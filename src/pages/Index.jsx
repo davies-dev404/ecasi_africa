@@ -139,22 +139,6 @@ const HeroSlider = () => {
         </div>
       </div>
 
-      {/* Arrows */}
-      <button
-        className="ecasi-slider-arrow left-4 md:left-8"
-        onClick={() => go(-1)}
-        aria-label="Previous slide"
-      >
-        <ChevronLeft size={20} />
-      </button>
-      <button
-        className="ecasi-slider-arrow right-4 md:right-8"
-        onClick={() => go(1)}
-        aria-label="Next slide"
-      >
-        <ChevronRight size={20} />
-      </button>
-
       {/* Dots */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         {heroSlides.map((_, i) => (
