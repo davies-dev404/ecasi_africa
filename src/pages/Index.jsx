@@ -26,14 +26,14 @@ const heroSlides = [
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Netfund-training.jpeg",
     title: "Capacity Strengthening &\nMentorship Programs",
     subtitle: "Building the green skills required to navigate carbon markets, sustainable finance, and environment impact assessments.",
-    cta: { label: "Training Courses", to: "/executive-training" },
+    cta: { label: "Training Courses", to: "/institute-overview" },
     cta2: { label: "Register Now", to: "/contact" },
   },
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Lidya-caf-with-Prof-Shem.jpg",
     title: "Evidence-Based Research\n& Specialized Advisory",
     subtitle: "Providing high-level consultancy for baseline studies, strategic social assessments, and policy reviews.",
-    cta: { label: "Consultancy Services", to: "/research-consultancy" },
+    cta: { label: "Consultancy Services", to: "/research/consulting" },
     cta2: { label: "Learn More", to: "/about" },
   },
   {
@@ -41,13 +41,13 @@ const heroSlides = [
     title: "Field Research &\nSystematic Observation",
     subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers across the continent.",
     cta: { label: "Research Areas", to: "/research-systematic-observation" },
-    cta2: { label: "Our Work", to: "/specialties" },
+    cta2: { label: "Our Work", to: "/our-strategic-focus" },
   },
   {
     bg: "/images/research/IMG_20241112_163109285-1024x683.jpg",
     title: "Environmental Impact\nAssessments",
     subtitle: "Delivering strategic environmental and social impact assessments that guide sustainable infrastructure and investment decisions.",
-    cta: { label: "Consultancy", to: "/research-consultancy" },
+    cta: { label: "Consultancy", to: "/research/consulting" },
     cta2: { label: "Contact Us", to: "/contact" },
   },
   {
@@ -61,7 +61,7 @@ const heroSlides = [
     bg: "/images/courses/IMGM1984-1024x683.jpg",
     title: "Executive Training\nWorkshops",
     subtitle: "Professional courses in climate change, green economy, and sustainable development delivered by leading experts.",
-    cta: { label: "View Courses", to: "/executive-training" },
+    cta: { label: "View Courses", to: "/institute-overview" },
     cta2: { label: "Register", to: "/contact" },
   },
 ];
@@ -90,14 +90,18 @@ const HeroSlider = () => {
 
   return (
     <div className="ecasi-hero" style={{ height: "clamp(380px, 55vw, 600px)" }}>
-      {/* Background */}
-      <div
-        className="absolute inset-0 bg-center bg-cover transition-opacity duration-500"
-        style={{
-          backgroundImage: `url(${slide.bg})`,
-          opacity: transitioning ? 0 : 1,
-        }}
-      />
+      {/* Background Images - Render all to preload */}
+      {heroSlides.map((s, idx) => (
+        <img
+          key={idx}
+          src={s.bg}
+          alt={`Hero Background ${idx + 1}`}
+          fetchpriority="high"
+          loading="eager"
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+          style={{ opacity: idx === current && !transitioning ? 1 : 0 }}
+        />
+      ))}
       <div className="ecasi-hero-overlay" />
 
       {/* Content */}
@@ -280,19 +284,19 @@ const Index = () => {
         {/* ── Stats Bar ── */}
         <div className="bg-ecasi-navy py-0">
           <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-            <div className="grid grid-cols-2 lg:grid-cols-5">
+            <div className="flex overflow-x-auto lg:grid lg:grid-cols-5 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               {stats.map((s, i) => (
                 <div
                   key={i}
-                  className={`py-7 px-6 text-center ${i < stats.length - 1 ? "lg:border-r border-white/10" : ""}`}
+                  className={`py-3 lg:py-7 px-5 md:px-6 text-center min-w-max flex-1 snap-start border-r border-white/10 last:border-r-0`}
                 >
                   <div
-                    className="text-3xl font-bold text-ecasi-orange mb-1"
+                    className="text-2xl md:text-3xl font-bold text-ecasi-orange mb-0.5 md:mb-1"
                     style={{ fontFamily: "'Fira Sans', sans-serif", color: "#fda128" }}
                   >
                     {s.value}
                   </div>
-                  <div className="text-white/70 text-sm uppercase tracking-wide" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                  <div className="text-white/70 text-[10px] md:text-sm uppercase tracking-wide whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
                     {s.label}
                   </div>
                 </div>
@@ -340,7 +344,7 @@ const Index = () => {
                   <p className="text-ecasi-body text-sm leading-relaxed mt-4" style={{ fontFamily: "'Roboto', sans-serif" }}>
                     Delivering excellence across all areas of capacity planning, environmental policy, and green transitions.
                   </p>
-                  <Link to="/specialties" className="ecasi-btn-primary mt-6 inline-block text-xs">
+                  <Link to="/our-strategic-focus" className="ecasi-btn-primary mt-6 inline-block text-xs">
                     View All Focus Areas
                   </Link>
                 </ScrollAnimation>

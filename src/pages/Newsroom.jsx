@@ -5,8 +5,6 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { newsItems } from '@/data/newsData';
 
-import facilityImg from '../assets/facility.png';
-
 import SEO from '@/components/SEO';
 
 const Newsroom = () => {
@@ -25,7 +23,7 @@ const Newsroom = () => {
       <section className="relative min-h-[500px] flex items-center">
         <div className="absolute inset-0 w-full h-full">
           <img 
-            src={facilityImg} 
+            src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80" 
             alt="Newsroom" 
             fetchPriority="high"
             className="w-full h-full object-cover"
@@ -106,7 +104,7 @@ const Newsroom = () => {
             {regularNews.map((item, index) => (
               <article key={index} className="healthcare-card group cursor-pointer flex flex-col h-full">
                 <div className="aspect-video bg-accent rounded-lg mb-5 overflow-hidden">
-                   <img src={item.image} alt={item.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                   <img src={item.image} alt={item.title} loading="eager" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 </div>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="px-2 py-1 bg-accent text-accent-foreground text-xs font-medium rounded">

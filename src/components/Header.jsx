@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Menu, X, Phone, Clock, ChevronDown, ChevronRight, Mail, Search
 } from "lucide-react";
-import logo from '../assets/ecasi_logo.png';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -65,9 +64,9 @@ const Header = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
               <img
-                src={logo}
+                src="/logo.png"
                 alt="ECASI Africa Logo"
-                className="h-16 w-auto object-contain"
+                className="h-16 w-auto object-contain mix-blend-multiply"
               />
             </Link>
 
@@ -653,19 +652,19 @@ const Header = () => {
               <div>
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'about' ? null : 'about')}
-                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded"
+                  className="w-full flex items-center justify-between px-4 py-3 text-[15px] font-bold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded shadow-sm"
                 >
                   About Us
                   <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === 'about' ? "rotate-180" : ""}`} />
                 </button>
                 {activeDropdown === 'about' && (
-                  <div className="pl-6 border-l-2 border-ecasi-green py-1 space-y-1">
+                  <div className="bg-gray-50 px-5 border-l-[3px] border-ecasi-green py-3 space-y-1.5 mt-1 rounded-r shadow-inner">
                     {aboutLinks.map((item, idx) => (
                       <Link
                         key={idx}
                         to={item.path}
                         onClick={() => setMobileMenuOpen(false)}
-                        className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                        className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                       >
                         {item.label}
                       </Link>
@@ -678,17 +677,17 @@ const Header = () => {
               <div>
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'programmes' ? null : 'programmes')}
-                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded"
+                  className="w-full flex items-center justify-between px-4 py-3 text-[15px] font-bold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded shadow-sm"
                 >
                   Programmes
                   <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === 'programmes' ? "rotate-180" : ""}`} />
                 </button>
                 {activeDropdown === 'programmes' && (
-                  <div className="pl-6 border-l-2 border-ecasi-green py-1 space-y-1">
+                  <div className="bg-gray-50 px-5 border-l-[3px] border-ecasi-green py-3 space-y-1.5 mt-1 rounded-r shadow-inner">
                     <Link
                       to="/specialties/clean-air-programme"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Air Quality Programme
                     </Link>
@@ -702,7 +701,7 @@ const Header = () => {
                         <ChevronDown size={12} className={`transition-transform duration-200 ${activeSubDropdown === 'climate' ? "rotate-180" : ""}`} />
                       </button>
                       {activeSubDropdown === 'climate' && (
-                        <div className="pl-4 border-l border-ecasi-green/30 py-1 space-y-1">
+                        <div className="bg-gray-100/80 px-4 border-l-2 border-ecasi-green/40 py-2 space-y-1 mt-1 rounded-r">
                           {[
                             { label: "Training, Education & Public Awareness", path: "/training-education-public-awareness" },
                             { label: "Research and Systematic Observation", path: "/research-systematic-observation" },
@@ -728,35 +727,35 @@ const Header = () => {
                     <Link
                       to="/specialties/energy"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Renewable Energy and Just Transition
                     </Link>
                     <Link
                       to="/specialties/sustainable-agriculture-and-food-systems"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Agriculture and Food Systems
                     </Link>
                     <Link
                       to="/specialties/transport"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Sustainable Transport &amp; E-Mobility
                     </Link>
                     <Link
                       to="/specialties/waste-and-circular-economy"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Waste &amp; Circular Economy
                     </Link>
                     <Link
                       to="/specialties/forests"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Natural Resources Management
                     </Link>
@@ -768,24 +767,24 @@ const Header = () => {
               <div>
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'training' ? null : 'training')}
-                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded"
+                  className="w-full flex items-center justify-between px-4 py-3 text-[15px] font-bold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded shadow-sm"
                 >
                   Executive Training
                   <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === 'training' ? "rotate-180" : ""}`} />
                 </button>
                 {activeDropdown === 'training' && (
-                  <div className="pl-6 border-l-2 border-ecasi-green py-1 space-y-1">
+                  <div className="bg-gray-50 px-5 border-l-[3px] border-ecasi-green py-3 space-y-1.5 mt-1 rounded-r shadow-inner">
                     <Link
                       to="/institute-overview"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Institute Overview
                     </Link>
                     <Link
                       to="/executive-training/courses"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-2.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Courses
                     </Link>
@@ -797,7 +796,7 @@ const Header = () => {
               <div>
                 <button
                   onClick={() => setActiveDropdown(activeDropdown === 'research' ? null : 'research')}
-                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded"
+                  className="w-full flex items-center justify-between px-4 py-3 text-[15px] font-bold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded shadow-sm"
                 >
                   Research &amp; Consultancy
                   <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === 'research' ? "rotate-180" : ""}`} />

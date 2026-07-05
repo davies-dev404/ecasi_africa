@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Linkedin } from 'lucide-react';
-import logo from '../assets/ecasi_logo.png';
 
 const Footer = () => {
   const year = new Date().getFullYear();
@@ -9,13 +8,13 @@ const Footer = () => {
     <footer className="ecasi-footer">
       {/* Main Footer Body */}
       <div className="max-w-[1476px] mx-auto px-4 lg:px-16 pt-16 pb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10 mb-12">
 
           {/* Column 1: Brand */}
-          <div className="space-y-5">
+          <div className="col-span-2 lg:col-span-1 space-y-5">
             <Link to="/" className="flex items-center gap-3">
               <div className="bg-white rounded-lg flex items-center justify-center p-1.5 flex-shrink-0">
-                <img src={logo} alt="ECASI Africa Logo" className="h-10 w-auto object-contain" />
+                <img src="/logo.png" alt="ECASI Africa Logo" className="h-10 w-auto object-contain mix-blend-multiply" />
               </div>
             </Link>
 
@@ -26,14 +25,16 @@ const Footer = () => {
             {/* Social Icons */}
             <div className="flex gap-3">
               {[
-                { icon: Facebook, label: "Facebook", href: "#" },
-                { icon: Instagram, label: "Instagram", href: "#" },
-                { label: "X", href: "#", custom: true },
-                { icon: Linkedin, label: "LinkedIn", href: "#" },
+                { icon: Facebook, label: "Facebook", href: "https://www.facebook.com/ecasiafrica/" },
+                { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/ecasiafrica/" },
+                { label: "X", href: "https://twitter.com/ecasiafrica", custom: true },
+                { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/company/ecasi-africa/" },
               ].map((s, i) => (
                 <a
                   key={i}
                   href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={s.label}
                   className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors text-white"
                 >
@@ -101,7 +102,7 @@ const Footer = () => {
           </div>
 
           {/* Column 4: Upcoming Events / Profiles */}
-          <div>
+          <div className="col-span-2 lg:col-span-1">
             <h4 className="text-white font-bold text-base uppercase tracking-wider mb-5 pb-3 border-b border-white/20"
               style={{ fontFamily: "'Fira Sans', sans-serif" }}>
               Our Profiles
@@ -124,9 +125,9 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/60">
+        <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/60 text-center">
           <p>Copyright © ECAS Institute, {year}.</p>
-          <div className="flex gap-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 items-center">
             <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
             <Link to="/accessibility" className="hover:text-white transition-colors">Accessibility</Link>

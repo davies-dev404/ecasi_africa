@@ -4,7 +4,7 @@ const SEO = ({ title, description, keywords, image }) => {
   const siteTitle = "ECASI AFRICA";
   const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
   const defaultDescription = "Environmental Capacities and Sustainability (ECAS) Institute is an independent Pan-African think tank advancing sustainable development through research, policy advisory, technical assistance, consultancy, and capacity strengthening.";
-  const defaultImage = "/ecasi_logo.png";
+  const defaultImage = "/logo.png";
 
   return (
     <Helmet>
