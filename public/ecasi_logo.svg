@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <defs>
+    <style>
+      .ec-text { font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif; font-weight: 900; }
+      .sub-text { font-family: Arial, Helvetica, sans-serif; font-weight: 700; }
+    </style>
+  </defs>
+
+  <!-- White background -->
+  <rect width="300" height="300" fill="white"/>
+
+  <!-- Outer thick green circle ring -->
+  <circle cx="150" cy="150" r="143" fill="none" stroke="#1a7a2e" stroke-width="5"/>
+  <circle cx="150" cy="150" r="136" fill="none" stroke="#1a7a2e" stroke-width="1.2"/>
+
+  <!-- Letter "e" -->
+  <text x="15" y="175" class="ec-text" font-size="108" fill="#1a7a2e">e</text>
+
+  <!-- Letter "c" -->
+  <text x="83" y="175" class="ec-text" font-size="108" fill="#1a7a2e">c</text>
+
+  <!-- Letter "A" -->
+  <text x="140" y="175" class="ec-text" font-size="108" fill="#1a7a2e">A</text>
+
+  <!-- Blue teardrop/water-drop accent inside the A -->
+  <!-- Positioned at the top-center of the A crossbar -->
+  <ellipse cx="195" cy="112" rx="8.5" ry="18" fill="#1e8fa3" transform="rotate(-8 195 112)"/>
+  <polygon points="195,132 186,116 204,116" fill="#1e8fa3"/>
+
+  <!-- Letter "S" -->
+  <text x="205" y="175" class="ec-text" font-size="108" fill="#1a7a2e">S</text>
+
+  <!-- Divider line -->
+  <line x1="55" y1="192" x2="245" y2="192" stroke="#1a7a2e" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Bottom text: ENVIRONMENTAL CAPACITIES AND -->
+  <text x="150" y="210" text-anchor="middle" class="sub-text" font-size="10" fill="#1a7a2e" letter-spacing="1.8">ENVIRONMENTAL CAPACITIES AND</text>
+
+  <!-- Bottom text: SUSTAINABILITY INSTITUTE -->
+  <text x="150" y="224" text-anchor="middle" class="sub-text" font-size="10" fill="#1a7a2e" letter-spacing="1.8">SUSTAINABILITY INSTITUTE</text>
+</svg>

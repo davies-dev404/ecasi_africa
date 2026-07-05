@@ -1,0 +1,619 @@
+@import url("https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=Roboto:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ECASI Africa Color Palette */
+    --ecasi-green: #008000;
+    --ecasi-green-dark: #006600;
+    --ecasi-green-light: #20a020;
+    --ecasi-navy: #032e42;
+    --ecasi-red: #d83030;
+    --ecasi-teal: #20b2aa;
+    --ecasi-teal-card: #3cb591;
+    --ecasi-blue: #1e73be;
+    --ecasi-text: #676767;
+
+    /* Shadcn tokens mapped to ECASI palette */
+    --background: 0 0% 100%;
+    --foreground: 207 87% 14%;       /* #032e42 navy */
+
+    --card: 0 0% 100%;
+    --card-foreground: 207 87% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 207 87% 14%;
+
+    --primary: 120 100% 25%;         /* #008000 green */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 120 20% 95%;
+    --secondary-foreground: 120 100% 20%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 41%;    /* #676767 */
+
+    --accent: 120 60% 92%;
+    --accent-foreground: 120 100% 20%;
+
+    --destructive: 0 67% 51%;        /* #d83030 red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 120 100% 25%;
+
+    --radius: 0.375rem;
+
+    /* ECASI-specific tokens */
+    --topbar-bg: #008000;
+    --topbar-blue: #1e73be;
+    --header-bg: #ffffff;
+    --nav-text: #032e42;
+    --nav-active: #d83030;
+    --nav-hover: #d83030;
+    --footer-bg: #008000;
+    --footer-contact-bg: #1a8080;
+    --section-bg-light: #f2f2f2;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 207 87% 8%;
+    --foreground: 0 0% 95%;
+    --card: 207 87% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 207 87% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 120 80% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 207 40% 18%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 207 40% 18%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 120 40% 20%;
+    --accent-foreground: 120 80% 70%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 207 40% 20%;
+    --input: 207 40% 20%;
+    --ring: 120 80% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Roboto", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #676767;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 700;
+    color: #032e42;
+    line-height: 1.3;
+  }
+
+  h1 { font-size: 40px; }
+  h2 { font-size: 33px; }
+  h3 { font-size: 29px; }
+  h4 { font-size: 25px; }
+  h5 { font-size: 22px; }
+  h6 { font-size: 19px; }
+
+  a {
+    color: #008000;
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: #1155cc;
+  }
+}
+
+@layer components {
+  /* ===== LAYOUT ===== */
+  .ecasi-container, .healthcare-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-16;
+  }
+
+  .ecasi-section {
+    @apply py-16 md:py-24;
+  }
+
+  /* ===== TOP BAR ===== */
+  .ecasi-topbar {
+    background: #008000;
+    color: #ffffff;
+    font-size: 13px;
+    position: relative;
+  }
+
+  .ecasi-topbar-left {
+    background: #1e73be;
+    padding: 8px 20px 8px 0;
+    position: relative;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%);
+    padding-right: 32px;
+  }
+
+  /* ===== HEADER / NAV ===== */
+  .ecasi-header {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .ecasi-nav-link {
+    font-family: "Roboto", sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #032e42;
+    padding: 0 12px;
+    letter-spacing: 0.02em;
+    position: relative;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+
+  .ecasi-nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background: #d83030;
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+  }
+
+  .ecasi-nav-link:hover,
+  .ecasi-nav-link.active {
+    color: #d83030;
+  }
+
+  .ecasi-nav-link:hover::after,
+  .ecasi-nav-link.active::after {
+    transform: scaleX(1);
+  }
+
+  /* ===== HERO SLIDER ===== */
+  .ecasi-hero {
+    position: relative;
+    overflow: hidden;
+    background: #032e42;
+  }
+
+  .ecasi-hero-slide {
+    position: relative;
+    min-height: 560px;
+    display: flex;
+    align-items: center;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .ecasi-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 46, 66, 0.65);
+  }
+
+  .ecasi-hero-content {
+    position: relative;
+    z-index: 10;
+    color: white;
+  }
+
+  .ecasi-slide-heading {
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 52px);
+    line-height: 1.2;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  /* ===== SECTION HEADINGS ===== */
+  .ecasi-section-title {
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #008000;
+    font-size: 28px;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+
+  .ecasi-section-divider {
+    height: 3px;
+    background: linear-gradient(90deg, #008000, #20b2aa);
+    width: 60px;
+    border-radius: 2px;
+    margin: 12px 0 24px;
+  }
+
+  /* ===== CARDS ===== */
+  .ecasi-card-green {
+    background: linear-gradient(160deg, #2d7d4e 0%, #1a6b3c 50%, #0f5c30 100%);
+    color: #ffffff;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .ecasi-card-green:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+  }
+
+  .ecasi-card-teal {
+    background: linear-gradient(160deg, #20b2aa 0%, #1a9490 50%, #12756d 100%);
+    color: #ffffff;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .ecasi-card-teal:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+  }
+
+  .ecasi-card-wave {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: rgba(255,255,255,0.15);
+    clip-path: polygon(0 40%, 25% 0%, 50% 40%, 75% 0%, 100% 40%, 100% 0%, 0 0%);
+  }
+
+  .ecasi-learn-more {
+    color: #d83030;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .ecasi-learn-more:hover {
+    color: #ff4444;
+    text-decoration: underline;
+  }
+
+  /* Drop Cap */
+  .ecasi-drop-cap::first-letter {
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 700;
+    font-size: 4em;
+    float: left;
+    line-height: 0.75;
+    margin-right: 8px;
+    color: #008000;
+  }
+
+  /* ===== BUTTONS ===== */
+  .ecasi-btn-primary {
+    background: #008000;
+    color: #ffffff;
+    font-family: "Roboto", sans-serif;
+    font-weight: 600;
+    padding: 10px 28px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: inline-block;
+    text-decoration: none;
+  }
+
+  .ecasi-btn-primary:hover {
+    background: #252628;
+    color: #ffffff;
+  }
+
+  .ecasi-btn-outline {
+    background: transparent;
+    color: #008000;
+    font-family: "Roboto", sans-serif;
+    font-weight: 600;
+    padding: 10px 28px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    border: 2px solid #008000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-block;
+    text-decoration: none;
+  }
+
+  .ecasi-btn-outline:hover {
+    background: #008000;
+    color: #ffffff;
+  }
+
+  /* ===== CONTACT STRIP ===== */
+  .ecasi-contact-strip {
+    background: linear-gradient(135deg, #1a8080 0%, #147070 100%);
+    color: white;
+  }
+
+  /* ===== FOOTER ===== */
+  .ecasi-footer {
+    background: #008000;
+    color: rgba(255,255,255,0.85);
+    font-size: 15px;
+  }
+
+  .ecasi-footer h3,
+  .ecasi-footer h4 {
+    color: #ffffff;
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 700;
+  }
+
+  .ecasi-footer a {
+    color: rgba(255,255,255,0.85);
+    transition: color 0.2s;
+    text-decoration: none;
+  }
+
+  .ecasi-footer a:hover {
+    color: #ffffff;
+  }
+
+  .ecasi-footer-list li {
+    padding: 6px 0;
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ecasi-footer-list li::before {
+    content: "›";
+    color: rgba(255,255,255,0.5);
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  /* ===== STATS COUNTER ===== */
+  .ecasi-stat-card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    padding: 24px;
+    text-align: center;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* ===== ICON BOX ===== */
+  .ecasi-icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #008000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .ecasi-icon-box:hover {
+    background: #006600;
+  }
+
+  /* ===== SEARCH ICON CIRCLE ===== */
+  .ecasi-icon-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid #676767;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #676767;
+  }
+
+  .ecasi-icon-circle:hover {
+    border-color: #d83030;
+    color: #d83030;
+  }
+
+  /* ===== SLIDER ARROWS ===== */
+  .ecasi-slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    z-index: 20;
+    transition: all 0.3s ease;
+  }
+
+  .ecasi-slider-arrow:hover {
+    background: #ff9139;
+    border-color: #ff9139;
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .ecasi-page-header {
+    background: #008000;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ecasi-page-header-title {
+    font-family: "Fira Sans", sans-serif;
+    font-size: clamp(32px, 5vw, 59px);
+    font-weight: 700;
+    color: #fda128;
+    text-align: center;
+  }
+
+  /* ===== EVENT CARD ===== */
+  .ecasi-event-card {
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .ecasi-event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+  }
+
+  /* ===== NEWS CARD ===== */
+  .ecasi-news-card {
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+  }
+
+  .ecasi-news-card:hover {
+    border-bottom-color: #008000;
+    box-shadow: 0 8px 28px rgba(0,128,0,0.12);
+    transform: translateY(-4px);
+  }
+
+  /* ===== STICKY HEADER ===== */
+  .ecasi-sticky-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #ffffff;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .ecasi-sticky-nav.scrolled {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: ecasiFadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: ecasiSlideUp 0.6s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: ecasiScaleIn 0.4s ease-out forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: ecasiSlideInLeft 0.6s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: ecasiSlideInRight 0.6s ease-out forwards;
+  }
+
+  @keyframes ecasiFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes ecasiSlideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes ecasiScaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes ecasiSlideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes ecasiSlideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .animate-marquee {
+    animation: scroll 30s linear infinite;
+  }
+
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
+
+  .text-ecasi-green { color: #008000; }
+  .text-ecasi-navy { color: #032e42; }
+  .text-ecasi-red { color: #d83030; }
+  .text-ecasi-teal { color: #20b2aa; }
+  .text-ecasi-blue { color: #1e73be; }
+  .text-ecasi-body { color: #676767; }
+
+  .bg-ecasi-green { background-color: #008000; }
+  .bg-ecasi-navy { background-color: #032e42; }
+  .bg-ecasi-red { background-color: #d83030; }
+  .bg-ecasi-teal { background-color: #20b2aa; }
+  .bg-ecasi-section { background-color: #f2f2f2; }
+
+  .border-ecasi-green { border-color: #008000; }
+  .border-ecasi-red { border-color: #d83030; }
+}
