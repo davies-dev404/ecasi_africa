@@ -45,7 +45,9 @@ const Header = () => {
   ];
 
   return (
-    <header className={`ecasi-sticky-nav ${scrolled ? "scrolled" : ""}`}>
+    <>
+      <div className="h-[148px] w-full shrink-0" aria-hidden="true"></div>
+      <header className={`ecasi-sticky-nav ${scrolled ? "scrolled" : ""}`}>
       {/* ── Top Bar ── */}
       <div
         className={`ecasi-topbar relative flex items-center justify-end overflow-hidden bg-ecasi-green transition-all duration-300 ease-in-out ${scrolled ? "h-0 opacity-0 min-h-[0px]" : "h-[48px] opacity-100 min-h-[48px]"
@@ -932,6 +934,7 @@ const Header = () => {
         )}
       </nav>
     </header>
+    </>
   );
 };
 

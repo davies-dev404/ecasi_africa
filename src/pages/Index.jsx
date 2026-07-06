@@ -112,7 +112,7 @@ const HeroSlider = () => {
         <div className="max-w-[1476px] w-full mx-auto px-4 lg:px-16">
           <div className="max-w-2xl">
             <p className="text-white/80 text-sm uppercase tracking-widest mb-3 font-medium" style={{ fontFamily: "'Roboto', sans-serif" }}>
-              ECAS Institute — Bridging the Data-Capacity-Planning Nexus
+              ECAS INSTITUTE — BRIDGING THE NEXUS BETWEEN RESEARCH, POLICY AND PRACTICE
             </p>
             <h1
               className="ecasi-slide-heading mb-4 whitespace-pre-line"
@@ -256,7 +256,7 @@ const Index = () => {
   return (
     <>
       <SEO
-        title="Bridging the Data-Capacity-Planning Nexus"
+        title="ECAS Institute — Bridging the Nexus Between Research, Policy and Practice"
         description="Environmental Capacities and Sustainability (ECAS) Institute is an independent Pan-African think tank advancing sustainable development through research, policy advisory, and capacity building."
       />
       <div className="min-h-screen flex flex-col bg-white">
