@@ -272,15 +272,15 @@ const Index = () => {
               {stats.map((s, i) => (
                 <div
                   key={i}
-                  className={`py-3 lg:py-7 px-5 md:px-6 text-center min-w-max flex-1 snap-start border-r border-white/10 last:border-r-0`}
+                  className={`py-2 lg:py-3 px-4 md:px-5 text-center min-w-max flex-1 snap-start border-r border-white/10 last:border-r-0`}
                 >
                   <div
-                    className="text-2xl md:text-3xl font-bold text-ecasi-orange mb-0.5 md:mb-1"
+                    className="text-xl md:text-2xl font-bold text-ecasi-orange mb-0.5"
                     style={{ fontFamily: "'Fira Sans', sans-serif", color: "#fda128" }}
                   >
                     {s.value}
                   </div>
-                  <div className="text-white/70 text-[10px] md:text-sm uppercase tracking-wide whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                  <div className="text-white/70 text-[9px] md:text-xs uppercase tracking-wide whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
                     {s.label}
                   </div>
                 </div>

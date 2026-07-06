@@ -142,13 +142,14 @@ const Reports = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filtered.map((item, index) => (
-              <ScrollAnimation key={item.id} delay={index * 80} animation="fade-up">
+              <ScrollAnimation key={item.id} delay={0} animation="fade-up">
                 <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
                   <div className="h-44 overflow-hidden relative bg-gray-100">
                     <img 
                       src={item.image} 
                       alt={item.title}
                       className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                      loading="eager"
                       onError={e => e.target.style.display='none'}
                     />
                     <div className="absolute inset-0 bg-ecasi-navy/20 group-hover:bg-ecasi-navy/10 transition-colors"></div>
@@ -205,16 +206,7 @@ const Reports = () => {
             ))}
           </div>
 
-          <div className="mt-16 text-center">
-            <a 
-              href="https://ecasiafrica.org/reports-2/" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-3 border-2 border-ecasi-green text-ecasi-green rounded-lg font-semibold hover:bg-ecasi-green hover:text-white transition-colors"
-            >
-              View All Reports on ECASI Website
-            </a>
-          </div>
+
 
         </div>
       </section>

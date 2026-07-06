@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Linkedin } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
 
 const Footer = () => {
   const year = new Date().getFullYear();
@@ -29,6 +29,7 @@ const Footer = () => {
                 { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/ecasiafrica/" },
                 { label: "X", href: "https://twitter.com/ecasiafrica", custom: true },
                 { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/company/ecasi-africa/" },
+                { icon: Youtube, label: "YouTube", href: "https://www.youtube.com/@ecasiafrica" },
               ].map((s, i) => (
                 <a
                   key={i}
@@ -58,10 +59,10 @@ const Footer = () => {
             </h4>
             <ul className="ecasi-footer-list space-y-1">
               {[
-                { label: "Programmes", path: "/specialties" },
+                { label: "Programmes", path: "/our-strategic-focus" },
                 { label: "About Us", path: "/about" },
                 { label: "Training", path: "/training-education-public-awareness" },
-                { label: "Research", path: "/newsroom" },
+                { label: "Research", path: "/research/overview" },
                 { label: "Resources", path: "/resources" },
                 { label: "Contact Us", path: "/contact" },
               ].map(({ label, path }) => (
@@ -84,7 +85,7 @@ const Footer = () => {
             <ul className="ecasi-footer-list space-y-1">
               {[
                 { label: "Air Quality Programme", path: "/specialties/clean-air-programme" },
-                { label: "Climate Change Action", path: "/specialties/climate-change" },
+                { label: "Climate Change Action", path: "/climate-change-programming" },
                 { label: "Renewable Energy and Just Transition", path: "/specialties/energy" },
                 { label: "Agriculture and Food Systems", path: "/specialties/sustainable-agriculture-and-food-systems" },
                 { label: "Sustainable Transport & E-Mobility", path: "/specialties/transport" },
@@ -126,12 +127,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/60 text-center">
-          <p>Copyright © ECAS Institute, {year}.</p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 items-center">
-            <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link to="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
-            <Link to="/accessibility" className="hover:text-white transition-colors">Accessibility</Link>
-          </div>
+          <p>Copyright © ECAS Institute, {year}. powered by JengaWeb</p>
         </div>
       </div>
     </footer>

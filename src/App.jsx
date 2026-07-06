@@ -10,9 +10,6 @@ import CleanAirProgramme from "./pages/CleanAirProgramme.jsx";
 import Newsroom from "./pages/Newsroom.jsx";
 import Contact from "./pages/Contact.jsx";
 import NotFound from "./pages/NotFound.jsx";
-import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
-import TermsOfService from "./pages/TermsOfService.jsx";
-import Accessibility from "./pages/Accessibility.jsx";
 import CookieBanner from "./components/CookieBanner.jsx";
 
 import NewsDetail from "./pages/NewsDetail.jsx";
@@ -84,9 +81,6 @@ const App = () => (
           <Route path="/newsroom" element={<Newsroom />} />
           <Route path="/news/:id" element={<NewsDetail />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/accessibility" element={<Accessibility />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/resources" element={<Resources />} />
           <Route path="/resources/publications" element={<Publications />} />

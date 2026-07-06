@@ -132,7 +132,7 @@ const ExecutiveTraining = () => {
           >
             <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
             <span className="text-white/40">/</span>
-            <Link to="/training-2" className="hover:text-white transition-colors">Executive Training</Link>
+            <Link to="/institute-overview" className="hover:text-white transition-colors">Executive Training</Link>
             <span className="text-white/40">/</span>
             <span className="text-white font-semibold">{title}</span>
           </motion.div>
@@ -163,10 +163,18 @@ const ExecutiveTraining = () => {
                     dangerouslySetInnerHTML={{ __html: courseInfo.content }}
                   />
                 ) : (
-                  <div className="text-center text-gray-400 py-16">
-                    <GraduationCap size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium text-gray-500">Course details are currently being updated.</p>
-                    <p className="mt-1">Please check back later or contact us for more information.</p>
+                  <div className="py-12 px-4 text-center max-w-2xl mx-auto">
+                    <GraduationCap size={48} className="mx-auto mb-6 text-ecasi-green/50" />
+                    <h3 className="text-3xl font-bold text-ecasi-navy mb-4">Welcome to Executive Training</h3>
+                    <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                      Explore our comprehensive suite of executive training programmes. Please select a course from the menu to view detailed information, curriculum, and enrollment options.
+                    </p>
+                    <p className="text-gray-500 mb-8">
+                      Our training modules offer actionable strategies in sustainability, climate finance, and policy implementation tailored specifically for professionals and leaders across the African continent.
+                    </p>
+                    <Link to="/contact" className="inline-flex items-center justify-center px-6 py-3 bg-ecasi-green text-white font-medium rounded-xl hover:bg-ecasi-green-dark transition-colors">
+                      Contact Us for Custom Training
+                    </Link>
                   </div>
                 )}
               </div>
@@ -223,7 +231,7 @@ const ExecutiveTraining = () => {
                   Transform your career with ECASI's world-class executive training programmes.
                 </p>
                 <Link
-                  to="/contact-us"
+                  to="/contact"
                   className="inline-flex items-center gap-2 bg-ecasi-green hover:bg-ecasi-green-dark text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
                 >
                   Contact Us

@@ -47,26 +47,44 @@ const Header = () => {
   return (
     <header className={`ecasi-sticky-nav ${scrolled ? "scrolled" : ""}`}>
       {/* ── Top Bar ── */}
-      <div className="ecasi-topbar min-h-[36px] flex items-center justify-end px-4 lg:px-16" style={{
-        background: "linear-gradient(90deg, #1e73be 0%, #1e73be 20%, #008000 20%, #008000 100%)"
-      }}>
-        <div className="flex items-center text-white text-xs font-semibold py-2">
-          <Clock size={13} className="mr-2" />
-          <span>Mon – Fri: 8:00am – 7:00pm</span>
+      <div
+        className={`ecasi-topbar relative flex items-center justify-end overflow-hidden bg-ecasi-green transition-all duration-300 ease-in-out ${scrolled ? "h-0 opacity-0 min-h-[0px]" : "h-[48px] opacity-100 min-h-[48px]"
+          }`}
+      >
+        <div
+          className="absolute top-0 left-0 bottom-0 bg-ecasi-blue"
+          style={{ width: '60%', clipPath: 'polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%)' }}
+        ></div>
+        <div className="relative z-10 flex items-center text-white text-sm font-semibold w-full max-w-[1476px] mx-auto px-4 lg:px-16 justify-between">
+          <div className="flex items-center space-x-6 text-white hidden md:flex">
+            <a href="tel:+254728925306" className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer">
+              <Phone size={15} className="mr-2 stroke-[2.5]" />
+              <span className="tracking-wide">+254 728 925 306</span>
+            </a>
+            <a href="mailto:info@ecasiafrica.org" className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer">
+              <Mail size={15} className="mr-2 stroke-[2.5]" />
+              <span className="tracking-wide">info@ecasiafrica.org</span>
+            </a>
+          </div>
+          <div className="flex items-center ml-auto">
+            <Clock size={16} className="mr-2 stroke-[2.5]" />
+            <span className="tracking-wide">Mon – Fri: 8:00am – 7:00pm</span>
+            <span className="mx-3 text-white/50">|</span>
+          </div>
         </div>
       </div>
 
       {/* ── Main Navigation ── */}
       <nav className="bg-white border-b border-gray-100 relative">
         <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-          <div className="flex items-center justify-between" style={{ height: "100px" }}>
+          <div className={`flex items-center justify-between transition-all duration-300 ${scrolled ? "h-[70px]" : "h-[100px]"}`}>
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
               <img
                 src="/logo.png"
                 alt="ECASI Africa Logo"
-                className="h-16 w-auto object-contain mix-blend-multiply"
+                className={`w-auto object-contain mix-blend-multiply transition-all duration-300 ${scrolled ? "h-12" : "h-20"}`}
               />
             </Link>
 
@@ -88,26 +106,25 @@ const Header = () => {
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <button
-                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${
-                    isActive("/about") || aboutLinks.some(l => isActive(l.path)) ? "active" : ""
-                  }`}
+                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${isActive("/about") || aboutLinks.some(l => isActive(l.path)) ? "active" : ""
+                    }`}
                 >
                   ABOUT US
                   <ChevronDown size={14} className="transition-transform duration-200" />
                 </button>
                 {activeDropdown === 'about' && (
                   <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 z-50 animate-fade-in">
-                  <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                    {aboutLinks.map((item, idx) => (
-                      <Link
-                        key={idx}
-                        to={item.path}
-                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
+                    <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                      {aboutLinks.map((item, idx) => (
+                        <Link
+                          key={idx}
+                          to={item.path}
+                          className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -119,117 +136,116 @@ const Header = () => {
                 onMouseLeave={() => { setActiveDropdown(null); setActiveSubDropdown(null); }}
               >
                 <button
-                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${
-                    location.pathname.startsWith("/programmes") || location.pathname.startsWith("/specialties") ? "active" : ""
-                  }`}
+                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${location.pathname.startsWith("/programmes") || location.pathname.startsWith("/specialties") ? "active" : ""
+                    }`}
                 >
                   PROGRAMMES
                   <ChevronDown size={14} className="transition-transform duration-200" />
                 </button>
                 {activeDropdown === 'programmes' && (
                   <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-80 z-50 animate-fade-in">
-                  <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                    <Link
-                      to="/specialties/clean-air-programme"
-                      className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                    >
-                      Air Quality Programme
-                    </Link>
+                    <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                      <Link
+                        to="/specialties/clean-air-programme"
+                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                      >
+                        Air Quality Programme
+                      </Link>
 
-                    {/* Climate Change Action Subdropdown */}
-                    <div
-                      className="relative"
-                      onMouseEnter={() => setActiveSubDropdown('climate')}
-                      onMouseLeave={() => setActiveSubDropdown(null)}
-                    >
-                      <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
-                        <span>Climate Change Action</span>
-                        <ChevronRight size={14} />
+                      {/* Climate Change Action Subdropdown */}
+                      <div
+                        className="relative"
+                        onMouseEnter={() => setActiveSubDropdown('climate')}
+                        onMouseLeave={() => setActiveSubDropdown(null)}
+                      >
+                        <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
+                          <span>Climate Change Action</span>
+                          <ChevronRight size={14} />
+                        </div>
+                        {activeSubDropdown === 'climate' && (
+                          <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
+                            <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                              {[
+                                { label: "Training, Education & Public Awareness", path: "/training-education-public-awareness" },
+                                { label: "Research and Systematic Observation", path: "/research-systematic-observation" },
+                                { label: "Creation of an Enabling Environment", path: "/creation-enabling-environment" },
+                                { label: "Adaptation & Mitigation Assessments", path: "/adaptation-mitigation-assessments" },
+                                { label: "GHG Inventories", path: "/ghg-inventories" },
+                                { label: "Institutional capacity-building and Reskilling", path: "/institutional-capacity-building" },
+                                { label: "Integrated Programming for Climate Change", path: "/climate-change-programming" },
+                                { label: "National Communications", path: "/national-communications" }
+                              ].map((sub, sIdx) => (
+                                <Link
+                                  key={sIdx}
+                                  to={sub.path}
+                                  className="block px-4 py-2 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors"
+                                >
+                                  {sub.label}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {activeSubDropdown === 'climate' && (
-                        <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
-                        <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                          {[
-                            { label: "Training, Education & Public Awareness", path: "/training-education-public-awareness" },
-                            { label: "Research and Systematic Observation", path: "/research-systematic-observation" },
-                            { label: "Creation of an Enabling Environment", path: "/creation-enabling-environment" },
-                            { label: "Adaptation & Mitigation Assessments", path: "/adaptation-mitigation-assessments" },
-                            { label: "GHG Inventories", path: "/ghg-inventories" },
-                            { label: "Institutional capacity-building and Reskilling", path: "/institutional-capacity-building" },
-                            { label: "Integrated Programming for Climate Change", path: "/climate-change-programming" },
-                            { label: "National Communications", path: "/national-communications" }
-                          ].map((sub, sIdx) => (
-                            <Link
-                              key={sIdx}
-                              to={sub.path}
-                              className="block px-4 py-2 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors"
-                            >
-                              {sub.label}
-                            </Link>
-                          ))}
-                        </div>
-                        </div>
-                      )}
-                    </div>
 
-                    <Link
-                      to="/specialties/energy"
-                      className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                    >
-                      Renewable Energy and Just Transition
-                    </Link>
-                    <Link
-                      to="/specialties/sustainable-agriculture-and-food-systems"
-                      className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                    >
-                      Agriculture and Food Systems
-                    </Link>
-                    <Link
-                      to="/specialties/transport"
-                      className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                    >
-                      Sustainable Transport &amp; E-Mobility
-                    </Link>
-                    <Link
-                      to="/specialties/waste-and-circular-economy"
-                      className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                    >
-                      Waste &amp; Circular Economy
-                    </Link>
+                      <Link
+                        to="/specialties/energy"
+                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                      >
+                        Renewable Energy and Just Transition
+                      </Link>
+                      <Link
+                        to="/specialties/sustainable-agriculture-and-food-systems"
+                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                      >
+                        Agriculture and Food Systems
+                      </Link>
+                      <Link
+                        to="/specialties/transport"
+                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                      >
+                        Sustainable Transport &amp; E-Mobility
+                      </Link>
+                      <Link
+                        to="/specialties/waste-and-circular-economy"
+                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                      >
+                        Waste &amp; Circular Economy
+                      </Link>
 
-                    {/* Natural Resources Management Subdropdown */}
-                    <div
-                      className="relative"
-                      onMouseEnter={() => setActiveSubDropdown('resources-mgmt')}
-                      onMouseLeave={() => setActiveSubDropdown(null)}
-                    >
-                      <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
-                        <span>Natural Resources Management</span>
-                        <ChevronRight size={14} />
+                      {/* Natural Resources Management Subdropdown */}
+                      <div
+                        className="relative"
+                        onMouseEnter={() => setActiveSubDropdown('resources-mgmt')}
+                        onMouseLeave={() => setActiveSubDropdown(null)}
+                      >
+                        <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
+                          <span>Natural Resources Management</span>
+                          <ChevronRight size={14} />
+                        </div>
+                        {activeSubDropdown === 'resources-mgmt' && (
+                          <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
+                            <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                              {[
+                                { label: "Forests, Biodiversity and Ecosystems", path: "/specialties/forests" },
+                                { label: "Sustainable Mining & Extractives", path: "/specialties/mining-extractives" },
+                                { label: "Environment, Migration and Mobility", path: "/specialties/security-migration" },
+                                { label: "Fresh Water Programme", path: "/specialties/water" },
+                                { label: "Oceans & Marine Programme", path: "/specialties/oceans-marine" }
+                              ].map((sub, sIdx) => (
+                                <Link
+                                  key={sIdx}
+                                  to={sub.path}
+                                  className="block px-4 py-2 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors"
+                                >
+                                  {sub.label}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {activeSubDropdown === 'resources-mgmt' && (
-                        <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
-                        <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                          {[
-                            { label: "Forests, Biodiversity and Ecosystems", path: "/specialties/forests" },
-                            { label: "Sustainable Mining & Extractives", path: "/specialties/mining-extractives" },
-                            { label: "Environment, Migration and Mobility", path: "/specialties/security-migration" },
-                            { label: "Fresh Water Programme", path: "/specialties/water" },
-                            { label: "Oceans & Marine Programme", path: "/specialties/oceans-marine" }
-                          ].map((sub, sIdx) => (
-                            <Link
-                              key={sIdx}
-                              to={sub.path}
-                              className="block px-4 py-2 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors"
-                            >
-                              {sub.label}
-                            </Link>
-                          ))}
-                        </div>
-                        </div>
-                      )}
                     </div>
-                  </div>
                   </div>
                 )}
               </div>
@@ -241,120 +257,119 @@ const Header = () => {
                 onMouseLeave={() => { setActiveDropdown(null); setActiveSubDropdown(null); }}
               >
                 <button
-                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${
-                    isActive("/courses") || isActive("/training-overview") ? "active" : ""
-                  }`}
+                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${isActive("/courses") || isActive("/training-overview") ? "active" : ""
+                    }`}
                 >
                   EXECUTIVE TRAINING
                   <ChevronDown size={14} className="transition-transform duration-200" />
                 </button>
                 {activeDropdown === 'training' && (
                   <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 z-50 animate-fade-in">
-                  <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                    <Link
-                      to="/institute-overview"
-                      className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                    >
-                      Institute Overview
-                    </Link>
+                    <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                      <Link
+                        to="/institute-overview"
+                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                      >
+                        Institute Overview
+                      </Link>
 
-                    {/* Courses Subdropdown */}
-                    <div
-                      className="relative"
-                      onMouseEnter={() => setActiveSubDropdown('courses')}
-                      onMouseLeave={() => setActiveSubDropdown(null)}
-                    >
-                      <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
-                        <span>Courses</span>
-                        <ChevronRight size={14} />
-                      </div>
-                      {activeSubDropdown === 'courses' && (
-                        <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
-                        <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                          {[
-                            {
-                              label: "Climate Change",
-                              path: "/executive-training/climate-change",
-                              id: "climate-change",
-                              children: [
-                                { label: "Energy and Green Economy", path: "/executive-training/energy" },
-                                { label: "Climate-Smart Forestry", path: "/executive-training/climate-smart-forestry" },
-                                { label: "Energy Transition and Mobility", path: "/executive-training/energy-transition-and-mobility" },
-                                { label: "Agricultural carbon credit markets", path: "/executive-training/agricultural-carbon-credit-markets" },
-                                { label: "Agriculture and Food Systems", path: "/executive-training/agriculture-and-food-systems" },
-                                { label: "An Introduction to Climate Change and Human Rights", path: "/executive-training/an-introduction-to-climate-change-and-human-rights" },
-                                { label: "Certified Expert in Climate Adaptation Finance", path: "/executive-training/certified-expert-in-climate-adaptation-finance" }
-                              ]
-                            },
-                            { label: "Biodiversity and Natural Resources", path: "/executive-training/biodiversity-and-natural-resources" },
-                            { label: "Business Sustainability Management", path: "/executive-training/business-sustainability-management" },
-                            {
-                              label: "Carbon Markets",
-                              path: "/executive-training/carbon-markets",
-                              id: "carbon-markets",
-                              children: [
-                                { label: "Carbon Accounting & Carbon Offsetting Course", path: "/executive-training/carbon-accounting-carbon-offsetting-course" },
-                                { label: "Certificate Course on Nature Based Solutions for Disaster and Climate Resilience", path: "/executive-training/certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience" },
-                                { label: "Certificate in Green Finance", path: "/executive-training/certificate-in-green-finance" },
-                                { label: "Certified Expert in Biodiversity Finance", path: "/executive-training/certified-expert-in-biodiversity-finance" },
-                                { label: "Certified Expert in Environmental Accounting, Leadership and Sustainability", path: "/executive-training/certified-expert-in-environmental-accounting" },
-                                { label: "Certified Expert in Sustainable Finance", path: "/executive-training/certified-expert-in-sustainable-finance" },
-                                { label: "Climate & Biodiversity Certificate Program", path: "/executive-training/climate-biodiversity-certificate-program" },
-                                { label: "CLIMATE AND HEALTH CERTIFICATE COURSE", path: "/executive-training/climate-and-health-certificate-course" },
-                                { label: "Climate Change and Water", path: "/executive-training/climate-change-and-water" }
-                              ]
-                            },
-                            { label: "Human Resources Professional Courses", path: "/executive-training/human-resources-professional-courses" },
-                            { label: "Green Skills Development", path: "/executive-training/green-skills-development" },
-                            {
-                              label: "Past Training",
-                              path: "/executive-training/past-training",
-                              id: "past-training",
-                              children: [
-                                { label: "CLIMATE RESILIENT INFRASTRACTURE DEVELOPMENT TRAINING COURSE", path: "/executive-training/climate-resilient-infrastructure" },
-                                { label: "ENVIRONMENT, CLIMATE CHANGE, ENERGY, AND SUSTAINABILITY COURSES", path: "/executive-training/environment-climate-change-courses" },
-                                { label: "REGIONAL WORKSHOP: CLIMATE CHANGE AND FOOD SYSTEMS TRANSFORMATION", path: "/executive-training/regional-workshop" },
-                                { label: "TRAINING ON CARBON MARKETS AND TRADING", path: "/executive-training/training-on-carbon-markets" }
-                              ]
-                            }
-                          ].map((sub, sIdx) => (
-                            <div
-                              key={sIdx}
-                              className="relative"
-                              onMouseEnter={() => sub.children && setActiveThirdLevelDropdown(sub.id)}
-                              onMouseLeave={() => sub.children && setActiveThirdLevelDropdown(null)}
-                            >
-                              <Link
-                                to={sub.path}
-                                className="flex items-center justify-between px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium border-b border-gray-50 last:border-0"
-                              >
-                                <span>{sub.label}</span>
-                                {sub.children && <ChevronRight size={12} />}
-                              </Link>
-                              
-                              {/* Third Level Dropdown */}
-                              {sub.children && activeThirdLevelDropdown === sub.id && (
-                                <div className="absolute left-full top-0 pl-1 w-72 z-50 animate-fade-in">
-                                  <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                                    {sub.children.map((child, cIdx) => (
-                                      <Link
-                                        key={cIdx}
-                                        to={child.path}
-                                        className="block px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors border-b border-gray-50 last:border-0"
-                                      >
-                                        {child.label}
-                                      </Link>
-                                    ))}
-                                  </div>
+                      {/* Courses Subdropdown */}
+                      <div
+                        className="relative"
+                        onMouseEnter={() => setActiveSubDropdown('courses')}
+                        onMouseLeave={() => setActiveSubDropdown(null)}
+                      >
+                        <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
+                          <span>Courses</span>
+                          <ChevronRight size={14} />
+                        </div>
+                        {activeSubDropdown === 'courses' && (
+                          <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
+                            <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                              {[
+                                {
+                                  label: "Climate Change",
+                                  path: "/executive-training/climate-change",
+                                  id: "climate-change",
+                                  children: [
+                                    { label: "Energy and Green Economy", path: "/executive-training/energy" },
+                                    { label: "Climate-Smart Forestry", path: "/executive-training/climate-smart-forestry" },
+                                    { label: "Energy Transition and Mobility", path: "/executive-training/energy-transition-and-mobility" },
+                                    { label: "Agricultural carbon credit markets", path: "/executive-training/agricultural-carbon-credit-markets" },
+                                    { label: "Agriculture and Food Systems", path: "/executive-training/agriculture-and-food-systems" },
+                                    { label: "An Introduction to Climate Change and Human Rights", path: "/executive-training/an-introduction-to-climate-change-and-human-rights" },
+                                    { label: "Certified Expert in Climate Adaptation Finance", path: "/executive-training/certified-expert-in-climate-adaptation-finance" }
+                                  ]
+                                },
+                                { label: "Biodiversity and Natural Resources", path: "/executive-training/biodiversity-and-natural-resources" },
+                                { label: "Business Sustainability Management", path: "/executive-training/business-sustainability-management" },
+                                {
+                                  label: "Carbon Markets",
+                                  path: "/executive-training/carbon-markets",
+                                  id: "carbon-markets",
+                                  children: [
+                                    { label: "Carbon Accounting & Carbon Offsetting Course", path: "/executive-training/carbon-accounting-carbon-offsetting-course" },
+                                    { label: "Certificate Course on Nature Based Solutions for Disaster and Climate Resilience", path: "/executive-training/certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience" },
+                                    { label: "Certificate in Green Finance", path: "/executive-training/certificate-in-green-finance" },
+                                    { label: "Certified Expert in Biodiversity Finance", path: "/executive-training/certified-expert-in-biodiversity-finance" },
+                                    { label: "Certified Expert in Environmental Accounting, Leadership and Sustainability", path: "/executive-training/certified-expert-in-environmental-accounting" },
+                                    { label: "Certified Expert in Sustainable Finance", path: "/executive-training/certified-expert-in-sustainable-finance" },
+                                    { label: "Climate & Biodiversity Certificate Program", path: "/executive-training/climate-biodiversity-certificate-program" },
+                                    { label: "CLIMATE AND HEALTH CERTIFICATE COURSE", path: "/executive-training/climate-and-health-certificate-course" },
+                                    { label: "Climate Change and Water", path: "/executive-training/climate-change-and-water" }
+                                  ]
+                                },
+                                { label: "Human Resources Professional Courses", path: "/executive-training/human-resources-professional-courses" },
+                                { label: "Green Skills Development", path: "/executive-training/green-skills-development" },
+                                {
+                                  label: "Past Training",
+                                  path: "/executive-training/past-training",
+                                  id: "past-training",
+                                  children: [
+                                    { label: "CLIMATE RESILIENT INFRASTRACTURE DEVELOPMENT TRAINING COURSE", path: "/executive-training/climate-resilient-infrastructure" },
+                                    { label: "ENVIRONMENT, CLIMATE CHANGE, ENERGY, AND SUSTAINABILITY COURSES", path: "/executive-training/environment-climate-change-courses" },
+                                    { label: "REGIONAL WORKSHOP: CLIMATE CHANGE AND FOOD SYSTEMS TRANSFORMATION", path: "/executive-training/regional-workshop" },
+                                    { label: "TRAINING ON CARBON MARKETS AND TRADING", path: "/executive-training/training-on-carbon-markets" }
+                                  ]
+                                }
+                              ].map((sub, sIdx) => (
+                                <div
+                                  key={sIdx}
+                                  className="relative"
+                                  onMouseEnter={() => sub.children && setActiveThirdLevelDropdown(sub.id)}
+                                  onMouseLeave={() => sub.children && setActiveThirdLevelDropdown(null)}
+                                >
+                                  <Link
+                                    to={sub.path}
+                                    className="flex items-center justify-between px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium border-b border-gray-50 last:border-0"
+                                  >
+                                    <span>{sub.label}</span>
+                                    {sub.children && <ChevronRight size={12} />}
+                                  </Link>
+
+                                  {/* Third Level Dropdown */}
+                                  {sub.children && activeThirdLevelDropdown === sub.id && (
+                                    <div className="absolute left-full top-0 pl-1 w-72 z-50 animate-fade-in">
+                                      <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                                        {sub.children.map((child, cIdx) => (
+                                          <Link
+                                            key={cIdx}
+                                            to={child.path}
+                                            className="block px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors border-b border-gray-50 last:border-0"
+                                          >
+                                            {child.label}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                        </div>
-                      )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   </div>
                 )}
               </div>
@@ -366,176 +381,175 @@ const Header = () => {
                 onMouseLeave={() => { setActiveDropdown(null); setActiveSubDropdown(null); }}
               >
                 <button
-                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${
-                    isActive("/newsroom") ? "active" : ""
-                  }`}
+                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${isActive("/newsroom") ? "active" : ""
+                    }`}
                 >
                   RESEARCH &amp; CONSULTANCY
                   <ChevronDown size={14} className="transition-transform duration-200" />
                 </button>
                 {activeDropdown === 'research' && (
                   <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 z-50 animate-fade-in">
-                  <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                    <Link
-                      to="/research/overview"
-                      className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                    >
-                      Overview
-                    </Link>
+                    <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                      <Link
+                        to="/research/overview"
+                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                      >
+                        Overview
+                      </Link>
 
-                    {/* Consultancy Subdropdown */}
-                    <div
-                      className="relative"
-                      onMouseEnter={() => setActiveSubDropdown('consultancy')}
-                      onMouseLeave={() => setActiveSubDropdown(null)}
-                    >
-                      <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
-                        <span>Consultancy</span>
-                        <ChevronRight size={14} />
-                      </div>
-                      {activeSubDropdown === 'consultancy' && (
-                        <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
-                        <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                          {[
-                            { label: "Overview", path: "/research/consulting" },
-                            {
-                              label: "Studies and Assessments",
-                              path: "/research/assessments",
-                              id: "studies-and-assessments",
-                              children: [
-                                { label: "Baseline Study", path: "/research/baseline-study" },
-                                { label: "Assessments", path: "/research/assessments" },
-                                { label: "Policy Reviews and Assessments", path: "/research/policy-reviews-and-assessments" },
-                                { label: "Policy Analysis", path: "/research/policy-analysis" }
-                              ]
-                            },
-                            {
-                              label: "Strategic Social and Environmental Assessments (SSEA)",
-                              path: "/research/strategic-environmental-assessments-sea-2",
-                              id: "ssea",
-                              children: [
-                                { label: "Environmental and Social Impact Assessment (SEA)", path: "/research/environmental-and-social-impact-assessment" },
-                                { label: "Strategic Environmental Assessments (SEA)", path: "/research/strategic-environmental-assessments-sea-2" },
-                                { label: "Environmental and Social Management Plans (ESMP)", path: "/research/environmental-and-social-management-plans-esmp" }
-                              ]
-                            },
-                            { label: "Rapporteur and Reporting Services", path: "/research/rapporteur-and-reporting-services" },
-                            {
-                              label: "Audits",
-                              path: "/research/environmental-audits",
-                              id: "audits",
-                              children: [
-                                { label: "Environmental Audits", path: "/research/environmental-audits" },
-                                { label: "Energy Audits", path: "/research/energy-audits" },
-                                { label: "Scoping Studies", path: "/research/scoping-studies" }
-                              ]
-                            }
-                          ].map((sub, sIdx) => (
-                            <div
-                              key={sIdx}
-                              className="relative"
-                              onMouseEnter={() => sub.children && setActiveThirdLevelDropdown(sub.id)}
-                              onMouseLeave={() => sub.children && setActiveThirdLevelDropdown(null)}
-                            >
-                              <Link
-                                to={sub.path}
-                                className="flex items-center justify-between px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium border-b border-gray-50 last:border-0"
-                              >
-                                <span>{sub.label}</span>
-                                {sub.children && <ChevronRight size={12} />}
-                              </Link>
-                              
-                              {sub.children && activeThirdLevelDropdown === sub.id && (
-                                <div className="absolute left-full top-0 pl-1 w-72 z-50 animate-fade-in">
-                                  <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                                    {sub.children.map((child, cIdx) => (
-                                      <Link
-                                        key={cIdx}
-                                        to={child.path}
-                                        className="block px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors border-b border-gray-50 last:border-0"
-                                      >
-                                        {child.label}
-                                      </Link>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                      {/* Consultancy Subdropdown */}
+                      <div
+                        className="relative"
+                        onMouseEnter={() => setActiveSubDropdown('consultancy')}
+                        onMouseLeave={() => setActiveSubDropdown(null)}
+                      >
+                        <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
+                          <span>Consultancy</span>
+                          <ChevronRight size={14} />
                         </div>
-                        </div>
-                      )}
-                    </div>
+                        {activeSubDropdown === 'consultancy' && (
+                          <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
+                            <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                              {[
+                                { label: "Overview", path: "/research/consulting" },
+                                {
+                                  label: "Studies and Assessments",
+                                  path: "/research/assessments",
+                                  id: "studies-and-assessments",
+                                  children: [
+                                    { label: "Baseline Study", path: "/research/baseline-study" },
+                                    { label: "Assessments", path: "/research/assessments" },
+                                    { label: "Policy Reviews and Assessments", path: "/research/policy-reviews-and-assessments" },
+                                    { label: "Policy Analysis", path: "/research/policy-analysis" }
+                                  ]
+                                },
+                                {
+                                  label: "Strategic Social and Environmental Assessments (SSEA)",
+                                  path: "/research/strategic-environmental-assessments-sea-2",
+                                  id: "ssea",
+                                  children: [
+                                    { label: "Environmental and Social Impact Assessment (SEA)", path: "/research/environmental-and-social-impact-assessment" },
+                                    { label: "Strategic Environmental Assessments (SEA)", path: "/research/strategic-environmental-assessments-sea-2" },
+                                    { label: "Environmental and Social Management Plans (ESMP)", path: "/research/environmental-and-social-management-plans-esmp" }
+                                  ]
+                                },
+                                { label: "Rapporteur and Reporting Services", path: "/research/rapporteur-and-reporting-services" },
+                                {
+                                  label: "Audits",
+                                  path: "/research/environmental-audits",
+                                  id: "audits",
+                                  children: [
+                                    { label: "Environmental Audits", path: "/research/environmental-audits" },
+                                    { label: "Energy Audits", path: "/research/energy-audits" },
+                                    { label: "Scoping Studies", path: "/research/scoping-studies" }
+                                  ]
+                                }
+                              ].map((sub, sIdx) => (
+                                <div
+                                  key={sIdx}
+                                  className="relative"
+                                  onMouseEnter={() => sub.children && setActiveThirdLevelDropdown(sub.id)}
+                                  onMouseLeave={() => sub.children && setActiveThirdLevelDropdown(null)}
+                                >
+                                  <Link
+                                    to={sub.path}
+                                    className="flex items-center justify-between px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium border-b border-gray-50 last:border-0"
+                                  >
+                                    <span>{sub.label}</span>
+                                    {sub.children && <ChevronRight size={12} />}
+                                  </Link>
 
-                    {/* Research Areas Subdropdown */}
-                    <div
-                      className="relative"
-                      onMouseEnter={() => setActiveSubDropdown('research-areas')}
-                      onMouseLeave={() => setActiveSubDropdown(null)}
-                    >
-                      <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
-                        <span>Research Areas</span>
-                        <ChevronRight size={14} />
-                      </div>
-                      {activeSubDropdown === 'research-areas' && (
-                        <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
-                        <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                          {[
-                            {
-                              label: "Climate Change",
-                              path: "/research/climate-finance",
-                              id: "climate-change-research",
-                              children: [
-                                { label: "Climate Finance", path: "/research/climate-finance" },
-                                { label: "Climate Adaptation", path: "/research/climate-adaptation" },
-                                { label: "Climate Change Mitigation", path: "/research/climate-change-mitigation" },
-                                { label: "Climate and Technology", path: "/research/climate-and-technology" }
-                              ]
-                            },
-                            { label: "Energy Transition", path: "/research/energy-transition" },
-                            { label: "Agriculture and Food Systems", path: "/research/agriculture-and-food-systems-2" },
-                            { label: "Natural Resources Research", path: "/research/natural-resources" },
-                            { label: "Transport and E-Mobility", path: "/research/transport-and-e-mobility" },
-                            { label: "Waste and Circular Economy", path: "/research/waste-and-circular-economy-2" },
-                            { label: "Just Transition", path: "/research/just-transition" },
-                            { label: "Environmental Law and Governance", path: "/research/environmental-law-and-governance" }
-                          ].map((sub, sIdx) => (
-                            <div
-                              key={sIdx}
-                              className="relative"
-                              onMouseEnter={() => sub.children && setActiveThirdLevelDropdown(sub.id)}
-                              onMouseLeave={() => sub.children && setActiveThirdLevelDropdown(null)}
-                            >
-                              <Link
-                                to={sub.path}
-                                className="flex items-center justify-between px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium border-b border-gray-50 last:border-0"
-                              >
-                                <span>{sub.label}</span>
-                                {sub.children && <ChevronRight size={12} />}
-                              </Link>
-                              
-                              {sub.children && activeThirdLevelDropdown === sub.id && (
-                                <div className="absolute left-full top-0 pl-1 w-72 z-50 animate-fade-in">
-                                  <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                                    {sub.children.map((child, cIdx) => (
-                                      <Link
-                                        key={cIdx}
-                                        to={child.path}
-                                        className="block px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors border-b border-gray-50 last:border-0"
-                                      >
-                                        {child.label}
-                                      </Link>
-                                    ))}
-                                  </div>
+                                  {sub.children && activeThirdLevelDropdown === sub.id && (
+                                    <div className="absolute left-full top-0 pl-1 w-72 z-50 animate-fade-in">
+                                      <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                                        {sub.children.map((child, cIdx) => (
+                                          <Link
+                                            key={cIdx}
+                                            to={child.path}
+                                            className="block px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors border-b border-gray-50 last:border-0"
+                                          >
+                                            {child.label}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                              ))}
                             </div>
-                          ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Research Areas Subdropdown */}
+                      <div
+                        className="relative"
+                        onMouseEnter={() => setActiveSubDropdown('research-areas')}
+                        onMouseLeave={() => setActiveSubDropdown(null)}
+                      >
+                        <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
+                          <span>Research Areas</span>
+                          <ChevronRight size={14} />
                         </div>
-                        </div>
-                      )}
+                        {activeSubDropdown === 'research-areas' && (
+                          <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
+                            <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                              {[
+                                {
+                                  label: "Climate Change",
+                                  path: "/research/climate-finance",
+                                  id: "climate-change-research",
+                                  children: [
+                                    { label: "Climate Finance", path: "/research/climate-finance" },
+                                    { label: "Climate Adaptation", path: "/research/climate-adaptation" },
+                                    { label: "Climate Change Mitigation", path: "/research/climate-change-mitigation" },
+                                    { label: "Climate and Technology", path: "/research/climate-and-technology" }
+                                  ]
+                                },
+                                { label: "Energy Transition", path: "/research/energy-transition" },
+                                { label: "Agriculture and Food Systems", path: "/research/agriculture-and-food-systems-2" },
+                                { label: "Natural Resources Research", path: "/research/natural-resources" },
+                                { label: "Transport and E-Mobility", path: "/research/transport-and-e-mobility" },
+                                { label: "Waste and Circular Economy", path: "/research/waste-and-circular-economy-2" },
+                                { label: "Just Transition", path: "/research/just-transition" },
+                                { label: "Environmental Law and Governance", path: "/research/environmental-law-and-governance" }
+                              ].map((sub, sIdx) => (
+                                <div
+                                  key={sIdx}
+                                  className="relative"
+                                  onMouseEnter={() => sub.children && setActiveThirdLevelDropdown(sub.id)}
+                                  onMouseLeave={() => sub.children && setActiveThirdLevelDropdown(null)}
+                                >
+                                  <Link
+                                    to={sub.path}
+                                    className="flex items-center justify-between px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium border-b border-gray-50 last:border-0"
+                                  >
+                                    <span>{sub.label}</span>
+                                    {sub.children && <ChevronRight size={12} />}
+                                  </Link>
+
+                                  {sub.children && activeThirdLevelDropdown === sub.id && (
+                                    <div className="absolute left-full top-0 pl-1 w-72 z-50 animate-fade-in">
+                                      <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                                        {sub.children.map((child, cIdx) => (
+                                          <Link
+                                            key={cIdx}
+                                            to={child.path}
+                                            className="block px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors border-b border-gray-50 last:border-0"
+                                          >
+                                            {child.label}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   </div>
                 )}
               </div>
@@ -547,36 +561,35 @@ const Header = () => {
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <button
-                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${
-                    isActive("/gallery") ? "active" : ""
-                  }`}
+                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${isActive("/gallery") ? "active" : ""
+                    }`}
                 >
                   RESOURCES
                   <ChevronDown size={14} className="transition-transform duration-200" />
                 </button>
                 {activeDropdown === 'resources' && (
                   <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 z-50 animate-fade-in">
-                  <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                    {[
-                      { label: "Resources Hub", path: "/resources" },
-                      { label: "Gallery", path: "/gallery" },
-                      { label: "Publications", path: "/resources/publications" },
-                      { label: "Policies and Laws", path: "/resources/policies-and-laws" },
-                      { label: "Reports", path: "/resources/reports" },
-                      { label: "Vacancies", path: "/vacancies" },
-                      { label: "Videos", path: "/resources/videos" },
-                      { label: "Books", path: "/resources/books" },
-                      { label: "Policy Briefs", path: "/resources/policy-briefs" }
-                    ].map((item, idx) => (
-                      <Link
-                        key={idx}
-                        to={item.path}
-                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
+                    <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                      {[
+                        { label: "Resources Hub", path: "/resources" },
+                        { label: "Gallery", path: "/gallery" },
+                        { label: "Publications", path: "/resources/publications" },
+                        { label: "Policies and Laws", path: "/resources/policies-and-laws" },
+                        { label: "Reports", path: "/resources/reports" },
+                        { label: "Vacancies", path: "/vacancies" },
+                        { label: "Videos", path: "/resources/videos" },
+                        { label: "Books", path: "/resources/books" },
+                        { label: "Policy Briefs", path: "/resources/policy-briefs" }
+                      ].map((item, idx) => (
+                        <Link
+                          key={idx}
+                          to={item.path}
+                          className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -641,9 +654,8 @@ const Header = () => {
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-sm font-semibold uppercase tracking-wide rounded ${
-                  isActive("/") ? "bg-ecasi-section text-ecasi-red" : "text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section"
-                }`}
+                className={`block px-4 py-3 text-sm font-semibold uppercase tracking-wide rounded ${isActive("/") ? "bg-ecasi-section text-ecasi-red" : "text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section"
+                  }`}
               >
                 Home
               </Link>
@@ -909,9 +921,8 @@ const Header = () => {
               <Link
                 to="/contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-sm font-semibold uppercase tracking-wide rounded ${
-                  isActive("/contact") ? "bg-ecasi-section text-ecasi-red" : "text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section"
-                }`}
+                className={`block px-4 py-3 text-sm font-semibold uppercase tracking-wide rounded ${isActive("/contact") ? "bg-ecasi-section text-ecasi-red" : "text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section"
+                  }`}
               >
                 Contact Us
               </Link>

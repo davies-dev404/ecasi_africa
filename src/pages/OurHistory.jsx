@@ -114,6 +114,7 @@ const OurHistory = () => {
                   src="https://ecasiafrica.org/wp-content/uploads/2026/05/1729710108119.jpg"
                   alt="ECAS Institute — Pan-African Policy Think-tank"
                   className="w-full object-cover"
+                  loading="eager"
                   style={{ maxHeight: '460px' }}
                 />
               </figure>
@@ -158,8 +159,8 @@ const OurHistory = () => {
               </div>
 
               <div className="mt-12 pt-8 border-t border-slate-100 flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <span className="text-primary font-bold text-lg">JO</span>
+                <div className="h-14 px-4 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <span className="text-primary font-bold text-lg">Jacob Olonde</span>
                 </div>
                 <div>
                   <p className="text-slate-500 text-sm font-medium mb-1">Warm regards,</p>

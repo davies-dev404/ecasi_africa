@@ -23,38 +23,6 @@ const teamMembers = [
     initials: "GG",
   },
   {
-    name: "Samuel Ochieng",
-    role: "Air Quality Advisor",
-    image: "https://ecasiafrica.org/wp-content/uploads/2025/04/Samuel-Ochieng-1024x598.jpeg",
-    department: "Advisory",
-    email: "s.ochieng@ecasiafrica.org",
-    initials: "SO",
-  },
-  {
-    name: "Hyrence Onguka",
-    role: "Partnerships & Resource Mobilization Officer",
-    image: "https://ecasiafrica.org/wp-content/uploads/2025/04/Hyrence-Onguka-1024x682.jpeg",
-    department: "Partnerships",
-    email: "h.onguka@ecasiafrica.org",
-    initials: "HO",
-  },
-  {
-    name: "Jason Musonda",
-    role: "Partnerships & Liaison Officer",
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/yu-1.jpg",
-    department: "Partnerships",
-    email: "j.musonda@ecasiafrica.org",
-    initials: "JM",
-  },
-  {
-    name: "Audrey Kisuya",
-    role: "Media & Communications Officer",
-    image: "https://ecasiafrica.org/wp-content/uploads/2025/04/Audrey-Kisuya-1024x683.jpeg",
-    department: "Communications",
-    email: "a.kisuya@ecasiafrica.org",
-    initials: "AK",
-  },
-  {
     name: "Sharon Mwalasha",
     role: "Finance & Administration Assistant",
     image: "https://ecasiafrica.org/wp-content/uploads/2025/04/Sharon-Mwalasha-1024x682.jpeg",
@@ -63,28 +31,20 @@ const teamMembers = [
     initials: "SM",
   },
   {
-    name: "Clare Atemba",
-    role: "Business Development Assistant",
-    image: "https://ecasiafrica.org/wp-content/uploads/2025/04/1719822127561.jpg",
-    department: "Administration",
-    email: "c.atemba@ecasiafrica.org",
-    initials: "CA",
+    name: "Gift Rioba",
+    role: "Corporate Marketing and Communications Advisor",
+    image: "/images/team/gift.jpeg",
+    department: "Communications",
+    email: "riobag@ecasiafrica.org",
+    initials: "GR",
   },
   {
-    name: "Moses Sidon",
-    role: "Data & Research Assistant",
-    image: "https://ecasiafrica.org/wp-content/uploads/2025/04/Moses-Oluoch-1024x683.jpeg",
-    department: "Research",
-    email: "m.sidon@ecasiafrica.org",
-    initials: "MS",
-  },
-  {
-    name: "Jennifer Dolith",
-    role: "Partnerships & Resource Mobilization Assistant",
-    image: "https://ecasiafrica.org/wp-content/uploads/2025/04/Jenipher-Dollith-1024x683.jpeg",
+    name: "Derrick S.Israel",
+    role: "Programs and Partnerships Manager",
+    image: "/images/team/derrick.png",
     department: "Partnerships",
-    email: "j.dolith@ecasiafrica.org",
-    initials: "JD",
+    email: "derrick@ecasiafrica.org",
+    initials: "DI",
   },
 ];
 
@@ -100,8 +60,8 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     transition: { type: "spring", stiffness: 100, damping: 15 }
   }
@@ -120,7 +80,7 @@ const OurTeam = () => {
       <section className="bg-primary pt-28 pb-12 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
         <div className="healthcare-container relative z-10">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -138,7 +98,7 @@ const OurTeam = () => {
       {/* Intro section */}
       <section className="py-16">
         <div className="healthcare-container">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -158,7 +118,7 @@ const OurTeam = () => {
           </motion.div>
 
           {/* Responsive grid of team members */}
-          <motion.div 
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -166,17 +126,17 @@ const OurTeam = () => {
             className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
           >
             {teamMembers.map((member, index) => (
-              <motion.div 
-                key={index} 
+              <motion.div
+                key={index}
                 variants={itemVariants}
-                className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative"
+                className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative after:absolute after:bottom-0 after:left-0 after:h-1.5 after:w-full after:bg-primary after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-left"
               >
                 {/* Decorative background shape */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
-                
+
                 {/* Photo container */}
                 <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 flex items-center justify-center p-4">
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     className="w-full h-full rounded-[1.5rem] overflow-hidden shadow-inner relative z-10"
@@ -185,6 +145,7 @@ const OurTeam = () => {
                       src={member.image}
                       alt={member.name}
                       className="w-full h-full object-cover object-top"
+                      loading="eager"
                       onError={(e) => {
                         e.target.style.display = 'none';
                         e.target.parentElement.classList.add('flex', 'items-center', 'justify-center', 'bg-primary/10');
@@ -205,7 +166,7 @@ const OurTeam = () => {
                     <h3 className="font-serif font-bold text-xl text-slate-800 group-hover:text-primary transition-colors leading-tight mb-2">
                       {member.name}
                     </h3>
-                    <p className="text-primary font-semibold text-xs tracking-wide">
+                    <p className="text-primary font-semibold text-xs tracking-wide text-left">
                       {member.role}
                     </p>
                   </div>
@@ -235,7 +196,7 @@ const OurTeam = () => {
       {/* Join Us section */}
       <section className="bg-white py-16 border-t border-slate-200">
         <div className="healthcare-container text-center">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

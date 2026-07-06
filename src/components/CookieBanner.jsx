@@ -30,7 +30,7 @@ const CookieBanner = () => {
             <h3 className="text-ecasi-navy font-bold text-sm md:text-base mb-1">We value your privacy</h3>
             <p className="text-ecasi-body text-xs md:text-sm">
               We use cookies and third-party tools to enhance your browsing experience, analyze site traffic, and serve tailored content. 
-              By clicking "Accept All", you consent to our use of cookies. Read our <a href="/privacy-policy" className="text-ecasi-green hover:underline">Privacy Policy</a> to learn more.
+              By clicking "Accept All", you consent to our use of cookies.
             </p>
           </div>
         </div>

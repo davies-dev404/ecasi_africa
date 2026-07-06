@@ -7,28 +7,28 @@ import { Link } from 'react-router-dom';
 
 const values = [
   {
-    icon: Heart,
-    title: "Healing",
+    icon: Compass,
+    title: "Integrity",
     color: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    description: "We believe that sustainable development heals communities. Our work addresses root environmental and socioeconomic causes of vulnerability, contributing to resilient, thriving societies across Africa.",
+    description: "We uphold the highest ethical standards in our research and advisory services, ensuring independence, transparency, and accountability.",
   },
   {
     icon: Lightbulb,
-    title: "Optimism",
+    title: "Innovation",
     color: "bg-amber-50 text-amber-600 border-amber-100",
-    description: "We approach Africa's development challenges with hope and a solutions-oriented mindset. We believe in Africa's capacity to leapfrog into a green, inclusive, and prosperous future.",
+    description: "We foster creative, evidence-based solutions to address Africa's complex sustainable development challenges and drive impactful change.",
   },
   {
     icon: ShieldCheck,
     title: "Professionalism",
     color: "bg-blue-50 text-blue-600 border-blue-100",
-    description: "Our commitment to professionalism is unwavering. We uphold the highest ethical standards, maintain rigorous research integrity, and treat every stakeholder with respect, transparency, and accountability.",
+    description: "Our commitment to professionalism is unwavering. We maintain rigorous research integrity and treat every stakeholder with respect.",
   },
   {
     icon: Star,
     title: "Excellence",
     color: "bg-purple-50 text-purple-600 border-purple-100",
-    description: "Excellence is not just a goal — it is our standard. We relentlessly pursue quality in research, policy advisory, and technical assistance, continuously innovating to better serve Africa's development agenda.",
+    description: "Excellence is not just a goal — it is our standard. We relentlessly pursue quality in research, policy advisory, and technical assistance.",
   },
 ];
 
@@ -284,7 +284,7 @@ const About = () => {
               Our Core Values
             </h2>
             <p className="text-slate-500 text-lg leading-relaxed">
-              ECASI&apos;s work is anchored in <strong className="text-primary">HOPE</strong> — Healing, Optimism, Professionalism, and Excellence.
+              ECASI&apos;s work is anchored in Integrity, Innovation, Professionalism, and Excellence.
             </p>
           </motion.div>
 
@@ -430,57 +430,24 @@ const About = () => {
             </p>
           </motion.div>
 
-          <div className="relative">
-            {/* Vertical Line */}
-            <div className="absolute left-4 md:left-1/2 transform md:-translate-x-1/2 h-full w-1 bg-slate-800 rounded-full" />
-
-            <div className="space-y-12">
+          <div className="max-w-2xl mx-auto">
+            <div className="relative border-l-2 border-slate-800 ml-4 md:ml-8 space-y-8">
               {milestones.map((milestone, index) => (
                 <motion.div 
-                  key={index} 
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="relative pl-8 md:pl-10"
                 >
-                  <div className="flex flex-col md:flex-row gap-8 items-start relative">
-
-                    {/* Timeline Dot */}
-                    <div className="absolute left-4 md:left-1/2 transform -translate-x-1/2 w-5 h-5 rounded-full bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] z-10 mt-6 md:mt-8 border-4 border-slate-900" />
-
-                    {/* Left Side */}
-                    <div className={`flex-1 pl-12 md:pl-0 ${index % 2 === 0 ? 'md:pr-16 md:text-right' : 'hidden md:block'}`}>
-                      {index % 2 === 0 && (
-                        <div className="group">
-                          <div className="bg-slate-800/80 backdrop-blur-sm p-8 rounded-[2rem] border border-slate-700 hover:border-cyan-400/50 transition-all duration-300 shadow-xl hover:-translate-y-1">
-                            <span className="text-3xl font-serif font-bold text-cyan-400 block mb-3 drop-shadow-md">{milestone.year}</span>
-                            <p className="text-slate-300 text-base leading-relaxed">{milestone.event}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Side */}
-                    <div className={`flex-1 pl-12 md:pl-0 ${index % 2 !== 0 ? 'md:pl-16 md:text-left' : 'hidden md:block'}`}>
-                      {index % 2 !== 0 && (
-                        <div className="group">
-                          <div className="bg-slate-800/80 backdrop-blur-sm p-8 rounded-[2rem] border border-slate-700 hover:border-cyan-400/50 transition-all duration-300 shadow-xl hover:-translate-y-1">
-                            <span className="text-3xl font-serif font-bold text-cyan-400 block mb-3 drop-shadow-md">{milestone.year}</span>
-                            <p className="text-slate-300 text-base leading-relaxed">{milestone.event}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Mobile Card */}
-                    <div className="md:hidden pl-12 w-full">
-                      <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 shadow-xl">
-                        <span className="text-2xl font-serif font-bold text-cyan-400 block mb-2">{milestone.year}</span>
-                        <p className="text-slate-300 text-sm leading-relaxed">{milestone.event}</p>
-                      </div>
-                    </div>
-
-                  </div>
+                  <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] border-2 border-slate-900" />
+                  <span className="inline-block px-3 py-1 bg-cyan-400/10 text-cyan-400 text-xs font-bold rounded-full mb-3 tracking-wider">
+                    {milestone.year}
+                  </span>
+                  <p className="text-slate-300 text-base leading-relaxed">
+                    {milestone.event}
+                  </p>
                 </motion.div>
               ))}
             </div>

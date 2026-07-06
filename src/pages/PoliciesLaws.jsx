@@ -243,16 +243,6 @@ const PoliciesLaws = () => {
             </div>
           )}
 
-          <div className="mt-16 text-center">
-            <a 
-              href="https://ecasiafrica.org/policies-and-laws/" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-3 border-2 border-ecasi-green text-ecasi-green rounded-lg font-semibold hover:bg-ecasi-green hover:text-white transition-colors"
-            >
-              View All Policies on ECASI Website
-            </a>
-          </div>
 
         </div>
       </section>

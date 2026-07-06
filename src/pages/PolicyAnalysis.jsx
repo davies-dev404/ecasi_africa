@@ -601,7 +601,7 @@ const PolicyAnalysis = () => {
                 Need Expert Policy Analysis?
               </h2>
               <p className="text-white/80 text-base max-w-xl" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                Get in touch with our team for evidence-based policy analysis, reviews, and strategic advisory services.
+                <Link to="/contact" className="hover:underline text-white font-semibold">Get in touch</Link> with our team for evidence-based policy analysis, reviews, and strategic advisory services.
               </p>
             </div>
             <div className="flex gap-4 flex-shrink-0">

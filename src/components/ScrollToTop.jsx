@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const ScrollToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  }, [pathname]);
 
   useEffect(() => {
     const toggleVisibility = () => {

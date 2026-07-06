@@ -5,13 +5,14 @@ const SEO = ({ title, description, keywords, image }) => {
   const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
   const defaultDescription = "Environmental Capacities and Sustainability (ECAS) Institute is an independent Pan-African think tank advancing sustainable development through research, policy advisory, technical assistance, consultancy, and capacity strengthening.";
   const defaultImage = "/logo.png";
+  const defaultKeywords = "ECAS Institute, ECASI Africa, sustainable development Africa, climate change policy, green economy research, environmental policy think tank, sustainability consulting, executive training Africa, capacity building, ESG advisory, energy transition";
 
   return (
     <Helmet>
       {/* Standard Metadata */}
       <title>{fullTitle}</title>
       <meta name="description" content={description || defaultDescription} />
-      {keywords && <meta name="keywords" content={keywords} />}
+      <meta name="keywords" content={keywords || defaultKeywords} />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="google-site-verification" content="K3tyeQb5qs4t6mrjxytSj80FvaoI69hmo6L7qEEN9x4" />
 

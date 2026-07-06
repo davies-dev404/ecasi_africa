@@ -193,10 +193,18 @@ const ResearchConsultancy = () => {
                     dangerouslySetInnerHTML={{ __html: pageInfo.content }}
                   />
                 ) : (
-                  <div className="text-center text-gray-400 py-16">
-                    <BookOpen size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium text-gray-500">Details are currently being updated.</p>
-                    <p className="mt-1">Please check back later or contact us for more information.</p>
+                  <div className="py-12 px-4 text-center max-w-2xl mx-auto">
+                    <BookOpen size={48} className="mx-auto mb-6 text-ecasi-green/50" />
+                    <h3 className="text-3xl font-bold text-ecasi-navy mb-4">Research & Consultancy</h3>
+                    <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                      Select an area from the menu to discover how ECASI provides cutting-edge research, baseline studies, and comprehensive policy assessments to support evidence-based decision-making.
+                    </p>
+                    <p className="text-gray-500 mb-8">
+                      We empower governments, development partners, and the private sector across Africa with expert insights for sustainable development.
+                    </p>
+                    <Link to="/contact" className="inline-flex items-center justify-center px-6 py-3 bg-ecasi-green text-white font-medium rounded-xl hover:bg-ecasi-green-dark transition-colors">
+                      Inquire About Our Services
+                    </Link>
                   </div>
                 )}
               </div>
@@ -253,7 +261,7 @@ const ResearchConsultancy = () => {
                   Our team of experts is ready to help with your research and consultancy needs.
                 </p>
                 <Link
-                  to="/contact-us"
+                  to="/contact"
                   className="inline-flex items-center gap-2 bg-ecasi-green hover:bg-ecasi-green-dark text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
                 >
                   Get in Touch
