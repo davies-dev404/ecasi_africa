@@ -638,7 +638,7 @@ const Header = () => {
               />
               <button
                 onClick={() => setSearchOpen(false)}
-                className="text-ecasi-body hover:text-ecasi-red transition-colors"
+                className="text-ecasi-body hover:text-ecasi-blue transition-colors"
               >
                 <X size={20} />
               </button>
@@ -654,7 +654,7 @@ const Header = () => {
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-sm font-semibold uppercase tracking-wide rounded ${isActive("/") ? "bg-ecasi-section text-ecasi-red" : "text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section"
+                className={`block px-4 py-3 text-sm font-semibold uppercase tracking-wide rounded ${isActive("/") ? "bg-ecasi-section text-ecasi-blue" : "text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section"
                   }`}
               >
                 Home
