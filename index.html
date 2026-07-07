@@ -1,37 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <title>ECASI AFRICA | Bridging the Nexus Between Research, Policy and Practice</title>
-    <meta
-      name="description"
-      content="ECAS Institute — Bridging the Nexus Between Research, Policy and Practice. An independent Pan-African think tank advancing sustainable development through research, policy advisory, technical assistance, consultancy, and capacity strengthening."
-    />
-    <meta name="author" content="ECAS Institute" />
-    <meta name="keywords" content="Bridging the Nexus Between Research, Policy and Practice, ECAS Institute, ECASI Africa, sustainable development Africa, climate change policy, green economy research, environmental policy think tank, sustainability consulting, executive training Africa, capacity building, ESG advisory" />
 
-    <meta property="og:title" content="ECASI AFRICA | Bridging the Nexus Between Research, Policy and Practice" />
-    <meta
-      property="og:description"
-      content="ECAS Institute — Bridging the Nexus Between Research, Policy and Practice — Advancing sustainable development in Africa."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/og-image.png" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Expanded CSP to allow external resources -->
+  <meta http-equiv="Content-Security-Policy"
+    content="upgrade-insecure-requests; default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https:;">
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@ecasinstitute" />
-    <meta name="twitter:image" content="/og-image.png" />
-    
-    <!-- Preload primary hero images for immediate rendering -->
-    <link rel="preload" as="image" href="https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg" fetchpriority="high">
-    <link rel="preload" as="image" href="https://ecasiafrica.org/wp-content/uploads/2026/05/DSC_0990-1.jpg">
-  </head>
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="apple-touch-icon" href="/logo.png">
+  <meta name="theme-color" content="#006837">
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <title>ECASI AFRICA | Bridging the Nexus Between Research, Policy and Practice</title>
+  <meta name="description"
+    content="ECAS Institute|Bridging the Nexus Between Research, Policy and Practice. An independent Pan-African think tank advancing sustainable development through research, policy advisory, technical assistance, consultancy, and capacity strengthening." />
+  <meta name="author" content="ECAS Institute" />
+  <meta name="keywords"
+    content="Bridging the Nexus Between Research, Policy and Practice, ECAS Institute, ECASI Africa, sustainable development Africa, climate change policy, green economy research, environmental policy think tank, sustainability consulting, executive training Africa, capacity building, ESG advisory" />
+
+  <!-- Canonical URL & Robots -->
+  <link rel="canonical" href="https://ecasiafrica.org/" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:title" content="ECASI AFRICA | Bridging the Nexus Between Research, Policy and Practice" />
+  <meta property="og:description"
+    content="ECAS Institute|Bridging the Nexus Between Research, Policy and Practice — Advancing sustainable development in Africa." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://ecasiafrica.org/og-image.png" />
+  <meta property="og:url" content="https://ecasiafrica.org/" />
+  <meta property="og:site_name" content="ECASI Africa" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ECASI AFRICA | Bridging the Nexus Between Research, Policy and Practice" />
+  <meta name="twitter:description"
+    content="An independent Pan-African think tank advancing sustainable development through research, policy advisory, technical assistance, consultancy, and capacity strengthening." />
+  <meta name="twitter:image" content="https://ecasiafrica.org/og-image.png" />
+  <meta name="twitter:site" content="@ecasinstitute" />
+
+  <!-- Structured Data / JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "ECASI Africa",
+    "url": "https://ecasiafrica.org",
+    "logo": "https://ecasiafrica.org/logo.png",
+    "description": "Independent Pan-African think tank advancing sustainable development through research, policy advisory, consultancy and capacity strengthening.",
+    "sameAs": [
+      "https://www.facebook.com/ecasinstitute",
+      "https://www.linkedin.com/company/ecasi-africa",
+      "https://x.com/ecasinstitute",
+      "https://www.youtube.com/@ecasinstitute"
+    ]
+  }
+  </script>
+
+  <!-- Preload primary hero images for immediate rendering -->
+  <link rel="preload" as="image"
+    href="https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg"
+    fetchpriority="high">
+  <link rel="preload" as="image" href="https://ecasiafrica.org/wp-content/uploads/2026/05/DSC_0990-1.jpg">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>
