@@ -11,23 +11,31 @@ const teamMembers = [
     role: "Founder & Chief Executive Officer",
     image: "https://ecasiafrica.org/wp-content/uploads/2024/06/IMG_6632.jpg",
     department: "Leadership",
-    email: "j.olonde@ecasiafrica.org",
+    email: "jolonde@ecasiafrica.org",
     initials: "JO",
+  },
+  {
+    name: "Debra Aquino",
+    role: "Human Resources and Operations",
+    image: "/images/team/HR.png",
+    department: "Human Resource",
+    email: "debra@ecasiafrica.org",
+    initials: "GG",
   },
   {
     name: "Gibson Gisore",
     role: "Legal & Policy Advisor",
     image: "https://ecasiafrica.org/wp-content/uploads/2024/06/Fro2fvzXoAMhCbn-1024x698.jpg",
     department: "Advisory",
-    email: "g.gisore@ecasiafrica.org",
+    email: "daquino@ecasiafrica.org",
     initials: "GG",
   },
   {
     name: "Sharon Mwalasha",
-    role: "Finance & Administration Assistant",
-    image: "https://ecasiafrica.org/wp-content/uploads/2025/04/Sharon-Mwalasha-1024x682.jpeg",
-    department: "Administration",
-    email: "s.mwalasha@ecasiafrica.org",
+    role: "Finance & Business Development",
+    image: "/images/team/mwalasha.png",
+    department: "Finance",
+    email: "smwalasha@ecasiafrica.org",
     initials: "SM",
   },
   {
@@ -88,7 +96,7 @@ const OurTeam = () => {
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-3 drop-shadow-md">
               Our Team
             </h1>
-            <p className="text-white/90 text-lg max-w-2xl mx-auto font-medium">
+            <p className="text-white/90 text-lg max-w-2xl mx-auto text-center font-medium">
               Meet the passionate experts and professional staff leading sustainable development initiatives across Africa.
             </p>
           </motion.div>
@@ -189,37 +197,6 @@ const OurTeam = () => {
                 </div>
               </motion.div>
             ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Join Us section */}
-      <section className="bg-white py-16 border-t border-slate-200">
-        <div className="healthcare-container text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-2xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-800 mb-4">
-              Want to join our mission?
-            </h2>
-            <p className="text-slate-600 text-base leading-relaxed mb-8">
-              We are always looking for passionate environmental scientists, policy analysts, researchers, and sustainable development professionals to join our network.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link to="/contact">
-                <button className="bg-primary text-white font-semibold px-8 py-3 rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-                  Contact Us
-                </button>
-              </Link>
-              <Link to="/about">
-                <button className="bg-white text-slate-700 border border-slate-200 font-semibold px-8 py-3 rounded-xl hover:bg-slate-50 transition-all shadow-sm hover:shadow-md">
-                  Learn More
-                </button>
-              </Link>
-            </div>
           </motion.div>
         </div>
       </section>

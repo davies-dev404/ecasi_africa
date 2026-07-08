@@ -85,7 +85,7 @@ const Contact = () => {
                 </svg>
               </a>
               <a
-                href="https://www.facebook.com/ecasiafrica/"
+                href="https://www.facebook.com/ECASInstitute"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white hover:opacity-80 transition-opacity"
@@ -107,7 +107,7 @@ const Contact = () => {
                 </svg>
               </a>
               <a
-                href="https://www.linkedin.com/company/ecasi-africa/"
+                href="https://www.linkedin.com/company/ecas-institute"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-[#0A66C2] flex items-center justify-center text-white hover:opacity-80 transition-opacity"

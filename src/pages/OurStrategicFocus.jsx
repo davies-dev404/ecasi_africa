@@ -84,7 +84,7 @@ const OurStrategicFocus = () => {
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-3 drop-shadow-md">
               Our Strategic Focus
             </h1>
-            <p className="text-white/90 text-lg max-w-2xl mx-auto font-medium">
+            <p className="text-white/90 text-lg max-w-2xl mx-auto text-center font-medium">
               Mapping our pathways to build a resilient, green, and sustainable Africa.
             </p>
           </motion.div>

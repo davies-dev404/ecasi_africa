@@ -82,7 +82,7 @@ const Doctors = () => {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4 drop-shadow-md">Governing Council</h1>
-            <p className="text-white/90 text-lg max-w-2xl mx-auto leading-relaxed font-medium">
+            <p className="text-white/90 text-lg max-w-2xl mx-auto text-center leading-relaxed font-medium">
               Diverse expertise providing governance oversight to ensure ECAS Institute executes its mission to the highest standards.
             </p>
           </motion.div>

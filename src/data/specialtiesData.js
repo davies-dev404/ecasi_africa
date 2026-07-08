@@ -811,7 +811,7 @@ export const specialtiesData = [
       </ul>
       
       <div class="mt-8">
-        <a href="/pdfs/Breathe_Nairobi_Project.pdf" target="_blank" rel="noopener noreferrer" download class="inline-flex items-center gap-2 px-5 py-3 bg-ecasi-green hover:bg-white hover:text-ecasi-navy text-white font-bold rounded-xl transition-all shadow-md">
+        <a href="/pdfs/Breathe_Nairobi_Project.pdf" target="_blank" rel="noopener noreferrer" download class="inline-flex items-center gap-2 px-5 py-3 bg-ecasi-green hover:bg-white hover:text-ecasi-navy !text-white hover:!text-ecasi-navy font-bold rounded-xl transition-all shadow-md">
           Download Breathe Nairobi Project PDF
         </a>
       </div>

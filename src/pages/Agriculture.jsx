@@ -112,31 +112,21 @@ const Agriculture = () => {
           </ul>
         </motion.section>
 
-        {/* Side-by-Side Images */}
+        {/* Image */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12 border-t pt-10"
+          className="mt-12 border-t pt-10 flex justify-center"
         >
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm w-full max-w-4xl">
             <img
-              src="https://ecasiafrica.org/wp-content/uploads/2024/05/hd-768x576.jpg"
-              alt="People and livestock at water source"
+              src="/famers.png"
+              alt="Farmers"
               className="w-full h-auto object-cover hover:scale-102 transition-transform duration-500"
               onError={(e) => {
-                e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
-              }}
-            />
-          </div>
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-            <img
-              src="https://ecasiafrica.org/wp-content/uploads/2024/05/IMG-20201212-WA0046-768x576.jpg"
-              alt="Farmers walking in farm"
-              className="w-full h-auto object-cover hover:scale-102 transition-transform duration-500"
-              onError={(e) => {
-                e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-2.jpg";
+                e.target.style.display = 'none';
               }}
             />
           </div>

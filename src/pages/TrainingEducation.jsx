@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  GraduationCap, BookOpen, Megaphone, FileText, Users, Handshake, 
+import {
+  GraduationCap, BookOpen, Megaphone, FileText, Users, Handshake,
   Download, Award, Users2, Brain, Leaf, Thermometer, ShieldAlert,
   Flame, Briefcase, Database, Landmark, Tractor, Trees, MessageSquare,
   ChevronDown, Quote, CheckCircle2, MapPin
@@ -149,7 +149,7 @@ const TrainingEducation = () => {
       <Header />
 
       {/* Green Banner Section */}
-      <section className="bg-ecasi-green py-10 mt-[136px] text-center text-white relative overflow-hidden">
+      <section className="bg-ecasi-green pt-28 pb-6 text-center text-white relative overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-4 relative z-10">
           <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-wide">
             Training, Education, and Public Awareness
@@ -165,12 +165,12 @@ const TrainingEducation = () => {
       {/* Main Content Body */}
       <section className="py-16 bg-white flex-grow">
         <div className="max-w-[1000px] mx-auto px-6">
-          
+
           <ScrollAnimation animation="fade-up">
             <h2 className="text-2xl md:text-3xl font-bold text-[#5dade2] mb-6 text-center">
               Training, Education & Public Awareness (TEPA)
             </h2>
-            
+
             <p className="text-gray-700 leading-relaxed text-base md:text-lg mb-10 text-justify">
               Our Training, Education, and Public Awareness (TEPA) program for climate change is a comprehensive approach to empower individuals and communities with the knowledge, skills, and motivation to address climate change. It encompasses various activities such as formal and non-formal education, public outreach, and capacity building through training. The ultimate goal is to foster behavioral changes, promote sustainable lifestyles, and encourage active participation in climate action.
             </p>
@@ -183,7 +183,7 @@ const TrainingEducation = () => {
             </h3>
           </ScrollAnimation>
 
-          <motion.div 
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -217,9 +217,9 @@ const TrainingEducation = () => {
           {/* Classroom Image */}
           <ScrollAnimation animation="fade-up">
             <div className="mb-20">
-              <img 
-                src="/images/research/IMG_20241112_163109285-1024x683.jpg" 
-                alt="Training, Education & Public Awareness Session" 
+              <img
+                src="/images/courses/85079752_1227263344135855_2280708113273192448_n.jpg"
+                alt="Training, Education & Public Awareness Session"
                 className="w-full h-[400px] object-cover rounded-2xl shadow-lg border border-gray-100"
               />
               <p className="text-xs text-gray-500 mt-3 font-medium text-center">
@@ -247,8 +247,8 @@ const TrainingEducation = () => {
                       Professional capacity development, coaching, and consulting services
                     </p>
                   </div>
-                  <a 
-                    href="/pdfs/ECASI_Training_Profile.pdf" 
+                  <a
+                    href="/pdfs/ECASI_Training_Profile.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     download
@@ -358,9 +358,9 @@ const TrainingEducation = () => {
             <div className="max-w-[800px] mx-auto mb-20">
               <Accordion type="single" collapsible className="w-full space-y-4">
                 {faqs.map((faq, index) => (
-                  <AccordionItem 
-                    key={index} 
-                    value={`item-${index}`} 
+                  <AccordionItem
+                    key={index}
+                    value={`item-${index}`}
                     className="bg-white border border-gray-100 rounded-xl px-6 shadow-sm data-[state=open]:border-ecasi-green/50 data-[state=open]:shadow-md transition-all"
                   >
                     <AccordionTrigger className="hover:no-underline text-ecasi-navy font-semibold text-left py-4">

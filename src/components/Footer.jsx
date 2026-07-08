@@ -25,10 +25,10 @@ const Footer = () => {
             {/* Social Icons */}
             <div className="flex gap-3">
               {[
-                { icon: Facebook, label: "Facebook", href: "https://www.facebook.com/ecasiafrica/" },
+                { icon: Facebook, label: "Facebook", href: "https://www.facebook.com/ECASInstitute" },
                 { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/ecasiafrica/" },
                 { label: "X", href: "https://twitter.com/ecasiafrica", custom: true },
-                { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/company/ecasi-africa/" },
+                { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/company/ecas-institute" },
                 { icon: Youtube, label: "YouTube", href: "https://www.youtube.com/@ecasiafrica" },
               ].map((s, i) => (
                 <a

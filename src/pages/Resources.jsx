@@ -103,7 +103,7 @@ const Resources = () => {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
               Resources Hub
             </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto text-center leading-relaxed">
               Empowering change through knowledge. Access our comprehensive library of research, policies, reports, and multimedia content.
             </p>
           </ScrollAnimation>

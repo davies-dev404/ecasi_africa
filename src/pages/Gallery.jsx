@@ -145,7 +145,7 @@ const Gallery = () => {
         <div className="max-w-[1200px] mx-auto px-4 relative z-10 text-center">
           <ScrollAnimation animation="fade-up">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Our Gallery</h1>
-            <p className="text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg text-white/80 max-w-2xl mx-auto text-center leading-relaxed">
               A visual journey through our fieldwork, events, training programs, and community engagements driving sustainable development across Africa.
             </p>
           </ScrollAnimation>

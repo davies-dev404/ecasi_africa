@@ -199,7 +199,7 @@ const PolicyAnalysis = () => {
 
             <motion.p
               variants={fadeInUp}
-              className="text-white/85 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-8"
+              className="text-white/85 text-lg md:text-xl max-w-3xl mx-auto text-center leading-relaxed mb-8"
               style={{ fontFamily: "'Roboto', sans-serif" }}
             >
               Expert advice and guidance on understanding, developing, and evaluating public policies
@@ -451,7 +451,7 @@ const PolicyAnalysis = () => {
             >
               Benefits of Policy Analysis Consulting
             </h2>
-            <p className="text-white/60 max-w-2xl mx-auto text-base" style={{ fontFamily: "'Roboto', sans-serif" }}>
+            <p className="text-white/60 max-w-2xl mx-auto text-center text-base" style={{ fontFamily: "'Roboto', sans-serif" }}>
               Our evidence-based approach delivers measurable outcomes that transform governance and public policy.
             </p>
           </motion.div>
