@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, GraduationCap, Briefcase, Brain, Landmark, C
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ScrollAnimation from '@/components/ScrollAnimation';
+import { eventsData as upcomingEvents } from '@/data/eventsData';
 
 // ─── Hero Slider ────────────────────────────────────────────────────────────
 const heroSlides = [
@@ -195,30 +196,7 @@ const programmes = [
   },
 ];
 
-// ─── Events ───────────────────────────────────────────────────────────────────
-const upcomingEvents = [
-  {
-    title: "International Training on Climate Resilience and Infrastructure Development",
-    date: "2024-06-17",
-    venue: "Four Points by Sheraton Hotel - Hurlingham, Nairobi Kenya",
-    type: "Class, Training, or Workshop",
-    desc: "Comprehensive training and skill development course building capacities for climate resilient project design, environmental screening, and engineering adaptation.",
-  },
-  {
-    title: "Regional Workshop: Climate Change and Food Systems Transformation",
-    date: "2024-05-22",
-    venue: "Jakaranda Hotel, Nairobi",
-    type: "Training, Workshop",
-    desc: "A high-level workshop discussing the integration of climate adaptation methods into food production and sustainable agricultural value chains across East Africa.",
-  },
-  {
-    title: "Certified Expert in Climate Adaptation Finance Program",
-    date: "2024-09-10",
-    venue: "Online & Nairobi Campus",
-    type: "Certificate Course",
-    desc: "Unlock knowledge in carbon credits, biodiversity finance, ESG framework adaptation, and resource mobilization for public and private sector projects.",
-  },
-];
+// ─── Events (Imported from data) ────────────────────────────────────────────────
 
 // ─── Testimonials ─────────────────────────────────────────────────────────────
 const testimonials = [
@@ -413,7 +391,7 @@ const Index = () => {
                           {ev.type}
                         </span>
                         {ev.isPast && (
-                          <span className="inline-block text-[10px] font-bold px-2 py-1 rounded border border-gray-300 text-gray-500 uppercase tracking-wider">
+                          <span className="inline-block text-[10px] font-bold px-2 py-1 rounded border border-red-300 bg-red-50 text-red-600 uppercase tracking-wider">
                             Past Event
                           </span>
                         )}

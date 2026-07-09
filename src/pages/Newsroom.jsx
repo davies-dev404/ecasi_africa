@@ -1,15 +1,32 @@
 import { Link } from 'react-router-dom';
-import { Calendar, ArrowRight } from 'lucide-react';
+import { Calendar, ArrowRight, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { newsItems } from '@/data/newsData';
+import { eventsData } from '@/data/eventsData';
 
 import SEO from '@/components/SEO';
 
 const Newsroom = () => {
   const featuredNews = newsItems.find(item => item.featured);
   const regularNews = newsItems.filter(item => !item.featured);
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const processedEvents = eventsData.map(ev => {
+    const eventDate = new Date(ev.date);
+    return {
+      ...ev,
+      isPast: eventDate < now,
+      dateObj: eventDate
+    };
+  }).sort((a, b) => {
+    if (a.isPast !== b.isPast) return a.isPast ? 1 : -1;
+    if (!a.isPast) return a.dateObj - b.dateObj;
+    return b.dateObj - a.dateObj;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -134,6 +151,61 @@ const Newsroom = () => {
             <Button variant="outline" size="lg">
               Load More Articles
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Events Grid */}
+      <section className="healthcare-section bg-background">
+        <div className="healthcare-container">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-2xl font-serif font-bold text-foreground">Events & Programs</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {processedEvents.map((ev, i) => (
+              <div key={i} className={`ecasi-event-card ${ev.isPast ? 'opacity-80 bg-gray-50' : ''}`}>
+                {/* Color header bar */}
+                <div
+                  className="h-2"
+                  style={{ background: ev.isPast ? '#9ca3af' : (i % 2 === 0 ? "#008000" : "#20b2aa") }}
+                />
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <span
+                      className="inline-block text-xs font-semibold px-3 py-1 rounded-full text-white"
+                      style={{ background: ev.isPast ? '#9ca3af' : (i % 2 === 0 ? "#008000" : "#20b2aa"), fontFamily: "'Roboto', sans-serif" }}
+                    >
+                      {ev.type}
+                    </span>
+                    {ev.isPast && (
+                      <span className="inline-block text-[10px] font-bold px-2 py-1 rounded border border-red-300 bg-red-50 text-red-600 uppercase tracking-wider">
+                        Past Event
+                      </span>
+                    )}
+                  </div>
+                  <h3
+                    className="text-ecasi-navy font-bold text-base mb-3 leading-snug"
+                    style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                  >
+                    {ev.title}
+                  </h3>
+                  <p className="text-ecasi-body text-sm leading-relaxed mb-4" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                    {ev.desc}
+                  </p>
+                  <div className="space-y-2 text-xs text-ecasi-body border-t border-gray-100 pt-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar size={13} className="text-ecasi-green flex-shrink-0" />
+                      <span>{new Date(ev.date).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "long", day: "numeric" })}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={13} className="text-ecasi-green flex-shrink-0" />
+                      <span>{ev.venue}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
