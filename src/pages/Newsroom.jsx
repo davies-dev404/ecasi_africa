@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, ArrowRight, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,44 @@ import SEO from '@/components/SEO';
 const Newsroom = () => {
   const featuredNews = newsItems.find(item => item.featured);
   const regularNews = newsItems.filter(item => !item.featured);
+
+  const [liveNews, setLiveNews] = useState([]);
+
+  useEffect(() => {
+    const fetchLiveNews = async () => {
+      try {
+        const rssUrl = encodeURIComponent('https://news.google.com/rss/search?q=environment+sustainability+when:7d&hl=en-US&gl=US&ceid=US:en');
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
+        const data = await res.json();
+        
+        if (data.status === 'ok') {
+          const fallBackImages = [
+            "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1509391366360-1e97f52ce23b?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80"
+          ];
+          const formattedNews = data.items.slice(0, 6).map((item, index) => ({
+            id: `live-${index}`,
+            title: item.title.split(' - ')[0],
+            excerpt: item.description.replace(/<[^>]+>/g, '').slice(0, 120) + '...',
+            category: "Global News",
+            date: new Date(item.pubDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+            image: fallBackImages[index % fallBackImages.length],
+            link: item.link
+          }));
+          setLiveNews(formattedNews);
+        }
+      } catch (error) {
+        console.error("Failed to fetch live news:", error);
+      }
+    };
+    fetchLiveNews();
+  }, []);
+
+  const displayNews = liveNews.length > 0 ? liveNews : regularNews;
 
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -111,14 +150,14 @@ const Newsroom = () => {
             <h2 className="text-2xl font-serif font-bold text-foreground">Latest News</h2>
             <div className="flex gap-2">
               <Button variant="outline" size="sm">All</Button>
-              <Button variant="ghost" size="sm">Announcements</Button>
-              <Button variant="ghost" size="sm">Research</Button>
-              <Button variant="ghost" size="sm">Community</Button>
+              <Button variant="ghost" size="sm">Global Policy</Button>
+              <Button variant="ghost" size="sm">Sustainability</Button>
+              <Button variant="ghost" size="sm">Conservation</Button>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {regularNews.map((item, index) => (
+            {displayNews.map((item, index) => (
               <article key={index} className="healthcare-card group cursor-pointer flex flex-col h-full">
                 <div className="aspect-video bg-accent rounded-lg mb-5 overflow-hidden">
                    <img src={item.image} alt={item.title} loading="eager" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -133,16 +172,28 @@ const Newsroom = () => {
                   </span>
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                  <Link to={`/news/${item.id}`}>
-                    {item.title}
-                  </Link>
+                  {item.link ? (
+                    <a href={item.link} target="_blank" rel="noopener noreferrer">
+                      {item.title}
+                    </a>
+                  ) : (
+                    <Link to={`/news/${item.id}`}>
+                      {item.title}
+                    </Link>
+                  )}
                 </h3>
                 <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3 flex-grow">
                   {item.excerpt}
                 </p>
-                <Link to={`/news/${item.id}`} className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all mt-auto">
-                  Read More <ArrowRight className="h-4 w-4" />
-                </Link>
+                {item.link ? (
+                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all mt-auto">
+                    Read More <ArrowRight className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <Link to={`/news/${item.id}`} className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all mt-auto">
+                    Read More <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
               </article>
             ))}
           </div>

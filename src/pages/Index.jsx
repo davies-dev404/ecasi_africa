@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '@/components/SEO';
-import { ChevronLeft, ChevronRight, GraduationCap, Briefcase, Brain, Landmark, Calendar, MapPin, Quote } from 'lucide-react';
+import { ChevronLeft, ChevronRight, GraduationCap, Briefcase, Brain, Landmark, Calendar, MapPin, Quote, User } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ScrollAnimation from '@/components/ScrollAnimation';
 import { eventsData as upcomingEvents } from '@/data/eventsData';
-
+import beryleImg from '@/assets/beryle.png';
+import yasukoImg from '@/assets/yasuko.png';
 // ─── Hero Slider ────────────────────────────────────────────────────────────
 const heroSlides = [
   {
@@ -203,22 +204,26 @@ const testimonials = [
   {
     name: "Beryl Omolo",
     role: "Konza Technopolis Authority",
-    quote: "It’s my first training and coming in I had so many expectations about knowing where these carbon markets are, is carbon markets really a thing. What I have learnt is very important and going back to the office I’ll be able to make an impact with the information."
+    quote: "It’s my first training and coming in I had so many expectations about knowing where these carbon markets are, is carbon markets really a thing. What I have learnt is very important and going back to the office I’ll be able to make an impact with the information.",
+    image: beryleImg
   },
   {
     name: "Clifford Siocha",
     role: "Senior environmentalist, KETRACO",
-    quote: "I’m quite delighted to be among the participants of the training on carbon markets as offered by NETFUND in collaboration with ECAS. We got to realize about the opportunity to train through an invitation letter sent to us."
+    quote: "I’m quite delighted to be among the participants of the training on carbon markets as offered by NETFUND in collaboration with ECAS. We got to realize about the opportunity to train through an invitation letter sent to us.",
+    image: ""
   },
   {
     name: "Yasuko Inoue",
     role: "Projects expert, JICA",
-    quote: "I really thank the organizers of this training that is NETFUND and ECAS. There’s a lot of people who are interested in carbon markets and we are learning with each other, as we interact with various people who are very passionate."
+    quote: "I really thank the organizers of this training that is NETFUND and ECAS. There’s a lot of people who are interested in carbon markets and we are learning with each other, as we interact with various people who are very passionate.",
+    image: yasukoImg
   },
   {
     name: "Robert Ayaga",
     role: "Electrical Engineer, KETRACO",
-    quote: "My experience in this workshop, actually I was very green... I really appreciate this training. I intend to take this to KETRACO where I want to take advantage of our credit points. I appreciate this opportunity and I believe that we are going to keep in touch."
+    quote: "My experience in this workshop, actually I was very green... I really appreciate this training. I intend to take this to KETRACO where I want to take advantage of our credit points. I appreciate this opportunity and I believe that we are going to keep in touch.",
+    image: ""
   }
 ];
 
@@ -450,6 +455,17 @@ const Index = () => {
                       &quot;{testimonial.quote}&quot;
                     </p>
                     <div className="flex flex-col items-center gap-1 mt-8">
+                      {testimonial.image ? (
+                        <img
+                          src={testimonial.image}
+                          alt={testimonial.name}
+                          className="w-16 h-16 rounded-full object-cover mb-2 border-2 border-[#008000]"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-2 border-2 border-[#008000]">
+                          <User size={32} className="text-gray-500" />
+                        </div>
+                      )}
                       <span className="text-[#032e42] font-bold text-base" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
                         {testimonial.name}
                       </span>
