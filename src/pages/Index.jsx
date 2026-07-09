@@ -248,6 +248,22 @@ const testimonials = [
 const Index = () => {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const processedEvents = upcomingEvents.map(ev => {
+    const eventDate = new Date(ev.date);
+    return {
+      ...ev,
+      isPast: eventDate < now,
+      dateObj: eventDate
+    };
+  }).sort((a, b) => {
+    if (a.isPast !== b.isPast) return a.isPast ? 1 : -1;
+    if (!a.isPast) return a.dateObj - b.dateObj;
+    return b.dateObj - a.dateObj;
+  });
+
   useEffect(() => {
     const t = setInterval(() => setActiveTestimonial((c) => (c + 1) % testimonials.length), 6000);
     return () => clearInterval(t);
@@ -380,21 +396,28 @@ const Index = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {upcomingEvents.map((ev, i) => (
+              {processedEvents.map((ev, i) => (
                 <ScrollAnimation key={i} animation="slide-up" delay={i * 100}>
-                  <div className="ecasi-event-card">
+                  <div className={`ecasi-event-card ${ev.isPast ? 'opacity-80 bg-gray-50' : ''}`}>
                     {/* Color header bar */}
                     <div
                       className="h-2"
-                      style={{ background: i % 2 === 0 ? "#008000" : "#20b2aa" }}
+                      style={{ background: ev.isPast ? '#9ca3af' : (i % 2 === 0 ? "#008000" : "#20b2aa") }}
                     />
                     <div className="p-6">
-                      <span
-                        className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4 text-white"
-                        style={{ background: i % 2 === 0 ? "#008000" : "#20b2aa", fontFamily: "'Roboto', sans-serif" }}
-                      >
-                        {ev.type}
-                      </span>
+                      <div className="flex justify-between items-start mb-4">
+                        <span
+                          className="inline-block text-xs font-semibold px-3 py-1 rounded-full text-white"
+                          style={{ background: ev.isPast ? '#9ca3af' : (i % 2 === 0 ? "#008000" : "#20b2aa"), fontFamily: "'Roboto', sans-serif" }}
+                        >
+                          {ev.type}
+                        </span>
+                        {ev.isPast && (
+                          <span className="inline-block text-[10px] font-bold px-2 py-1 rounded border border-gray-300 text-gray-500 uppercase tracking-wider">
+                            Past Event
+                          </span>
+                        )}
+                      </div>
                       <h3
                         className="text-ecasi-navy font-bold text-base mb-3 leading-snug"
                         style={{ fontFamily: "'Fira Sans', sans-serif" }}

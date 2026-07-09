@@ -38,7 +38,7 @@ const Newsroom = () => {
               Newsroom
             </h1>
             <p className="text-lg md:text-xl text-white mb-8 border-l-4 border-teal-300 pl-4 animate-slide-up drop-shadow-md" style={{ animationDelay: '0.1s' }}>
-              Latest news, announcements, and developments from HealthCare Regional Medical Center.
+              Latest news, announcements, and developments from Environmental Capacities and Sustainability (ECAS) Institute.
             </p>
           </div>
         </div>
@@ -146,8 +146,8 @@ const Newsroom = () => {
               Stay Informed
             </h2>
             <p className="text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-              Subscribe to our newsletter for the latest health tips, news, and updates 
-              from HealthCare Regional Medical Center.
+              Subscribe to our newsletter for the latest environmental news, policy updates, and insights 
+              from ECAS Institute.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <input 
