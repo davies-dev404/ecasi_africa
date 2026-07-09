@@ -27,7 +27,7 @@ const teamMembers = [
     role: "Legal & Policy Advisor",
     image: "https://ecasiafrica.org/wp-content/uploads/2024/06/Fro2fvzXoAMhCbn-1024x698.jpg",
     department: "Advisory",
-    email: "daquino@ecasiafrica.org",
+    email: "gibsong@ecasiafrica.org",
     initials: "GG",
   },
   {
@@ -171,7 +171,7 @@ const OurTeam = () => {
                 {/* Profile info */}
                 <div className="p-6 flex-1 flex flex-col justify-between relative z-10 bg-white">
                   <div>
-                    <h3 className="font-serif font-bold text-xl text-slate-800 group-hover:text-primary transition-colors leading-tight mb-2">
+                    <h3 className="font-serif font-bold text-xl text-slate-800 group-hover:text-blue-600 transition-colors leading-tight mb-2">
                       {member.name}
                     </h3>
                     <p className="text-primary font-semibold text-xs tracking-wide text-left">
