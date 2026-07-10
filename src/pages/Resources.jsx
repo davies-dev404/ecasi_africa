@@ -49,6 +49,7 @@ const resourcesLinks = [
     color: 'bg-orange-50 text-orange-600',
     hover: 'group-hover:bg-orange-600 group-hover:text-white',
   },
+
   {
     title: 'Videos',
     path: '/resources/videos',

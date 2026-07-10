@@ -162,7 +162,7 @@ const stats = [
   { value: "8+", label: "Countries Delivered Services" },
   { value: "5000+", label: "Participants Inspired" },
   { value: "10+", label: "Years of Experience" },
-  { value: "50+", label: "Physical & Online Seasons" },
+  { value: "50+", label: "Physical & Online Sessions" },
 ];
 
 // ─── Programmes ──────────────────────────────────────────────────────────────

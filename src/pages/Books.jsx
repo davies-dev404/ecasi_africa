@@ -6,29 +6,7 @@ import ScrollAnimation from '@/components/ScrollAnimation';
 import { Book, Download, Eye, Calendar, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const dummyData = [
-  {
-    id: 1,
-    title: "Governing the Commons: African Perspectives",
-    date: "2023",
-    author: "Dr. Jane Doe & Prof. John Smith",
-    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    id: 2,
-    title: "The Green Transition in Sub-Saharan Africa",
-    date: "2022",
-    author: "ECASI Research Group",
-    image: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    id: 3,
-    title: "Climate Justice: A Guide for Activists",
-    date: "2021",
-    author: "Various Authors",
-    image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=600",
-  },
-];
+const dummyData = [];
 
 const Books = () => {
   return (
@@ -91,6 +69,14 @@ const Books = () => {
               </ScrollAnimation>
             ))}
           </div>
+
+          {dummyData.length === 0 && (
+            <div className="text-center py-20 text-gray-400">
+              <Book size={40} className="mx-auto mb-4 opacity-30" />
+              <p className="text-lg">These books are not currently available. Please check back later.</p>
+            </div>
+          )}
+
         </div>
       </section>
       <Footer />

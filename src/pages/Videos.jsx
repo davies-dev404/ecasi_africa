@@ -6,29 +6,7 @@ import ScrollAnimation from '@/components/ScrollAnimation';
 import { Video as VideoIcon, Play, Calendar, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const dummyData = [
-  {
-    id: 1,
-    title: "Documentary: Voices of the Drought",
-    date: "April 2024",
-    type: "Documentary",
-    image: "https://images.unsplash.com/photo-1542314831-c5a42a1f8b8c?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    id: 2,
-    title: "Webinar: Carbon Markets in Africa",
-    date: "March 2024",
-    type: "Webinar",
-    image: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    id: 3,
-    title: "Highlight: 2023 ECASI Annual Conference",
-    date: "December 2023",
-    type: "Event Highlight",
-    image: "https://images.unsplash.com/photo-1475721028070-205fb90dc2e9?auto=format&fit=crop&q=80&w=600",
-  },
-];
+const dummyData = [];
 
 const Videos = () => {
   return (
@@ -90,6 +68,14 @@ const Videos = () => {
               </ScrollAnimation>
             ))}
           </div>
+
+          {dummyData.length === 0 && (
+            <div className="text-center py-20 text-gray-400">
+              <VideoIcon size={40} className="mx-auto mb-4 opacity-30" />
+              <p className="text-lg">These videos are not currently available. Please check back later.</p>
+            </div>
+          )}
+
         </div>
       </section>
       <Footer />

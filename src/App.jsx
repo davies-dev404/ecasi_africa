@@ -20,6 +20,7 @@ import PoliciesLaws from "./pages/PoliciesLaws.jsx";
 import Reports from "./pages/Reports.jsx";
 import Videos from "./pages/Videos.jsx";
 import Books from "./pages/Books.jsx";
+
 import PolicyBriefs from "./pages/PolicyBriefs.jsx";
 import OurHistory from "./pages/OurHistory.jsx";
 import OurStrategicFocus from "./pages/OurStrategicFocus.jsx";
@@ -88,6 +89,7 @@ const App = () => (
           <Route path="/resources/reports" element={<Reports />} />
           <Route path="/resources/videos" element={<Videos />} />
           <Route path="/resources/books" element={<Books />} />
+
           <Route path="/resources/policy-briefs" element={<PolicyBriefs />} />
           <Route path="/our-history" element={<OurHistory />} />
           <Route path="/our-strategic-focus" element={<OurStrategicFocus />} />

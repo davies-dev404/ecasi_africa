@@ -6,74 +6,7 @@ import ScrollAnimation from '@/components/ScrollAnimation';
 import { FileText, Download, Eye, Calendar, ArrowLeft, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const reports = [
-  {
-    id: 1,
-    title: "ECAS Institute Annual Impact Report 2023",
-    date: "January 2024",
-    type: "Annual Report",
-    pages: "88 pages",
-    image: "/images/courses/IMGM1984-1024x683.jpg",
-    tags: ["Annual Report", "Impact", "2023"],
-    summary: "A comprehensive overview of ECAS Institute's activities, partnerships, trainings delivered, and sustainability impact across Africa in 2023.",
-    downloadUrl: "/reports/ECASI-Annual-Impact-Report-2023.pdf",
-  },
-  {
-    id: 2,
-    title: "Kenya National Climate Change Action Plan — Review Report",
-    date: "October 2023",
-    type: "Assessment Report",
-    pages: "62 pages",
-    image: "/images/research/1710846398420-1-1-1024x683.jpg",
-    tags: ["Kenya", "Climate Policy", "Assessment"],
-    summary: "A systematic review and assessment of Kenya's third National Climate Change Action Plan (NCCAP), evaluating implementation gaps and providing remedial recommendations.",
-    downloadUrl: "/reports/Kenya-NCCAP-Review.pdf",
-  },
-  {
-    id: 3,
-    title: "Regional Workshop Report: Climate Change and Food Systems Transformation",
-    date: "June 2024",
-    type: "Workshop Report",
-    pages: "36 pages",
-    image: "/images/courses/20241003_133952069-1-1024x683.jpg",
-    tags: ["Food Systems", "Workshop", "Regional"],
-    summary: "Report from the regional workshop bringing together food system experts, farmers, and policymakers to chart pathways for climate-resilient food systems in East Africa.",
-    downloadUrl: "/reports/Food-Systems-Workshop-Report.pdf",
-  },
-  {
-    id: 4,
-    title: "Quarterly Climate Finance Tracker: Q3 2023",
-    date: "September 2023",
-    type: "Quarterly Report",
-    pages: "28 pages",
-    image: "/images/research/57213763_2128957177158658_1134502275364945920_n.jpg",
-    tags: ["Climate Finance", "Tracker", "Q3 2023"],
-    summary: "Tracks climate finance flows to African countries in Q3 2023, providing data on major pledges, disbursements, and effectiveness of green bonds and adaptation funds.",
-    downloadUrl: "/reports/Climate-Finance-Q3-2023.pdf",
-  },
-  {
-    id: 5,
-    title: "Baseline Study: Air Quality in Nairobi Metropolitan Area",
-    date: "August 2023",
-    type: "Baseline Study",
-    pages: "74 pages",
-    image: "/images/research/IMG_20241112_163109285-1024x683.jpg",
-    tags: ["Air Quality", "Baseline Study", "Nairobi"],
-    summary: "A comprehensive baseline assessment of air quality in the Nairobi Metropolitan Area, documenting pollutant levels, emission sources, and public health impacts.",
-    downloadUrl: "/reports/Nairobi-Air-Quality-Baseline.pdf",
-  },
-  {
-    id: 6,
-    title: "Scoping Study: E-Waste Management Framework for East Africa",
-    date: "July 2023",
-    type: "Scoping Study",
-    pages: "50 pages",
-    image: "/images/programmes/migration-community.png",
-    tags: ["E-Waste", "Scoping Study", "East Africa"],
-    summary: "Scoping study examining the legislative, institutional, and technical landscape for e-waste management across East African Community member states.",
-    downloadUrl: "/reports/E-Waste-EAC-Scoping.pdf",
-  },
-];
+const reports = [];
 
 const Reports = () => {
   const [expandedId, setExpandedId] = useState(null);
@@ -84,9 +17,10 @@ const Reports = () => {
 
   const handleDownload = async (url) => {
     try {
-      // Check if the local file exists first (using HEAD request)
       const res = await fetch(url, { method: 'HEAD' });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type');
+      // If Vite returns index.html for a missing file, the content-type will be text/html
+      if (res.ok && contentType && !contentType.includes('text/html')) {
         const link = document.createElement('a');
         link.href = url;
         link.download = url.split('/').pop(); // Force download behavior with original filename
@@ -217,7 +151,12 @@ const Reports = () => {
             ))}
           </div>
 
-
+          {filtered.length === 0 && (
+            <div className="text-center py-20 text-gray-400">
+              <FileText size={40} className="mx-auto mb-4 opacity-30" />
+              <p className="text-lg">These reports are not currently available. Please check back later.</p>
+            </div>
+          )}
 
         </div>
       </section>

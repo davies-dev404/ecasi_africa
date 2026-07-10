@@ -5,71 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { FileText, ShieldAlert, Scale, Plane, ShoppingBag, DollarSign, Download, ExternalLink, ShieldCheck } from 'lucide-react';
 
-const policies = [
-  {
-    number: "1",
-    title: "CONSTITUTION OF ENVIRONMENTAL CAPACITY AND SUSTAINABILITY INSTITUTE",
-    category: "Governance",
-    icon: Scale,
-    url: "/reports/CONSTITUTION-OF-ENVIRONMENTAL-CAPACITY-AND-SUSTAINABILITY-INSTITUTE.pdf",
-    description: "The founding constitutional document outlining the establishment, mandates, governance structures, and legal framework of ECAS Institute.",
-    color: "bg-emerald-50 text-emerald-600 border-emerald-100",
-  },
-  {
-    number: "4",
-    title: "ECAS Institute Antibribery-and-anticorruption-policy",
-    category: "Ethics & Compliance",
-    icon: ShieldCheck,
-    url: "/reports/ECAS-Institute-Antibribery-and-anticorruption-policy.pdf",
-    description: "Our zero-tolerance framework against bribery and corrupt practices, ensuring transparency, integrity, and ethical conduct across all operations.",
-    color: "bg-blue-50 text-blue-600 border-blue-100",
-  },
-  {
-    number: "5",
-    title: "Whistleblower Policy",
-    category: "Ethics & Compliance",
-    icon: ShieldAlert,
-    url: "/reports/Whistleblower-Policy.pdf",
-    description: "A safe, anonymous channel for employees and partners to report unethical behavior, financial impropriety, or violations of code of conduct.",
-    color: "bg-purple-50 text-purple-600 border-purple-100",
-  },
-  {
-    number: "6",
-    title: "RISK REGISTER-ECAS INSTITUTE",
-    category: "Governance",
-    icon: FileText,
-    url: "/reports/RISK-REGISTER-ECAS-INSTITUTE.pdf",
-    description: "Strategic registry outlining potential institutional risks, mitigation actions, impact analysis, and responsible focal departments.",
-    color: "bg-orange-50 text-orange-600 border-orange-100",
-  },
-  {
-    number: "7",
-    title: "ECAS Institute Travel Expense Policy",
-    category: "Operations",
-    icon: Plane,
-    url: "/reports/ECAS-iNSTITUTE-Travel-Expense-Policy-1.docx",
-    description: "Regulatory procedures for travel allowances, reimbursements, booking guidelines, and expense management for official engagements.",
-    color: "bg-amber-50 text-amber-600 border-amber-100",
-  },
-  {
-    number: "8",
-    title: "ECAS Institute Green Procurement Policy",
-    category: "Operations",
-    icon: ShoppingBag,
-    url: "/reports/ECAS-Institute-_Green-Procurement-Policy.docx",
-    description: "Procurement guidelines focused on sustainability, prioritizing eco-friendly vendors, energy-efficient goods, and minimal footprint services.",
-    color: "bg-teal-50 text-teal-600 border-teal-100",
-  },
-  {
-    number: "9",
-    title: "Financial Policy and Procedures",
-    category: "Financial",
-    icon: DollarSign,
-    url: "/reports/Financial-Policy-and-Procedures.pdf",
-    description: "Guidelines and standardized procedures governing financial transactions, budgeting, audits, and monetary controls at ECAS Institute.",
-    color: "bg-green-50 text-green-600 border-green-100",
-  },
-];
+const policies = [];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -95,7 +31,8 @@ const OurPolicies = () => {
     e.preventDefault();
     try {
       const res = await fetch(url, { method: 'HEAD' });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && !contentType.includes('text/html')) {
         const link = document.createElement('a');
         link.href = url;
         link.download = url.split('/').pop();
@@ -219,6 +156,14 @@ const OurPolicies = () => {
               </motion.div>
             ))}
           </motion.div>
+
+          {policies.length === 0 && (
+            <div className="text-center py-20 text-slate-500 w-full col-span-full">
+              <ShieldAlert className="h-12 w-12 mx-auto mb-4 opacity-50 text-slate-400" />
+              <p className="text-xl font-medium">These policies are not currently available. Please check back later.</p>
+            </div>
+          )}
+
         </div>
       </section>
 

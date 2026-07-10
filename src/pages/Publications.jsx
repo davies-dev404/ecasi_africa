@@ -6,80 +6,7 @@ import ScrollAnimation from '@/components/ScrollAnimation';
 import { BookOpen, Download, Eye, Calendar, ArrowLeft, Search, FileText, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const publications = [
-  {
-    id: 1,
-    title: "Impact of Climate Change on African Agriculture: Policy Perspectives",
-    date: "March 2024",
-    type: "Research Paper",
-    authors: "ECASI Research Team",
-    pages: "42 pages",
-    image: "/images/research/1710846398420-1-1-1024x683.jpg",
-    downloadUrl: "/reports/Climate-Change-African-Agriculture.pdf",
-    abstract: "This paper examines the multifaceted impacts of climate change on agricultural systems across Sub-Saharan Africa, providing policy recommendations for food security and sustainable farming transitions.",
-    tags: ["Climate Change", "Agriculture", "Food Security"],
-  },
-  {
-    id: 2,
-    title: "Renewable Energy Adoption Trends in East Africa 2023",
-    date: "December 2023",
-    type: "Whitepaper",
-    authors: "Dr. Jane Mwangi & Team",
-    pages: "58 pages",
-    image: "/images/research/IMG_20241112_163109285-1024x683.jpg",
-    downloadUrl: "/reports/Renewable-Energy-East-Africa.pdf",
-    abstract: "A comprehensive analysis of renewable energy adoption trends in Kenya, Uganda, Tanzania, Rwanda, and Ethiopia, identifying key drivers and barriers to the clean energy transition.",
-    tags: ["Renewable Energy", "East Africa", "Green Economy"],
-  },
-  {
-    id: 3,
-    title: "UNEA-6 Briefing: African Delegations Positions & Outcomes",
-    date: "February 2024",
-    type: "Conference Report",
-    authors: "ECASI Policy Team",
-    pages: "30 pages",
-    image: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
-    downloadUrl: "/reports/UNEA6-Briefing-Outcomes.pdf",
-    abstract: "A comprehensive briefing on the United Nations Environment Assembly 6th session, covering African delegations' positions, key negotiation outcomes, and follow-up action points.",
-    tags: ["UN Environment", "UNEA", "Policy"],
-  },
-  {
-    id: 4,
-    title: "Biodiversity Conservation Strategies for Sub-Saharan Africa 2030",
-    date: "November 2023",
-    type: "Strategy Paper",
-    authors: "Multi-disciplinary ECASI Authors",
-    pages: "65 pages",
-    image: "/images/programmes/migration-community.png",
-    downloadUrl: "/reports/Biodiversity-Conservation-2030.pdf",
-    abstract: "Evidence-based strategies for biodiversity conservation aligned with the Kunming-Montreal Global Biodiversity Framework, with a focus on community-led conservation models.",
-    tags: ["Biodiversity", "Conservation", "Strategy"],
-  },
-  {
-    id: 5,
-    title: "Carbon Markets in Africa: Opportunities and Challenges",
-    date: "September 2023",
-    type: "Research Paper",
-    authors: "ECASI Carbon Markets Working Group",
-    pages: "48 pages",
-    image: "/images/courses/IMGM1984-1024x683.jpg",
-    downloadUrl: "/reports/Carbon-Markets-Africa.pdf",
-    abstract: "An assessment of Africa's participation in voluntary and compliance carbon markets, identifying entry points for countries to monetize their climate mitigation contributions.",
-    tags: ["Carbon Markets", "Climate Finance", "Africa"],
-  },
-  {
-    id: 6,
-    title: "Sustainable Urban Transport in African Cities",
-    date: "July 2023",
-    type: "Policy Brief",
-    authors: "ECASI Urban Mobility Team",
-    pages: "24 pages",
-    image: "/images/programmes/contact-hero.jpg",
-    downloadUrl: "/reports/Sustainable-Urban-Transport.pdf",
-    abstract: "Analyzing pathways to decarbonize urban transport in African cities through e-mobility, public transit investment, and integrated land-use planning.",
-    tags: ["Transport", "Urban", "E-Mobility"],
-  },
-];
+const publications = [];
 
 const Publications = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,7 +25,8 @@ const Publications = () => {
   const handleDownload = async (url, title) => {
     try {
       const res = await fetch(url, { method: 'HEAD' });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && !contentType.includes('text/html')) {
         const link = document.createElement('a');
         link.href = url;
         link.download = url.split('/').pop();
@@ -246,7 +174,7 @@ const Publications = () => {
           {filtered.length === 0 && (
             <div className="text-center py-20 text-gray-400">
               <BookOpen size={40} className="mx-auto mb-4 opacity-30" />
-              <p className="text-lg">No publications found matching your search.</p>
+              <p className="text-lg">These publications are not currently available. Please check back later.</p>
               <button onClick={() => { setSearchTerm(''); setSelectedType('All'); }} className="mt-4 text-ecasi-green font-semibold hover:underline">
                 Clear filters
               </button>

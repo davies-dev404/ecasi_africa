@@ -6,74 +6,7 @@ import ScrollAnimation from '@/components/ScrollAnimation';
 import { FileBadge, Download, Eye, Calendar, ArrowLeft, Tag, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const briefs = [
-  {
-    id: 1,
-    issue: "Issue 48",
-    title: "Integrating Gender Equity in National Climate Action Plans (NAPs)",
-    date: "June 2024",
-    pages: "8 pages",
-    tags: ["Gender", "Climate Policy", "NAPs"],
-    summary: "Provides guidance on mainstreaming gender-responsive approaches into Nationally Determined Contributions and National Adaptation Plans for more equitable climate outcomes.",
-    image: "/images/courses/IMGM1984-1024x683.jpg",
-    downloadUrl: "/reports/Gender-Climate-NAPs-Brief.pdf",
-  },
-  {
-    id: 2,
-    issue: "Issue 47",
-    title: "Policy Recommendations for Just E-Mobility Transition in African Cities",
-    date: "May 2024",
-    pages: "10 pages",
-    tags: ["E-Mobility", "Transport", "Urban Policy"],
-    summary: "Outlines targeted policy interventions to accelerate the uptake of electric vehicles and public transport decarbonization in rapidly growing African cities.",
-    image: "/images/programmes/contact-hero.jpg",
-    downloadUrl: "/reports/EMobility-African-Cities-Brief.pdf",
-  },
-  {
-    id: 3,
-    issue: "Issue 46",
-    title: "Unlocking Carbon Finance for Smallholder Farmers in East Africa",
-    date: "March 2024",
-    pages: "12 pages",
-    tags: ["Carbon Finance", "Agriculture", "Smallholders"],
-    summary: "Analysis of existing and emerging carbon finance mechanisms accessible to smallholder farmers and rural communities, with implementation recommendations.",
-    image: "/images/research/1710846398420-1-1-1024x683.jpg",
-    downloadUrl: "/reports/Carbon-Finance-Smallholder-Brief.pdf",
-  },
-  {
-    id: 4,
-    issue: "Issue 45",
-    title: "Scaling Nature-Based Solutions for Flood Resilience in Urban Africa",
-    date: "January 2024",
-    pages: "9 pages",
-    tags: ["Nature-Based Solutions", "Urban Resilience", "Floods"],
-    summary: "Explores the potential of nature-based solutions such as urban forests, wetland restoration, and green infrastructure to reduce urban flood risk across African cities.",
-    image: "/images/programmes/migration-community.png",
-    downloadUrl: "/reports/NBS-Flood-Resilience-Brief.pdf",
-  },
-  {
-    id: 5,
-    issue: "Issue 44",
-    title: "Strengthening Environmental Law Enforcement in Sub-Saharan Africa",
-    date: "November 2023",
-    pages: "11 pages",
-    tags: ["Environmental Law", "Governance", "Enforcement"],
-    summary: "Identifies capacity gaps in environmental law enforcement and proposes institutional reforms and regional cooperation mechanisms to improve compliance.",
-    image: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
-    downloadUrl: "/reports/Environmental-Law-Enforcement-Brief.pdf",
-  },
-  {
-    id: 6,
-    issue: "Issue 43",
-    title: "Transforming Waste Management: The Circular Economy Opportunity",
-    date: "October 2023",
-    pages: "8 pages",
-    tags: ["Waste Management", "Circular Economy", "Africa"],
-    summary: "Examines how circular economy principles can be applied to waste management in African countries to generate economic opportunities while reducing pollution.",
-    image: "/images/courses/62262333_1035153403346851_5273722628304011264_n-1024x681.jpg",
-    downloadUrl: "/reports/Circular-Economy-Waste-Brief.pdf",
-  },
-];
+const briefs = [];
 
 const PolicyBriefs = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -87,7 +20,8 @@ const PolicyBriefs = () => {
   const handleDownload = async (url) => {
     try {
       const res = await fetch(url, { method: 'HEAD' });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && !contentType.includes('text/html')) {
         const link = document.createElement('a');
         link.href = url;
         link.download = url.split('/').pop();
@@ -217,7 +151,7 @@ const PolicyBriefs = () => {
           {filtered.length === 0 && (
             <div className="text-center py-20 text-gray-400">
               <FileBadge size={40} className="mx-auto mb-4 opacity-30" />
-              <p className="text-lg">No policy briefs found matching your search.</p>
+              <p className="text-lg">These policy briefs are not currently available. Please check back later.</p>
               <button onClick={() => setSearchTerm('')} className="mt-4 text-ecasi-green font-semibold hover:underline">
                 Clear search
               </button>
