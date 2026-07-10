@@ -373,7 +373,7 @@ const Index = () => {
                 <p className="ecasi-section-title text-2xl md:text-3xl mb-2">UPCOMING EVENTS</p>
                 <div className="ecasi-section-divider" />
               </ScrollAnimation>
-              <Link to="/newsroom" className="ecasi-btn-outline text-xs hidden md:inline-block">
+              <Link to="/newsroom" className="ecasi-btn-outline text-xs mt-4 md:mt-0">
                 View All Events
               </Link>
             </div>

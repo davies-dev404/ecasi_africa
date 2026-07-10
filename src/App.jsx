@@ -12,7 +12,6 @@ import Contact from "./pages/Contact.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import CookieBanner from "./components/CookieBanner.jsx";
 
-import NewsDetail from "./pages/NewsDetail.jsx";
 import Gallery from "./pages/Gallery.jsx";
 import Resources from "./pages/Resources.jsx";
 import Publications from "./pages/Publications.jsx";
@@ -80,7 +79,6 @@ const App = () => (
           <Route path="/specialties/security-migration" element={<Migration />} />
           <Route path="/specialties/water" element={<Water />} />
           <Route path="/newsroom" element={<Newsroom />} />
-          <Route path="/news/:id" element={<NewsDetail />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/resources" element={<Resources />} />
