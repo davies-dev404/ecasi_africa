@@ -262,9 +262,9 @@ const TrainingEducation = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Left Column: Key Training Areas */}
                   <div>
-                    <h4 className="text-ecasi-green font-bold uppercase tracking-wider text-xs mb-4 flex items-center gap-2">
+                    <h4 className="text-[#5dade2] font-bold uppercase tracking-wider text-xs mb-4 flex items-center gap-2">
                       <Award size={16} />
-                      Key Training Areas
+                      Some of the Training Areas
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       {trainingAreas.map((area, i) => {
@@ -272,7 +272,7 @@ const TrainingEducation = () => {
                         return (
                           <div key={i} className="flex items-center gap-2 bg-white/5 rounded-lg p-2.5 hover:bg-white/10 transition-colors">
                             <AreaIcon size={14} className="text-ecasi-green flex-shrink-0" />
-                            <span className="text-xs text-white/90 font-medium leading-tight">{area.label}</span>
+                            <span className="text-xs text-[#5dade2] font-medium leading-tight">{area.label}</span>
                           </div>
                         );
                       })}
@@ -282,11 +282,11 @@ const TrainingEducation = () => {
                   {/* Right Column: methodology & registration */}
                   <div className="space-y-6">
                     <div>
-                      <h4 className="text-ecasi-green font-bold uppercase tracking-wider text-xs mb-3 flex items-center gap-2">
+                      <h4 className="text-[#5dade2] font-bold uppercase tracking-wider text-xs mb-3 flex items-center gap-2">
                         <Users2 size={16} />
                         Training Methodology
                       </h4>
-                      <ul className="space-y-1.5 text-xs text-white/80 pl-4 list-disc">
+                      <ul className="space-y-1.5 text-xs text-[#5dade2] pl-4 list-disc">
                         {methodologies.slice(0, 5).map((method, idx) => (
                           <li key={idx}>{method}</li>
                         ))}
@@ -294,11 +294,11 @@ const TrainingEducation = () => {
                     </div>
 
                     <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                      <h5 className="font-bold text-sm text-white flex items-center gap-1.5">
-                        <Award size={16} className="text-ecasi-green" />
+                      <h5 className="font-bold text-sm text-[#5dade2] flex items-center gap-1.5">
+                        <Award size={16} className="text-[#5dade2]" />
                         NITA Registered Provider
                       </h5>
-                      <p className="text-xs text-white/70 mt-1 leading-relaxed">
+                      <p className="text-xs text-[#5dade2] mt-1 leading-relaxed">
                         ECAS is recognized by the National Industrial Training Authority (NITA) as an official training provider and levy contributor.
                       </p>
                     </div>
@@ -307,12 +307,12 @@ const TrainingEducation = () => {
 
                 {/* Target Audience Section */}
                 <div className="mt-8 pt-6 border-t border-white/10">
-                  <h4 className="text-ecasi-green font-bold uppercase tracking-wider text-xs mb-3">
+                  <h4 className="text-[#5dade2] font-bold uppercase tracking-wider text-xs mb-3">
                     Target Audience
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {audiences.map((audience, i) => (
-                      <span key={i} className="bg-white/10 text-white/90 text-xs px-3 py-1 rounded-full font-medium">
+                      <span key={i} className="bg-white/10 text-[#5dade2] text-xs px-3 py-1 rounded-full font-medium">
                         {audience}
                       </span>
                     ))}
