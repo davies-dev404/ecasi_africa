@@ -16,7 +16,7 @@ const reports = [
     image: "/images/courses/IMGM1984-1024x683.jpg",
     tags: ["Annual Report", "Impact", "2023"],
     summary: "A comprehensive overview of ECAS Institute's activities, partnerships, trainings delivered, and sustainability impact across Africa in 2023.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2024/01/ECASI-Annual-Impact-Report-2023.pdf",
+    downloadUrl: "/reports/ECASI-Annual-Impact-Report-2023.pdf",
   },
   {
     id: 2,
@@ -27,7 +27,7 @@ const reports = [
     image: "/images/research/1710846398420-1-1-1024x683.jpg",
     tags: ["Kenya", "Climate Policy", "Assessment"],
     summary: "A systematic review and assessment of Kenya's third National Climate Change Action Plan (NCCAP), evaluating implementation gaps and providing remedial recommendations.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2023/10/Kenya-NCCAP-Review.pdf",
+    downloadUrl: "/reports/Kenya-NCCAP-Review.pdf",
   },
   {
     id: 3,
@@ -38,7 +38,7 @@ const reports = [
     image: "/images/courses/20241003_133952069-1-1024x683.jpg",
     tags: ["Food Systems", "Workshop", "Regional"],
     summary: "Report from the regional workshop bringing together food system experts, farmers, and policymakers to chart pathways for climate-resilient food systems in East Africa.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2024/06/Food-Systems-Workshop-Report.pdf",
+    downloadUrl: "/reports/Food-Systems-Workshop-Report.pdf",
   },
   {
     id: 4,
@@ -49,7 +49,7 @@ const reports = [
     image: "/images/research/57213763_2128957177158658_1134502275364945920_n.jpg",
     tags: ["Climate Finance", "Tracker", "Q3 2023"],
     summary: "Tracks climate finance flows to African countries in Q3 2023, providing data on major pledges, disbursements, and effectiveness of green bonds and adaptation funds.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2023/09/Climate-Finance-Q3-2023.pdf",
+    downloadUrl: "/reports/Climate-Finance-Q3-2023.pdf",
   },
   {
     id: 5,
@@ -60,7 +60,7 @@ const reports = [
     image: "/images/research/IMG_20241112_163109285-1024x683.jpg",
     tags: ["Air Quality", "Baseline Study", "Nairobi"],
     summary: "A comprehensive baseline assessment of air quality in the Nairobi Metropolitan Area, documenting pollutant levels, emission sources, and public health impacts.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2023/08/Nairobi-Air-Quality-Baseline.pdf",
+    downloadUrl: "/reports/Nairobi-Air-Quality-Baseline.pdf",
   },
   {
     id: 6,
@@ -71,7 +71,7 @@ const reports = [
     image: "/images/programmes/migration-community.png",
     tags: ["E-Waste", "Scoping Study", "East Africa"],
     summary: "Scoping study examining the legislative, institutional, and technical landscape for e-waste management across East African Community member states.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2023/07/E-Waste-EAC-Scoping.pdf",
+    downloadUrl: "/reports/E-Waste-EAC-Scoping.pdf",
   },
 ];
 
@@ -82,12 +82,23 @@ const Reports = () => {
   const types = ['All', ...new Set(reports.map(r => r.type))];
   const filtered = selectedType === 'All' ? reports : reports.filter(r => r.type === selectedType);
 
-  const handleDownload = (url) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.click();
+  const handleDownload = async (url) => {
+    try {
+      // Check if the local file exists first (using HEAD request)
+      const res = await fetch(url, { method: 'HEAD' });
+      if (res.ok) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = url.split('/').pop(); // Force download behavior with original filename
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      } else {
+        alert("This document is currently being updated and will be available for download shortly. Please check back later.");
+      }
+    } catch (err) {
+      alert("We are unable to process your download request at this time. Please try again later.");
+    }
   };
 
   return (

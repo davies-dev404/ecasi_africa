@@ -16,7 +16,7 @@ const briefs = [
     tags: ["Gender", "Climate Policy", "NAPs"],
     summary: "Provides guidance on mainstreaming gender-responsive approaches into Nationally Determined Contributions and National Adaptation Plans for more equitable climate outcomes.",
     image: "/images/courses/IMGM1984-1024x683.jpg",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2024/06/Gender-Climate-NAPs-Brief.pdf",
+    downloadUrl: "/reports/Gender-Climate-NAPs-Brief.pdf",
   },
   {
     id: 2,
@@ -27,7 +27,7 @@ const briefs = [
     tags: ["E-Mobility", "Transport", "Urban Policy"],
     summary: "Outlines targeted policy interventions to accelerate the uptake of electric vehicles and public transport decarbonization in rapidly growing African cities.",
     image: "/images/programmes/contact-hero.jpg",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2024/05/EMobility-African-Cities-Brief.pdf",
+    downloadUrl: "/reports/EMobility-African-Cities-Brief.pdf",
   },
   {
     id: 3,
@@ -38,7 +38,7 @@ const briefs = [
     tags: ["Carbon Finance", "Agriculture", "Smallholders"],
     summary: "Analysis of existing and emerging carbon finance mechanisms accessible to smallholder farmers and rural communities, with implementation recommendations.",
     image: "/images/research/1710846398420-1-1-1024x683.jpg",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2024/03/Carbon-Finance-Smallholder-Brief.pdf",
+    downloadUrl: "/reports/Carbon-Finance-Smallholder-Brief.pdf",
   },
   {
     id: 4,
@@ -49,7 +49,7 @@ const briefs = [
     tags: ["Nature-Based Solutions", "Urban Resilience", "Floods"],
     summary: "Explores the potential of nature-based solutions such as urban forests, wetland restoration, and green infrastructure to reduce urban flood risk across African cities.",
     image: "/images/programmes/migration-community.png",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2024/01/NBS-Flood-Resilience-Brief.pdf",
+    downloadUrl: "/reports/NBS-Flood-Resilience-Brief.pdf",
   },
   {
     id: 5,
@@ -60,7 +60,7 @@ const briefs = [
     tags: ["Environmental Law", "Governance", "Enforcement"],
     summary: "Identifies capacity gaps in environmental law enforcement and proposes institutional reforms and regional cooperation mechanisms to improve compliance.",
     image: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2023/11/Environmental-Law-Enforcement-Brief.pdf",
+    downloadUrl: "/reports/Environmental-Law-Enforcement-Brief.pdf",
   },
   {
     id: 6,
@@ -71,7 +71,7 @@ const briefs = [
     tags: ["Waste Management", "Circular Economy", "Africa"],
     summary: "Examines how circular economy principles can be applied to waste management in African countries to generate economic opportunities while reducing pollution.",
     image: "/images/courses/62262333_1035153403346851_5273722628304011264_n-1024x681.jpg",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2023/10/Circular-Economy-Waste-Brief.pdf",
+    downloadUrl: "/reports/Circular-Economy-Waste-Brief.pdf",
   },
 ];
 
@@ -84,12 +84,22 @@ const PolicyBriefs = () => {
       b.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
   });
 
-  const handleDownload = (url) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.click();
+  const handleDownload = async (url) => {
+    try {
+      const res = await fetch(url, { method: 'HEAD' });
+      if (res.ok) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = url.split('/').pop();
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      } else {
+        alert("This document is currently being updated and will be available for download shortly. Please check back later.");
+      }
+    } catch (err) {
+      alert("We are unable to process your download request at this time. Please try again later.");
+    }
   };
 
   return (

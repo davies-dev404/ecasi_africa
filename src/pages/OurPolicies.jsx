@@ -11,7 +11,7 @@ const policies = [
     title: "CONSTITUTION OF ENVIRONMENTAL CAPACITY AND SUSTAINABILITY INSTITUTE",
     category: "Governance",
     icon: Scale,
-    url: "https://ecasiafrica.org/wp-content/uploads/2025/04/CONSTITUTION-OF-ENVIRONMENTAL-CAPACITY-AND-SUSTAINABILITY-INSTITUTE.pdf",
+    url: "/reports/CONSTITUTION-OF-ENVIRONMENTAL-CAPACITY-AND-SUSTAINABILITY-INSTITUTE.pdf",
     description: "The founding constitutional document outlining the establishment, mandates, governance structures, and legal framework of ECAS Institute.",
     color: "bg-emerald-50 text-emerald-600 border-emerald-100",
   },
@@ -20,7 +20,7 @@ const policies = [
     title: "ECAS Institute Antibribery-and-anticorruption-policy",
     category: "Ethics & Compliance",
     icon: ShieldCheck,
-    url: "https://ecasiafrica.org/wp-content/uploads/2025/04/ECAS-Institute-Antibribery-and-anticorruption-policy.pdf",
+    url: "/reports/ECAS-Institute-Antibribery-and-anticorruption-policy.pdf",
     description: "Our zero-tolerance framework against bribery and corrupt practices, ensuring transparency, integrity, and ethical conduct across all operations.",
     color: "bg-blue-50 text-blue-600 border-blue-100",
   },
@@ -29,7 +29,7 @@ const policies = [
     title: "Whistleblower Policy",
     category: "Ethics & Compliance",
     icon: ShieldAlert,
-    url: "https://ecasiafrica.org/wp-content/uploads/2025/04/Whistleblower-Policy.pdf",
+    url: "/reports/Whistleblower-Policy.pdf",
     description: "A safe, anonymous channel for employees and partners to report unethical behavior, financial impropriety, or violations of code of conduct.",
     color: "bg-purple-50 text-purple-600 border-purple-100",
   },
@@ -38,7 +38,7 @@ const policies = [
     title: "RISK REGISTER-ECAS INSTITUTE",
     category: "Governance",
     icon: FileText,
-    url: "https://ecasiafrica.org/wp-content/uploads/2025/04/RISK-REGISTER-ECAS-INSTITUTE.pdf",
+    url: "/reports/RISK-REGISTER-ECAS-INSTITUTE.pdf",
     description: "Strategic registry outlining potential institutional risks, mitigation actions, impact analysis, and responsible focal departments.",
     color: "bg-orange-50 text-orange-600 border-orange-100",
   },
@@ -47,7 +47,7 @@ const policies = [
     title: "ECAS Institute Travel Expense Policy",
     category: "Operations",
     icon: Plane,
-    url: "https://ecasiafrica.org/wp-content/uploads/2025/04/ECAS-iNSTITUTE-Travel-Expense-Policy-1.docx",
+    url: "/reports/ECAS-iNSTITUTE-Travel-Expense-Policy-1.docx",
     description: "Regulatory procedures for travel allowances, reimbursements, booking guidelines, and expense management for official engagements.",
     color: "bg-amber-50 text-amber-600 border-amber-100",
   },
@@ -56,7 +56,7 @@ const policies = [
     title: "ECAS Institute Green Procurement Policy",
     category: "Operations",
     icon: ShoppingBag,
-    url: "https://ecasiafrica.org/wp-content/uploads/2025/04/ECAS-Institute-_Green-Procurement-Policy.docx",
+    url: "/reports/ECAS-Institute-_Green-Procurement-Policy.docx",
     description: "Procurement guidelines focused on sustainability, prioritizing eco-friendly vendors, energy-efficient goods, and minimal footprint services.",
     color: "bg-teal-50 text-teal-600 border-teal-100",
   },
@@ -65,7 +65,7 @@ const policies = [
     title: "Financial Policy and Procedures",
     category: "Financial",
     icon: DollarSign,
-    url: "https://ecasiafrica.org/wp-content/uploads/2025/04/Financial-Policy-and-Procedures.pdf",
+    url: "/reports/Financial-Policy-and-Procedures.pdf",
     description: "Guidelines and standardized procedures governing financial transactions, budgeting, audits, and monetary controls at ECAS Institute.",
     color: "bg-green-50 text-green-600 border-green-100",
   },
@@ -91,6 +91,25 @@ const itemVariants = {
 };
 
 const OurPolicies = () => {
+  const handleDownload = async (e, url) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(url, { method: 'HEAD' });
+      if (res.ok) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = url.split('/').pop();
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      } else {
+        alert("This document is currently being updated and will be available for download shortly. Please check back later.");
+      }
+    } catch (err) {
+      alert("We are unable to process your download request at this time. Please try again later.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50/50">
       <SEO
@@ -189,14 +208,13 @@ const OurPolicies = () => {
                     <span>Open Link</span>
                   </a>
 
-                  <a
-                    href={policy.url}
-                    download
+                  <button
+                    onClick={(e) => handleDownload(e, policy.url)}
                     className="inline-flex items-center justify-center gap-2 bg-slate-50 text-primary border border-slate-200 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
                   >
                     <Download className="h-4 w-4" />
                     <span>Download</span>
-                  </a>
+                  </button>
                 </div>
               </motion.div>
             ))}

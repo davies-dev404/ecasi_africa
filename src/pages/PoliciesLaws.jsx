@@ -17,7 +17,7 @@ const policies = [
     image: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
     tags: ["Climate Policy", "Kenya", "Framework"],
     summary: "Kenya's overarching national policy guiding climate change action, establishing coordination mechanisms, and outlining low-carbon and climate-resilient development pathways.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2022/12/Kenya-Climate-Change-Framework-Policy.pdf",
+    downloadUrl: "/reports/Kenya-Climate-Change-Framework-Policy.pdf",
   },
   {
     id: 2,
@@ -29,7 +29,7 @@ const policies = [
     image: "/images/research/IMG_20241112_163109285-1024x683.jpg",
     tags: ["EAC", "Regional", "Climate Change"],
     summary: "The regional policy framework for the East African Community member states on coordinated climate change response, adaptation, and mitigation actions.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2021/08/EAC-Climate-Change-Policy.pdf",
+    downloadUrl: "/reports/EAC-Climate-Change-Policy.pdf",
   },
   {
     id: 3,
@@ -41,7 +41,7 @@ const policies = [
     image: "/images/research/1710846398420-1-1-1024x683.jpg",
     tags: ["Legislation", "Environmental Law", "Kenya"],
     summary: "The principal framework for environmental management in Kenya, establishing the National Environment Management Authority and outlining enforcement mechanisms.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2022/01/EMCA-Kenya-Revised.pdf",
+    downloadUrl: "/reports/EMCA-Kenya-Revised.pdf",
   },
   {
     id: 4,
@@ -53,7 +53,7 @@ const policies = [
     image: "/images/courses/IMGM1984-1024x683.jpg",
     tags: ["NDC", "Paris Agreement", "Kenya"],
     summary: "Kenya's enhanced Nationally Determined Contribution under the Paris Agreement, outlining updated targets for reducing greenhouse gas emissions and building climate resilience.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2023/09/Kenya-Enhanced-NDC-2030.pdf",
+    downloadUrl: "/reports/Kenya-Enhanced-NDC-2030.pdf",
   },
   {
     id: 5,
@@ -65,7 +65,7 @@ const policies = [
     image: "/images/research/57213763_2128957177158658_1134502275364945920_n.jpg",
     tags: ["African Union", "Strategy", "Continental"],
     summary: "The African Union's 10-year strategy for addressing climate change, promoting sustainable development, and building resilience across the continent.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2022/10/AU-Climate-Change-Strategy.pdf",
+    downloadUrl: "/reports/AU-Climate-Change-Strategy.pdf",
   },
   {
     id: 6,
@@ -77,7 +77,91 @@ const policies = [
     image: "/images/programmes/migration-community.png",
     tags: ["Forests", "Conservation", "Legislation"],
     summary: "Kenya's principal legislation for the conservation, protection, and management of all forest resources, including community forest associations.",
-    downloadUrl: "https://ecasiafrica.org/wp-content/uploads/2022/01/Forest-Conservation-Management-Act-Kenya.pdf",
+    downloadUrl: "/reports/Forest-Conservation-Management-Act-Kenya.pdf",
+  },
+  {
+    id: 7,
+    title: "Constitution of Environmental Capacity and Sustainability Institute",
+    date: "2025",
+    type: "Governance",
+    country: "ECAS Institute",
+    pages: "Internal",
+    image: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
+    tags: ["Governance", "Constitution"],
+    summary: "The founding constitutional document outlining the establishment, mandates, governance structures, and legal framework of ECAS Institute.",
+    downloadUrl: "/reports/CONSTITUTION-OF-ENVIRONMENTAL-CAPACITY-AND-SUSTAINABILITY-INSTITUTE.pdf",
+  },
+  {
+    id: 8,
+    title: "ECAS Institute Anti-bribery and Anti-corruption Policy",
+    date: "2025",
+    type: "Ethics & Compliance",
+    country: "ECAS Institute",
+    pages: "Internal",
+    image: "/images/research/IMG_20241112_163109285-1024x683.jpg",
+    tags: ["Ethics", "Compliance"],
+    summary: "Our zero-tolerance framework against bribery and corrupt practices, ensuring transparency, integrity, and ethical conduct across all operations.",
+    downloadUrl: "/reports/ECAS-Institute-Antibribery-and-anticorruption-policy.pdf",
+  },
+  {
+    id: 9,
+    title: "Whistleblower Policy",
+    date: "2025",
+    type: "Ethics & Compliance",
+    country: "ECAS Institute",
+    pages: "Internal",
+    image: "/images/research/1710846398420-1-1-1024x683.jpg",
+    tags: ["Ethics", "Compliance"],
+    summary: "A safe, anonymous channel for employees and partners to report unethical behavior, financial impropriety, or violations of code of conduct.",
+    downloadUrl: "/reports/Whistleblower-Policy.pdf",
+  },
+  {
+    id: 10,
+    title: "Risk Register - ECAS Institute",
+    date: "2025",
+    type: "Governance",
+    country: "ECAS Institute",
+    pages: "Internal",
+    image: "/images/courses/IMGM1984-1024x683.jpg",
+    tags: ["Governance", "Risk Management"],
+    summary: "Strategic registry outlining potential institutional risks, mitigation actions, impact analysis, and responsible focal departments.",
+    downloadUrl: "/reports/RISK-REGISTER-ECAS-INSTITUTE.pdf",
+  },
+  {
+    id: 11,
+    title: "ECAS Institute Travel Expense Policy",
+    date: "2025",
+    type: "Operations",
+    country: "ECAS Institute",
+    pages: "Internal",
+    image: "/images/research/57213763_2128957177158658_1134502275364945920_n.jpg",
+    tags: ["Operations", "Travel"],
+    summary: "Regulatory procedures for travel allowances, reimbursements, booking guidelines, and expense management for official engagements.",
+    downloadUrl: "/reports/ECAS-iNSTITUTE-Travel-Expense-Policy-1.docx",
+  },
+  {
+    id: 12,
+    title: "ECAS Institute Green Procurement Policy",
+    date: "2025",
+    type: "Operations",
+    country: "ECAS Institute",
+    pages: "Internal",
+    image: "/images/programmes/migration-community.png",
+    tags: ["Operations", "Procurement"],
+    summary: "Procurement guidelines focused on sustainability, prioritizing eco-friendly vendors, energy-efficient goods, and minimal footprint services.",
+    downloadUrl: "/reports/ECAS-Institute-_Green-Procurement-Policy.docx",
+  },
+  {
+    id: 13,
+    title: "Financial Policy and Procedures",
+    date: "2025",
+    type: "Financial",
+    country: "ECAS Institute",
+    pages: "Internal",
+    image: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
+    tags: ["Financial", "Procedures"],
+    summary: "Guidelines and standardized procedures governing financial transactions, budgeting, audits, and monetary controls at ECAS Institute.",
+    downloadUrl: "/reports/Financial-Policy-and-Procedures.pdf",
   },
 ];
 
@@ -96,12 +180,22 @@ const PoliciesLaws = () => {
     return matchesSearch && matchesType;
   });
 
-  const handleDownload = (url) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.click();
+  const handleDownload = async (url) => {
+    try {
+      const res = await fetch(url, { method: 'HEAD' });
+      if (res.ok) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = url.split('/').pop();
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      } else {
+        alert("This document is currently being updated and will be available for download shortly. Please check back later.");
+      }
+    } catch (err) {
+      alert("We are unable to process your download request at this time. Please try again later.");
+    }
   };
 
   return (
