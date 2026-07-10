@@ -11,7 +11,7 @@ const teamMembers = [
     role: "Founder & Chief Executive Officer",
     image: "https://ecasiafrica.org/wp-content/uploads/2024/06/IMG_6632.jpg",
     department: "Leadership",
-    email: "jolonde@ecasiafrica.org",
+    email: "jacob@ecasiafrica.org",
     initials: "JO",
   },
   {
@@ -35,7 +35,7 @@ const teamMembers = [
     role: "Finance & Business Development",
     image: "/images/team/mwalasha.png",
     department: "Finance",
-    email: "smwalasha@ecasiafrica.org",
+    email: "sharon@ecasiafrica.org",
     initials: "SM",
   },
   {
