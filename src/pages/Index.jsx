@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, GraduationCap, Briefcase, Brain, Landmark, C
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ScrollAnimation from '@/components/ScrollAnimation';
+import LinkedInFeed from '@/components/LinkedInFeed';
 import { eventsData as upcomingEvents } from '@/data/eventsData';
 import beryleImg from '@/assets/beryle.png';
 import yasukoImg from '@/assets/yasuko.png';
@@ -425,6 +426,17 @@ const Index = () => {
                 </ScrollAnimation>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── LinkedIn Feed ── */}
+        <section className="py-16 md:py-20 bg-gray-50 border-t border-gray-200">
+          <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
+            <ScrollAnimation animation="slide-up">
+              <p className="ecasi-section-title text-2xl md:text-3xl mb-2">LATEST FROM LINKEDIN</p>
+              <div className="ecasi-section-divider mb-8" />
+            </ScrollAnimation>
+            <LinkedInFeed />
           </div>
         </section>
 

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Mail } from 'lucide-react';
 
 const Footer = () => {
   const year = new Date().getFullYear();
@@ -23,13 +23,13 @@ const Footer = () => {
             </p>
 
             {/* Social Icons */}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               {[
                 { icon: Facebook, label: "Facebook", href: "https://www.facebook.com/ECASInstitute" },
                 { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/ecasiafrica/" },
                 { label: "X", href: "https://twitter.com/ecasiafrica", custom: true },
                 { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/company/ecas-institute" },
-                { icon: Youtube, label: "YouTube", href: "https://www.youtube.com/@ecasiafrica" },
+                { icon: Mail, label: "Email", href: "mailto:info@ecasiafrica.org" },
               ].map((s, i) => (
                 <a
                   key={i}

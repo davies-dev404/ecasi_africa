@@ -3,6 +3,7 @@ import { Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import LinkedInFeed from '@/components/LinkedInFeed';
 import { eventsData } from '@/data/eventsData';
 import SEO from '@/components/SEO';
 
@@ -135,6 +136,16 @@ const Newsroom = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* LinkedIn Feed Section */}
+      <section className="py-16 md:py-24 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+        <div className="healthcare-container">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">Social Feed</h2>
+          </div>
+          <LinkedInFeed />
         </div>
       </section>
 
