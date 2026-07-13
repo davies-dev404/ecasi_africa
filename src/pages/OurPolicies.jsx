@@ -5,8 +5,64 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { FileText, ShieldAlert, Scale, Plane, ShoppingBag, DollarSign, Download, ExternalLink, ShieldCheck } from 'lucide-react';
 
-const policies = [];
-
+const policies = [
+  {
+    title: "Constitution of Environmental Capacity and Sustainability Institute",
+    description: "The founding constitutional document outlining the establishment, mandates, governance structures, and legal framework of ECAS Institute.",
+    url: "/pdfs/CONSTITUTION-OF-ENVIRONMENTAL-CAPACITY-AND-SUSTAINABILITY-INSTITUTE.pdf",
+    number: "001",
+    icon: FileText,
+    color: "bg-slate-100 text-slate-600"
+  },
+  {
+    title: "ECAS Institute Anti-bribery and Anti-corruption Policy",
+    description: "Our zero-tolerance framework against bribery and corrupt practices, ensuring transparency, integrity, and ethical conduct across all operations.",
+    url: "/pdfs/ECAS-Institute-Antibribery-and-anticorruption-policy.pdf",
+    number: "002",
+    icon: Scale,
+    color: "bg-blue-100 text-blue-600"
+  },
+  {
+    title: "Whistleblower Policy",
+    description: "A safe, anonymous channel for employees and partners to report unethical behavior, financial impropriety, or violations of code of conduct.",
+    url: "/pdfs/Whistleblower-Policy.pdf",
+    number: "003",
+    icon: ShieldAlert,
+    color: "bg-red-100 text-red-600"
+  },
+  {
+    title: "Risk Register - ECAS Institute",
+    description: "Strategic registry outlining potential institutional risks, mitigation actions, impact analysis, and responsible focal departments.",
+    url: "/pdfs/RISK-REGISTER-ECAS-INSTITUTE.pdf",
+    number: "004",
+    icon: ShieldCheck,
+    color: "bg-orange-100 text-orange-600"
+  },
+  {
+    title: "ECAS Institute Travel Expense Policy",
+    description: "Regulatory procedures for travel allowances, reimbursements, booking guidelines, and expense management for official engagements.",
+    url: "/pdfs/ECAS-iNSTITUTE-Travel-Expense-Policy-1.docx",
+    number: "005",
+    icon: Plane,
+    color: "bg-indigo-100 text-indigo-600"
+  },
+  {
+    title: "ECAS Institute Green Procurement Policy",
+    description: "Procurement guidelines focused on sustainability, prioritizing eco-friendly vendors, energy-efficient goods, and minimal footprint services.",
+    url: "/pdfs/ECAS-Institute-_Green-Procurement-Policy.docx",
+    number: "006",
+    icon: ShoppingBag,
+    color: "bg-green-100 text-green-600"
+  },
+  {
+    title: "Financial Policy and Procedures",
+    description: "Guidelines and standardized procedures governing financial transactions, budgeting, audits, and monetary controls at ECAS Institute.",
+    url: "/pdfs/Financial-Policy-and-Procedures.pdf",
+    number: "007",
+    icon: DollarSign,
+    color: "bg-emerald-100 text-emerald-600"
+  }
+];
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -27,23 +83,17 @@ const itemVariants = {
 };
 
 const OurPolicies = () => {
-  const handleDownload = async (e, url) => {
+  const handleView = async (e, url) => {
     e.preventDefault();
     try {
       const res = await fetch(url, { method: 'HEAD' });
-      const contentType = res.headers.get('content-type');
-      if (res.ok && contentType && !contentType.includes('text/html')) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = url.split('/').pop();
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.click();
+      if (res.ok) {
+        window.open(url, '_blank', 'noopener,noreferrer');
       } else {
-        alert("This document is currently being updated and will be available for download shortly. Please check back later.");
+        alert("This document is currently being updated and will be available for viewing shortly. Please check back later.");
       }
     } catch (err) {
-      alert("We are unable to process your download request at this time. Please try again later.");
+      alert("We are unable to process your request at this time. Please try again later.");
     }
   };
 
@@ -135,22 +185,12 @@ const OurPolicies = () => {
 
                 {/* Actions / Download Links */}
                 <div className="mt-auto pt-5 border-t border-slate-100 flex items-center justify-between relative z-10">
-                  <a
-                    href={policy.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-semibold text-slate-400 hover:text-primary transition-colors flex items-center gap-1.5"
+                  <button
+                    onClick={(e) => handleView(e, policy.url)}
+                    className="inline-flex items-center justify-center gap-2 bg-slate-50 text-primary border border-slate-200 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm w-full"
                   >
                     <ExternalLink className="h-4 w-4" />
-                    <span>Open Link</span>
-                  </a>
-
-                  <button
-                    onClick={(e) => handleDownload(e, policy.url)}
-                    className="inline-flex items-center justify-center gap-2 bg-slate-50 text-primary border border-slate-200 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>Download</span>
+                    <span>View Policy</span>
                   </button>
                 </div>
               </motion.div>

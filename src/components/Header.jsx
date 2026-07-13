@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu, X, Phone, Clock, ChevronDown, ChevronRight, Mail, Search
 } from "lucide-react";
@@ -11,8 +11,19 @@ const Header = () => {
   const [activeThirdLevelDropdown, setActiveThirdLevelDropdown] = useState(null);
   const [activeFourthLevelDropdown, setActiveFourthLevelDropdown] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setSearchOpen(false);
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -631,20 +642,23 @@ const Header = () => {
         {/* Search bar slider */}
         {searchOpen && (
           <div className="animate-fade-in border-t border-gray-100 bg-white px-4 lg:px-16 py-4 absolute top-full left-0 w-full z-40 shadow-md">
-            <div className="max-w-[1476px] mx-auto flex items-center gap-4">
+            <form onSubmit={handleSearch} className="max-w-[1476px] mx-auto flex items-center gap-4">
               <input
                 type="text"
                 placeholder="Search ECASI Africa..."
                 autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 border-b-2 border-ecasi-green outline-none py-2 text-base text-ecasi-navy placeholder-ecasi-body bg-transparent font-sans"
               />
               <button
+                type="button"
                 onClick={() => setSearchOpen(false)}
                 className="text-ecasi-body hover:text-ecasi-blue transition-colors"
               >
                 <X size={20} />
               </button>
-            </div>
+            </form>
           </div>
         )}
 

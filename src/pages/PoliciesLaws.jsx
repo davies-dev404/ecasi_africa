@@ -6,7 +6,85 @@ import ScrollAnimation from '@/components/ScrollAnimation';
 import { Scale, Download, Eye, Calendar, ArrowLeft, Tag, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const policies = [];
+const policies = [
+  {
+    id: 7,
+    title: "Constitution of Environmental Capacity and Sustainability Institute",
+    date: "2025",
+    type: "Governance",
+    country: "ECAS Institute",
+    pages: "Internal",
+    tags: ["Governance", "Constitution"],
+    summary: "The founding constitutional document outlining the establishment, mandates, governance structures, and legal framework of ECAS Institute.",
+    url: "/pdfs/CONSTITUTION-OF-ENVIRONMENTAL-CAPACITY-AND-SUSTAINABILITY-INSTITUTE.pdf",
+  },
+  {
+    id: 8,
+    title: "ECAS Institute Anti-bribery and Anti-corruption Policy",
+    date: "2025",
+    type: "Ethics & Compliance",
+    country: "ECAS Institute",
+    pages: "Internal",
+    tags: ["Ethics", "Compliance"],
+    summary: "Our zero-tolerance framework against bribery and corrupt practices, ensuring transparency, integrity, and ethical conduct across all operations.",
+    url: "/pdfs/ECAS-Institute-Antibribery-and-anticorruption-policy.pdf",
+  },
+  {
+    id: 9,
+    title: "Whistleblower Policy",
+    date: "2025",
+    type: "Ethics & Compliance",
+    country: "ECAS Institute",
+    pages: "Internal",
+    tags: ["Ethics", "Compliance"],
+    summary: "A safe, anonymous channel for employees and partners to report unethical behavior, financial impropriety, or violations of code of conduct.",
+    url: "/pdfs/Whistleblower-Policy.pdf",
+  },
+  {
+    id: 10,
+    title: "Risk Register - ECAS Institute",
+    date: "2025",
+    type: "Governance",
+    country: "ECAS Institute",
+    pages: "Internal",
+    tags: ["Governance", "Risk Management"],
+    summary: "Strategic registry outlining potential institutional risks, mitigation actions, impact analysis, and responsible focal departments.",
+    url: "/pdfs/RISK-REGISTER-ECAS-INSTITUTE.pdf",
+  },
+  {
+    id: 11,
+    title: "ECAS Institute Travel Expense Policy",
+    date: "2025",
+    type: "Operations",
+    country: "ECAS Institute",
+    pages: "Internal",
+    tags: ["Operations", "Travel"],
+    summary: "Regulatory procedures for travel allowances, reimbursements, booking guidelines, and expense management for official engagements.",
+    url: "/pdfs/ECAS-iNSTITUTE-Travel-Expense-Policy-1.docx",
+  },
+  {
+    id: 12,
+    title: "ECAS Institute Green Procurement Policy",
+    date: "2025",
+    type: "Operations",
+    country: "ECAS Institute",
+    pages: "Internal",
+    tags: ["Operations", "Procurement"],
+    summary: "Procurement guidelines focused on sustainability, prioritizing eco-friendly vendors, energy-efficient goods, and minimal footprint services.",
+    url: "/pdfs/ECAS-Institute-_Green-Procurement-Policy.docx",
+  },
+  {
+    id: 13,
+    title: "Financial Policy and Procedures",
+    date: "2025",
+    type: "Financial",
+    country: "ECAS Institute",
+    pages: "Internal",
+    tags: ["Financial", "Procedures"],
+    summary: "Guidelines and standardized procedures governing financial transactions, budgeting, audits, and monetary controls at ECAS Institute.",
+    url: "/pdfs/Financial-Policy-and-Procedures.pdf",
+  },
+];
 
 const PoliciesLaws = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,22 +101,18 @@ const PoliciesLaws = () => {
     return matchesSearch && matchesType;
   });
 
-  const handleDownload = async (url) => {
+
+  const handleView = async (url) => {
     try {
+      // Check if file exists locally or accessible remotely
       const res = await fetch(url, { method: 'HEAD' });
-      const contentType = res.headers.get('content-type');
-      if (res.ok && contentType && !contentType.includes('text/html')) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = url.split('/').pop();
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.click();
+      if (res.ok) {
+        window.open(url, '_blank', 'noopener,noreferrer');
       } else {
-        alert("This document is currently being updated and will be available for download shortly. Please check back later.");
+        alert("This document is currently being updated and will be available for viewing shortly. Please check back later.");
       }
     } catch (err) {
-      alert("We are unable to process your download request at this time. Please try again later.");
+      alert("We are unable to process your request at this time. Please try again later.");
     }
   };
 
@@ -108,22 +182,15 @@ const PoliciesLaws = () => {
             {filtered.map((item, index) => (
               <ScrollAnimation key={item.id} delay={index * 80} animation="fade-up">
                 <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
-                  <div className="h-40 overflow-hidden relative bg-gray-100">
-                    <img 
-                      src={item.image} 
-                      alt={item.title} 
-                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                      onError={e => e.target.style.display='none'}
-                    />
-                    <div className="absolute inset-0 bg-ecasi-navy/30 group-hover:bg-ecasi-navy/10 transition-colors"></div>
-                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-ecasi-navy">
-                      {item.type}
-                    </div>
-                    <div className="absolute top-4 right-4 bg-ecasi-green text-white px-2 py-0.5 rounded text-xs">
-                      {item.country}
-                    </div>
-                  </div>
                   <div className="p-6 flex flex-col flex-grow">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="bg-slate-100 text-ecasi-navy px-3 py-1 rounded-full text-xs font-semibold">
+                        {item.type}
+                      </span>
+                      <span className="bg-ecasi-green/10 text-ecasi-green px-2 py-1 rounded text-xs font-semibold">
+                        {item.country}
+                      </span>
+                    </div>
                     <div className="flex items-center text-sm text-gray-500 mb-3 gap-2">
                       <Calendar size={14} />
                       <span>{item.date}</span>
@@ -158,11 +225,11 @@ const PoliciesLaws = () => {
                         {expandedId === item.id ? 'Close' : 'View Details'}
                       </button>
                       <button 
-                        onClick={() => handleDownload(item.downloadUrl)}
+                        onClick={() => handleView(item.url)}
                         className="flex items-center gap-1.5 px-4 py-2 bg-ecasi-green text-white rounded-lg text-sm font-semibold hover:bg-ecasi-navy transition-colors"
                       >
-                        <Download size={14} />
-                        Download PDF
+                        <Eye size={14} />
+                        View PDF
                       </button>
                     </div>
                   </div>

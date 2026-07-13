@@ -50,6 +50,7 @@ import ExecutiveTraining from "./pages/ExecutiveTraining.jsx";
 import ResearchConsultancy from "./pages/ResearchConsultancy.jsx";
 import Training from "./pages/Training.jsx";
 import PolicyAnalysis from "./pages/PolicyAnalysis.jsx";
+import Search from "./pages/Search.jsx";
 
 import Analytics from "@/components/Analytics";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -110,6 +111,7 @@ const App = () => (
           <Route path="/executive-training/:slug" element={<ExecutiveTraining />} />
           <Route path="/policy-analysis" element={<PolicyAnalysis />} />
           <Route path="/research/:slug" element={<ResearchConsultancy />} />
+          <Route path="/search" element={<Search />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieBanner />
