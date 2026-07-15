@@ -87,6 +87,36 @@ const galleryImages = [
     title: "Coastal Programme",
     description: "Assessing marine ecosystem and coastal resource health."
   },
+  {
+    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.40.jpeg",
+    category: "events",
+    title: "ECASI Partnership",
+    description: "ECASI Africa team and partners."
+  },
+  {
+    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41.jpeg",
+    category: "events",
+    title: "Partnership Engagement",
+    description: "Collaborative event with partners."
+  },
+  {
+    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41%20(1).jpeg",
+    category: "events",
+    title: "Team Session",
+    description: "ECASI team members at a recent event."
+  },
+  {
+    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41%20(2).jpeg",
+    category: "events",
+    title: "Breathe Cities Partnership",
+    description: "ECASI Africa partnering with Breathe Cities."
+  },
+  {
+    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41%20(3).jpeg",
+    category: "events",
+    title: "Stakeholder Meeting",
+    description: "Meeting with key stakeholders and partners."
+  }
 ];
 
 const GalleryImage = ({ image, categoryLabel }) => {
