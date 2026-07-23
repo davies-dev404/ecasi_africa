@@ -50,12 +50,9 @@ const Contact = () => {
             className="flex justify-center"
           >
             <img
-              src="/images/programmes/contact-hero.jpg"
+              src="/images/WhatsApp Image 2026-07-15 at 12.25.40.jpeg"
               alt="ECASI Africa event - Thank You"
-              className="w-full max-w-[450px] h-auto rounded-lg shadow-md"
-              onError={(e) => {
-                e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
-              }}
+              className="ecasi-hero-img w-full max-w-[450px] h-auto rounded-lg shadow-md"
             />
           </motion.div>
 

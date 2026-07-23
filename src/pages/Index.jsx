@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '@/components/SEO';
-import { ChevronLeft, ChevronRight, GraduationCap, Briefcase, Brain, Landmark, Calendar, MapPin, Quote, User } from 'lucide-react';
+import { GraduationCap, Briefcase, Brain, Landmark, Calendar, MapPin, Quote, User } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ScrollAnimation from '@/components/ScrollAnimation';
@@ -99,9 +99,9 @@ const HeroSlider = () => {
           key={idx}
           src={s.bg}
           alt={`Hero Background ${idx + 1}`}
-          fetchpriority="high"
+          fetchPriority="high"
           loading="eager"
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+          className="ecasi-hero-img absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
           style={{ opacity: idx === current && !transitioning ? 1 : 0 }}
         />
       ))}
