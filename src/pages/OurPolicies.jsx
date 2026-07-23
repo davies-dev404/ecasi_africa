@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom';
+
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { FileText, ShieldAlert, Scale, Plane, ShoppingBag, DollarSign, Download, ExternalLink, ShieldCheck } from 'lucide-react';
+import { FileText, ShieldAlert, Scale, Plane, ShoppingBag, DollarSign, ExternalLink, ShieldCheck } from 'lucide-react';
 
 const policies = [
   {
@@ -93,6 +93,7 @@ const OurPolicies = () => {
         alert("This document is currently being updated and will be available for viewing shortly. Please check back later.");
       }
     } catch (err) {
+      console.error("Error viewing policy:", err);
       alert("We are unable to process your request at this time. Please try again later.");
     }
   };
