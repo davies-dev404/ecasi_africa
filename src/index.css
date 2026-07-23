@@ -110,17 +110,18 @@
     font-family: "Roboto", system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.7;
-    color: #676767;
+    color: #032e42; /* ECASI Navy for high visibility and contrast */
   }
 
   p {
     text-align: justify;
+    color: #1a202c; /* High contrast body paragraph text */
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: "Fira Sans", sans-serif;
     font-weight: 700;
-    color: #032e42;
+    color: #032e42; /* ECASI Navy */
     line-height: 1.3;
   }
 
@@ -132,12 +133,27 @@
   h6 { font-size: 19px; }
 
   a {
-    color: #008000;
+    color: #008000; /* ECASI Green */
     transition: color 0.2s ease;
   }
 
   a:hover {
-    color: #1155cc;
+    color: #1e73be; /* ECASI Blue */
+  }
+
+  /* ECASI High Visibility Utilities for washed-out fonts */
+  .text-white\/40, .text-white\/50, .text-white\/60 {
+    color: #ffffff !important; /* Force high contrast white */
+    opacity: 0.95 !important;
+  }
+
+  .text-white\/70, .text-white\/80, .text-white\/90 {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  .text-slate-400, .text-gray-400 {
+    color: #032e42 !important; /* ECASI Navy instead of invisible grey */
   }
 }
 
