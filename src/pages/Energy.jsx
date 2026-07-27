@@ -65,33 +65,21 @@ const Energy = () => {
       {/* ── Main Content Area ── */}
       <main className="max-w-5xl mx-auto px-6 py-12 font-sans text-[#676767] leading-relaxed">
         
-        {/* Side-by-Side Images */}
+        {/* Programme Header Image */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10"
+          className="max-w-2xl mx-auto mb-10 overflow-hidden rounded-lg border border-gray-200 shadow-sm"
         >
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-            <img
-              src="https://ecasiafrica.org/wp-content/uploads/2025/05/20241003_133952069-1-1024x683.jpg"
-              alt="Geothermal Spa Group"
-              className="w-full h-auto object-cover hover:scale-102 transition-transform duration-500"
-              onError={(e) => {
-                e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
-              }}
-            />
-          </div>
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between bg-black">
-            <img
-              src="https://ecasiafrica.org/wp-content/uploads/2025/05/image-8.png"
-              alt="The Future of Public Transport in Kenya"
-              className="w-full h-auto object-cover hover:scale-102 transition-transform duration-500"
-              onError={(e) => {
-                e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-2.jpg";
-              }}
-            />
-          </div>
+          <img
+            src="https://ecasiafrica.org/wp-content/uploads/2025/05/20241003_133952069-1-1024x683.jpg"
+            alt="Geothermal Spa Group"
+            className="w-full h-auto object-cover hover:scale-102 transition-transform duration-500"
+            onError={(e) => {
+              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+            }}
+          />
         </motion.div>
 
         {/* Introductory Highlight Paragraph */}

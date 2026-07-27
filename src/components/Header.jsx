@@ -850,38 +850,226 @@ const Header = () => {
                 )}
               </div>
 
-              {/* Research & Consultancy */}
+              {/* Research */}
               <div>
                 <button
-                  onClick={() => setActiveDropdown(activeDropdown === 'research' ? null : 'research')}
+                  onClick={() => {
+                    setActiveDropdown(activeDropdown === 'research' ? null : 'research');
+                    setActiveSubDropdown(null);
+                    setActiveThirdLevelDropdown(null);
+                  }}
                   className="w-full flex items-center justify-between px-4 py-2 text-sm font-bold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded shadow-sm"
                 >
-                  Research &amp; Consultancy
+                  Research
                   <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === 'research' ? "rotate-180" : ""}`} />
                 </button>
                 {activeDropdown === 'research' && (
-                  <div className="pl-6 border-l-2 border-ecasi-green py-1 space-y-1">
+                  <div className="bg-gray-50 px-4 border-l-[3px] border-ecasi-green py-1.5 space-y-0.5 mt-0.5 rounded-r shadow-inner">
                     <Link
                       to="/research/overview"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-1.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
                       Overview
                     </Link>
+
+                    {/* Research Areas Subdropdown */}
+                    <div>
+                      <button
+                        onClick={() => {
+                          setActiveSubDropdown(activeSubDropdown === 'research-areas' ? null : 'research-areas');
+                          setActiveThirdLevelDropdown(null);
+                        }}
+                        className="w-full flex items-center justify-between py-1.5 text-sm text-ecasi-body hover:text-ecasi-green"
+                      >
+                        Research Areas
+                        <ChevronDown size={12} className={`transition-transform duration-200 ${activeSubDropdown === 'research-areas' ? "rotate-180" : ""}`} />
+                      </button>
+                      {activeSubDropdown === 'research-areas' && (
+                        <div className="bg-gray-100/80 px-3 border-l-2 border-ecasi-green/40 py-1 space-y-0.5 mt-0.5 rounded-r">
+                          {/* Climate Change (Third level dropdown) */}
+                          <div>
+                            <button
+                              onClick={() => setActiveThirdLevelDropdown(activeThirdLevelDropdown === 'climate-change-research' ? null : 'climate-change-research')}
+                              className="w-full flex items-center justify-between py-1 text-xs text-ecasi-body hover:text-ecasi-green"
+                            >
+                              Climate Change
+                              <ChevronDown size={10} className={`transition-transform duration-200 ${activeThirdLevelDropdown === 'climate-change-research' ? "rotate-180" : ""}`} />
+                            </button>
+                            {activeThirdLevelDropdown === 'climate-change-research' && (
+                              <div className="bg-gray-200/50 px-2 border-l border-ecasi-green/20 py-0.5 space-y-0.5 mt-0.5 rounded-r">
+                                {[
+                                  { label: "Climate Finance", path: "/research/climate-finance" },
+                                  { label: "Climate Adaptation", path: "/research/climate-adaptation" },
+                                  { label: "Climate Change Mitigation", path: "/research/climate-change-mitigation" },
+                                  { label: "Climate and Technology", path: "/research/climate-and-technology" }
+                                ].map((child, cIdx) => (
+                                  <Link
+                                    key={cIdx}
+                                    to={child.path}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="block py-1 text-[11px] text-ecasi-body hover:text-ecasi-green"
+                                  >
+                                    {child.label}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {[
+                            { label: "Energy Transition", path: "/research/energy-transition" },
+                            { label: "Agriculture and Food Systems", path: "/research/agriculture-and-food-systems-2" },
+                            { label: "Natural Resources Research", path: "/research/natural-resources" },
+                            { label: "Transport and E-Mobility", path: "/research/transport-and-e-mobility" },
+                            { label: "Waste and Circular Economy", path: "/research/waste-and-circular-economy-2" },
+                            { label: "Just Transition", path: "/research/just-transition" },
+                            { label: "Environmental Law and Governance", path: "/research/environmental-law-and-governance" }
+                          ].map((sub, sIdx) => (
+                            <Link
+                              key={sIdx}
+                              to={sub.path}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="block py-1.5 text-xs text-ecasi-body hover:text-ecasi-green transition-colors"
+                            >
+                              {sub.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Consultancy */}
+              <div>
+                <button
+                  onClick={() => {
+                    setActiveDropdown(activeDropdown === 'consultancy' ? null : 'consultancy');
+                    setActiveSubDropdown(null);
+                    setActiveThirdLevelDropdown(null);
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2 text-sm font-bold uppercase tracking-wide text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section rounded shadow-sm"
+                >
+                  Consultancy
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === 'consultancy' ? "rotate-180" : ""}`} />
+                </button>
+                {activeDropdown === 'consultancy' && (
+                  <div className="bg-gray-50 px-4 border-l-[3px] border-ecasi-green py-1.5 space-y-0.5 mt-0.5 rounded-r shadow-inner">
                     <Link
                       to="/research/consulting"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-1.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
-                      Consultancy
+                      Overview
                     </Link>
+
+                    {/* Studies and Assessments */}
+                    <div>
+                      <button
+                        onClick={() => {
+                          setActiveSubDropdown(activeSubDropdown === 'studies-assessments' ? null : 'studies-assessments');
+                          setActiveThirdLevelDropdown(null);
+                        }}
+                        className="w-full flex items-center justify-between py-1.5 text-sm text-ecasi-body hover:text-ecasi-green"
+                      >
+                        Studies and Assessments
+                        <ChevronDown size={12} className={`transition-transform duration-200 ${activeSubDropdown === 'studies-assessments' ? "rotate-180" : ""}`} />
+                      </button>
+                      {activeSubDropdown === 'studies-assessments' && (
+                        <div className="bg-gray-100/80 px-3 border-l-2 border-ecasi-green/40 py-1 space-y-0.5 mt-0.5 rounded-r">
+                          {[
+                            { label: "Baseline Study", path: "/research/baseline-study" },
+                            { label: "Assessments", path: "/research/assessments" },
+                            { label: "Policy Reviews and Assessments", path: "/research/policy-reviews-and-assessments" },
+                            { label: "Policy Analysis", path: "/research/policy-analysis" }
+                          ].map((sub, sIdx) => (
+                            <Link
+                              key={sIdx}
+                              to={sub.path}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="block py-1 text-xs text-ecasi-body hover:text-ecasi-green"
+                            >
+                              {sub.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Strategic Social and Environmental Assessments (SSEA) */}
+                    <div>
+                      <button
+                        onClick={() => {
+                          setActiveSubDropdown(activeSubDropdown === 'ssea' ? null : 'ssea');
+                          setActiveThirdLevelDropdown(null);
+                        }}
+                        className="w-full flex items-center justify-between py-1.5 text-sm text-ecasi-body hover:text-ecasi-green"
+                      >
+                        Strategic Social and Environmental Assessments (SSEA)
+                        <ChevronDown size={12} className={`transition-transform duration-200 ${activeSubDropdown === 'ssea' ? "rotate-180" : ""}`} />
+                      </button>
+                      {activeSubDropdown === 'ssea' && (
+                        <div className="bg-gray-100/80 px-3 border-l-2 border-ecasi-green/40 py-1 space-y-0.5 mt-0.5 rounded-r">
+                          {[
+                            { label: "Environmental and Social Impact Assessment (SEA)", path: "/research/environmental-and-social-impact-assessment" },
+                            { label: "Strategic Environmental Assessments (SEA)", path: "/research/strategic-environmental-assessments-sea-2" },
+                            { label: "Environmental and Social Management Plans (ESMP)", path: "/research/environmental-and-social-management-plans-esmp" }
+                          ].map((sub, sIdx) => (
+                            <Link
+                              key={sIdx}
+                              to={sub.path}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="block py-1 text-xs text-ecasi-body hover:text-ecasi-green"
+                            >
+                              {sub.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Rapporteur and Reporting Services */}
                     <Link
-                      to="/research/climate-finance"
+                      to="/research/rapporteur-and-reporting-services"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 text-sm text-ecasi-body hover:text-ecasi-green"
+                      className="block py-1.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
                     >
-                      Research Areas
+                      Rapporteur and Reporting Services
                     </Link>
+
+                    {/* Audits */}
+                    <div>
+                      <button
+                        onClick={() => {
+                          setActiveSubDropdown(activeSubDropdown === 'audits' ? null : 'audits');
+                          setActiveThirdLevelDropdown(null);
+                        }}
+                        className="w-full flex items-center justify-between py-1.5 text-sm text-ecasi-body hover:text-ecasi-green"
+                      >
+                        Audits
+                        <ChevronDown size={12} className={`transition-transform duration-200 ${activeSubDropdown === 'audits' ? "rotate-180" : ""}`} />
+                      </button>
+                      {activeSubDropdown === 'audits' && (
+                        <div className="bg-gray-100/80 px-3 border-l-2 border-ecasi-green/40 py-1 space-y-0.5 mt-0.5 rounded-r">
+                          {[
+                            { label: "Environmental Audits", path: "/research/environmental-audits" },
+                            { label: "Energy Audits", path: "/research/energy-audits" },
+                            { label: "Scoping Studies", path: "/research/scoping-studies" }
+                          ].map((sub, sIdx) => (
+                            <Link
+                              key={sIdx}
+                              to={sub.path}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="block py-1 text-xs text-ecasi-body hover:text-ecasi-green"
+                            >
+                              {sub.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
