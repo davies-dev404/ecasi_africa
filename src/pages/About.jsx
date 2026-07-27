@@ -176,7 +176,7 @@ const About = () => {
                 {
                   icon: Globe2,
                   label: "Pan-African Reach",
-                  value: "East, West & Southern Africa",
+                  value: "Global",
                   desc: "Operating across the continent with partners in multiple African nations.",
                   color: "bg-emerald-50/50 border-emerald-100",
                   accent: "text-emerald-700",

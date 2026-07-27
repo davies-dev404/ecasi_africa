@@ -13,38 +13,7 @@ const teamMembers = [
     department: "Leadership",
     email: "jacob@ecasiafrica.org",
     initials: "JO",
-  },
-  {
-    name: "Debra Aquino",
-    role: "Human Resources and Operations",
-    image: "/images/team/HR.png",
-    department: "Human Resource",
-    email: "debra@ecasiafrica.org",
-    initials: "GG",
-  },
-  {
-    name: "Gibson Gisore",
-    role: "Legal & Policy Advisor",
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/06/Fro2fvzXoAMhCbn-1024x698.jpg",
-    department: "Advisory",
-    email: "gibsong@ecasiafrica.org",
-    initials: "GG",
-  },
-  {
-    name: "Sharon Mwalasha",
-    role: "Finance & Business Development",
-    image: "/images/team/mwalasha.png",
-    department: "Finance",
-    email: "sharon@ecasiafrica.org",
-    initials: "SM",
-  },
-  {
-    name: "Gift Rioba",
-    role: "Corporate Marketing and Communications Advisor",
-    image: "/images/team/gift.jpeg",
-    department: "Communications",
-    email: "riobag@ecasiafrica.org",
-    initials: "GR",
+    linkedin: "https://www.linkedin.com/in/jacob-olonde-69494a30",
   },
   {
     name: "Derrick S.Israel",
@@ -53,6 +22,52 @@ const teamMembers = [
     department: "Partnerships",
     email: "derrick@ecasiafrica.org",
     initials: "DI",
+    linkedin: "https://www.linkedin.com/in/derrick-israel",
+  },
+  {
+    name: "Daniel Mbithi",
+    role: "Programmes and Partnership Assistant",
+    image: "/images/team/daniel.png",
+    department: "Partnerships",
+    email: "daniel@ecasiafrica.org",
+    initials: "DM",
+    linkedin: "https://www.linkedin.com/in/daniel-mbithi-442692261/",
+  },
+  {
+    name: "Sharon Mwalasha",
+    role: "Finance & Business Development",
+    image: "/images/team/mwalasha.png",
+    department: "Finance",
+    email: "sharon@ecasiafrica.org",
+    initials: "SM",
+    linkedin: "https://www.linkedin.com/in/sharon-mwalasha-202688122",
+  },
+  {
+    name: "Gibson Gisore",
+    role: "Legal & Policy Advisor",
+    image: "https://ecasiafrica.org/wp-content/uploads/2024/06/Fro2fvzXoAMhCbn-1024x698.jpg",
+    department: "Advisory",
+    email: "gibsong@ecasiafrica.org",
+    initials: "GG",
+    linkedin: "https://www.linkedin.com/in/gibson-gisore-18764247/",
+  },
+  {
+    name: "Gift Rioba",
+    role: "Corporate Marketing and Communications Advisor",
+    image: "/images/team/gift.jpeg",
+    department: "Communications",
+    email: "riobag@ecasiafrica.org",
+    initials: "GR",
+    linkedin: "https://www.linkedin.com/in/rioba-gifti-",
+  },
+  {
+    name: "Debra Aquino",
+    role: "Human Resources and Operations",
+    image: "/images/team/HR.png",
+    department: "Human Resource",
+    email: "debra@ecasiafrica.org",
+    initials: "DA",
+    linkedin: "https://www.linkedin.com/in/debra-aquino-02a4a3133",
   },
 ];
 
@@ -189,9 +204,11 @@ const OurTeam = () => {
                       <span className="truncate max-w-[130px]">{member.email}</span>
                     </a>
                     <div className="flex gap-1.5">
-                      <a href="#" className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors shadow-sm" aria-label="LinkedIn">
-                        <Linkedin className="h-4 w-4" />
-                      </a>
+                      {member.linkedin && (
+                        <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors shadow-sm" aria-label="LinkedIn">
+                          <Linkedin className="h-4 w-4" />
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -78,6 +78,12 @@ const stakeholders = [
 
 const geoLevels = [
   {
+    level: "Local Governments",
+    description: "Activities address local-level data gaps and community needs, strengthening grassroots environmental capacity and implementation.",
+    icon: Users,
+    color: "bg-teal-50 text-teal-600 border-teal-100",
+  },
+  {
     level: "National",
     description: "Activities address sector-specific data gaps and needs that contribute to strengthening of the national level data ecosystem. Aligned to national priorities using multi-stakeholder approaches.",
     icon: Map,
@@ -360,7 +366,7 @@ const TheoryOfChange = () => {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
-            className="grid md:grid-cols-3 gap-8"
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
           >
             {geoLevels.map((geo, index) => (
               <motion.div 

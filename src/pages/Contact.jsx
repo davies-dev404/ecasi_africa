@@ -40,7 +40,7 @@ const Contact = () => {
 
       {/* ── Main Content ── */}
       <main className="max-w-5xl mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-2 gap-12 items-start">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
 
           {/* Left Column: Image Slider / Event Image */}
           <motion.div
@@ -50,9 +50,9 @@ const Contact = () => {
             className="flex justify-center"
           >
             <img
-              src="/images/WhatsApp Image 2026-07-15 at 12.25.40.jpeg"
-              alt="ECASI Africa event - Thank You"
-              className="ecasi-hero-img w-full max-w-[450px] h-auto rounded-lg shadow-md"
+              src="/logo.png"
+              alt="ECASI Africa Logo"
+              className="w-full max-w-[450px] h-auto object-contain mix-blend-multiply"
             />
           </motion.div>
 

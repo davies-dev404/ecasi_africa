@@ -193,7 +193,7 @@ const OurHistory = () => {
                     { k: "Founded", v: "2016" },
                     { k: "Type", v: "Pan-African Policy Think-Tank" },
                     { k: "HQ", v: "Nairobi, Kenya" },
-                    { k: "Coverage", v: "East, West & Southern Africa" },
+                    { k: "Coverage", v: "Global" },
                     { k: "Approach", v: "Research · Policy · Practice" },
                   ].map(({ k, v }) => (
                     <li key={k} className="flex flex-col gap-1 border-b border-white/15 pb-3 last:border-0 last:pb-0">
