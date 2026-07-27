@@ -19,20 +19,12 @@ const teamMembers = [
     name: "Derrick S.Israel",
     role: "Programs and Partnerships Manager",
     image: "/images/team/derrick.png",
-    department: "Partnerships",
+    department: "Programmes",
     email: "derrick@ecasiafrica.org",
     initials: "DI",
     linkedin: "https://www.linkedin.com/in/derrick-israel",
   },
-  {
-    name: "Daniel Mbithi",
-    role: "Programmes and Partnership Assistant",
-    image: "/images/team/daniel.png",
-    department: "Partnerships",
-    email: "daniel@ecasiafrica.org",
-    initials: "DM",
-    linkedin: "https://www.linkedin.com/in/daniel-mbithi-442692261/",
-  },
+
   {
     name: "Sharon Mwalasha",
     role: "Finance & Business Development",
@@ -46,11 +38,12 @@ const teamMembers = [
     name: "Gibson Gisore",
     role: "Legal & Policy Advisor",
     image: "https://ecasiafrica.org/wp-content/uploads/2024/06/Fro2fvzXoAMhCbn-1024x698.jpg",
-    department: "Advisory",
+    department: "Legal",
     email: "gibsong@ecasiafrica.org",
     initials: "GG",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/",
   },
+
   {
     name: "Gift Rioba",
     role: "Corporate Marketing and Communications Advisor",
@@ -64,10 +57,19 @@ const teamMembers = [
     name: "Debra Aquino",
     role: "Human Resources and Operations",
     image: "/images/team/HR.png",
-    department: "Human Resource",
+    department: "HR",
     email: "debra@ecasiafrica.org",
     initials: "DA",
     linkedin: "https://www.linkedin.com/in/debra-aquino-02a4a3133",
+  },
+  {
+    name: "Daniel Mbithi",
+    role: "Programmes and Partnership Assistant",
+    image: "/images/team/daniel.png",
+    department: "Programmes",
+    email: "daniel@ecasiafrica.org",
+    initials: "DM",
+    linkedin: "https://www.linkedin.com/in/daniel-mbithi-442692261/",
   },
 ];
 

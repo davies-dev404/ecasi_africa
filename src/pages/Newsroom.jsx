@@ -17,13 +17,13 @@ const Newsroom = () => {
     if (!email) return;
 
     setSubStatus({ loading: true, message: "", type: "" });
-    
+
     try {
       if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-         await new Promise(resolve => setTimeout(resolve, 1000));
-         setSubStatus({ loading: false, message: "Simulated success! (PHP disabled locally)", type: "success" });
-         setEmail("");
-         return;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setSubStatus({ loading: false, message: "Simulated success! (PHP disabled locally)", type: "success" });
+        setEmail("");
+        return;
       }
 
       const res = await fetch('/api/subscribe.php', {
@@ -31,9 +31,9 @@ const Newsroom = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
-      
+
       const data = await res.json();
-      
+
       if (res.ok) {
         setSubStatus({ loading: false, message: data.message || "Thanks for subscribing!", type: "success" });
         setEmail("");
@@ -64,7 +64,7 @@ const Newsroom = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO 
+      <SEO
         title="Events & Programs"
         description="Upcoming events, programs, and initiatives from ECAS Institute (ECASI Africa)."
       />
@@ -73,9 +73,9 @@ const Newsroom = () => {
       {/* Hero Section */}
       <section className="relative min-h-[50vh] flex items-center justify-center text-center overflow-hidden">
         <div className="absolute inset-0 w-full h-full">
-          <img 
-            src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80" 
-            alt="Nature landscape" 
+          <img
+            src="WhatsApp Image 2026-07-15 at 12.25.41 (3).jpeg"
+            alt="training"
             fetchPriority="high"
             className="w-full h-full object-cover transform scale-105"
           />
@@ -156,23 +156,23 @@ const Newsroom = () => {
             {/* Decorative background elements */}
             <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-64 h-64 bg-black/10 rounded-full blur-2xl pointer-events-none"></div>
-            
+
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary-foreground mb-4">
                 Stay Informed
               </h2>
               <p className="text-primary-foreground/90 mb-10 max-w-2xl mx-auto text-lg leading-relaxed">
-                Subscribe to our newsletter for the latest environmental news, policy updates, and insights 
+                Subscribe to our newsletter for the latest environmental news, policy updates, and insights
                 from ECAS Institute.
               </p>
               <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto bg-white/10 p-2 rounded-2xl backdrop-blur-sm border border-white/20">
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={subStatus.loading}
                   required
-                  placeholder="Enter your email address..." 
+                  placeholder="Enter your email address..."
                   className="flex-1 h-12 px-6 rounded-xl bg-white text-slate-900 border-0 focus:ring-2 focus:ring-primary/50 placeholder:text-slate-400 font-medium outline-none disabled:opacity-50"
                 />
                 <Button type="submit" variant="hero" size="lg" disabled={subStatus.loading} className="rounded-xl h-12 px-8 font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50">

@@ -8,7 +8,7 @@ import { Award, BookOpen, Globe2, Users, MapPin, Briefcase, GraduationCap, Star,
 const councilMembers = [
   {
     name: "Prof. Shem O. Wandiga",
-    role: "Chairperson, Governing Council",
+    role: "Immediate Former Chairperson, Governing Council",
     initials: "SW",
     image: "https://ecasiafrica.org/wp-content/uploads/2024/06/wandiga.jpg",
     tags: ["Chemistry", "Environmental Science", "UNESCO", "University of Nairobi"],
@@ -26,7 +26,7 @@ const councilMembers = [
   },
   {
     name: "Jacob Olonde",
-    role: "CEO & Secretary to the Board",
+    role: "Chief Executive Officer",
     initials: "JO",
     image: "https://ecasiafrica.org/wp-content/uploads/2024/06/IMG_6632.jpg",
     tags: ["Environmentalist", "Climate Advisor", "Author", "Mentor"],

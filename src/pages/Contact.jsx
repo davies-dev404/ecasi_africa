@@ -15,13 +15,21 @@ const Contact = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-28 pb-6 text-white text-center">
-        <div className="max-w-6xl mx-auto px-4">
+      <section 
+        className="pt-32 pb-16 text-white text-center relative overflow-hidden"
+        style={{
+          backgroundImage: "url('https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-[#032e42]/70"></div>
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-2xl md:text-3xl font-bold uppercase tracking-wide"
+            className="text-3xl md:text-5xl font-bold uppercase tracking-wide"
           >
             Contact Us
           </motion.h1>

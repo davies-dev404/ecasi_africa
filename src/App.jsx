@@ -29,6 +29,7 @@ import Partners from "./pages/Partners.jsx";
 import Governance from "./pages/Governance.jsx";
 import TheoryOfChange from "./pages/TheoryOfChange.jsx";
 import Vacancies from "./pages/Vacancies.jsx";
+import OrganisationProfiles from "./pages/OrganisationProfiles.jsx";
 import TrainingEducation from "./pages/TrainingEducation.jsx";
 import ResearchSystematicObservation from "./pages/ResearchSystematicObservation.jsx";
 import EnablingEnvironment from "./pages/EnablingEnvironment.jsx";
@@ -98,6 +99,7 @@ const App = () => (
           <Route path="/governance" element={<Governance />} />
           <Route path="/theory-of-change" element={<TheoryOfChange />} />
           <Route path="/vacancies" element={<Vacancies />} />
+          <Route path="/organisation-profiles" element={<OrganisationProfiles />} />
           <Route path="/training-education-public-awareness" element={<TrainingEducation />} />
           <Route path="/research-systematic-observation" element={<ResearchSystematicObservation />} />
           <Route path="/creation-enabling-environment" element={<EnablingEnvironment />} />

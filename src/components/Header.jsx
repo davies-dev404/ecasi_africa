@@ -49,6 +49,7 @@ const Header = () => {
     { label: "Our Strategic Focus", path: "/our-strategic-focus" },
     { label: "Our Team", path: "/our-team" },
     { label: "Our Policies", path: "/our-policies" },
+    { label: "Organisation Profiles", path: "/organisation-profiles" },
     { label: "Partners", path: "/partners" },
     { label: "Governance", path: "/governance" },
     { label: "Theory of Change", path: "/theory-of-change" },
@@ -397,7 +398,7 @@ const Header = () => {
                   className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${isActive("/newsroom") ? "active" : ""
                     }`}
                 >
-                  RESEARCH &amp; CONSULTANCY
+                  RESEARCH
                   <ChevronDown size={14} className="transition-transform duration-200" />
                 </button>
                 {activeDropdown === 'research' && (
@@ -410,14 +411,14 @@ const Header = () => {
                         Overview
                       </Link>
 
-                      {/* Consultancy Subdropdown */}
+                      {/* Research Areas Subdropdown */}
                       <div
                         className="relative"
-                        onMouseEnter={() => setActiveSubDropdown('consultancy')}
+                        onMouseEnter={() => setActiveSubDropdown('research-areas')}
                         onMouseLeave={() => setActiveSubDropdown(null)}
                       >
                         <div className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section cursor-pointer transition-colors font-medium">
-                          <span>Consultancy</span>
+                          <span>Research Areas</span>
                           <ChevronRight size={14} />
                         </div>
                         {activeSubDropdown === 'consultancy' && (
@@ -493,6 +494,99 @@ const Header = () => {
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* CONSULTANCY Dropdown */}
+              <div
+                className="relative flex items-center h-full"
+                onMouseEnter={() => setActiveDropdown('consultancy')}
+                onMouseLeave={() => { setActiveDropdown(null); setActiveSubDropdown(null); }}
+              >
+                <button
+                  className={`ecasi-nav-link flex items-center gap-1 h-full text-sm font-semibold tracking-wide ${isActive("/consultancy") ? "active" : ""
+                    }`}
+                >
+                  CONSULTANCY
+                  <ChevronDown size={14} className="transition-transform duration-200" />
+                </button>
+                {activeDropdown === 'consultancy' && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 z-50 animate-fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                      <Link
+                        to="/consultancy"
+                        className="block px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium"
+                      >
+                        Overview
+                      </Link>
+                      
+                      {[
+                        {
+                          label: "Studies and Assessments",
+                          path: "/research/assessments",
+                          id: "studies-and-assessments",
+                          children: [
+                            { label: "Baseline Study", path: "/research/baseline-study" },
+                            { label: "Assessments", path: "/research/assessments" },
+                            { label: "Policy Reviews and Assessments", path: "/research/policy-reviews-and-assessments" },
+                            { label: "Policy Analysis", path: "/research/policy-analysis" }
+                          ]
+                        },
+                        {
+                          label: "Strategic Social and Environmental Assessments (SSEA)",
+                          path: "/research/strategic-environmental-assessments-sea-2",
+                          id: "ssea",
+                          children: [
+                            { label: "Environmental and Social Impact Assessment (SEA)", path: "/research/environmental-and-social-impact-assessment" },
+                            { label: "Strategic Environmental Assessments (SEA)", path: "/research/strategic-environmental-assessments-sea-2" },
+                            { label: "Environmental and Social Management Plans (ESMP)", path: "/research/environmental-and-social-management-plans-esmp" }
+                          ]
+                        },
+                        { label: "Rapporteur and Reporting Services", path: "/research/rapporteur-and-reporting-services" },
+                        {
+                          label: "Audits",
+                          path: "/research/environmental-audits",
+                          id: "audits",
+                          children: [
+                            { label: "Environmental Audits", path: "/research/environmental-audits" },
+                            { label: "Energy Audits", path: "/research/energy-audits" },
+                            { label: "Scoping Studies", path: "/research/scoping-studies" }
+                          ]
+                        }
+                      ].map((sub, sIdx) => (
+                        <div
+                          key={sIdx}
+                          className="relative"
+                          onMouseEnter={() => sub.children && setActiveThirdLevelDropdown(sub.id)}
+                          onMouseLeave={() => sub.children && setActiveThirdLevelDropdown(null)}
+                        >
+                          <Link
+                            to={sub.path}
+                            className="flex items-center justify-between px-6 py-2.5 text-sm text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors font-medium border-b border-gray-50 last:border-0"
+                          >
+                            <span>{sub.label}</span>
+                            {sub.children && <ChevronRight size={14} />}
+                          </Link>
+
+                          {sub.children && activeThirdLevelDropdown === sub.id && (
+                            <div className="absolute left-full top-0 pl-1 w-72 z-50 animate-fade-in">
+                              <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
+                                {sub.children.map((child, cIdx) => (
+                                  <Link
+                                            key={cIdx}
+                                            to={child.path}
+                                            className="block px-6 py-2.5 text-xs text-ecasi-navy hover:text-ecasi-green hover:bg-ecasi-section transition-colors border-b border-gray-50 last:border-0"
+                                          >
+                                            {child.label}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
 
                       {/* Research Areas Subdropdown */}
                       <div

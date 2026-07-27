@@ -242,9 +242,7 @@ const About = () => {
               </div>
               <h2 className="text-3xl font-serif font-bold text-slate-800 mb-6 relative z-10">Our Mission</h2>
               <p className="text-slate-600 leading-relaxed text-lg relative z-10">
-                To advance sustainable development in Africa by delivering high-quality research, evidence-based
-                policy advisory, technical assistance, and capacity building that empowers governments, institutions,
-                the private sector, and civil society to build resilient, inclusive, and green economies.
+                To scale sustainable development in Africa through robust data generation, extensive knowledge sharing, and targeted capacity development, empowering governments, institutions, the private sector, and civil society to build resilient, inclusive, and green economies.
               </p>
             </motion.div>
             

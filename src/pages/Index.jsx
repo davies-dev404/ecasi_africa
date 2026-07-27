@@ -13,60 +13,28 @@ import yasukoImg from '@/assets/yasuko.png';
 const heroSlides = [
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg",
-    title: "Air Quality Training &\nClimate Resilience",
+    title: "Programmes",
     subtitle: "Empowering stakeholders and communities with technical knowledge to drive climate resilient actions and policies across Africa.",
-    cta: { label: "Our Programmes", to: "/training-education-public-awareness" },
-    cta2: { label: "Contact Us", to: "/contact" },
-  },
-  {
-    bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/DSC_0990-1.jpg",
-    title: "Advancing Sustainability\nAcross Africa",
-    subtitle: "We serve as an independent Pan-African think tank supporting green growth and evidence-based environment policies.",
-    cta: { label: "About ECAS", to: "/about" },
-    cta2: { label: "Our Team", to: "/our-team" },
+    cta: { label: "View Programmes", to: "/training-education-public-awareness" },
   },
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Netfund-training.jpeg",
-    title: "Capacity Strengthening &\nMentorship Programs",
-    subtitle: "Building the green skills required to navigate carbon markets, sustainable finance, and environment impact assessments.",
-    cta: { label: "Training Courses", to: "/institute-overview" },
-    cta2: { label: "Register Now", to: "/contact" },
-  },
-  {
-    bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Lidya-caf-with-Prof-Shem.jpg",
-    title: "Evidence-Based Research\n& Specialized Advisory",
-    subtitle: "Providing high-level consultancy for baseline studies, strategic social assessments, and policy reviews.",
-    cta: { label: "Consultancy Services", to: "/research/consulting" },
-    cta2: { label: "Learn More", to: "/about" },
+    title: "Training",
+    subtitle: "Training Workshops",
+    cta: { label: "View Courses", to: "/institute-overview" },
   },
   {
     bg: "/images/research/1710846398420-1-1-1024x683.jpg",
-    title: "Field Research &\nSystematic Observation",
+    title: "Research",
     subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers across the continent.",
-    cta: { label: "Research Areas", to: "/research-systematic-observation" },
-    cta2: { label: "Our Work", to: "/our-strategic-focus" },
+    cta: { label: "Research Areas", to: "/research/overview" },
   },
   {
-    bg: "/images/research/IMG_20241112_163109285-1024x683.jpg",
-    title: "Environmental Impact\nAssessments",
-    subtitle: "Delivering strategic environmental and social impact assessments that guide sustainable infrastructure and investment decisions.",
-    cta: { label: "Consultancy", to: "/research/consulting" },
-    cta2: { label: "Contact Us", to: "/contact" },
-  },
-  {
-    bg: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
-    title: "Policy Advocacy &\nInternational Engagement",
-    subtitle: "Representing Africa's voice in global environmental forums and driving impactful multilateral policy outcomes.",
-    cta: { label: "Our Policies", to: "/our-policies" },
-    cta2: { label: "Learn More", to: "/about" },
-  },
-  {
-    bg: "/images/courses/IMGM1984-1024x683.jpg",
-    title: "Executive Training\nWorkshops",
-    subtitle: "Professional courses in climate change, green economy, and sustainable development delivered by leading experts.",
-    cta: { label: "View Courses", to: "/institute-overview" },
-    cta2: { label: "Register", to: "/contact" },
-  },
+    bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Lidya-caf-with-Prof-Shem.jpg",
+    title: "Consultancy",
+    subtitle: "Providing high-level consultancy for baseline studies, strategic social assessments, and policy reviews.",
+    cta: { label: "Impact Assessment", to: "/consultancy" },
+  }
 ];
 
 
@@ -95,24 +63,25 @@ const HeroSlider = () => {
     <div className="ecasi-hero" style={{ height: "clamp(380px, 55vw, 600px)" }}>
       {/* Background Images - Render all to preload */}
       {heroSlides.map((s, idx) => (
-        <img
-          key={idx}
-          src={s.bg}
-          alt={`Hero Background ${idx + 1}`}
-          fetchPriority="high"
-          loading="eager"
-          className="ecasi-hero-img absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
-          style={{ opacity: idx === current && !transitioning ? 1 : 0 }}
-        />
+        <Link to={s.cta.to} key={idx} className="absolute inset-0 block w-full h-full z-0 cursor-pointer">
+          <img
+            src={s.bg}
+            alt={`Hero Background ${idx + 1}`}
+            fetchPriority="high"
+            loading="eager"
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+            style={{ opacity: idx === current && !transitioning ? 1 : 0 }}
+          />
+        </Link>
       ))}
-      <div className="ecasi-hero-overlay" />
+      <div className="ecasi-hero-overlay pointer-events-none" />
 
       {/* Content */}
       <div
-        className="ecasi-hero-content absolute inset-0 flex items-center"
+        className="ecasi-hero-content absolute inset-0 flex items-center pointer-events-none"
         style={{ opacity: transitioning ? 0 : 1, transition: "opacity 0.4s" }}
       >
-        <div className="max-w-[1476px] w-full mx-auto px-4 lg:px-16">
+        <div className="max-w-[1476px] w-full mx-auto px-4 lg:px-16 pointer-events-auto">
           <div className="max-w-2xl">
             <p className="text-white/80 text-sm uppercase tracking-widest mb-3 font-medium" style={{ fontFamily: "'Roboto', sans-serif" }}>
               ECAS INSTITUTE — BRIDGING THE NEXUS BETWEEN RESEARCH, POLICY AND PRACTICE
@@ -129,13 +98,6 @@ const HeroSlider = () => {
             <div className="flex items-center gap-4 flex-wrap">
               <Link to={slide.cta.to} className="ecasi-btn-primary">
                 {slide.cta.label}
-              </Link>
-              <Link
-                to={slide.cta2.to}
-                className="text-white border-2 border-white/70 hover:border-white px-7 py-2.5 rounded text-sm font-semibold uppercase tracking-wider transition-all hover:bg-white/10"
-                style={{ fontFamily: "'Roboto', sans-serif" }}
-              >
-                {slide.cta2.label}
               </Link>
             </div>
           </div>
@@ -170,31 +132,45 @@ const stats = [
 const programmes = [
   {
     variant: "green",
-    title: "TRAINING, MENTORSHIP & SKILLING",
-    desc: "We offer technical, knowledge, and green skills-based courses covering climate change, policy, finance, sustainability, governance, technology and research, projects, and human resource development and mentorship among other specialized areas.",
-    link: "/training-education-public-awareness",
+    title: "TRAINING",
+    desc: "We offer technical, knowledge, and green skills-based courses covering climate change, policy, finance, sustainability, governance, technology and research.",
+    link: "/institute-overview",
     icon: <GraduationCap size={28} />,
   },
   {
     variant: "teal",
-    title: "CONSULTANCY & BUSINESS ADVISORY",
-    desc: "ECAS Institute provides integrated consultancy and advisory services supporting governments, development partners, private sector actors, and civil society in designing and implementing sustainable, evidence-based solutions. Our work spans strategic planning, institutional development, policy advisory, environmental assessments, and sustainability-focused technical support.",
-    link: "/research/consulting",
-    icon: <Briefcase size={28} className="text-white" />,
+    title: "RESEARCH",
+    desc: "As a think tank, we serve as a centre for research and analysis, conducting in-depth research to guide decision-makers and stakeholders.",
+    link: "/research/overview",
+    icon: <Brain size={28} className="text-white" />,
   },
   {
     variant: "green",
-    title: "RESEARCH & INNOVATION",
-    desc: "As a think tank, we serve as a centre for research and analysis, informing and influencing policy decisions and public discourse on complex societal issues. We conduct in-depth research, analyse data, and develop evidence-based policy recommendations to guide decision-makers and stakeholders.",
-    link: "/research/overview",
-    icon: <Brain size={28} />,
+    title: "CONSULTANCY",
+    desc: "We provide integrated consultancy and advisory services supporting governments, development partners, and private sector actors.",
+    link: "/consultancy",
+    icon: <Briefcase size={28} />,
   },
   {
     variant: "teal",
-    title: "POLICY & TECHNICAL ASSISTANCE",
-    desc: "We offer support in policy development and review, environmental and climate assessments, ESG advisory, and technical implementation of sustainability programs. Our multidisciplinary team also contributes to capacity building, stakeholder consultations, and knowledge exchange across key sectors.",
+    title: "POLICY ADVISORY",
+    desc: "We offer support in policy development and review, providing evidence-based recommendations to inform and influence policy decisions.",
     link: "/our-policies",
     icon: <Landmark size={28} className="text-white" />,
+  },
+  {
+    variant: "green",
+    title: "TECHNICAL ASSISTANCE",
+    desc: "Our multidisciplinary team contributes to capacity building, stakeholder consultations, and technical implementation of sustainability programs.",
+    link: "/our-strategic-focus",
+    icon: <Briefcase size={28} />,
+  },
+  {
+    variant: "teal",
+    title: "AIR QUALITY",
+    desc: "Empowering stakeholders and communities with technical knowledge to drive clean air initiatives and sustainable environments.",
+    link: "/specialties/clean-air-programme",
+    icon: <Brain size={28} className="text-white" />,
   },
 ];
 
@@ -300,7 +276,7 @@ const Index = () => {
                   className="ecasi-drop-cap text-ecasi-body text-base md:text-lg leading-relaxed mb-5"
                   style={{ fontFamily: "'Roboto', sans-serif" }}
                 >
-                  Environmental Capacities and Sustainability (ECAS) Institute is an independent Pan-African think tank advancing sustainable development through research, policy advisory, technical assistance, consultancy, and capacity strengthening. ECAS offers high-level specialized management training, skills development programmes, consultancy, and research services across climate change, environmental policy, green economy, sustainable transport, energy transitions, agriculture, health, and sustainable finance to support resilient and inclusive development.
+                  Environmental Capacities and Sustainability (ECAS) Institute is a Pan-African think tank advancing capacity development through training, research, policy advisory, technical assistance and consultancy. We operate across East Africa, West Africa, and have a Global Reach, supporting green growth and evidence-based environment policies.
                 </p>
                 <p className="text-ecasi-body text-base leading-relaxed" style={{ fontFamily: "'Roboto', sans-serif" }}>
                   Over the years, ECAS has trained thousands of professionals and communities, mentored young leaders, conducted research assignments, and delivered advisory and consultancy services that drive evidence-based solutions, institutional growth, and sustainable impact across Africa and beyond.
@@ -429,6 +405,27 @@ const Index = () => {
           </div>
         </section>
 
+        {/* ── Partners Section ── */}
+        <section className="py-16 md:py-20 bg-gray-50 border-t border-gray-200">
+          <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
+            <ScrollAnimation animation="slide-up">
+              <p className="ecasi-section-title text-2xl md:text-3xl mb-2 text-center">OUR PARTNERS</p>
+              <div className="flex justify-center mb-8">
+                <div className="ecasi-section-divider" />
+              </div>
+              <p className="text-center text-ecasi-body text-base max-w-2xl mx-auto mb-10">
+                We collaborate with leading institutions to drive impact across Africa.
+              </p>
+            </ScrollAnimation>
+            <div className="flex flex-wrap justify-center items-center gap-10 md:gap-20">
+              <div className="text-xl font-bold text-gray-400 grayscale hover:grayscale-0 transition-all cursor-pointer">ICCA</div>
+              <div className="text-xl font-bold text-gray-400 grayscale hover:grayscale-0 transition-all cursor-pointer">CAF</div>
+              <div className="text-xl font-bold text-gray-400 grayscale hover:grayscale-0 transition-all cursor-pointer">Nairobi City County</div>
+              <div className="text-xl font-bold text-gray-400 grayscale hover:grayscale-0 transition-all cursor-pointer">Grid Cities</div>
+            </div>
+          </div>
+        </section>
+
         {/* ── LinkedIn Feed ── */}
         <section className="py-16 md:py-20 bg-gray-50 border-t border-gray-200">
           <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
@@ -448,7 +445,7 @@ const Index = () => {
                 className="text-center text-2xl md:text-3xl font-bold mb-2 uppercase tracking-wide text-[#032e42]"
                 style={{ fontFamily: "'Fira Sans', sans-serif" }}
               >
-                WHAT OUR PARTICIPANTS SAY
+                WHAT OUR PARTNERS SAY
               </p>
               <div className="flex justify-center mb-12">
                 <div className="ecasi-section-divider" style={{ background: "linear-gradient(90deg,#20b2aa,#008000)" }} />
