@@ -33,15 +33,15 @@ const heroSlides = [
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg",
     title: "Air Quality Training &\nClimate Resilience",
-    subtitle: "Empowering stakeholders and communities with technical knowledge to drive climate resilient actions and policies across Africa.",
+    subtitle: "Empowering stakeholders and communities with technical knowledge to drive climate resilient actions and policies globally.",
     cta: { label: "Our Programmes", to: "/training-education-public-awareness" },
     cta2: { label: "Contact Us", to: "/contact" },
     position: "object-center",
   },
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/DSC_0990-1.jpg",
-    title: "Advancing Sustainability\nAcross Africa",
-    subtitle: "We serve as an independent Pan-African think tank supporting green growth and evidence-based environment policies.",
+    title: "Advancing Sustainability\nGlobally",
+    subtitle: "We serve as an independent global think tank supporting green growth and evidence-based environment policies.",
     cta: { label: "About ECAS", to: "/about" },
     cta2: { label: "Our Team", to: "/our-team" },
     position: "object-top",
@@ -57,7 +57,7 @@ const heroSlides = [
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Lidya-caf-with-Prof-Shem.jpg",
     title: "Evidence-Based Research\n& Specialized Advisory",
-    subtitle: "Providing high-level consultancy for baseline studies, strategic social assessments, and policy reviews.",
+    subtitle: "",
     cta: { label: "Consultancy Services", to: "/research/consulting" },
     cta2: { label: "Learn More", to: "/about" },
     position: "object-top",
@@ -65,7 +65,7 @@ const heroSlides = [
   {
     bg: "/images/research/1710846398420-1-1-1024x683.jpg",
     title: "Field Research &\nSystematic Observation",
-    subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers across the continent.",
+    subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers globally.",
     cta: { label: "Research Areas", to: "/research-systematic-observation" },
     cta2: { label: "Our Work", to: "/our-strategic-focus" },
     position: "object-center",
@@ -81,7 +81,7 @@ const heroSlides = [
   {
     bg: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
     title: "Policy Advocacy &\nInternational Engagement",
-    subtitle: "Representing Africa's voice in global environmental forums and driving impactful multilateral policy outcomes.",
+    subtitle: "Driving impactful multilateral policy outcomes in global environmental forums.",
     cta: { label: "Our Policies", to: "/our-policies" },
     cta2: { label: "Learn More", to: "/about" },
     position: "object-top",
@@ -142,18 +142,15 @@ const HeroSlider = () => {
       >
         <div className="max-w-[1476px] w-full mx-auto px-4 lg:px-16 pointer-events-auto">
           <div className="max-w-2xl">
-            <p className="text-white/80 text-sm uppercase tracking-widest mb-3 font-medium" style={{ fontFamily: "'Roboto', sans-serif" }}>
+            <p className="text-white/60 text-xs uppercase tracking-wider mb-2.5 font-medium" style={{ fontFamily: "'Roboto', sans-serif" }}>
               ECAS INSTITUTE — BRIDGING THE NEXUS BETWEEN RESEARCH, POLICY AND PRACTICE
             </p>
             <h1
-              className="ecasi-slide-heading mb-4 whitespace-pre-line"
+              className="ecasi-slide-heading mb-8 whitespace-pre-line"
               style={{ fontFamily: "'Fira Sans', sans-serif" }}
             >
               {slide.title}
             </h1>
-            <p className="text-white/85 text-base md:text-lg mb-8 leading-relaxed max-w-xl" style={{ fontFamily: "'Roboto', sans-serif" }}>
-              {slide.subtitle}
-            </p>
             <div className="flex items-center gap-4 flex-wrap">
               {slide.cta && (
                 <Link to={slide.cta.to} className="ecasi-btn-primary">

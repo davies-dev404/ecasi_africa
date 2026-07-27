@@ -65,23 +65,6 @@ const Transport = () => {
       {/* ── Main Content Area ── */}
       <main className="max-w-4xl mx-auto px-6 py-12 font-sans text-[#676767] leading-relaxed">
         
-        {/* Centered Prestige E-Bus Image */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-          className="mb-10 flex justify-center"
-        >
-          <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/image-8.png"
-            alt="The Future of Public Transport in Kenya - Electric Bus"
-            className="w-full max-w-[700px] h-auto border border-gray-200 shadow-sm rounded-lg"
-            onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
-            }}
-          />
-        </motion.div>
-
         {/* Introductory Highlight Paragraph */}
         <motion.p
           initial={{ opacity: 0, y: 15 }}

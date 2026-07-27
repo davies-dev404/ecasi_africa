@@ -137,7 +137,7 @@ const Governance = () => {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
-            className="grid md:grid-cols-3 gap-8 mt-24"
+            className="grid md:grid-cols-2 max-w-4xl mx-auto gap-8 mt-24"
           >
             {/* Pillar 1: Governing Council */}
             <motion.div variants={itemVariants} className="bg-white border border-slate-100 rounded-[2rem] p-8 h-full flex flex-col justify-between hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group relative overflow-hidden">
@@ -156,27 +156,6 @@ const Governance = () => {
                 className="inline-flex items-center justify-between w-full p-4 bg-slate-50 rounded-xl text-sm font-bold text-primary hover:bg-primary hover:text-white transition-colors mt-auto relative z-10 group/btn"
               >
                 <span>Meet Governing Council</span>
-                <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-              </Link>
-            </motion.div>
-
-            {/* Pillar 2: Secretariat & Teams */}
-            <motion.div variants={itemVariants} className="bg-white border border-slate-100 rounded-[2rem] p-8 h-full flex flex-col justify-between hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full opacity-50 pointer-events-none transition-transform duration-500 group-hover:scale-110"></div>
-              <div className="relative z-10">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                  <Briefcase className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-serif font-bold text-slate-800 mb-4 group-hover:text-primary transition-colors">Secretariat Team</h3>
-                <p className="text-slate-600 text-sm leading-relaxed mb-8">
-                  Led by the CEO, the Secretariat executes daily programmatic actions, research partnerships, training sessions, and community interventions.
-                </p>
-              </div>
-              <Link
-                to="/our-team"
-                className="inline-flex items-center justify-between w-full p-4 bg-slate-50 rounded-xl text-sm font-bold text-primary hover:bg-primary hover:text-white transition-colors mt-auto relative z-10 group/btn"
-              >
-                <span>Meet Secretariat Team</span>
                 <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
               </Link>
             </motion.div>

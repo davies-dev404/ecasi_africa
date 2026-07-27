@@ -270,7 +270,7 @@
   .ecasi-slide-heading {
     font-family: "Fira Sans", sans-serif;
     font-weight: 700;
-    font-size: clamp(28px, 4vw, 52px);
+    font-size: clamp(20px, 3.2vw, 36px);
     line-height: 1.2;
     color: #ffffff;
     text-shadow: 0 2px 8px rgba(0,0,0,0.3);
