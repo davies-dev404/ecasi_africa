@@ -49,7 +49,7 @@ const teamMembers = [
     department: "Advisory",
     email: "gibsong@ecasiafrica.org",
     initials: "GG",
-    linkedin: "https://www.linkedin.com/in/gibson-gisore-18764247/",
+    linkedin: "",
   },
   {
     name: "Gift Rioba",
