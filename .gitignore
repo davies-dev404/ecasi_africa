@@ -25,3 +25,7 @@ dist-ssr
 
 # Environment Variables
 .env
+# Environment files
+.env
+.env.*
+!.env.example
