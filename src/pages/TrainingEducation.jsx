@@ -149,7 +149,7 @@ const TrainingEducation = () => {
       <Header />
 
       {/* Green Banner Section */}
-      <section className="bg-ecasi-green pt-28 pb-6 text-center text-white relative overflow-hidden">
+      <section className="bg-ecasi-green pt-24 pb-6 text-center text-white relative overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-4 relative z-10">
           <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-wide">
             Training, Education, and Public Awareness

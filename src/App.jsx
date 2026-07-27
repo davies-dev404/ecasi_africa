@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index.jsx";
 import About from "./pages/About.jsx";
 import GoverningCouncil from "./pages/GoverningCouncil.jsx";
@@ -113,6 +113,7 @@ const App = () => (
           <Route path="/executive-training/:slug" element={<ExecutiveTraining />} />
           <Route path="/policy-analysis" element={<PolicyAnalysis />} />
           <Route path="/research/:slug" element={<ResearchConsultancy />} />
+          <Route path="/consultancy" element={<Navigate to="/research/consulting" replace />} />
           <Route path="/search" element={<Search />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

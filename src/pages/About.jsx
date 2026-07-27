@@ -104,7 +104,7 @@ const About = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="bg-primary pt-28 pb-12 text-center relative overflow-hidden">
+      <section className="bg-primary pt-24 pb-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
         <div className="healthcare-container relative z-10">
           <motion.div 
@@ -123,7 +123,7 @@ const About = () => {
       </section>
 
       {/* Welcome to ECAS Institute */}
-      <section className="py-16 md:py-24">
+      <section className="py-12 md:py-16">
         <div className="healthcare-container max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left: Text content */}
@@ -226,7 +226,7 @@ const About = () => {
       </section>
 
       {/* Mission & Vision */}
-      <section className="py-20 bg-white border-y border-slate-100">
+      <section className="py-12 md:py-16 bg-white border-y border-slate-100">
         <div className="healthcare-container max-w-5xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 md:gap-12">
             <motion.div 
@@ -269,7 +269,7 @@ const About = () => {
       </section>
 
       {/* Core Values */}
-      <section className="py-20">
+      <section className="py-12 md:py-16">
         <div className="healthcare-container max-w-6xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -316,7 +316,7 @@ const About = () => {
       </section>
 
       {/* Specialized Programmes */}
-      <section className="py-20 bg-slate-50 border-t border-slate-100">
+      <section className="py-12 md:py-16 bg-slate-50 border-t border-slate-100">
         <div className="healthcare-container max-w-6xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -370,7 +370,7 @@ const About = () => {
       </section>
 
       {/* Strategic Focus Areas - Compact Grid */}
-      <section className="py-20 bg-white">
+      <section className="py-12 md:py-16 bg-white">
         <div className="healthcare-container max-w-5xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -407,7 +407,7 @@ const About = () => {
       </section>
 
       {/* Our Story / History Timeline */}
-      <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
+      <section className="py-16 bg-slate-900 text-white relative overflow-hidden">
         {/* Background Decorative Pattern */}
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'60\\' height=\\'60\\' viewBox=\\'0 0 60 60\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'none\\' fill-rule=\\'evenodd\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\'%3E%3Cpath d=\\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }}></div>
         
@@ -454,7 +454,7 @@ const About = () => {
       </section>
 
       {/* CTA */}
-      <section className="healthcare-hero-gradient py-20 relative overflow-hidden">
+      <section className="healthcare-hero-gradient py-12 md:py-16 relative overflow-hidden">
         <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
         <div className="healthcare-container text-center relative z-10">
           <motion.div 

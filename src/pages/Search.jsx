@@ -33,7 +33,7 @@ const Search = () => {
       <SEO title={`Search Results for "${query}" | ECASI Africa`} description="Search results" />
       <Header />
 
-      <section className="bg-ecasi-navy pt-24 pb-16 relative overflow-hidden">
+      <section className="bg-ecasi-navy pt-20 pb-12 relative overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-4 relative z-10">
           <ScrollAnimation animation="fade-up">
             <div className="flex items-center gap-4 mb-4">
@@ -51,7 +51,7 @@ const Search = () => {
         </div>
       </section>
 
-      <section className="py-20 flex-grow">
+      <section className="py-12 md:py-16 flex-grow">
         <div className="max-w-[1200px] mx-auto px-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             {results.length > 0 ? (
@@ -71,7 +71,7 @@ const Search = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20">
+              <div className="text-center py-12 md:py-16">
                 <SearchIcon size={48} className="mx-auto text-gray-300 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-500 mb-2">No results found</h3>
                 <p className="text-gray-400">We couldn't find anything matching "{query}". Please try a different search term.</p>

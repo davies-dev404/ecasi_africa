@@ -219,7 +219,7 @@ const PolicyAnalysis = () => {
       </section>
 
       {/* ── Introduction ── */}
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-12 md:py-16 bg-white">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-16">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center">
             <motion.div
@@ -287,7 +287,7 @@ const PolicyAnalysis = () => {
       </section>
 
       {/* ── What It Involves ── */}
-      <section className="py-16 md:py-24 bg-slate-50">
+      <section className="py-12 md:py-16 bg-slate-50">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-16">
           <motion.div
             initial="hidden"
@@ -360,7 +360,7 @@ const PolicyAnalysis = () => {
       </section>
 
       {/* ── Key Aspects ── */}
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-12 md:py-16 bg-white">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-16">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
             {/* Left heading */}
@@ -425,7 +425,7 @@ const PolicyAnalysis = () => {
       </section>
 
       {/* ── Benefits ── */}
-      <section className="py-16 md:py-24 relative overflow-hidden">
+      <section className="py-12 md:py-16 relative overflow-hidden">
         {/* Dark gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#0f2035] to-[#0a1628]" />
         <div className="absolute inset-0 opacity-5" style={{
@@ -499,7 +499,7 @@ const PolicyAnalysis = () => {
       </section>
 
       {/* ── Visual Feature Image ── */}
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-12 md:py-16 bg-white">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-16">
           <motion.div
             initial="hidden"
@@ -535,7 +535,7 @@ const PolicyAnalysis = () => {
       </section>
 
       {/* ── Related Services ── */}
-      <section className="py-16 md:py-20 bg-slate-50">
+      <section className="py-16 md:py-12 md:py-16 bg-slate-50">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-16">
           <motion.div
             initial="hidden"

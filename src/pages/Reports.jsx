@@ -43,7 +43,7 @@ const Reports = () => {
       />
       <Header />
 
-      <section className="bg-ecasi-navy pt-24 pb-16 relative overflow-hidden">
+      <section className="bg-ecasi-navy pt-20 pb-12 relative overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-4 relative z-10">
           <Link to="/resources" className="inline-flex items-center text-white/70 hover:text-white mb-6 transition-colors">
             <ArrowLeft size={16} className="mr-2" />
@@ -65,7 +65,7 @@ const Reports = () => {
         </div>
       </section>
 
-      <section className="py-20 flex-grow">
+      <section className="py-12 md:py-16 flex-grow">
         <div className="max-w-[1200px] mx-auto px-4">
           
           {/* Filter */}
@@ -152,7 +152,7 @@ const Reports = () => {
           </div>
 
           {filtered.length === 0 && (
-            <div className="text-center py-20 text-gray-400">
+            <div className="text-center py-12 md:py-16 text-gray-400">
               <FileText size={40} className="mx-auto mb-4 opacity-30" />
               <p className="text-lg">These reports are not currently available. Please check back later.</p>
             </div>

@@ -13,7 +13,7 @@ const ResearchSystematicObservation = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-28 pb-6 text-white text-center">
+      <section className="bg-ecasi-green pt-24 pb-6 text-white text-center">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">
             Research and Systematic Observation

@@ -34,7 +34,7 @@ const Governance = () => {
       <Header />
 
       {/* Page Banner */}
-      <section className="bg-primary pt-28 pb-12 text-center relative overflow-hidden">
+      <section className="bg-primary pt-24 pb-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
         <div className="healthcare-container relative z-10">
           <motion.div 
@@ -53,7 +53,7 @@ const Governance = () => {
       </section>
 
       {/* Overview Section */}
-      <section className="py-16 md:py-24">
+      <section className="py-12 md:py-16">
         <div className="healthcare-container max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6">

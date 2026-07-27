@@ -76,6 +76,7 @@ const relatedPages = {
     { label: 'Rapporteur Services', slug: 'rapporteur-and-reporting-services' },
   ],
   research: [
+    { label: 'Overview', slug: 'overview' },
     { label: 'Climate Finance', slug: 'climate-finance' },
     { label: 'Climate Adaptation', slug: 'climate-adaptation' },
     { label: 'Climate Change Mitigation', slug: 'climate-change-mitigation' },
@@ -91,7 +92,7 @@ const relatedPages = {
 };
 
 const consultancySlugs = [
-  'overview', 'consulting', 'baseline-study', 'assessments',
+  'consulting', 'baseline-study', 'assessments',
   'policy-reviews-and-assessments', 'policy-analysis',
   'environmental-and-social-impact-assessment',
   'strategic-environmental-assessments-sea-2',
@@ -127,7 +128,7 @@ const ResearchConsultancy = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-28 pb-8 text-white text-center relative overflow-hidden">
+      <section className="bg-ecasi-green pt-24 pb-8 text-white text-center relative overflow-hidden">
         {/* Subtle decorative pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 left-1/4 w-32 h-32 border border-white rounded-full" />

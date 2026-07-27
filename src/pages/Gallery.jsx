@@ -171,7 +171,7 @@ const Gallery = () => {
       />
       <Header />
       
-      <section className="bg-ecasi-navy pt-24 pb-16 relative overflow-hidden">
+      <section className="bg-ecasi-navy pt-20 pb-12 relative overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-4 relative z-10 text-center">
           <ScrollAnimation animation="fade-up">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Our Gallery</h1>
@@ -182,7 +182,7 @@ const Gallery = () => {
         </div>
       </section>
 
-      <section className="py-20 flex-grow">
+      <section className="py-12 md:py-16 flex-grow">
         <div className="max-w-[1200px] mx-auto px-4">
           <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
             <div className="flex justify-center mb-12">
@@ -214,7 +214,7 @@ const Gallery = () => {
           </Tabs>
 
           {filteredImages.length === 0 && (
-            <div className="text-center py-20 text-gray-400">
+            <div className="text-center py-12 md:py-16 text-gray-400">
               <p className="text-lg">No images found in this category.</p>
             </div>
           )}

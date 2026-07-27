@@ -98,7 +98,7 @@ const Newsroom = () => {
       </section>
 
       {/* Events Grid */}
-      <section className="py-16 md:py-24 bg-white dark:bg-slate-900">
+      <section className="py-12 md:py-16 bg-white dark:bg-slate-900">
         <div className="healthcare-container">
           <div className="flex items-center justify-between mb-12">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">Events & Programs</h2>
@@ -140,7 +140,7 @@ const Newsroom = () => {
       </section>
 
       {/* LinkedIn Feed Section */}
-      <section className="py-16 md:py-24 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+      <section className="py-12 md:py-16 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
         <div className="healthcare-container">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">Social Feed</h2>
@@ -150,7 +150,7 @@ const Newsroom = () => {
       </section>
 
       {/* Newsletter CTA */}
-      <section className="py-16 md:py-24 bg-slate-50 dark:bg-slate-950/50">
+      <section className="py-12 md:py-16 bg-slate-50 dark:bg-slate-950/50">
         <div className="healthcare-container">
           <div className="relative bg-primary rounded-[2.5rem] p-10 md:p-16 text-center overflow-hidden shadow-2xl">
             {/* Decorative background elements */}

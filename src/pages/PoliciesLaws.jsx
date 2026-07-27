@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import RequestDocumentModal from '@/components/RequestDocumentModal';
 import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
-import { Scale, Download, Eye, Calendar, ArrowLeft, Tag, Search } from 'lucide-react';
+import { Scale, Download, Eye, Calendar, ArrowLeft, Tag, Search, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const policies = [
@@ -16,7 +17,8 @@ const policies = [
     pages: "Internal",
     tags: ["Governance", "Constitution"],
     summary: "The founding constitutional document outlining the establishment, mandates, governance structures, and legal framework of ECAS Institute.",
-    url: "/pdfs/CONSTITUTION-OF-ENVIRONMENTAL-CAPACITY-AND-SUSTAINABILITY-INSTITUTE.pdf",
+    url: "#",
+    isSensitive: true,
   },
   {
     id: 8,
@@ -28,6 +30,7 @@ const policies = [
     tags: ["Ethics", "Compliance"],
     summary: "Our zero-tolerance framework against bribery and corrupt practices, ensuring transparency, integrity, and ethical conduct across all operations.",
     url: "/pdfs/ECAS-Institute-Antibribery-and-anticorruption-policy.pdf",
+    isSensitive: false,
   },
   {
     id: 9,
@@ -39,6 +42,7 @@ const policies = [
     tags: ["Ethics", "Compliance"],
     summary: "A safe, anonymous channel for employees and partners to report unethical behavior, financial impropriety, or violations of code of conduct.",
     url: "/pdfs/Whistleblower-Policy.pdf",
+    isSensitive: false,
   },
   {
     id: 10,
@@ -49,7 +53,8 @@ const policies = [
     pages: "Internal",
     tags: ["Governance", "Risk Management"],
     summary: "Strategic registry outlining potential institutional risks, mitigation actions, impact analysis, and responsible focal departments.",
-    url: "/pdfs/RISK-REGISTER-ECAS-INSTITUTE.pdf",
+    url: "#",
+    isSensitive: true,
   },
   {
     id: 11,
@@ -60,7 +65,8 @@ const policies = [
     pages: "Internal",
     tags: ["Operations", "Travel"],
     summary: "Regulatory procedures for travel allowances, reimbursements, booking guidelines, and expense management for official engagements.",
-    url: "/pdfs/ECAS-iNSTITUTE-Travel-Expense-Policy-1.docx",
+    url: "#",
+    isSensitive: true,
   },
   {
     id: 12,
@@ -72,6 +78,7 @@ const policies = [
     tags: ["Operations", "Procurement"],
     summary: "Procurement guidelines focused on sustainability, prioritizing eco-friendly vendors, energy-efficient goods, and minimal footprint services.",
     url: "/pdfs/ECAS-Institute-_Green-Procurement-Policy.docx",
+    isSensitive: false,
   },
   {
     id: 13,
@@ -82,11 +89,14 @@ const policies = [
     pages: "Internal",
     tags: ["Financial", "Procedures"],
     summary: "Guidelines and standardized procedures governing financial transactions, budgeting, audits, and monetary controls at ECAS Institute.",
-    url: "/pdfs/Financial-Policy-and-Procedures.pdf",
+    url: "#",
+    isSensitive: true,
   },
 ];
 
 const PoliciesLaws = () => {
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
@@ -124,7 +134,7 @@ const PoliciesLaws = () => {
       />
       <Header />
 
-      <section className="bg-ecasi-navy pt-24 pb-16 relative overflow-hidden">
+      <section className="bg-ecasi-navy pt-20 pb-12 relative overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-4 relative z-10">
           <Link to="/resources" className="inline-flex items-center text-white/70 hover:text-white mb-6 transition-colors">
             <ArrowLeft size={16} className="mr-2" />
@@ -146,7 +156,7 @@ const PoliciesLaws = () => {
         </div>
       </section>
 
-      <section className="py-20 flex-grow">
+      <section className="py-12 md:py-16 flex-grow">
         <div className="max-w-[1200px] mx-auto px-4">
           
           {/* Search & Filter */}
@@ -224,13 +234,24 @@ const PoliciesLaws = () => {
                         <Eye size={15} className="mr-1.5" />
                         {expandedId === item.id ? 'Close' : 'View Details'}
                       </button>
-                      <button 
-                        onClick={() => handleView(item.url)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-ecasi-green text-white rounded-lg text-sm font-semibold hover:bg-ecasi-navy transition-colors"
-                      >
-                        <Eye size={14} />
-                        View PDF
-                      </button>
+                      {item.isSensitive ? (
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedPolicy(item); setRequestModalOpen(true); }}
+                          className="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-semibold border border-amber-200 transition-colors text-center"
+                        >
+                          <ShieldCheck size={14} />
+                          <span>Request Access</span>
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => handleView(item.url)}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-ecasi-green text-white rounded-lg text-sm font-semibold hover:bg-ecasi-navy transition-colors"
+                        >
+                          <Eye size={14} />
+                          View PDF
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -239,7 +260,7 @@ const PoliciesLaws = () => {
           </div>
 
           {filtered.length === 0 && (
-            <div className="text-center py-20 text-gray-400">
+            <div className="text-center py-12 md:py-16 text-gray-400">
               <Scale size={40} className="mx-auto mb-4 opacity-30" />
               <p className="text-lg">These resources are not currently available. Please check back later.</p>
               <button onClick={() => { setSearchTerm(''); setSelectedType('All'); }} className="mt-4 text-ecasi-green font-semibold hover:underline">
@@ -251,6 +272,12 @@ const PoliciesLaws = () => {
 
         </div>
       </section>
+            <RequestDocumentModal
+        isOpen={requestModalOpen}
+        onClose={() => { setRequestModalOpen(false); setSelectedPolicy(null); }}
+        documentTitle={selectedPolicy ? selectedPolicy.title : ''}
+        documentNumber={selectedPolicy ? selectedPolicy.id : ''}
+      />
       <Footer />
     </div>
   );

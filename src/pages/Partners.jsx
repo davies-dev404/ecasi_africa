@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
@@ -6,32 +7,162 @@ import Footer from '@/components/Footer';
 import { Handshake, Building2, Globe2, GraduationCap, ArrowRight } from 'lucide-react';
 
 const partnersList = [
+  // Financial Partners
   {
     name: "Clean Air Fund",
     logo: "https://ecasiafrica.org/wp-content/uploads/2025/04/CLEAN-AIR-FUND.png",
     website: "https://www.cleanairfund.org/",
-    type: "Philanthropic Organisation",
+    category: "financial",
+    type: "Financial Partner",
     icon: Globe2,
-    description: "Clean Air Fund is a global philanthropic organisation working with governments, funders, businesses and campaigners to create a future where everyone breathes clean air.",
+    description: "A global philanthropic organisation working with governments, funders, businesses and campaigners to create a future where everyone breathes clean air, supporting air quality regulations and Breathe Cities initiative in Nairobi.",
     color: "bg-blue-50 text-blue-600 border-blue-100",
   },
   {
+    name: "Bloomberg Philanthropies",
+    logo: "/images/bloomberg.png",
+    website: "https://www.bloomberg.org/",
+    category: "financial",
+    type: "Financial Partner",
+    icon: Globe2,
+    description: "Encompasses all of Michael R. Bloomberg's charitable activities, focusing on five key areas: the environment, public health, government innovation, the arts, and education to ensure better, longer lives.",
+    color: "bg-amber-50 text-amber-600 border-amber-100",
+  },
+  {
+    name: "Breathe Cities",
+    logo: "/images/breaths.png",
+    website: "https://breathecities.org/",
+    category: "financial",
+    type: "Financial Partner",
+    icon: Globe2,
+    description: "An initiative of Bloomberg Philanthropies, Clean Air Fund, and C40 Cities, collaborating with Nairobi City County to reduce air pollution and establish robust air quality standards.",
+    color: "bg-teal-50 text-teal-600 border-teal-100",
+  },
+
+  // Governance Partners
+  {
     name: "Nairobi City County",
-    logo: "https://ecasiafrica.org/wp-content/uploads/2025/04/download-1.jpg",
+    logo: "/images/partners/nairobi_county.png",
     website: "https://nairobi.go.ke/",
-    type: "Government Authority",
+    category: "governance",
+    type: "Governance Partner",
     icon: Building2,
-    description: "The Nairobi City County was created by the Constitution of Kenya 2010 and is the successor of the defunct City Council of Nairobi. It operates under the auspices of the Cities and Urban Areas Act, the Devolved Governments Act, and a host of other Acts. The Nairobi City County is charged with the responsibility of providing a variety of services to residents within its area of jurisdiction.",
+    description: "The local government authority responsible for municipal services, urban development, and enacting locally tailored environment and air quality regulations in Nairobi, Kenya.",
     color: "bg-emerald-50 text-emerald-600 border-emerald-100",
   },
   {
-    name: "The Institute for Climate Change and Adaptation (ICCA)",
-    logo: "https://ecasiafrica.org/wp-content/uploads/2025/04/Uon_emblem-1.gif",
+    name: "Government of Kenya (GoK)",
+    logo: "/images/partners/gok_harambee.png",
+    website: "https://www.kenya.go.ke/",
+    category: "governance",
+    type: "Governance Partner",
+    icon: Building2,
+    description: "The national government authority of the Republic of Kenya, formulating nationwide policies, coordinating climate programs, and enacting environmental legislation.",
+    color: "bg-green-50 text-green-600 border-green-100",
+  },
+  {
+    name: "Council of Governors (CoG)",
+    logo: "/images/partners/council_of_governors.png",
+    website: "https://www.cog.go.ke/",
+    category: "governance",
+    type: "Governance Partner",
+    icon: Building2,
+    description: "A non-partisan organization that provides a forum for consultation, sharing information, and coordinating climate action and policies across Kenya's 47 county governments.",
+    color: "bg-cyan-50 text-cyan-600 border-cyan-100",
+  },
+
+  // Academic Partners
+  {
+    name: "University of Nairobi (ICCA)",
+    logo: "/images/partners/uon.png",
     website: "https://icca.uonbi.ac.ke/",
-    type: "Academic & Research Institution",
+    category: "academic",
+    type: "Academic Partner",
     icon: GraduationCap,
-    description: "The Institute for Climate Change and Adaptation (ICCA) was established in 2011 with the mission of building human capacity necessary to address the unique climate change and adaptation needs of vulnerable communities through teaching, action-oriented research, development of innovative technologies and community participation. The Institute also provides expert advice for national and regional policy formulation and implementation.",
+    description: "An elite academic and research institute at the University of Nairobi, established to build human capacity and conduct action-oriented research on climate change adaptation in Sub-Saharan Africa.",
     color: "bg-purple-50 text-purple-600 border-purple-100",
+  },
+  {
+    name: "Kenyatta University",
+    logo: "/images/partners/academic_ku.png",
+    website: "https://www.ku.ac.ke/",
+    category: "academic",
+    type: "Academic Partner",
+    icon: GraduationCap,
+    description: "A leading public research university in Kenya, actively engaging in environmental studies, green campus initiatives, and academic partnerships for sustainability.",
+    color: "bg-indigo-50 text-indigo-600 border-indigo-100",
+  },
+  {
+    name: "Technical University of Mombasa (TUM)",
+    logo: "/images/partners/academic_tum.png",
+    website: "https://www.tum.ac.ke/",
+    category: "academic",
+    type: "Academic Partner",
+    icon: GraduationCap,
+    description: "A public university offering specialized engineering and environmental courses, collaborating on coastal climate resilience and ocean management studies.",
+    color: "bg-violet-50 text-violet-600 border-violet-100",
+  },
+  {
+    name: "Maseno University",
+    logo: "/images/partners/academic_maseno.png",
+    website: "https://www.maseno.ac.ke/",
+    category: "academic",
+    type: "Academic Partner",
+    icon: GraduationCap,
+    description: "A leading university in Western Kenya known for its research in environmental sciences, sustainable development, and community climate training.",
+    color: "bg-pink-50 text-pink-600 border-pink-100",
+  },
+
+  // Professional Membership
+  {
+    name: "Environment Institute of Kenya (EIK)",
+    logo: "/images/partners/eik.png",
+    website: "https://eik.co.ke/",
+    category: "membership",
+    type: "Professional Membership",
+    icon: Handshake,
+    description: "The professional body for environmental practitioners in Kenya, certifying and regulating environmental impact assessment (EIA) and audit experts.",
+    color: "bg-orange-50 text-orange-600 border-orange-100",
+  },
+  {
+    name: "Adaptation Research Alliance (ARA)",
+    logo: "/images/partners/ara.png",
+    website: "https://www.adaptationresearchalliance.org/",
+    category: "membership",
+    type: "Professional Membership",
+    icon: Handshake,
+    description: "A global coalition that promotes action-oriented research to inform adaptation and build climate resilience for vulnerable communities.",
+    color: "bg-amber-50 text-amber-600 border-amber-100",
+  },
+  {
+    name: "Kenya Climate Change Working Group (KCCWG)",
+    logo: "/images/partners/kccwg.png",
+    website: "https://kccwg.org/",
+    category: "membership",
+    type: "Professional Membership",
+    icon: Handshake,
+    description: "A leading civil society coalition in Kenya advocating for climate justice, community awareness, and effective national climate change policies.",
+    color: "bg-rose-50 text-rose-600 border-rose-100",
+  },
+  {
+    name: "Ukama",
+    logo: "/images/partners/ukama.png",
+    website: "https://www.ukama-learning.org/",
+    category: "membership",
+    type: "Professional Membership",
+    icon: Handshake,
+    description: "A network of organizations and experts collaborating on sustainable development education, knowledge exchange, and climate learning tools.",
+    color: "bg-lime-50 text-lime-600 border-lime-100",
+  },
+  {
+    name: "Pan African Climate Justice Alliance (PACJA)",
+    logo: "/images/partners/pacja.png",
+    website: "https://www.pacja.org/",
+    category: "membership",
+    type: "Professional Membership",
+    icon: Handshake,
+    description: "A coalition of civil society organizations across Africa advocating for climate justice, equity, and fair climate policies for the continent in global forums.",
+    color: "bg-emerald-50 text-emerald-600 border-emerald-100",
   },
 ];
 
@@ -55,6 +186,20 @@ const itemVariants = {
 };
 
 const Partners = () => {
+  const [activeCategory, setActiveCategory] = useState("all");
+
+  const categories = [
+    { id: "all", label: "All Partners" },
+    { id: "financial", label: "Financial Partners" },
+    { id: "governance", label: "Governance Partners" },
+    { id: "academic", label: "Academic Partners" },
+    { id: "membership", label: "Professional Membership" },
+  ];
+
+  const filteredPartners = activeCategory === "all"
+    ? partnersList
+    : partnersList.filter(p => p.category === activeCategory);
+
   return (
     <div className="min-h-screen bg-slate-50/50">
       <SEO
@@ -64,7 +209,7 @@ const Partners = () => {
       <Header />
 
       {/* Page Banner */}
-      <section className="bg-primary pt-28 pb-12 text-center relative overflow-hidden">
+      <section className="bg-primary pt-24 pb-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
         <div className="healthcare-container relative z-10">
           <motion.div 
@@ -83,7 +228,7 @@ const Partners = () => {
       </section>
 
       {/* Main Section */}
-      <section className="py-16 md:py-24">
+      <section className="py-12 md:py-16">
         <div className="healthcare-container">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -106,6 +251,23 @@ const Partners = () => {
             </p>
           </motion.div>
 
+          {/* Category Filter Tabs */}
+          <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-12 max-w-4xl mx-auto px-4">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  activeCategory === cat.id
+                    ? "bg-[#008000] text-white shadow-lg shadow-green-600/20 scale-105"
+                    : "bg-white text-slate-600 border border-slate-200 hover:border-[#008000] hover:text-[#008000]"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
           {/* Grid of Partners */}
           <motion.div 
             variants={containerVariants}
@@ -114,7 +276,7 @@ const Partners = () => {
             viewport={{ once: true, margin: "-50px" }}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto"
           >
-            {partnersList.map((partner, index) => (
+            {filteredPartners.map((partner, index) => (
               <motion.div 
                 key={index} 
                 variants={itemVariants}
@@ -126,20 +288,22 @@ const Partners = () => {
                 {/* Top Portion */}
                 <div className="relative z-10">
                   {/* Logo Panel */}
-                  <motion.div 
-                    whileHover={{ scale: 1.05 }}
-                    className="h-40 w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] p-6 mb-8 flex items-center justify-center overflow-hidden shadow-inner"
-                  >
-                    <img
-                      src={partner.logo}
-                      alt={`${partner.name} logo`}
-                      className="max-h-full max-w-full object-contain filter grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `<div class="text-primary font-bold text-lg text-center flex flex-col items-center gap-2"><span class="bg-primary/10 p-3 rounded-2xl text-primary"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></span></div>`;
-                      }}
-                    />
-                  </motion.div>
+                  <a href={partner.website} target="_blank" rel="noopener noreferrer" className="block cursor-pointer">
+                    <motion.div 
+                      whileHover={{ scale: 1.05 }}
+                      className="h-40 w-full bg-transparent p-6 mb-8 flex items-center justify-center overflow-hidden"
+                    >
+                      <img
+                        src={partner.logo}
+                        alt={`${partner.name} logo`}
+                        className="max-h-full max-w-full object-contain filter grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = `<div class="text-primary font-bold text-lg text-center flex flex-col items-center gap-2"><span class="bg-primary/10 p-3 rounded-2xl text-primary"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></span></div>`;
+                        }}
+                      />
+                    </motion.div>
+                  </a>
 
                   {/* Badge */}
                   <div className="flex items-center gap-3 mb-5">

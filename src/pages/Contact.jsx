@@ -15,21 +15,20 @@ const Contact = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section 
-        className="pt-32 pb-16 text-white text-center relative overflow-hidden"
-        style={{
-          backgroundImage: "url('https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="absolute inset-0 bg-[#032e42]/70"></div>
+      <section className="bg-ecasi-green pt-24 pb-8 text-white text-center relative overflow-hidden">
+        {/* Subtle decorative pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-4 left-1/4 w-32 h-32 border border-white rounded-full" />
+          <div className="absolute bottom-2 right-1/3 w-24 h-24 border border-white rounded-full" />
+        </div>
+
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-3xl md:text-5xl font-bold uppercase tracking-wide"
+            className="text-2xl md:text-3xl font-bold uppercase tracking-wide"
+            style={{ fontFamily: "'Fira Sans', sans-serif" }}
           >
             Contact Us
           </motion.h1>
@@ -38,6 +37,7 @@ const Contact = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
             className="flex items-center justify-center gap-2 mt-2 text-xs md:text-sm text-white/80 font-medium"
+            style={{ fontFamily: "'Roboto', sans-serif" }}
           >
             <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
             <span className="text-white/40">/</span>
@@ -73,7 +73,7 @@ const Contact = () => {
           >
             {/* Contact Info Green Header */}
             <div className="w-full max-w-[350px] bg-ecasi-green text-white text-center py-4 px-6 rounded-t-lg">
-              <h2 className="text-xl font-bold">Contact Info</h2>
+              <h2 className="text-xl font-bold" style={{ fontFamily: "'Fira Sans', sans-serif" }}>Contact Info</h2>
             </div>
 
             {/* Social Icons */}

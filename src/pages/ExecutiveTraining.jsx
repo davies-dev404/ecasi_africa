@@ -97,7 +97,7 @@ const ExecutiveTraining = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-28 pb-8 text-white text-center relative overflow-hidden">
+      <section className="bg-ecasi-green pt-24 pb-8 text-white text-center relative overflow-hidden">
         {/* Subtle decorative pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 left-1/4 w-32 h-32 border border-white rounded-full" />

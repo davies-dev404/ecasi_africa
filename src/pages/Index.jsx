@@ -9,32 +9,91 @@ import LinkedInFeed from '@/components/LinkedInFeed';
 import { eventsData as upcomingEvents } from '@/data/eventsData';
 import beryleImg from '@/assets/beryle.png';
 import yasukoImg from '@/assets/yasuko.png';
+// ─── Partners Data for Ticker Carousel ────────────────────────────────────────
+const partners = [
+  { name: "Clean Air Fund", logo: "https://ecasiafrica.org/wp-content/uploads/2025/04/CLEAN-AIR-FUND.png", url: "https://www.cleanairfund.org/" },
+  { name: "Bloomberg Philanthropies", logo: "/images/bloomberg.png", url: "https://www.bloomberg.org/" },
+  { name: "Breathe Cities", logo: "/images/breaths.png", url: "https://breathecities.org/" },
+  { name: "Nairobi City County", logo: "/images/partners/nairobi_county.png", url: "https://nairobi.go.ke/" },
+  { name: "Government of Kenya", logo: "/images/partners/gok_harambee.png", url: "https://www.kenya.go.ke/" },
+  { name: "Council of Governors", logo: "/images/partners/council_of_governors.png", url: "https://www.cog.go.ke/" },
+  { name: "University of Nairobi (ICCA)", logo: "/images/partners/uon.png", url: "https://icca.uonbi.ac.ke/" },
+  { name: "Kenyatta University", logo: "/images/partners/academic_ku.png", url: "https://www.ku.ac.ke/" },
+  { name: "Technical University of Mombasa", logo: "/images/partners/academic_tum.png", url: "https://www.tum.ac.ke/" },
+  { name: "Maseno University", logo: "/images/partners/academic_maseno.png", url: "https://www.maseno.ac.ke/" },
+  { name: "Environment Institute of Kenya", logo: "/images/partners/eik.png", url: "https://eik.co.ke/" },
+  { name: "Adaptation Research Alliance", logo: "/images/partners/ara.png", url: "https://www.adaptationresearchalliance.org/" },
+  { name: "Kenya Climate Change Working Group", logo: "/images/partners/kccwg.png", url: "https://kccwg.org/" },
+  { name: "Ukama", logo: "/images/partners/ukama.png", url: "https://www.ukama-learning.org/" },
+  { name: "Pan African Climate Justice Alliance", logo: "/images/partners/pacja.png", url: "https://www.pacja.org/" },
+];
+
 // ─── Hero Slider ────────────────────────────────────────────────────────────
 const heroSlides = [
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg",
-    title: "Programmes",
+    title: "Air Quality Training &\nClimate Resilience",
     subtitle: "Empowering stakeholders and communities with technical knowledge to drive climate resilient actions and policies across Africa.",
-    cta: { label: "View Programmes", to: "/training-education-public-awareness" },
+    cta: { label: "Our Programmes", to: "/training-education-public-awareness" },
+    cta2: { label: "Contact Us", to: "/contact" },
+    position: "object-center",
   },
   {
-    bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Netfund-training.jpeg",
-    title: "Training",
-    subtitle: "Training Workshops",
-    cta: { label: "View Courses", to: "/institute-overview" },
+    bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/DSC_0990-1.jpg",
+    title: "Advancing Sustainability\nAcross Africa",
+    subtitle: "We serve as an independent Pan-African think tank supporting green growth and evidence-based environment policies.",
+    cta: { label: "About ECAS", to: "/about" },
+    cta2: { label: "Our Team", to: "/our-team" },
+    position: "object-top",
   },
   {
-    bg: "/images/research/1710846398420-1-1-1024x683.jpg",
-    title: "Research",
-    subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers across the continent.",
-    cta: { label: "Research Areas", to: "/research/overview" },
+    bg: "/images/research/1713864387984-1024x768.jpg",
+    title: "Capacity Strengthening &\nMentorship Programs",
+    subtitle: "Building the green skills required to navigate carbon markets, sustainable finance, and environment impact assessments.",
+    cta: { label: "Training Courses", to: "/institute-overview" },
+    cta2: { label: "Register Now", to: "/contact" },
+    position: "object-center",
   },
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Lidya-caf-with-Prof-Shem.jpg",
-    title: "Consultancy",
+    title: "Evidence-Based Research\n& Specialized Advisory",
     subtitle: "Providing high-level consultancy for baseline studies, strategic social assessments, and policy reviews.",
-    cta: { label: "Impact Assessment", to: "/consultancy" },
-  }
+    cta: { label: "Consultancy Services", to: "/research/consulting" },
+    cta2: { label: "Learn More", to: "/about" },
+    position: "object-top",
+  },
+  {
+    bg: "/images/research/1710846398420-1-1-1024x683.jpg",
+    title: "Field Research &\nSystematic Observation",
+    subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers across the continent.",
+    cta: { label: "Research Areas", to: "/research-systematic-observation" },
+    cta2: { label: "Our Work", to: "/our-strategic-focus" },
+    position: "object-center",
+  },
+  {
+    bg: "/images/research/IMG_20241112_163109285-1024x683.jpg",
+    title: "Environmental Impact\nAssessments",
+    subtitle: "Delivering strategic environmental and social impact assessments that guide sustainable infrastructure and investment decisions.",
+    cta: { label: "Consultancy", to: "/research/consulting" },
+    cta2: { label: "Contact Us", to: "/contact" },
+    position: "object-top",
+  },
+  {
+    bg: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
+    title: "Policy Advocacy &\nInternational Engagement",
+    subtitle: "Representing Africa's voice in global environmental forums and driving impactful multilateral policy outcomes.",
+    cta: { label: "Our Policies", to: "/our-policies" },
+    cta2: { label: "Learn More", to: "/about" },
+    position: "object-top",
+  },
+  {
+    bg: "/images/courses/IMGM1984-1024x683.jpg",
+    title: "Executive Training\nWorkshops",
+    subtitle: "Professional courses in climate change, green economy, and sustainable development delivered by leading experts.",
+    cta: { label: "View Courses", to: "/institute-overview" },
+    cta2: { label: "Register", to: "/contact" },
+    position: "object-top",
+  },
 ];
 
 
@@ -69,7 +128,7 @@ const HeroSlider = () => {
             alt={`Hero Background ${idx + 1}`}
             fetchPriority="high"
             loading="eager"
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${s.position || 'object-center'}`}
             style={{ opacity: idx === current && !transitioning ? 1 : 0 }}
           />
         </Link>
@@ -96,9 +155,16 @@ const HeroSlider = () => {
               {slide.subtitle}
             </p>
             <div className="flex items-center gap-4 flex-wrap">
-              <Link to={slide.cta.to} className="ecasi-btn-primary">
-                {slide.cta.label}
-              </Link>
+              {slide.cta && (
+                <Link to={slide.cta.to} className="ecasi-btn-primary">
+                  {slide.cta.label}
+                </Link>
+              )}
+              {slide.cta2 && (
+                <Link to={slide.cta2.to} className="border-2 border-white text-white hover:bg-white hover:text-black transition-all duration-200 px-[26px] py-[8px] text-[13px] font-semibold rounded-[3px] uppercase tracking-wider inline-block">
+                  {slide.cta2.label}
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -406,22 +472,71 @@ const Index = () => {
         </section>
 
         {/* ── Partners Section ── */}
-        <section className="py-16 md:py-20 bg-gray-50 border-t border-gray-200">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
+        <section className="py-12 bg-white border-t border-gray-100 overflow-hidden select-none relative w-full">
+          <div className="max-w-[1476px] mx-auto px-4 lg:px-16 mb-10">
             <ScrollAnimation animation="slide-up">
               <p className="ecasi-section-title text-2xl md:text-3xl mb-2 text-center">OUR PARTNERS</p>
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center mb-6">
                 <div className="ecasi-section-divider" />
               </div>
-              <p className="text-center text-ecasi-body text-base max-w-2xl mx-auto mb-10">
+              <p className="text-center text-ecasi-body text-base max-w-2xl mx-auto">
                 We collaborate with leading institutions to drive impact across Africa.
               </p>
             </ScrollAnimation>
-            <div className="flex flex-wrap justify-center items-center gap-10 md:gap-20">
-              <div className="text-xl font-bold text-gray-400 grayscale hover:grayscale-0 transition-all cursor-pointer">ICCA</div>
-              <div className="text-xl font-bold text-gray-400 grayscale hover:grayscale-0 transition-all cursor-pointer">CAF</div>
-              <div className="text-xl font-bold text-gray-400 grayscale hover:grayscale-0 transition-all cursor-pointer">Nairobi City County</div>
-              <div className="text-xl font-bold text-gray-400 grayscale hover:grayscale-0 transition-all cursor-pointer">Grid Cities</div>
+          </div>
+          
+          <div className="relative w-full overflow-hidden flex flex-col justify-center">
+            {/* Gradient Mask for Fade Effect at Edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+            <div className="flex w-[200%] gap-12 items-center animate-marquee whitespace-nowrap py-4">
+              {/* Copy 1 */}
+              <div className="flex justify-around items-center gap-16 min-w-full shrink-0">
+                {partners.map((partner, idx) => (
+                  <a
+                    key={`p1-${idx}`}
+                    href={partner.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-14 flex items-center grayscale hover:grayscale-0 transition-all duration-300 transform hover:scale-105 shrink-0"
+                    title={partner.name}
+                  >
+                    <img
+                      src={partner.logo}
+                      alt={partner.name}
+                      className="h-full object-contain max-w-[160px]"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400 uppercase tracking-wider">${partner.name}</span>`;
+                      }}
+                    />
+                  </a>
+                ))}
+              </div>
+              {/* Copy 2 */}
+              <div className="flex justify-around items-center gap-16 min-w-full shrink-0">
+                {partners.map((partner, idx) => (
+                  <a
+                    key={`p2-${idx}`}
+                    href={partner.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-14 flex items-center grayscale hover:grayscale-0 transition-all duration-300 transform hover:scale-105 shrink-0"
+                    title={partner.name}
+                  >
+                    <img
+                      src={partner.logo}
+                      alt={partner.name}
+                      className="h-full object-contain max-w-[160px]"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400 uppercase tracking-wider">${partner.name}</span>`;
+                      }}
+                    />
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </section>

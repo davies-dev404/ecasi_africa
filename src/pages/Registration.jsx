@@ -14,7 +14,7 @@ const Registration = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="bg-ecasi-blue pt-28 pb-12 text-center relative overflow-hidden">
+      <section className="bg-ecasi-blue pt-24 pb-8 text-center relative overflow-hidden">
         <div className="healthcare-container relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}

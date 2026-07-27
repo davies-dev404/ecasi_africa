@@ -13,7 +13,7 @@ const InstitutionalCapacityBuilding = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-28 pb-6 text-white text-center">
+      <section className="bg-ecasi-green pt-24 pb-6 text-white text-center">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-xl md:text-2xl font-bold uppercase tracking-wide leading-snug">
             Institutional capacity-building and Reskilling
@@ -35,7 +35,7 @@ const InstitutionalCapacityBuilding = () => {
         {/* Centered Image */}
         <div className="mb-10 flex justify-center">
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/IMG_20241112_163109285-768x512.jpg"
+            src="/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41%20(1).jpeg"
             alt="Institutional Capacity Building"
             className="w-full max-w-[650px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {

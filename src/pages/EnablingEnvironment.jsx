@@ -19,7 +19,7 @@ const EnablingEnvironment = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-ecasi-green pt-28 pb-6 text-white text-center"
+        className="bg-ecasi-green pt-24 pb-6 text-white text-center"
       >
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">

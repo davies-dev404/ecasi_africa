@@ -86,7 +86,7 @@ const Resources = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="bg-ecasi-green pt-24 pb-16 relative overflow-hidden">
+      <section className="bg-ecasi-green pt-20 pb-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           {/* Subtle background pattern */}
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -112,7 +112,7 @@ const Resources = () => {
       </section>
 
       {/* Main Content */}
-      <section className="py-20 flex-grow">
+      <section className="py-12 md:py-16 flex-grow">
         <div className="max-w-[1200px] mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {resourcesLinks.map((resource, index) => {
@@ -150,7 +150,7 @@ const Resources = () => {
       </section>
 
       {/* Featured Call to Action */}
-      <section className="bg-white py-20 border-t border-gray-100">
+      <section className="bg-white py-12 md:py-16 border-t border-gray-100">
         <div className="max-w-[1200px] mx-auto px-4">
           <ScrollAnimation>
             <div className="bg-ecasi-section rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">

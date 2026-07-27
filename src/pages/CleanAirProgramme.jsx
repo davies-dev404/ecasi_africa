@@ -15,7 +15,7 @@ const CleanAirProgramme = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-ecasi-green pt-28 pb-8 text-white text-center relative overflow-hidden">
+      <section className="bg-ecasi-green pt-24 pb-8 text-white text-center relative overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/15 backdrop-blur-sm mb-4">
             <Wind size={28} className="text-white" />

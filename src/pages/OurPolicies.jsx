@@ -1,8 +1,10 @@
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import RequestDocumentModal from '@/components/RequestDocumentModal';
 import { FileText, ShieldAlert, Scale, Plane, ShoppingBag, DollarSign, ExternalLink, ShieldCheck } from 'lucide-react';
 
 const policies = [
@@ -90,6 +92,8 @@ const itemVariants = {
 };
 
 const OurPolicies = () => {
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
   const handleView = async (e, url) => {
     e.preventDefault();
     try {
@@ -114,7 +118,7 @@ const OurPolicies = () => {
       <Header />
 
       {/* Page Banner */}
-      <section className="bg-primary pt-28 pb-12 text-center relative overflow-hidden">
+      <section className="bg-primary pt-24 pb-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
         <div className="healthcare-container relative z-10">
           <motion.div 
@@ -133,7 +137,7 @@ const OurPolicies = () => {
       </section>
 
       {/* Main Section */}
-      <section className="py-16 md:py-24">
+      <section className="py-12 md:py-16">
         <div className="healthcare-container">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -194,10 +198,14 @@ const OurPolicies = () => {
                 {/* Actions / Download Links */}
                 <div className="mt-auto pt-5 border-t border-slate-100 flex items-center justify-between relative z-10">
                   {policy.isSensitive ? (
-                    <div className="inline-flex items-center justify-center gap-2 bg-slate-100 text-slate-500 border border-slate-200 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm w-full cursor-not-allowed">
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedPolicy(policy); setRequestModalOpen(true); }}
+                      className="inline-flex items-center justify-center gap-2 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white hover:border-amber-600 border border-amber-200 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm w-full transition-all text-center"
+                    >
                       <ShieldCheck className="h-4 w-4" />
-                      <span>Available upon request</span>
-                    </div>
+                      <span>Request Access</span>
+                    </button>
                   ) : (
                     <button
                       onClick={(e) => handleView(e, policy.url)}
@@ -213,7 +221,7 @@ const OurPolicies = () => {
           </motion.div>
 
           {policies.length === 0 && (
-            <div className="text-center py-20 text-slate-500 w-full col-span-full">
+            <div className="text-center py-12 md:py-16 text-slate-500 w-full col-span-full">
               <ShieldAlert className="h-12 w-12 mx-auto mb-4 opacity-50 text-slate-400" />
               <p className="text-xl font-medium">These policies are not currently available. Please check back later.</p>
             </div>
@@ -259,6 +267,12 @@ const OurPolicies = () => {
         </div>
       </section>
 
+            <RequestDocumentModal
+        isOpen={requestModalOpen}
+        onClose={() => { setRequestModalOpen(false); setSelectedPolicy(null); }}
+        documentTitle={selectedPolicy ? selectedPolicy.title : ''}
+        documentNumber={selectedPolicy ? selectedPolicy.number : ''}
+      />
       <Footer />
     </div>
   );

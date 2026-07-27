@@ -13,7 +13,7 @@ const GhgInventories = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-28 pb-6 text-white text-center">
+      <section className="bg-ecasi-green pt-24 pb-6 text-white text-center">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-xl md:text-2xl font-bold uppercase tracking-wide leading-snug max-w-4xl mx-auto">
             GHG inventories, emission database management and systems for collecting, managing and utilizing activity data and emission factors
