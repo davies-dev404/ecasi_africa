@@ -56,8 +56,8 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     transition: { type: "spring", stiffness: 100, damping: 15 }
   }
@@ -76,7 +76,7 @@ const OurStrategicFocus = () => {
       <section className="bg-primary pt-24 pb-8 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
         <div className="healthcare-container relative z-10">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -97,7 +97,7 @@ const OurStrategicFocus = () => {
           <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-center">
 
             {/* Image from ECASI website */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -107,7 +107,7 @@ const OurStrategicFocus = () => {
                 <motion.img
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.7 }}
-                  src="https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg"
+                  src="/images/programmes/tana_river.png"
                   alt="ECAS Institute Strategic Focus"
                   className="w-full h-full object-cover"
                   style={{ maxHeight: '560px' }}
@@ -125,7 +125,7 @@ const OurStrategicFocus = () => {
             </motion.div>
 
             {/* Overview text */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -141,7 +141,7 @@ const OurStrategicFocus = () => {
               </h2>
 
               <div className="space-y-5 text-slate-600 leading-relaxed text-base">
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
@@ -185,7 +185,7 @@ const OurStrategicFocus = () => {
       {/* Strategic Focus Areas */}
       <section className="py-12 md:py-16 bg-white">
         <div className="healthcare-container">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -203,7 +203,7 @@ const OurStrategicFocus = () => {
             </p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -211,14 +211,14 @@ const OurStrategicFocus = () => {
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {focusAreas.map((area, index) => (
-              <motion.div 
-                key={index} 
+              <motion.div
+                key={index}
                 variants={itemVariants}
                 className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group relative overflow-hidden"
               >
                 {/* Background decorative element */}
                 <div className={`absolute -bottom-16 -right-16 w-40 h-40 rounded-full opacity-10 pointer-events-none transition-transform duration-500 group-hover:scale-150 ${area.color.split(' ')[0]}`}></div>
-                
+
                 <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center mb-8 flex-shrink-0 transition-transform duration-500 group-hover:scale-110 shadow-sm ${area.color}`}>
                   <area.icon className="h-6 w-6" />
                 </div>
@@ -231,31 +231,20 @@ const OurStrategicFocus = () => {
               </motion.div>
             ))}
           </motion.div>
-        </div>
-      </section>
 
-      {/* CTA */}
-      <section className="healthcare-hero-gradient py-12 md:py-16">
-        <div className="healthcare-container text-center relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="max-w-2xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary-foreground mb-5">
-              Work With ECAS Institute
-            </h2>
-            <p className="text-primary-foreground/90 text-lg mb-10 leading-relaxed">
-              Engage with us on research, policy advisory, capacity strengthening, and
-              sustainable development solutions across Africa.
-            </p>
-            <Link to="/contact">
-              <button className="bg-white text-primary font-bold px-10 py-4 rounded-xl hover:bg-slate-50 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1">
+          {/* Inline CTA strip */}
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl px-6 py-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)' }}>
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)", backgroundSize: "18px 18px" }} />
+            <div className="relative z-10">
+              <p className="text-white font-bold text-sm">Work With ECAS Institute</p>
+              <p className="text-white/70 text-xs">Engage with us on research, advisory &amp; capacity strengthening.</p>
+            </div>
+            <Link to="/contact" className="flex-shrink-0 relative z-10">
+              <button className="bg-white/10 backdrop-blur-sm border border-white/30 text-white font-bold px-5 py-2 rounded-lg hover:bg-white hover:text-slate-900 transition-all shadow-md text-xs">
                 Get in Touch
               </button>
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 

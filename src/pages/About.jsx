@@ -47,24 +47,28 @@ const programmes = [
     title: "Training, Mentorship & Skilling",
     color: "bg-emerald-50 text-emerald-600 border-emerald-100",
     description: "Comprehensive courses and mentorship in climate change, sustainability policy, green finance, and capacity building for professionals across Africa.",
+    path: "/institute-overview"
   },
   {
     icon: Users,
     title: "Consultancy & Business Advisory",
     color: "bg-teal-50 text-teal-600 border-teal-100",
     description: "Integrated consultancy services for governments, development partners, the private sector, and civil society, covering sustainability, ESG, and development strategy.",
+    path: "/research/consulting"
   },
   {
     icon: BookOpen,
     title: "Research & Innovation",
     color: "bg-blue-50 text-blue-600 border-blue-100",
     description: "A dedicated center for research and analysis that informs evidence-based policy decisions on climate, environment, health, and sustainable finance.",
+    path: "/research/overview"
   },
   {
     icon: Globe2,
     title: "Policy & Technical Assistance",
     color: "bg-purple-50 text-purple-600 border-purple-100",
     description: "Expert support in policy development, ESG advisory, sustainability programs, and technical assistance to governments and institutions.",
+    path: "/policy-analysis"
   },
 ];
 
@@ -359,7 +363,7 @@ const About = () => {
                   </p>
                 </div>
                 <div className="mt-8 pt-5 border-t border-slate-100">
-                  <Link to="/our-history" className="text-primary text-sm font-bold flex items-center gap-2 group-hover:gap-3 transition-all hover:text-primary/80">
+                  <Link to={prog.path} className="text-primary text-sm font-bold flex items-center gap-2 group-hover:gap-3 transition-all hover:text-primary/80">
                     Learn More <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -407,75 +411,86 @@ const About = () => {
       </section>
 
       {/* Our Story / History Timeline */}
-      <section className="py-16 bg-slate-900 text-white relative overflow-hidden">
-        {/* Background Decorative Pattern */}
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'60\\' height=\\'60\\' viewBox=\\'0 0 60 60\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'none\\' fill-rule=\\'evenodd\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\'%3E%3Cpath d=\\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }}></div>
-        
-        <div className="healthcare-container max-w-5xl mx-auto relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-20 max-w-3xl mx-auto"
-          >
-            <span className="text-cyan-400 font-bold text-sm uppercase tracking-[0.2em] mb-4 block">Our Journey</span>
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
-              A Decade of Impact
-            </h2>
-            <p className="text-slate-400 text-lg leading-relaxed">
-              Since our founding, ECAS Institute has grown into a continent-wide force for
-              sustainable development — building partnerships, generating knowledge, and shaping policy across Africa.
-            </p>
-          </motion.div>
+      <section className="py-14 relative overflow-hidden text-white" style={{ background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5016 40%, #3d6b1f 70%, #1e4d2b 100%)' }}>
+        {/* Decorative blobs */}
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-10 pointer-events-none" style={{ background: 'radial-gradient(circle, #a3e635 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-10 pointer-events-none" style={{ background: 'radial-gradient(circle, #86efac 0%, transparent 70%)', transform: 'translate(-30%, 30%)' }} />
+        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.6) 1px, transparent 0)", backgroundSize: "24px 24px" }} />
 
-          <div className="max-w-2xl mx-auto">
-            <div className="relative border-l-2 border-slate-800 ml-4 md:ml-8 space-y-8">
-              {milestones.map((milestone, index) => (
-                <motion.div 
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="relative pl-8 md:pl-10"
-                >
-                  <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] border-2 border-slate-900" />
-                  <span className="inline-block px-3 py-1 bg-cyan-400/10 text-cyan-400 text-xs font-bold rounded-full mb-3 tracking-wider">
-                    {milestone.year}
-                  </span>
-                  <p className="text-slate-300 text-base leading-relaxed">
-                    {milestone.event}
-                  </p>
-                </motion.div>
-              ))}
+        <div className="healthcare-container relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-start">
+
+            {/* Left: Heading */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="lg:sticky lg:top-28"
+            >
+              <span className="inline-block text-green-300 font-bold text-xs uppercase tracking-[0.2em] mb-4">Our Journey</span>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold leading-tight mb-5">
+                A Decade<br />of Impact
+              </h2>
+              <p className="text-white/70 text-sm leading-relaxed mb-8 max-w-sm">
+                Since our founding, ECAS Institute has grown into a continent-wide force for sustainable development — building partnerships, generating knowledge, and shaping policy across Africa.
+              </p>
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { value: '10+', label: 'Years of Impact' },
+                  { value: '30+', label: 'African Countries' },
+                  { value: '500+', label: 'Professionals Trained' },
+                  { value: '6', label: 'Focus Areas' },
+                ].map((stat, i) => (
+                  <div key={i} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                    <p className="text-2xl font-bold text-green-300">{stat.value}</p>
+                    <p className="text-white/60 text-xs mt-1">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Right: Timeline */}
+            <div className="relative">
+              <div className="relative space-y-4">
+                {milestones.map((milestone, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className="flex gap-4 items-start group"
+                  >
+                    {/* Year badge */}
+                    <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm group-hover:bg-green-400/20 transition-colors">
+                      <span className="text-green-300 font-bold text-xs leading-tight text-center">{milestone.year}</span>
+                    </div>
+                    {/* Card */}
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 backdrop-blur-sm group-hover:bg-white/10 transition-colors">
+                      <p className="text-white/85 text-sm leading-relaxed">{milestone.event}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Inline CTA strip */}
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl px-6 py-4 relative overflow-hidden" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)", backgroundSize: "18px 18px" }} />
+                <div className="relative z-10">
+                  <p className="text-white font-bold text-sm">Partner With ECAS Institute</p>
+                  <p className="text-white/60 text-xs">Whether you're in government, private sector, or civil society — let's work together.</p>
+                </div>
+                <Link to="/contact" className="flex-shrink-0 relative z-10">
+                  <button className="bg-green-400 text-slate-900 font-bold px-5 py-2 rounded-lg hover:bg-green-300 transition-all shadow-md text-xs">
+                    Get in Touch
+                  </button>
+                </Link>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* CTA */}
-      <section className="healthcare-hero-gradient py-12 md:py-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
-        <div className="healthcare-container text-center relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="max-w-3xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary-foreground mb-5">
-              Partner With Us
-            </h2>
-            <p className="text-lg text-primary-foreground/90 mb-10 leading-relaxed">
-              Whether you are a government, development partner, private sector organisation, or civil society actor —
-              ECASI Africa is ready to work with you toward a sustainable, prosperous Africa.
-            </p>
-            <Link to="/contact">
-              <button className="bg-white text-primary font-bold px-10 py-4 rounded-xl hover:bg-slate-50 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1">
-                Get in Touch
-              </button>
-            </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 

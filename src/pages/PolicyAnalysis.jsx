@@ -296,7 +296,7 @@ const PolicyAnalysis = () => {
             variants={fadeInUp}
             className="text-center mb-14"
           >
-            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-2 rounded-full mb-4">
+            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-4 py-2 rounded-full mb-4">
               <FileText className="h-3.5 w-3.5" />
               What It Involves
             </span>
@@ -311,7 +311,7 @@ const PolicyAnalysis = () => {
               each designed to drive impactful outcomes.
             </p>
           </motion.div>
-
+ 
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -328,7 +328,7 @@ const PolicyAnalysis = () => {
               >
                 {/* Decorative gradient blob */}
                 <div className={`absolute -top-16 -right-16 w-40 h-40 rounded-full bg-gradient-to-br ${item.color} opacity-[0.06] group-hover:opacity-[0.12] group-hover:scale-125 transition-all duration-500`} />
-
+ 
                 <div className="relative z-10">
                   <div className="flex items-start gap-5">
                     <motion.div
@@ -339,7 +339,7 @@ const PolicyAnalysis = () => {
                     </motion.div>
                     <div>
                       <h3
-                        className="text-xl font-bold text-slate-800 mb-3 group-hover:text-emerald-700 transition-colors"
+                        className="text-xl font-bold text-slate-800 mb-3 group-hover:text-primary transition-colors"
                         style={{ fontFamily: "'Fira Sans', sans-serif" }}
                       >
                         {item.title}

@@ -224,11 +224,55 @@
     transform: scaleX(1);
   }
 
-  /* ===== HERO SLIDER ===== */
+  /* ===== HERO SLIDER (Smart Slider 3 faithful recreation) ===== */
+  /* Mirrors n2-ss-3 WordPress config: fullwidth, 1200px limiter, horizontal transition */
+
   .ecasi-hero {
     position: relative;
     overflow: hidden;
     background: #032e42;
+  }
+
+  /* ── Heading: clean text, no box background ── */
+  .n2ss-heading {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    cursor: default;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  /* ── Arrows: nextend-arrow-animated-fade ──
+     26px wide on desktop, 16px on mobile (matches WP media query) */
+  .n2ss-arrow {
+    opacity: 0.85;
+    transition: opacity 0.3s;
+  }
+  .n2ss-arrow:hover {
+    opacity: 1;
+  }
+  /* Arrow chevron stroke → orange on hover (WP .nextend-arrow:HOVER) */
+  .n2ss-arrow:hover .n2ss-arrow-inner svg polyline,
+  .n2ss-arrow:focus .n2ss-arrow-inner svg polyline {
+    stroke: #ff9139;
+    transition: stroke 0.3s;
+  }
+  .n2ss-arrow-inner svg polyline {
+    transition: stroke 0.3s;
+  }
+
+  /* Mobile: 16px arrows (WP: @media max-width:900px/700px → width:16px) */
+  @media (max-width: 700px) {
+    .n2ss-arrow .n2ss-arrow-inner svg {
+      width: 16px;
+      height: 32px;
+    }
+  }
+
+  /* ── Slide content fade-in (layer in-animation: mainInEnd) ── */
+  @keyframes n2ssContentIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0);    }
   }
 
   .ecasi-hero-slide {
@@ -238,23 +282,6 @@
     align-items: center;
     background-size: cover;
     background-position: center;
-  }
-
-  .ecasi-hero-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to bottom,
-      rgba(3, 46, 66, 0.25) 0%,
-      rgba(3, 46, 66, 0.65) 60%,
-      rgba(3, 46, 66, 0.95) 100%
-    ),
-    radial-gradient(
-      circle at center,
-      rgba(0, 0, 0, 0) 30%,
-      rgba(0, 0, 0, 0.4) 100%
-    );
-    z-index: 5;
   }
 
   .ecasi-hero-img {

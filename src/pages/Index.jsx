@@ -28,153 +28,386 @@ const partners = [
   { name: "Pan African Climate Justice Alliance", logo: "/images/partners/pacja.png", url: "https://www.pacja.org/" },
 ];
 
-// ─── Hero Slider ────────────────────────────────────────────────────────────
+// ─── Hero Slider ─────────────────────────────────────────────────────────────
+// Slides mirror the WordPress Smart Slider 3 (n2-ss-3) on ecasiafrica.org
+// Base: 1200×600px fullwidth | Autoplay: 5 000 ms | Transition: horizontal 800 ms easeOutQuad
 const heroSlides = [
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg",
     title: "Air Quality Training &\nClimate Resilience",
     subtitle: "Empowering stakeholders and communities with technical knowledge to drive climate resilient actions and policies globally.",
-    cta: { label: "Our Programmes", to: "/training-education-public-awareness" },
-    cta2: { label: "Contact Us", to: "/contact" },
-    position: "object-center",
+    cta:  { label: "Our Programmes", to: "/training-education-public-awareness" },
+    cta2: { label: "Contact Us",     to: "/contact" },
+    position: "object-center md:object-[center_20%] xl:object-[center_30%]",
   },
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/DSC_0990-1.jpg",
     title: "Advancing Sustainability\nGlobally",
     subtitle: "We serve as an independent global think tank supporting green growth and evidence-based environment policies.",
-    cta: { label: "About ECAS", to: "/about" },
-    cta2: { label: "Our Team", to: "/our-team" },
-    position: "object-top",
+    cta:  { label: "About ECAS", to: "/about" },
+    cta2: { label: "Our Team",   to: "/our-team" },
+    position: "object-top md:object-[center_20%] xl:object-[center_30%]",
   },
   {
-    bg: "/images/research/1713864387984-1024x768.jpg",
+    bg: "/images/courses/20241003_133952069-1-1024x683.jpg",
     title: "Capacity Strengthening &\nMentorship Programs",
     subtitle: "Building the green skills required to navigate carbon markets, sustainable finance, and environment impact assessments.",
-    cta: { label: "Training Courses", to: "/institute-overview" },
-    cta2: { label: "Register Now", to: "/contact" },
-    position: "object-center",
+    cta:  { label: "Training Courses", to: "/institute-overview" },
+    cta2: { label: "Register Now",     to: "/contact" },
+    position: "object-center md:object-[center_30%]",
   },
   {
     bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Lidya-caf-with-Prof-Shem.jpg",
     title: "Evidence-Based Research\n& Specialized Advisory",
-    subtitle: "",
-    cta: { label: "Consultancy Services", to: "/research/consulting" },
-    cta2: { label: "Learn More", to: "/about" },
-    position: "object-top",
+    subtitle: "Delivering rigorous analysis that powers policy decisions across Africa and beyond.",
+    cta:  { label: "Consultancy Services", to: "/research/consulting" },
+    cta2: { label: "Learn More",           to: "/about" },
+    position: "object-top md:object-[center_20%]",
   },
   {
     bg: "/images/research/1710846398420-1-1-1024x683.jpg",
     title: "Field Research &\nSystematic Observation",
     subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers globally.",
-    cta: { label: "Research Areas", to: "/research-systematic-observation" },
-    cta2: { label: "Our Work", to: "/our-strategic-focus" },
-    position: "object-center",
+    cta:  { label: "Research Areas", to: "/research-systematic-observation" },
+    cta2: { label: "Our Work",       to: "/our-strategic-focus" },
+    position: "object-center md:object-[center_30%]",
   },
   {
     bg: "/images/research/IMG_20241112_163109285-1024x683.jpg",
     title: "Environmental Impact\nAssessments",
     subtitle: "Delivering strategic environmental and social impact assessments that guide sustainable infrastructure and investment decisions.",
-    cta: { label: "Consultancy", to: "/research/consulting" },
-    cta2: { label: "Contact Us", to: "/contact" },
-    position: "object-top",
+    cta:  { label: "Consultancy", to: "/research/consulting" },
+    cta2: { label: "Contact Us",  to: "/contact" },
+    position: "object-top md:object-[center_20%]",
   },
   {
-    bg: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
+    bg: "/images/research/1713864387984-1024x768.jpg",
     title: "Policy Advocacy &\nInternational Engagement",
     subtitle: "Driving impactful multilateral policy outcomes in global environmental forums.",
-    cta: { label: "Our Policies", to: "/our-policies" },
-    cta2: { label: "Learn More", to: "/about" },
-    position: "object-top",
+    cta:  { label: "Our Policies", to: "/our-policies" },
+    cta2: { label: "Learn More",   to: "/about" },
+    position: "object-bottom",
   },
   {
     bg: "/images/courses/IMGM1984-1024x683.jpg",
     title: "Executive Training\nWorkshops",
     subtitle: "Professional courses in climate change, green economy, and sustainable development delivered by leading experts.",
-    cta: { label: "View Courses", to: "/institute-overview" },
-    cta2: { label: "Register", to: "/contact" },
-    position: "object-top",
+    cta:  { label: "View Courses", to: "/institute-overview" },
+    cta2: { label: "Register",     to: "/contact" },
+    position: "object-[center_40%]",
   },
 ];
 
-
+// ─── Smart Slider 3 – faithful React recreation ───────────────────────────────
+// Matches WP config:
+//   • fullwidth, max-width 1200 px limiter (n2-ss-slide-limiter)
+//   • horizontal translateX transition, 800 ms, cubic-bezier(0.25,0.46,0.45,0.94) ≈ easeOutQuad
+//   • 5 000 ms autoplay
+//   • Arrow: 26 px image-like chevron, orange (#ff9139) on hover
+//   • Heading box: RGBA(0,0,0,0.67) bg → RGBA(255,145,57,1) on hover, border-radius 3 px
+//   • Dot bullets at bottom-center
 const HeroSlider = () => {
-  const [current, setCurrent] = useState(0);
-  const [transitioning, setTransitioning] = useState(false);
+  const [current, setCurrent]       = useState(0);
+  const [prev,    setPrev]          = useState(null);
+  const [dir,     setDir]           = useState(1);   // 1 = next, -1 = prev
+  const [sliding, setSliding]       = useState(false);
   const timerRef = useRef(null);
+  const n = heroSlides.length;
 
-  const go = (dir) => {
-    if (transitioning) return;
-    setTransitioning(true);
-    setTimeout(() => {
-      setCurrent((c) => (c + dir + heroSlides.length) % heroSlides.length);
-      setTransitioning(false);
-    }, 300);
+  const goTo = (next, direction) => {
+    if (sliding || next === current) return;
+    setDir(direction);
+    setPrev(current);
+    setCurrent(next);
+    setSliding(true);
+    setTimeout(() => { setPrev(null); setSliding(false); }, 820);
+  };
+
+  const goNext = () => goTo((current + 1) % n,  1);
+  const goPrev = () => goTo((current - 1 + n) % n, -1);
+
+  // Reset autoplay timer on every interaction
+  const resetTimer = () => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(goNext, 5000);
   };
 
   useEffect(() => {
-    timerRef.current = setInterval(() => go(1), 5000);
+    timerRef.current = setInterval(goNext, 5000);
     return () => clearInterval(timerRef.current);
   });
 
-  const slide = heroSlides[current];
+  // Slide-track offset: outgoing exits in direction, incoming enters from opposite
+  const getStyle = (idx) => {
+    if (idx === current) {
+      return {
+        transform: sliding ? 'translateX(0%)' : 'translateX(0%)',
+        transition: sliding
+          ? 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 820ms'
+          : 'none',
+        opacity: 1,
+        zIndex: 12,
+      };
+    }
+    if (idx === prev && sliding) {
+      return {
+        transform: `translateX(${dir * -100}%)`,
+        transition: 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 820ms',
+        opacity: 1,
+        zIndex: 11,
+      };
+    }
+    return { transform: 'translateX(-100000px)', opacity: 0, zIndex: 10, transition: 'none' };
+  };
+
+  // Incoming slide starts offset and moves to 0
+  const getIncomingStyle = (idx) => {
+    if (idx === current && sliding) {
+      return {
+        transform: `translateX(${dir * 100}%)`,
+        transition: 'none',
+      };
+    }
+    return {};
+  };
 
   return (
-    <div className="ecasi-hero" style={{ height: "clamp(380px, 55vw, 600px)" }}>
-      {/* Background Images - Render all to preload */}
-      {heroSlides.map((s, idx) => (
-        <Link to={s.cta.to} key={idx} className="absolute inset-0 block w-full h-full z-0 cursor-pointer">
-          <img
-            src={s.bg}
-            alt={`Hero Background ${idx + 1}`}
-            fetchPriority="high"
-            loading="eager"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${s.position || 'object-center'}`}
-            style={{ opacity: idx === current && !transitioning ? 1 : 0 }}
-          />
-        </Link>
-      ))}
-      <div className="ecasi-hero-overlay pointer-events-none" />
+    // n2-ss-slider-1 → n2-ss-slider-2 → n2-ss-slider-3
+    <div
+      className="n2ss-hero"
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        width: '100%',
+        height: 'clamp(320px, 50vw, 600px)',
+        background: '#032e42',
+      }}
+    >
+      {/* ── Slide backgrounds (n2-ss-slide-backgrounds) ── */}
+      {heroSlides.map((s, idx) => {
+        const isActive  = idx === current;
+        const isLeaving = idx === prev && sliding;
+        const isIncoming = isActive && sliding;
 
-      {/* Content */}
-      <div
-        className="ecasi-hero-content absolute inset-0 flex items-center pointer-events-none"
-        style={{ opacity: transitioning ? 0 : 1, transition: "opacity 0.4s" }}
-      >
-        <div className="max-w-[1476px] w-full mx-auto px-4 lg:px-16 pointer-events-auto">
-          <div className="max-w-2xl">
-            <p className="text-white/60 text-xs uppercase tracking-wider mb-2.5 font-medium" style={{ fontFamily: "'Roboto', sans-serif" }}>
-              ECAS INSTITUTE — BRIDGING THE NEXUS BETWEEN RESEARCH, POLICY AND PRACTICE
-            </p>
-            <h1
-              className="ecasi-slide-heading mb-8 whitespace-pre-line"
-              style={{ fontFamily: "'Fira Sans', sans-serif" }}
-            >
-              {slide.title}
-            </h1>
-            <div className="flex items-center gap-4 flex-wrap">
-              {slide.cta && (
-                <Link to={slide.cta.to} className="ecasi-btn-primary">
-                  {slide.cta.label}
-                </Link>
-              )}
-              {slide.cta2 && (
-                <Link to={slide.cta2.to} className="border-2 border-white text-white hover:bg-white hover:text-black transition-all duration-200 px-[26px] py-[8px] text-[13px] font-semibold rounded-[3px] uppercase tracking-wider inline-block">
-                  {slide.cta2.label}
-                </Link>
-              )}
-            </div>
+        // Outgoing: slides out in `dir` direction
+        // Incoming: starts at opposite side, slides to 0
+        let transform = 'translateX(-100000px)';
+        let transition = 'none';
+        let zIndex = 10;
+
+        if (isLeaving) {
+          transform = `translateX(${dir * -100}%)`;
+          transition = 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94)';
+          zIndex = 11;
+        } else if (isIncoming) {
+          // animates from offset → 0
+          transform = 'translateX(0%)';
+          transition = 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94)';
+          zIndex = 12;
+        } else if (isActive && !sliding) {
+          transform = 'translateX(0%)';
+          transition = 'none';
+          zIndex = 12;
+        }
+
+        return (
+          <div
+            key={idx}
+            style={{
+              position: 'absolute', inset: 0,
+              transform, transition, zIndex,
+              willChange: 'transform',
+            }}
+          >
+            <img
+              src={s.bg}
+              alt={`Slide ${idx + 1}`}
+              fetchPriority={idx === 0 ? 'high' : 'auto'}
+              loading={idx === 0 ? 'eager' : 'lazy'}
+              className={`w-full h-full object-cover ${s.position || 'object-center'}`}
+              style={{ filter: 'saturate(1.12) contrast(1.06) brightness(1.02)' }}
+            />
           </div>
+        );
+      })}
+
+      {/* ── Dark gradient overlay (matches WP ecasi-hero-overlay) ── */}
+      <div
+        style={{
+          position: 'absolute', inset: 0, zIndex: 15, pointerEvents: 'none',
+          background: `
+            linear-gradient(to bottom,
+              rgba(3,46,66,0.08) 0%,
+              rgba(3,46,66,0.28) 55%,
+              rgba(3,46,66,0.60) 100%),
+            radial-gradient(circle at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.18) 100%)
+          `,
+        }}
+      />
+
+      {/* ── Slide content (n2-ss-slider-4 / n2-ss-slide) ── */}
+      {/* n2-ss-slide-limiter: max-width 1200 px centered */}
+      <div
+        style={{
+          position: 'absolute', inset: 0, zIndex: 20,
+          display: 'flex', alignItems: 'center',
+        }}
+      >
+        <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 32px' }}>
+          {heroSlides.map((s, idx) => {
+            const visible = idx === current;
+            return (
+              <div
+                key={idx}
+                style={{
+                  display: visible ? 'block' : 'none',
+                  animation: visible && !sliding ? 'n2ssContentIn 0.5s ease-out' : 'none',
+                }}
+              >
+                {/* Eyebrow */}
+                <p style={{
+                  color: 'rgba(255,255,255,0.85)',
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  marginBottom: '12px',
+                  fontFamily: "'Roboto', sans-serif",
+                  fontWeight: 500,
+                }}>
+                  ECAS INSTITUTE — BRIDGING THE NEXUS BETWEEN RESEARCH, POLICY AND PRACTICE
+                </p>
+
+                {/* Heading — n2-style heading box: dark bg, orange hover */}
+                <h1 className="n2ss-heading" style={{
+                  display: 'inline-block',
+                  fontFamily: "'Fira Sans', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 'clamp(22px, 3.4vw, 42px)',
+                  lineHeight: 1.18,
+                  color: '#ffffff',
+                  whiteSpace: 'pre-line',
+                  marginBottom: '28px',
+                }}>
+                  {s.title}
+                </h1>
+
+                {/* CTA Buttons */}
+                <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {s.cta && (
+                    <Link
+                      to={s.cta.to}
+                      onClick={resetTimer}
+                      style={{
+                        background: '#008000',
+                        color: '#ffffff',
+                        fontFamily: "'Roboto', sans-serif",
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        padding: '10px 26px',
+                        borderRadius: '3px',
+                        textDecoration: 'none',
+                        display: 'inline-block',
+                        transition: 'background 0.25s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#252628'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#008000'}
+                    >
+                      {s.cta.label}
+                    </Link>
+                  )}
+                  {s.cta2 && (
+                    <Link
+                      to={s.cta2.to}
+                      onClick={resetTimer}
+                      style={{
+                        border: '2px solid rgba(255,255,255,0.85)',
+                        color: '#ffffff',
+                        fontFamily: "'Roboto', sans-serif",
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        padding: '8px 24px',
+                        borderRadius: '3px',
+                        textDecoration: 'none',
+                        display: 'inline-block',
+                        transition: 'background 0.25s, color 0.25s, border-color 0.25s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#032e42'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ffffff'; }}
+                    >
+                      {s.cta2.label}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Dots */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+      {/* ── Arrow: previous (nextend-arrow-previous) ── */}
+      <button
+        onClick={() => { goPrev(); resetTimer(); }}
+        aria-label="Previous slide"
+        className="n2ss-arrow n2ss-arrow-prev"
+        style={{
+          position: 'absolute', left: '16px', top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 25, cursor: 'pointer', background: 'none', border: 'none', padding: 0,
+          lineHeight: 0,
+        }}
+      >
+        {/* WP uses img arrows (26px wide); we replicate with an SVG chevron */}
+        <span className="n2ss-arrow-inner" style={{ display: 'flex' }}>
+          <svg width="26" height="44" viewBox="0 0 26 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="20,6 6,22 20,38" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </span>
+      </button>
+
+      {/* ── Arrow: next (nextend-arrow-next) ── */}
+      <button
+        onClick={() => { goNext(); resetTimer(); }}
+        aria-label="Next slide"
+        className="n2ss-arrow n2ss-arrow-next"
+        style={{
+          position: 'absolute', right: '16px', top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 25, cursor: 'pointer', background: 'none', border: 'none', padding: 0,
+          lineHeight: 0,
+        }}
+      >
+        <span className="n2ss-arrow-inner" style={{ display: 'flex' }}>
+          <svg width="26" height="44" viewBox="0 0 26 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="6,6 20,22 6,38" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </span>
+      </button>
+
+      {/* ── Dot bullets (bottom-center) ── */}
+      <div style={{
+        position: 'absolute', bottom: '18px', left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex', gap: '7px', zIndex: 25,
+      }}>
         {heroSlides.map((_, i) => (
           <button
             key={i}
-            onClick={() => { if (!transitioning) { setTransitioning(true); setTimeout(() => { setCurrent(i); setTransitioning(false); }, 300); } }}
-            className={`h-2 rounded-full transition-all duration-300 ${i === current ? "w-7 bg-white" : "w-2 bg-white/50"}`}
+            onClick={() => { goTo(i, i > current ? 1 : -1); resetTimer(); }}
             aria-label={`Slide ${i + 1}`}
+            style={{
+              height: '8px',
+              width: i === current ? '28px' : '8px',
+              borderRadius: '4px',
+              background: i === current ? '#ffffff' : 'rgba(255,255,255,0.45)',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              transition: 'width 0.3s, background 0.3s',
+            }}
           />
         ))}
       </div>
@@ -405,6 +638,76 @@ const Index = () => {
           </div>
         </section>
 
+        {/* ── Partners Section ── */}
+        <section className="py-12 bg-white border-t border-gray-100 overflow-hidden select-none relative w-full">
+          <div className="max-w-[1476px] mx-auto px-4 lg:px-16 mb-10">
+            <ScrollAnimation animation="slide-up">
+              <p className="ecasi-section-title text-2xl md:text-3xl mb-2 text-center">OUR PARTNERS</p>
+              <div className="flex justify-center mb-6">
+                <div className="ecasi-section-divider" />
+              </div>
+              <p className="text-center text-ecasi-body text-base max-w-2xl mx-auto">
+                We collaborate with leading institutions to drive impact across Africa.
+              </p>
+            </ScrollAnimation>
+          </div>
+
+          <div className="relative w-full overflow-hidden flex flex-col justify-center">
+            {/* Gradient Mask for Fade Effect at Edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+            <div className="flex w-[200%] gap-12 items-center animate-marquee whitespace-nowrap py-4">
+              {/* Copy 1 */}
+              <div className="flex justify-around items-center gap-16 min-w-full shrink-0">
+                {partners.map((partner, idx) => (
+                  <a
+                    key={`p1-${idx}`}
+                    href={partner.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-14 flex items-center transition-all duration-300 transform hover:scale-105 shrink-0"
+                    title={partner.name}
+                  >
+                    <img
+                      src={partner.logo}
+                      alt={partner.name}
+                      className="h-full object-contain max-w-[160px]"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400 uppercase tracking-wider">${partner.name}</span>`;
+                      }}
+                    />
+                  </a>
+                ))}
+              </div>
+              {/* Copy 2 */}
+              <div className="flex justify-around items-center gap-16 min-w-full shrink-0">
+                {partners.map((partner, idx) => (
+                  <a
+                    key={`p2-${idx}`}
+                    href={partner.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-14 flex items-center transition-all duration-300 transform hover:scale-105 shrink-0"
+                    title={partner.name}
+                  >
+                    <img
+                      src={partner.logo}
+                      alt={partner.name}
+                      className="h-full object-contain max-w-[160px]"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400 uppercase tracking-wider">${partner.name}</span>`;
+                      }}
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── Upcoming Events ── */}
         <section className="py-16 md:py-20 bg-white">
           <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
@@ -468,76 +771,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* ── Partners Section ── */}
-        <section className="py-12 bg-white border-t border-gray-100 overflow-hidden select-none relative w-full">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16 mb-10">
-            <ScrollAnimation animation="slide-up">
-              <p className="ecasi-section-title text-2xl md:text-3xl mb-2 text-center">OUR PARTNERS</p>
-              <div className="flex justify-center mb-6">
-                <div className="ecasi-section-divider" />
-              </div>
-              <p className="text-center text-ecasi-body text-base max-w-2xl mx-auto">
-                We collaborate with leading institutions to drive impact across Africa.
-              </p>
-            </ScrollAnimation>
-          </div>
-          
-          <div className="relative w-full overflow-hidden flex flex-col justify-center">
-            {/* Gradient Mask for Fade Effect at Edges */}
-            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-
-            <div className="flex w-[200%] gap-12 items-center animate-marquee whitespace-nowrap py-4">
-              {/* Copy 1 */}
-              <div className="flex justify-around items-center gap-16 min-w-full shrink-0">
-                {partners.map((partner, idx) => (
-                  <a
-                    key={`p1-${idx}`}
-                    href={partner.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-14 flex items-center grayscale hover:grayscale-0 transition-all duration-300 transform hover:scale-105 shrink-0"
-                    title={partner.name}
-                  >
-                    <img
-                      src={partner.logo}
-                      alt={partner.name}
-                      className="h-full object-contain max-w-[160px]"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400 uppercase tracking-wider">${partner.name}</span>`;
-                      }}
-                    />
-                  </a>
-                ))}
-              </div>
-              {/* Copy 2 */}
-              <div className="flex justify-around items-center gap-16 min-w-full shrink-0">
-                {partners.map((partner, idx) => (
-                  <a
-                    key={`p2-${idx}`}
-                    href={partner.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-14 flex items-center grayscale hover:grayscale-0 transition-all duration-300 transform hover:scale-105 shrink-0"
-                    title={partner.name}
-                  >
-                    <img
-                      src={partner.logo}
-                      alt={partner.name}
-                      className="h-full object-contain max-w-[160px]"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400 uppercase tracking-wider">${partner.name}</span>`;
-                      }}
-                    />
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* ── LinkedIn Feed ── */}
         <section className="py-16 md:py-20 bg-gray-50 border-t border-gray-200">
           <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
@@ -550,54 +783,54 @@ const Index = () => {
         </section>
 
         {/* ── Client Testimonials ── */}
-        <section className="py-16 md:py-20 bg-gray-50 relative overflow-hidden">
+        <section className="py-8 md:py-10 bg-gray-50 relative overflow-hidden">
           <div className="max-w-[1476px] mx-auto px-4 lg:px-16 relative z-10">
             <ScrollAnimation animation="fade-in">
               <p
-                className="text-center text-2xl md:text-3xl font-bold mb-2 uppercase tracking-wide text-[#032e42]"
+                className="text-center text-xl md:text-2xl font-bold mb-2 uppercase tracking-wide text-[#032e42]"
                 style={{ fontFamily: "'Fira Sans', sans-serif" }}
               >
                 WHAT OUR PARTNERS SAY
               </p>
-              <div className="flex justify-center mb-12">
+              <div className="flex justify-center mb-6">
                 <div className="ecasi-section-divider" style={{ background: "linear-gradient(90deg,#20b2aa,#008000)" }} />
               </div>
             </ScrollAnimation>
 
-            <div className="max-w-4xl mx-auto overflow-hidden">
+            <div className="max-w-3xl mx-auto overflow-hidden">
               <div
                 className="flex transition-transform duration-700 ease-in-out"
                 style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
               >
                 {testimonials.map((testimonial, i) => (
                   <div key={i} className="min-w-full px-4 flex flex-col items-center text-center">
-                    <Quote size={48} className="mx-auto mb-6 opacity-20 text-[#008000]" />
-                    <p className="text-gray-600 italic">
+                    <Quote size={32} className="mx-auto mb-3 opacity-20 text-[#008000]" />
+                    <p className="text-gray-600 italic text-sm">
                       &quot;{testimonial.quote}&quot;
                     </p>
-                    <div className="flex flex-col items-center gap-1 mt-8">
+                    <div className="flex flex-col items-center gap-1 mt-4">
                       {testimonial.image ? (
                         <img
                           src={testimonial.image}
                           alt={testimonial.name}
-                          className="w-16 h-16 rounded-full object-cover mb-2 border-2 border-[#008000]"
+                          className="w-12 h-12 rounded-full object-cover mb-1 border-2 border-[#008000]"
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gray-200 mb-2 border-2 border-[#008000]">
-                          <User size={32} className="text-gray-500" />
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gray-200 mb-1 border-2 border-[#008000]">
+                          <User size={24} className="text-gray-500" />
                         </div>
                       )}
-                      <span className="text-[#032e42] font-bold text-base" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
+                      <span className="text-[#032e42] font-bold text-sm" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
                         {testimonial.name}
                       </span>
-                      <span className="text-gray-500 text-sm font-medium">{testimonial.role}</span>
+                      <span className="text-gray-500 text-xs font-medium">{testimonial.role}</span>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Dots */}
-              <div className="flex justify-center gap-3 mt-10">
+              <div className="flex justify-center gap-3 mt-5">
                 {testimonials.map((_, i) => (
                   <button
                     key={i}

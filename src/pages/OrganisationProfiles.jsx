@@ -9,19 +9,19 @@ const profiles = [
   {
     title: "ECAS Institute Corporate Profile",
     description: "An overview of our mission, vision, key impact areas, and structural framework across the African continent.",
-    url: "/pdfs/ECAS-Corporate-Profile.pdf",
+    url: "/pdfs/ECAS PROFILE .pdf",
     icon: FileText,
   },
   {
     title: "Capacity Building & Training Profile",
     description: "Details on our executive courses, mentorship programmes, and capacity-building tracks for professionals and governments.",
-    url: "/pdfs/ECAS-Training-Profile.pdf",
+    url: "/pdfs/ECASI_Training_Profile.pdf",
     icon: FileText,
   },
   {
     title: "Research & Advisory Services",
     description: "Our portfolio of consultancy services, policy assessments, and specialized advisory for stakeholders.",
-    url: "/pdfs/ECAS-Research-Advisory-Profile.pdf",
+    url: "/ECASI_Research_Profile_2025.pdf",
     icon: FileText,
   }
 ];
