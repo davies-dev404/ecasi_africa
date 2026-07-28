@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '@/components/SEO';
 import { GraduationCap, Briefcase, Brain, Landmark, Calendar, MapPin, Quote, User } from 'lucide-react';
@@ -107,69 +107,33 @@ const heroSlides = [
 //   • Heading box: RGBA(0,0,0,0.67) bg → RGBA(255,145,57,1) on hover, border-radius 3 px
 //   • Dot bullets at bottom-center
 const HeroSlider = () => {
-  const [current, setCurrent]       = useState(0);
-  const [prev,    setPrev]          = useState(null);
-  const [dir,     setDir]           = useState(1);   // 1 = next, -1 = prev
-  const [sliding, setSliding]       = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev] = useState(null);
+  const [sliding, setSliding] = useState(false);
   const timerRef = useRef(null);
   const n = heroSlides.length;
 
-  const goTo = (next, direction) => {
+  const goTo = useCallback((next) => {
     if (sliding || next === current) return;
-    setDir(direction);
     setPrev(current);
     setCurrent(next);
     setSliding(true);
     setTimeout(() => { setPrev(null); setSliding(false); }, 820);
-  };
+  }, [sliding, current]);
 
-  const goNext = () => goTo((current + 1) % n,  1);
-  const goPrev = () => goTo((current - 1 + n) % n, -1);
+  const goNext = useCallback(() => goTo((current + 1) % n), [current, n, goTo]);
+  const goPrev = useCallback(() => goTo((current - 1 + n) % n), [current, n, goTo]);
 
   // Reset autoplay timer on every interaction
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     clearInterval(timerRef.current);
     timerRef.current = setInterval(goNext, 5000);
-  };
+  }, [goNext]);
 
   useEffect(() => {
     timerRef.current = setInterval(goNext, 5000);
     return () => clearInterval(timerRef.current);
-  });
-
-  // Slide-track offset: outgoing exits in direction, incoming enters from opposite
-  const getStyle = (idx) => {
-    if (idx === current) {
-      return {
-        transform: sliding ? 'translateX(0%)' : 'translateX(0%)',
-        transition: sliding
-          ? 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 820ms'
-          : 'none',
-        opacity: 1,
-        zIndex: 12,
-      };
-    }
-    if (idx === prev && sliding) {
-      return {
-        transform: `translateX(${dir * -100}%)`,
-        transition: 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 820ms',
-        opacity: 1,
-        zIndex: 11,
-      };
-    }
-    return { transform: 'translateX(-100000px)', opacity: 0, zIndex: 10, transition: 'none' };
-  };
-
-  // Incoming slide starts offset and moves to 0
-  const getIncomingStyle = (idx) => {
-    if (idx === current && sliding) {
-      return {
-        transform: `translateX(${dir * 100}%)`,
-        transition: 'none',
-      };
-    }
-    return {};
-  };
+  }, [current, goNext]);
 
   return (
     // n2-ss-slider-1 → n2-ss-slider-2 → n2-ss-slider-3
@@ -185,30 +149,17 @@ const HeroSlider = () => {
     >
       {/* ── Slide backgrounds (n2-ss-slide-backgrounds) ── */}
       {heroSlides.map((s, idx) => {
-        const isActive  = idx === current;
-        const isLeaving = idx === prev && sliding;
-        const isIncoming = isActive && sliding;
+        const isActive = idx === current;
 
-        // Outgoing: slides out in `dir` direction
-        // Incoming: starts at opposite side, slides to 0
-        let transform = 'translateX(-100000px)';
-        let transition = 'none';
-        let zIndex = 10;
+        // Calculate shortest path distance with modulo
+        let diff = idx - current;
+        diff = ((diff + n/2) % n + n) % n - n/2;
 
-        if (isLeaving) {
-          transform = `translateX(${dir * -100}%)`;
-          transition = 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94)';
-          zIndex = 11;
-        } else if (isIncoming) {
-          // animates from offset → 0
-          transform = 'translateX(0%)';
-          transition = 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94)';
-          zIndex = 12;
-        } else if (isActive && !sliding) {
-          transform = 'translateX(0%)';
-          transition = 'none';
-          zIndex = 12;
-        }
+        const transform = `translateX(${diff * 100}%)`;
+        const transition = (isActive || idx === prev) && sliding
+          ? 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94)'
+          : 'none';
+        const zIndex = isActive ? 12 : (idx === prev ? 11 : 10);
 
         return (
           <div

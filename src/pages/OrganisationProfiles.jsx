@@ -9,7 +9,7 @@ const profiles = [
   {
     title: "ECAS Institute Corporate Profile",
     description: "An overview of our mission, vision, key impact areas, and structural framework across the African continent.",
-    url: "/pdfs/ECAS PROFILE .pdf",
+    url: "/pdfs/ECAS_Corporate_Profile.pdf",
     icon: FileText,
   },
   {
@@ -21,7 +21,7 @@ const profiles = [
   {
     title: "Research & Advisory Services",
     description: "Our portfolio of consultancy services, policy assessments, and specialized advisory for stakeholders.",
-    url: "/ECASI_Research_Profile_2025.pdf",
+    url: "/pdfs/ECASI_Research_Profile_2025.pdf",
     icon: FileText,
   }
 ];

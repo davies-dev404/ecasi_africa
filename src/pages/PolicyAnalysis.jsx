@@ -72,19 +72,19 @@ const whatItInvolves = [
     icon: ClipboardCheck,
     title: 'Evaluating Policy Proposals',
     description: 'Assessing the potential impact of proposed policies, considering their costs and benefits, and identifying potential risks and challenges.',
-    color: 'from-violet-500 to-purple-600',
-    bgLight: 'bg-violet-50',
-    iconColor: 'text-violet-600',
-    borderColor: 'border-violet-200',
+    color: 'from-teal-500 to-emerald-600',
+    bgLight: 'bg-teal-50',
+    iconColor: 'text-teal-600',
+    borderColor: 'border-teal-200',
   },
   {
     icon: Users,
     title: 'Advocacy',
     description: 'Informing advocacy efforts by providing evidence-based arguments and recommendations to influence policy decisions.',
-    color: 'from-amber-500 to-orange-600',
-    bgLight: 'bg-amber-50',
-    iconColor: 'text-amber-600',
-    borderColor: 'border-amber-200',
+    color: 'from-sky-500 to-blue-600',
+    bgLight: 'bg-sky-50',
+    iconColor: 'text-sky-600',
+    borderColor: 'border-sky-200',
   },
 ];
 
@@ -371,7 +371,7 @@ const PolicyAnalysis = () => {
               variants={slideInLeft}
               className="lg:w-80 flex-shrink-0"
             >
-              <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-violet-600 bg-violet-50 px-4 py-2 rounded-full mb-4">
+              <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-2 rounded-full mb-4">
                 <Target className="h-3.5 w-3.5" />
                 Key Aspects
               </span>
@@ -380,7 +380,7 @@ const PolicyAnalysis = () => {
                 style={{ fontFamily: "'Fira Sans', sans-serif" }}
               >
                 Core Pillars of{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-purple-500">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-500">
                   Policy Analysis
                 </span>
               </h2>
@@ -403,20 +403,20 @@ const PolicyAnalysis = () => {
                   key={i}
                   variants={itemVariants}
                   whileHover={{ x: 8, transition: { duration: 0.2 } }}
-                  className="group flex items-center gap-5 bg-slate-50 hover:bg-gradient-to-r hover:from-violet-50 hover:to-white rounded-2xl p-5 border border-slate-100 hover:border-violet-200 transition-all duration-300 cursor-default"
+                  className="group flex items-center gap-5 bg-slate-50 hover:bg-gradient-to-r hover:from-blue-50 hover:to-white rounded-2xl p-5 border border-slate-100 hover:border-blue-200 transition-all duration-300 cursor-default"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md group-hover:bg-violet-100 transition-all duration-300">
-                    <aspect.icon className="h-6 w-6 text-slate-400 group-hover:text-violet-600 transition-colors" />
+                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md group-hover:bg-blue-100 transition-all duration-300">
+                    <aspect.icon className="h-6 w-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-700 group-hover:text-violet-700 transition-colors text-base" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
+                    <h4 className="font-bold text-slate-700 group-hover:text-blue-700 transition-colors text-base" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
                       {aspect.title}
                     </h4>
                     <p className="text-slate-500 text-sm" style={{ fontFamily: "'Roboto', sans-serif" }}>
                       {aspect.description}
                     </p>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-violet-500 ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                  <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300" />
                 </motion.div>
               ))}
             </motion.div>
@@ -522,10 +522,10 @@ const PolicyAnalysis = () => {
                 transition={{ delay: 0.3, duration: 0.6 }}
               >
                 <h3 className="text-white text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
-                  Shaping Africa's Policy Landscape
+                  Shaping Africa&apos;s Policy Landscape
                 </h3>
                 <p className="text-white/80 text-base max-w-xl" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                  ECAS Institute's policy analysis expertise spans climate change, environmental governance,
+                  ECAS Institute&apos;s policy analysis expertise spans climate change, environmental governance,
                   sustainable development, and social impact assessments across the African continent.
                 </p>
               </motion.div>
@@ -535,7 +535,7 @@ const PolicyAnalysis = () => {
       </section>
 
       {/* ── Related Services ── */}
-      <section className="py-16 md:py-12 md:py-16 bg-slate-50">
+      <section className="py-16 md:py-12 bg-slate-50">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-16">
           <motion.div
             initial="hidden"
