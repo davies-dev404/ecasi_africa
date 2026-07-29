@@ -134,11 +134,11 @@ const Header = () => {
           }`}
       >
         <div
-          className="hidden md:block absolute top-0 left-0 bottom-0 bg-ecasi-blue"
+          className="absolute top-0 left-0 bottom-0 bg-ecasi-blue"
           style={{ width: '60%', clipPath: 'polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%)' }}
         ></div>
-        <div className="relative z-10 flex flex-col sm:flex-row items-center text-white text-[11px] sm:text-xs md:text-sm font-semibold w-full max-w-[1476px] mx-auto px-4 lg:px-16 justify-between gap-y-1.5">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-white">
+        <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center text-white text-[11px] sm:text-xs md:text-sm font-semibold w-full max-w-[1476px] mx-auto px-4 lg:px-16 justify-between gap-y-1.5">
+          <div className="flex flex-wrap items-center justify-start gap-x-4 gap-y-1 text-white">
             <a href="tel:+254728925306" className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer whitespace-nowrap">
               <Phone size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />
               <span className="tracking-wide">+254 728 925 306</span>
@@ -148,7 +148,7 @@ const Header = () => {
               <span className="tracking-wide">info@ecasiafrica.org</span>
             </a>
           </div>
-          <div className="flex items-center justify-center whitespace-nowrap sm:ml-auto">
+          <div className="flex items-center justify-end whitespace-nowrap sm:ml-auto">
             <Clock size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />
             <span className="tracking-wide">Mon – Fri: 8:00am – 7:00pm</span>
           </div>

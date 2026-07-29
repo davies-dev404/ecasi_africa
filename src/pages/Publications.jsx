@@ -3,10 +3,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
-import { BookOpen, Download, Eye, Calendar, ArrowLeft, Search, FileText, Tag } from 'lucide-react';
+import { BookOpen, Eye, Calendar, ArrowLeft, Search, FileText, Tag, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import publicationsData from '@/data/publicationsData.json';
 
-const publications = [];
+const publications = publicationsData;
 
 const Publications = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,22 +23,18 @@ const Publications = () => {
     return matchesSearch && matchesType;
   });
 
-  const handleDownload = async (url, title) => {
+  const handleView = async (url) => {
     try {
       const res = await fetch(url, { method: 'HEAD' });
       const contentType = res.headers.get('content-type');
       if (res.ok && contentType && !contentType.includes('text/html')) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = url.split('/').pop();
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.click();
+        window.open(url, '_blank', 'noopener,noreferrer');
       } else {
-        alert("This document is currently being updated and will be available for download shortly. Please check back later.");
+        alert("This document is currently being updated and will be available for viewing shortly. Please check back later.");
       }
     } catch (err) {
-      alert("We are unable to process your download request at this time. Please try again later.");
+      console.error("Error viewing document:", err);
+      alert("We are unable to process your request at this time. Please try again later.");
     }
   };
 
@@ -157,12 +154,12 @@ const Publications = () => {
                         {expandedId === item.id ? 'Hide' : 'Abstract'}
                       </button>
                       <button 
-                        onClick={() => handleDownload(item.downloadUrl, item.title)}
+                        onClick={() => handleView(item.downloadUrl)}
                         className="flex items-center gap-1.5 px-4 py-2 bg-ecasi-green text-white rounded-lg text-sm font-semibold hover:bg-ecasi-navy transition-colors"
-                        aria-label={`Download ${item.title}`}
+                        aria-label={`View ${item.title}`}
                       >
-                        <Download size={14} />
-                        Download PDF
+                        <ExternalLink size={14} />
+                        View PDF
                       </button>
                     </div>
                   </div>

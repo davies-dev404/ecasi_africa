@@ -1,0 +1,368 @@
+[
+  {
+    "id": "pub-1",
+    "title": "Agenda 21",
+    "type": "Resource / Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Agenda 21. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Agenda%2021.pdf"
+  },
+  {
+    "id": "pub-2",
+    "title": "Analysis of Kenya’s Agricultural Policy Environment Towards Food Security and Climate Resilient Sector",
+    "type": "Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "Government of Kenya / Local Partners",
+    "abstract": "Official publication document addressing Analysis of Kenya’s Agricultural Policy Environment Towards Food Security and Climate Resilient Sector. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Environment",
+      "Climate Change",
+      "Agriculture"
+    ],
+    "downloadUrl": "/pdfs/Publications/Analysis%20of%20Kenya%E2%80%99s%20Agricultural%20Policy%20Environment%20Towards%20Food%20Security%20and%20Climate%20Resilient%20Sector.pdf"
+  },
+  {
+    "id": "pub-3",
+    "title": "Climate Change Act No11of2016",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Climate Change Act No11of2016. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Climate Change"
+    ],
+    "downloadUrl": "/pdfs/Publications/Climate%20Change%20Act%20No11of2016.pdf"
+  },
+  {
+    "id": "pub-4",
+    "title": "Climate change curriculum guidelines 31st May 2020",
+    "type": "Guidelines",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2020",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Climate change curriculum guidelines 31st May 2020. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Climate Change"
+    ],
+    "downloadUrl": "/pdfs/Publications/Climate%20change%20curriculum%20guidelines-31st-May-2020.pdf"
+  },
+  {
+    "id": "pub-5",
+    "title": "Climate Change Framework PolicyMay2017",
+    "type": "Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2017",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Climate Change Framework PolicyMay2017. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Climate Change"
+    ],
+    "downloadUrl": "/pdfs/Publications/Climate-Change-Framework-PolicyMay2017.pdf"
+  },
+  {
+    "id": "pub-6",
+    "title": "Community Land Act 27 of 2016",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2016",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Community Land Act 27 of 2016. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Land Use",
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Community%20Land%20Act_27%20of%202016.pdf"
+  },
+  {
+    "id": "pub-7",
+    "title": "CountyGovernmentsAct No17of2012 1",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing CountyGovernmentsAct No17of2012 1. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/CountyGovernmentsAct_No17of2012_1.pdf"
+  },
+  {
+    "id": "pub-8",
+    "title": "EMCA Act 2015",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2015",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing EMCA Act 2015. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/EMCA%20Act%202015.pdf"
+  },
+  {
+    "id": "pub-9",
+    "title": "Energy Act 2019",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2019",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Energy Act 2019. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Energy"
+    ],
+    "downloadUrl": "/pdfs/Publications/Energy%20Act%202019.pdf"
+  },
+  {
+    "id": "pub-10",
+    "title": "Forest Conservation and Management Bill 2015 23 3 2015",
+    "type": "Resource / Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2015",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Forest Conservation and Management Bill 2015 23 3 2015. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Forestry",
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Forest-Conservation-and-Management-Bill-2015-23-3-2015.pdf"
+  },
+  {
+    "id": "pub-11",
+    "title": "KENYA) Improving Efficiency in Forestry Operations and Forest Product Processing in Keyna 0",
+    "type": "Resource / Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "Government of Kenya / Local Partners",
+    "abstract": "Official publication document addressing KENYA) Improving Efficiency in Forestry Operations and Forest Product Processing in Keyna 0. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Forestry",
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/KENYA%29%20Improving%20Efficiency%20in%20Forestry%20Operations%20and%20Forest%20Product%20Processing%20in%20Keyna_0.pdf"
+  },
+  {
+    "id": "pub-12",
+    "title": "Kyoto protocol",
+    "type": "International Treaty",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "UNFCCC",
+    "abstract": "Official publication document addressing Kyoto protocol. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Kyoto_protocol.pdf"
+  },
+  {
+    "id": "pub-13",
+    "title": "Land Act 2012",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2012",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Land Act 2012. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Land Use",
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Land%20Act%202012.pdf"
+  },
+  {
+    "id": "pub-14",
+    "title": "National Climate Change Response Strategy April 2010",
+    "type": "Strategic Plan",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2010",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing National Climate Change Response Strategy April 2010. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Climate Change"
+    ],
+    "downloadUrl": "/pdfs/Publications/National-Climate-Change-Response-Strategy_April-2010.pdf"
+  },
+  {
+    "id": "pub-15",
+    "title": "NATIONAL E WASTE MANAGEMENT STRATEGY APRIL 29th 1",
+    "type": "Strategic Plan",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing NATIONAL E WASTE MANAGEMENT STRATEGY APRIL 29th 1. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Waste Management"
+    ],
+    "downloadUrl": "/pdfs/Publications/NATIONAL-E-WASTE-MANAGEMENT-STRATEGY-APRIL-29th-1.pdf"
+  },
+  {
+    "id": "pub-16",
+    "title": "NATIONAL ENVIRONMENT POLICY 20131",
+    "type": "Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing NATIONAL ENVIRONMENT POLICY 20131. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Environment"
+    ],
+    "downloadUrl": "/pdfs/Publications/NATIONAL-ENVIRONMENT-POLICY-20131.pdf"
+  },
+  {
+    "id": "pub-17",
+    "title": "Paris Agreement",
+    "type": "International Treaty",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "UNFCCC",
+    "abstract": "Official publication document addressing Paris Agreement. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Paris%20Agreement.pdf"
+  },
+  {
+    "id": "pub-18",
+    "title": "PIK TRNM Policy Brief 20 08 17",
+    "type": "Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing PIK TRNM Policy Brief 20 08 17. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/PIK%20TRNM%20Policy%20Brief%2020-08-17.pdf"
+  },
+  {
+    "id": "pub-19",
+    "title": "Public Private Partnerships ActNo15of2013",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Public Private Partnerships ActNo15of2013. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Public%20Private_Partnerships_ActNo15of2013.pdf"
+  },
+  {
+    "id": "pub-20",
+    "title": "THE NAIROBI CITY COUNTY AIR QUALITY ACT 2022 AMBIENT REGULATIONS 2025",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2022",
+    "authors": "Government of Kenya / Local Partners",
+    "abstract": "Official publication document addressing THE NAIROBI CITY COUNTY AIR QUALITY ACT 2022 AMBIENT REGULATIONS 2025. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Air Quality",
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/THE-NAIROBI-CITY-COUNTY-AIR-QUALITY-ACT-2022-AMBIENT-REGULATIONS-2025.pdf"
+  },
+  {
+    "id": "pub-21",
+    "title": "The Constitution of Kenya 2010",
+    "type": "Resource / Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "Government of Kenya / Local Partners",
+    "abstract": "Official publication document addressing The Constitution of Kenya 2010. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/The_Constitution_of_Kenya_2010.pdf"
+  },
+  {
+    "id": "pub-22",
+    "title": "The Kenya Climate Change Act 2016",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "Government of Kenya / Local Partners",
+    "abstract": "Official publication document addressing The Kenya Climate Change Act 2016. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability",
+      "Climate Change"
+    ],
+    "downloadUrl": "/pdfs/Publications/The_Kenya_Climate_Change_Act_2016.pdf"
+  },
+  {
+    "id": "pub-23",
+    "title": "UNFCCC",
+    "type": "International Treaty",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "Resource",
+    "authors": "UNFCCC",
+    "abstract": "Official publication document addressing UNFCCC. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/UNFCCC.pdf"
+  },
+  {
+    "id": "pub-24",
+    "title": "Urban Areas and Cities Act No13 of 2011",
+    "type": "Act / Legislation",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2011",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Urban Areas and Cities Act No13 of 2011. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Urban%20Areas%20and%20Cities%20Act_No13%20of%202011.pdf"
+  },
+  {
+    "id": "pub-25",
+    "title": "Vision 2030 Popular Version",
+    "type": "Resource / Policy Document",
+    "image": "",
+    "pages": "PDF Document",
+    "date": "2030",
+    "authors": "ECAS Institute",
+    "abstract": "Official publication document addressing Vision 2030 Popular Version. This publication provides resources, analysis, or guidelines related to sustainable development and policy planning.",
+    "tags": [
+      "Sustainability"
+    ],
+    "downloadUrl": "/pdfs/Publications/Vision-2030-Popular-Version.pdf"
+  }
+]

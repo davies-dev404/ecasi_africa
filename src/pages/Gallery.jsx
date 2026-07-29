@@ -16,6 +16,30 @@ const galleryCategories = [
 
 const galleryImages = [
   {
+    src: "/images/courses/mentorship_group.jpg",
+    category: "training",
+    title: "Capacity Strengthening & Mentorship",
+    description: "ECAS Institute mentorship and capacity building session participants."
+  },
+  {
+    src: "/images/research/evidence_based_research.jpg",
+    category: "events",
+    title: "Kenya National Public Transport Summit 2025",
+    description: "ECASI representatives sharing insights at the National Public Transport Summit."
+  },
+  {
+    src: "/images/research/field_research.jpg",
+    category: "fieldwork",
+    title: "Field Research & Systematic Observation",
+    description: "Conducting fieldwork, stakeholder mapping, and community evaluations."
+  },
+  {
+    src: "/images/courses/executive_training.jpg",
+    category: "training",
+    title: "Executive Training Workshop",
+    description: "Interactive session focusing on environmental policies and climate change."
+  },
+  {
     src: "/images/research/1710846398420-1-1-1024x683.jpg",
     category: "fieldwork",
     title: "Field Research Session",

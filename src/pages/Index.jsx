@@ -49,7 +49,7 @@ const heroSlides = [
     position: "object-top md:object-[center_20%] xl:object-[center_30%]",
   },
   {
-    bg: "/images/courses/20241003_133952069-1-1024x683.jpg",
+    bg: "/images/courses/mentorship_group.jpg",
     title: "Capacity Strengthening &\nMentorship Programs",
     subtitle: "Building the green skills required to navigate carbon markets, sustainable finance, and environment impact assessments.",
     cta:  { label: "Training Courses", to: "/institute-overview" },
@@ -57,7 +57,7 @@ const heroSlides = [
     position: "object-center md:object-[center_30%]",
   },
   {
-    bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Lidya-caf-with-Prof-Shem.jpg",
+    bg: "/images/research/evidence_based_research.jpg",
     title: "Evidence-Based Research\n& Specialized Advisory",
     subtitle: "Delivering rigorous analysis that powers policy decisions across Africa and beyond.",
     cta:  { label: "Consultancy Services", to: "/research/consulting" },
@@ -65,15 +65,15 @@ const heroSlides = [
     position: "object-top md:object-[center_20%]",
   },
   {
-    bg: "/images/research/1710846398420-1-1-1024x683.jpg",
-    title: "Field Research &\nSystematic Observation",
+    bg: "/images/research/field_research.jpg",
+    title: "Field Research &\nSystemic Observation",
     subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers globally.",
     cta:  { label: "Research Areas", to: "/research-systematic-observation" },
     cta2: { label: "Our Work",       to: "/our-strategic-focus" },
     position: "object-center md:object-[center_30%]",
   },
   {
-    bg: "/images/research/IMG_20241112_163109285-1024x683.jpg",
+    bg: "/images/courses/ok.jpg",
     title: "Environmental Impact\nAssessments",
     subtitle: "Delivering strategic environmental and social impact assessments that guide sustainable infrastructure and investment decisions.",
     cta:  { label: "Consultancy", to: "/research/consulting" },
@@ -89,7 +89,7 @@ const heroSlides = [
     position: "object-bottom",
   },
   {
-    bg: "/images/courses/IMGM1984-1024x683.jpg",
+    bg: "/images/courses/executive_training.jpg",
     title: "Executive Training\nWorkshops",
     subtitle: "Professional courses in climate change, green economy, and sustainable development delivered by leading experts.",
     cta:  { label: "View Courses", to: "/institute-overview" },
@@ -454,6 +454,7 @@ const testimonials = [
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Index = () => {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [currentStat, setCurrentStat] = useState(0);
 
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -476,6 +477,11 @@ const Index = () => {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    const t = setInterval(() => setCurrentStat((c) => (c + 1) % stats.length), 3000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
     <>
       <SEO
@@ -489,25 +495,63 @@ const Index = () => {
         <HeroSlider />
 
         {/* ── Stats Bar ── */}
-        <div className="bg-ecasi-navy py-0">
+        <div className="bg-ecasi-navy py-0 overflow-hidden">
           <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-            <div className="flex overflow-x-auto lg:grid lg:grid-cols-5 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {/* Desktop View (lg and up) */}
+            <div className="hidden lg:grid lg:grid-cols-5">
               {stats.map((s, i) => (
                 <div
                   key={i}
-                  className={`py-2 lg:py-3 px-4 md:px-5 text-center min-w-max flex-1 snap-start border-r border-white/10 last:border-r-0`}
+                  className="py-3 px-5 text-center border-r border-white/10 last:border-r-0"
                 >
                   <div
-                    className="text-xl md:text-2xl font-bold text-ecasi-orange mb-0.5"
+                    className="text-2xl font-bold text-ecasi-orange mb-0.5"
                     style={{ fontFamily: "'Fira Sans', sans-serif", color: "#fda128" }}
                   >
                     {s.value}
                   </div>
-                  <div className="text-white/70 text-[9px] md:text-xs uppercase tracking-wide whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                  <div className="text-white/70 text-xs uppercase tracking-wide whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
                     {s.label}
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Mobile/Tablet View (below lg) - Carousel */}
+            <div className="lg:hidden relative overflow-hidden py-4">
+              <div 
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${currentStat * 100}%)` }}
+              >
+                {stats.map((s, i) => (
+                  <div
+                    key={i}
+                    className="w-full flex-shrink-0 text-center px-4"
+                  >
+                    <div
+                      className="text-3xl font-bold text-ecasi-orange mb-1"
+                      style={{ fontFamily: "'Fira Sans', sans-serif", color: "#fda128" }}
+                    >
+                      {s.value}
+                    </div>
+                    <div className="text-white/80 text-xs uppercase tracking-wider" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Pagination Dots */}
+              <div className="flex justify-center gap-1.5 mt-3">
+                {stats.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentStat(i)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${i === currentStat ? 'w-4 bg-ecasi-orange' : 'w-1.5 bg-white/30'}`}
+                    aria-label={`Go to stat ${i + 1}`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
