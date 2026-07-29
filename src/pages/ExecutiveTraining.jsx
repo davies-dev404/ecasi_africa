@@ -410,7 +410,7 @@ const ExecutiveTraining = () => {
               >
                 <h4 className="font-bold text-base mb-2">Enroll Today</h4>
                 <p className="text-white/70 text-sm mb-4 leading-relaxed">
-                  Transform your career with ECASI's world-class executive training programmes.
+                  Transform your career with ECASI&apos;s world-class executive training programmes.
                 </p>
                 <Link
                   to="/contact"
