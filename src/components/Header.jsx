@@ -130,28 +130,27 @@ const Header = () => {
       <header className={`ecasi-sticky-nav ${scrolled ? "scrolled" : ""}`}>
       {/* ── Top Bar ── */}
       <div
-        className={`ecasi-topbar relative flex items-center justify-end overflow-hidden bg-ecasi-green transition-all duration-300 ease-in-out ${scrolled ? "h-0 opacity-0 min-h-[0px]" : "h-[48px] opacity-100 min-h-[48px]"
+        className={`ecasi-topbar relative flex items-center justify-end overflow-hidden bg-ecasi-green transition-all duration-300 ease-in-out ${scrolled ? "h-0 opacity-0 min-h-[0px]" : "h-auto min-h-[40px] md:h-[48px] opacity-100 py-1.5 md:py-0"
           }`}
       >
         <div
-          className="absolute top-0 left-0 bottom-0 bg-ecasi-blue"
+          className="hidden md:block absolute top-0 left-0 bottom-0 bg-ecasi-blue"
           style={{ width: '60%', clipPath: 'polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%)' }}
         ></div>
-        <div className="relative z-10 flex items-center text-white text-sm font-semibold w-full max-w-[1476px] mx-auto px-4 lg:px-16 justify-between">
-          <div className="hidden md:flex items-center space-x-6 text-white">
-            <a href="tel:+254728925306" className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer">
-              <Phone size={15} className="mr-2 stroke-[2.5]" />
+        <div className="relative z-10 flex flex-col sm:flex-row items-center text-white text-[11px] sm:text-xs md:text-sm font-semibold w-full max-w-[1476px] mx-auto px-4 lg:px-16 justify-between gap-y-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-white">
+            <a href="tel:+254728925306" className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer whitespace-nowrap">
+              <Phone size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />
               <span className="tracking-wide">+254 728 925 306</span>
             </a>
-            <a href="mailto:info@ecasiafrica.org" className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer">
-              <Mail size={15} className="mr-2 stroke-[2.5]" />
+            <a href="mailto:info@ecasiafrica.org" className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer whitespace-nowrap">
+              <Mail size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />
               <span className="tracking-wide">info@ecasiafrica.org</span>
             </a>
           </div>
-          <div className="flex items-center ml-auto">
-            <Clock size={16} className="mr-2 stroke-[2.5]" />
+          <div className="flex items-center justify-center whitespace-nowrap sm:ml-auto">
+            <Clock size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />
             <span className="tracking-wide">Mon – Fri: 8:00am – 7:00pm</span>
-            <span className="mx-3 text-white/50">|</span>
           </div>
         </div>
       </div>
