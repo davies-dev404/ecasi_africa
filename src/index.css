@@ -688,3 +688,127 @@
   .border-ecasi-green { border-color: #008000; }
   .border-ecasi-red { border-color: #d83030; }
 }
+
+/* ==========================================================================
+   EXECUTIVE & ACADEMIC COURSE PROSE STYLING
+   ========================================================================== */
+.prose.prose-green {
+  font-family: 'Roboto', 'Inter', sans-serif;
+  color: #4b5563; /* text-gray-600 */
+  line-height: 1.85;
+}
+
+.prose.prose-green p {
+  margin-bottom: 1.5rem;
+  font-size: 1.05rem;
+  font-family: 'Roboto', sans-serif;
+  color: #374151; /* text-gray-700 */
+}
+
+.prose.prose-green h1,
+.prose.prose-green h2,
+.prose.prose-green h3,
+.prose.prose-green h4 {
+  color: #032e42; /* brand navy */
+  font-weight: 700;
+  margin-top: 2.75rem;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.015em;
+  font-family: 'Fira Sans', sans-serif;
+  text-transform: uppercase;
+}
+
+/* Styled Section Headers with Elegant Accent Border */
+.prose.prose-green h2,
+.prose.prose-green p > strong:only-child,
+.prose.prose-green p > b:only-child {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #008000;
+  padding-bottom: 0.5rem;
+  margin-top: 2.5rem;
+  display: block;
+  width: 100%;
+  color: #032e42;
+}
+
+/* Executive highlight for lists and bullet points */
+.prose.prose-green ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-bottom: 1.75rem;
+  margin-top: 0.5rem;
+}
+
+.prose.prose-green ul > li {
+  position: relative;
+  padding-left: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.025rem;
+  line-height: 1.75;
+  color: #374151;
+}
+
+/* Custom green bullet points */
+.prose.prose-green ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 0.65rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #008000;
+}
+
+.prose.prose-green ol {
+  margin-bottom: 1.75rem;
+  padding-left: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.prose.prose-green ol > li {
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+  font-size: 1.025rem;
+  color: #374151;
+}
+
+/* Blockquotes */
+.prose.prose-green blockquote {
+  border-left: 4px solid #008000;
+  background-color: #f9fafb;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.5rem;
+  font-style: italic;
+  color: #374151;
+  margin: 2rem 0;
+}
+
+/* Elegant Academic / Executive Tables */
+.prose.prose-green table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+  font-size: 0.95rem;
+}
+
+.prose.prose-green th {
+  background-color: #032e42;
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border: 1px solid #e5e7eb;
+}
+
+.prose.prose-green td {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.prose.prose-green tr:nth-child(even) {
+  background-color: #f9fafb;
+}

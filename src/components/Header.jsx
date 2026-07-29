@@ -76,6 +76,54 @@ const Header = () => {
     { label: "Vacancies", path: "/vacancies" },
   ];
 
+  const coursesLinks = [
+    {
+      label: "Climate Change",
+      path: "/executive-training/climate-change",
+      id: "climate-change",
+      children: [
+        { label: "Energy and Green Economy", path: "/executive-training/energy" },
+        { label: "Climate-Smart Forestry", path: "/executive-training/climate-smart-forestry" },
+        { label: "Energy Transition and Mobility", path: "/executive-training/energy-transition-and-mobility" },
+        { label: "Agricultural carbon credit markets", path: "/executive-training/agricultural-carbon-credit-markets" },
+        { label: "Agriculture and Food Systems", path: "/executive-training/agriculture-and-food-systems" },
+        { label: "An Introduction to Climate Change and Human Rights", path: "/executive-training/an-introduction-to-climate-change-and-human-rights" },
+        { label: "Certified Expert in Climate Adaptation Finance", path: "/executive-training/certified-expert-in-climate-adaptation-finance" }
+      ]
+    },
+    { label: "Biodiversity and Natural Resources", path: "/executive-training/biodiversity-and-natural-resources" },
+    { label: "Business Sustainability Management", path: "/executive-training/business-sustainability-management" },
+    {
+      label: "Carbon Markets",
+      path: "/executive-training/carbon-markets",
+      id: "carbon-markets",
+      children: [
+        { label: "Carbon Accounting & Carbon Offsetting Course", path: "/executive-training/carbon-accounting-carbon-offsetting-course" },
+        { label: "Certificate Course on Nature Based Solutions for Disaster and Climate Resilience", path: "/executive-training/certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience" },
+        { label: "Certificate in Green Finance", path: "/executive-training/certificate-in-green-finance" },
+        { label: "Certified Expert in Biodiversity Finance", path: "/executive-training/certified-expert-in-biodiversity-finance" },
+        { label: "Certified Expert in Environmental Accounting, Leadership and Sustainability", path: "/executive-training/certified-expert-in-environmental-accounting" },
+        { label: "Certified Expert in Sustainable Finance", path: "/executive-training/certified-expert-in-sustainable-finance" },
+        { label: "Climate & Biodiversity Certificate Program", path: "/executive-training/climate-biodiversity-certificate-program" },
+        { label: "CLIMATE AND HEALTH CERTIFICATE COURSE", path: "/executive-training/climate-and-health-certificate-course" },
+        { label: "Climate Change and Water", path: "/executive-training/climate-change-and-water" }
+      ]
+    },
+    { label: "Human Resources Professional Courses", path: "/executive-training/human-resources-professional-courses" },
+    { label: "Green Skills Development", path: "/executive-training/green-skills-development" },
+    {
+      label: "Past Training",
+      path: "/executive-training/past-training",
+      id: "past-training",
+      children: [
+        { label: "CLIMATE RESILIENT INFRASTRACTURE DEVELOPMENT TRAINING COURSE", path: "/executive-training/climate-resilient-infrastructure" },
+        { label: "ENVIRONMENT, CLIMATE CHANGE, ENERGY, AND SUSTAINABILITY COURSES", path: "/executive-training/environment-climate-change-courses" },
+        { label: "REGIONAL WORKSHOP: CLIMATE CHANGE AND FOOD SYSTEMS TRANSFORMATION", path: "/executive-training/regional-workshop" },
+        { label: "TRAINING ON CARBON MARKETS AND TRADING", path: "/executive-training/training-on-carbon-markets" }
+      ]
+    }
+  ];
+
   return (
     <>
       <div className="h-[148px] w-full shrink-0" aria-hidden="true"></div>
@@ -320,53 +368,7 @@ const Header = () => {
                         {activeSubDropdown === 'courses' && (
                           <div className="absolute left-full top-0 pl-2 w-72 z-50 animate-fade-in">
                             <div className="bg-white rounded-xl shadow-2xl border border-gray-100 py-3">
-                              {[
-                                {
-                                  label: "Climate Change",
-                                  path: "/executive-training/climate-change",
-                                  id: "climate-change",
-                                  children: [
-                                    { label: "Energy and Green Economy", path: "/executive-training/energy" },
-                                    { label: "Climate-Smart Forestry", path: "/executive-training/climate-smart-forestry" },
-                                    { label: "Energy Transition and Mobility", path: "/executive-training/energy-transition-and-mobility" },
-                                    { label: "Agricultural carbon credit markets", path: "/executive-training/agricultural-carbon-credit-markets" },
-                                    { label: "Agriculture and Food Systems", path: "/executive-training/agriculture-and-food-systems" },
-                                    { label: "An Introduction to Climate Change and Human Rights", path: "/executive-training/an-introduction-to-climate-change-and-human-rights" },
-                                    { label: "Certified Expert in Climate Adaptation Finance", path: "/executive-training/certified-expert-in-climate-adaptation-finance" }
-                                  ]
-                                },
-                                { label: "Biodiversity and Natural Resources", path: "/executive-training/biodiversity-and-natural-resources" },
-                                { label: "Business Sustainability Management", path: "/executive-training/business-sustainability-management" },
-                                {
-                                  label: "Carbon Markets",
-                                  path: "/executive-training/carbon-markets",
-                                  id: "carbon-markets",
-                                  children: [
-                                    { label: "Carbon Accounting & Carbon Offsetting Course", path: "/executive-training/carbon-accounting-carbon-offsetting-course" },
-                                    { label: "Certificate Course on Nature Based Solutions for Disaster and Climate Resilience", path: "/executive-training/certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience" },
-                                    { label: "Certificate in Green Finance", path: "/executive-training/certificate-in-green-finance" },
-                                    { label: "Certified Expert in Biodiversity Finance", path: "/executive-training/certified-expert-in-biodiversity-finance" },
-                                    { label: "Certified Expert in Environmental Accounting, Leadership and Sustainability", path: "/executive-training/certified-expert-in-environmental-accounting" },
-                                    { label: "Certified Expert in Sustainable Finance", path: "/executive-training/certified-expert-in-sustainable-finance" },
-                                    { label: "Climate & Biodiversity Certificate Program", path: "/executive-training/climate-biodiversity-certificate-program" },
-                                    { label: "CLIMATE AND HEALTH CERTIFICATE COURSE", path: "/executive-training/climate-and-health-certificate-course" },
-                                    { label: "Climate Change and Water", path: "/executive-training/climate-change-and-water" }
-                                  ]
-                                },
-                                { label: "Human Resources Professional Courses", path: "/executive-training/human-resources-professional-courses" },
-                                { label: "Green Skills Development", path: "/executive-training/green-skills-development" },
-                                {
-                                  label: "Past Training",
-                                  path: "/executive-training/past-training",
-                                  id: "past-training",
-                                  children: [
-                                    { label: "CLIMATE RESILIENT INFRASTRACTURE DEVELOPMENT TRAINING COURSE", path: "/executive-training/climate-resilient-infrastructure" },
-                                    { label: "ENVIRONMENT, CLIMATE CHANGE, ENERGY, AND SUSTAINABILITY COURSES", path: "/executive-training/environment-climate-change-courses" },
-                                    { label: "REGIONAL WORKSHOP: CLIMATE CHANGE AND FOOD SYSTEMS TRANSFORMATION", path: "/executive-training/regional-workshop" },
-                                    { label: "TRAINING ON CARBON MARKETS AND TRADING", path: "/executive-training/training-on-carbon-markets" }
-                                  ]
-                                }
-                              ].map((sub, sIdx) => (
+                              {coursesLinks.map((sub, sIdx) => (
                                 <div
                                   key={sIdx}
                                   className="relative"
@@ -839,13 +841,69 @@ const Header = () => {
                     >
                       Institute Overview
                     </Link>
-                    <Link
-                      to="/executive-training/courses"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block py-1.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
-                    >
-                      Courses
-                    </Link>
+                    <div>
+                      <button
+                        onClick={() => {
+                          setActiveSubDropdown(activeSubDropdown === 'courses' ? null : 'courses');
+                          setActiveThirdLevelDropdown(null);
+                        }}
+                        className="w-full flex items-center justify-between py-1.5 text-sm font-medium text-gray-700 hover:text-ecasi-green transition-colors"
+                      >
+                        Courses
+                        <ChevronDown size={14} className={`transition-transform duration-200 ${activeSubDropdown === 'courses' ? "rotate-180" : ""}`} />
+                      </button>
+                      {activeSubDropdown === 'courses' && (
+                        <div className="bg-gray-100/80 px-3 border-l-2 border-ecasi-green/40 py-1 space-y-0.5 mt-0.5 rounded-r">
+                          {coursesLinks.map((sub, sIdx) => {
+                            if (sub.children) {
+                              return (
+                                <div key={sIdx}>
+                                  <button
+                                    onClick={() => setActiveThirdLevelDropdown(activeThirdLevelDropdown === sub.id ? null : sub.id)}
+                                    className="w-full flex items-center justify-between py-1 text-xs text-ecasi-body hover:text-ecasi-green"
+                                  >
+                                    {sub.label}
+                                    <ChevronDown size={10} className={`transition-transform duration-200 ${activeThirdLevelDropdown === sub.id ? "rotate-180" : ""}`} />
+                                  </button>
+                                  {activeThirdLevelDropdown === sub.id && (
+                                    <div className="bg-gray-200/50 px-2 border-l border-ecasi-green/20 py-0.5 space-y-0.5 mt-0.5 rounded-r">
+                                      <Link
+                                        to={sub.path}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="block py-1 text-[11px] text-ecasi-body hover:text-ecasi-green font-medium"
+                                      >
+                                        Overview
+                                      </Link>
+                                      {sub.children.map((child, cIdx) => (
+                                        <Link
+                                          key={cIdx}
+                                          to={child.path}
+                                          onClick={() => setMobileMenuOpen(false)}
+                                          className="block py-1 text-[11px] text-ecasi-body hover:text-ecasi-green"
+                                        >
+                                          {child.label}
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <Link
+                                  key={sIdx}
+                                  to={sub.path}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className="block py-1.5 text-xs text-ecasi-body hover:text-ecasi-green transition-colors"
+                                >
+                                  {sub.label}
+                                </Link>
+                              );
+                            }
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

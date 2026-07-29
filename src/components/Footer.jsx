@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Linkedin, Mail } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 
 const Footer = () => {
   const year = new Date().getFullYear();
@@ -21,6 +21,19 @@ const Footer = () => {
             <p className="text-white/75 text-sm leading-relaxed">
               Environmental Capacities and Sustainability Institute (ECAS Institute) is an independent Pan-African think tank advancing sustainable development through research, policy advisory, technical assistance, consultancy, and capacity strengthening.
             </p>
+
+            <div className="text-white/70 text-xs space-y-2 pt-1">
+              <p className="flex items-center gap-2">
+                <MapPin size={14} className="text-white/80 shrink-0" />
+                <span>P.O. Box 37193-00100, Nairobi Kenya</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <Phone size={14} className="text-white/80 shrink-0" />
+                <a href="tel:+254728925306" className="hover:underline hover:text-white transition-colors">+254 728 925 306</a>
+                <span>/</span>
+                <a href="tel:+254736356738" className="hover:underline hover:text-white transition-colors">+254 736 356 738</a>
+              </p>
+            </div>
 
             {/* Social Icons */}
             <div className="flex flex-wrap gap-3">

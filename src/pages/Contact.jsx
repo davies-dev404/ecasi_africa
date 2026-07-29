@@ -163,9 +163,12 @@ const Contact = () => {
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                 <Phone className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <a href="tel:+254728925306" className="text-white font-semibold text-sm hover:underline">
-                  +(254) 728925306
+              <div className="flex flex-col">
+                <a href="tel:+254728925306" className="text-white font-semibold text-sm hover:underline whitespace-nowrap">
+                  +254 728 925 306
+                </a>
+                <a href="tel:+254736356738" className="text-white font-semibold text-sm hover:underline whitespace-nowrap">
+                  +254 736 356 738
                 </a>
                 <p className="text-white/70 text-xs">Call Us Now</p>
               </div>
@@ -177,11 +180,12 @@ const Contact = () => {
                 <MapPin className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-white font-semibold text-sm leading-tight">
+                <p className="text-white font-semibold text-sm leading-snug">
                   Beverly Court Apartments, Office No 8<br />
-                  Marcus Garvey Road, Kilimani,Nairobi Kenya.
+                  Marcus Garvey Road, Kilimani, Nairobi Kenya.<br />
+                  P.O. Box 37193-00100, Nairobi Kenya
                 </p>
-                <p className="text-white/70 text-xs">Visit our office</p>
+                <p className="text-white/70 text-xs">Visit / Write to us</p>
               </div>
             </div>
           </div>
