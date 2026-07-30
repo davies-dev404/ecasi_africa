@@ -1,14 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
-import { Video as VideoIcon, Play, Calendar, ArrowLeft } from 'lucide-react';
+import { Video as VideoIcon, Play, Calendar, ArrowLeft, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const dummyData = [];
+import { dataService } from '@/lib/dataService';
 
 const Videos = () => {
+  const dummyData = dataService.getVideos();
+  const [activeVideo, setActiveVideo] = useState(null);
+
+  // Helper to parse YouTube video IDs and return autoplay embed URL
+  const getYoutubeEmbedUrl = (url) => {
+    if (!url) return '';
+    let videoId = '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      videoId = match[2];
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+  };
+
+  const isYoutube = (url) => {
+    if (!url) return false;
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <SEO
@@ -44,9 +63,12 @@ const Videos = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {dummyData.map((item, index) => (
               <ScrollAnimation key={item.id} delay={index * 100} animation="fade-up">
-                <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full cursor-pointer">
+                <div 
+                  onClick={() => setActiveVideo(item)}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full cursor-pointer"
+                >
                   <div className="h-56 overflow-hidden relative bg-gray-900 flex items-center justify-center group">
-                    <img src={item.image} alt={item.title} className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300"/>
+                    <img src={item.image || 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&q=80'} alt={item.title} className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300"/>
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
                     <div className="relative z-10 w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/40 group-hover:bg-ecasi-green group-hover:border-transparent transition-all duration-300 transform group-hover:scale-110">
                       <Play className="text-white ml-1" size={24} fill="currentColor" />
@@ -78,6 +100,46 @@ const Videos = () => {
 
         </div>
       </section>
+
+      {/* Video Lightbox Player Modal */}
+      {activeVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-950 border border-slate-900 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden relative shadow-2xl flex flex-col animate-scale-in">
+            <div className="p-5 border-b border-slate-900 flex justify-between items-center text-white">
+              <div>
+                <span className="text-ecasi-green text-xs font-bold uppercase tracking-wider">{activeVideo.type}</span>
+                <h3 className="font-bold text-lg mt-0.5">{activeVideo.title}</h3>
+              </div>
+              <button 
+                onClick={() => setActiveVideo(null)} 
+                className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-grow flex items-center justify-center bg-black aspect-video w-full max-h-[70vh]">
+              {isYoutube(activeVideo.url) ? (
+                <iframe 
+                  src={getYoutubeEmbedUrl(activeVideo.url)}
+                  title={activeVideo.title}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowFullScreen
+                />
+              ) : (
+                <video 
+                  src={activeVideo.url} 
+                  controls 
+                  className="w-full h-full"
+                  autoPlay
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

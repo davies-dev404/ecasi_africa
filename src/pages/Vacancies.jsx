@@ -25,12 +25,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-
-const vacancies = [
-  // Keeping it empty as per typical "no vacancies" or placeholder layout, 
-  // but adding one placeholder so the user has a design to see.
-  // We can add a "No Vacancies" state as well if array is empty.
-];
+import { dataService } from '@/lib/dataService';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -50,6 +45,7 @@ const itemVariants = {
 };
 
 const Vacancies = () => {
+  const vacancies = dataService.getVacancies();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState('');

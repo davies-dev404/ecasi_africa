@@ -5,10 +5,10 @@ import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
 import { Book, Download, Eye, Calendar, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const dummyData = [];
+import { dataService } from '@/lib/dataService';
 
 const Books = () => {
+  const dummyData = dataService.getBooks();
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <SEO

@@ -5,10 +5,10 @@ import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
 import { FileBadge, Download, Eye, Calendar, ArrowLeft, Tag, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const briefs = [];
+import { dataService } from '@/lib/dataService';
 
 const PolicyBriefs = () => {
+  const briefs = dataService.getPolicyBriefs();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 

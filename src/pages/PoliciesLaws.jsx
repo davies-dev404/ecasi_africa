@@ -7,94 +7,10 @@ import ScrollAnimation from '@/components/ScrollAnimation';
 import { Scale, Download, Eye, Calendar, ArrowLeft, Tag, Search, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const policies = [
-  {
-    id: 7,
-    title: "Constitution of Environmental Capacity and Sustainability Institute",
-    date: "2025",
-    type: "Governance",
-    country: "ECAS Institute",
-    pages: "Internal",
-    tags: ["Governance", "Constitution"],
-    summary: "The founding constitutional document outlining the establishment, mandates, governance structures, and legal framework of ECAS Institute.",
-    url: "#",
-    isSensitive: true,
-  },
-  {
-    id: 8,
-    title: "ECAS Institute Anti-bribery and Anti-corruption Policy",
-    date: "2025",
-    type: "Ethics & Compliance",
-    country: "ECAS Institute",
-    pages: "Internal",
-    tags: ["Ethics", "Compliance"],
-    summary: "Our zero-tolerance framework against bribery and corrupt practices, ensuring transparency, integrity, and ethical conduct across all operations.",
-    url: "/pdfs/ECAS-Institute-Antibribery-and-anticorruption-policy.pdf",
-    isSensitive: false,
-  },
-  {
-    id: 9,
-    title: "Whistleblower Policy",
-    date: "2025",
-    type: "Ethics & Compliance",
-    country: "ECAS Institute",
-    pages: "Internal",
-    tags: ["Ethics", "Compliance"],
-    summary: "A safe, anonymous channel for employees and partners to report unethical behavior, financial impropriety, or violations of code of conduct.",
-    url: "/pdfs/Whistleblower-Policy.pdf",
-    isSensitive: false,
-  },
-  {
-    id: 10,
-    title: "Risk Register - ECAS Institute",
-    date: "2025",
-    type: "Governance",
-    country: "ECAS Institute",
-    pages: "Internal",
-    tags: ["Governance", "Risk Management"],
-    summary: "Strategic registry outlining potential institutional risks, mitigation actions, impact analysis, and responsible focal departments.",
-    url: "#",
-    isSensitive: true,
-  },
-  {
-    id: 11,
-    title: "ECAS Institute Travel Expense Policy",
-    date: "2025",
-    type: "Operations",
-    country: "ECAS Institute",
-    pages: "Internal",
-    tags: ["Operations", "Travel"],
-    summary: "Regulatory procedures for travel allowances, reimbursements, booking guidelines, and expense management for official engagements.",
-    url: "#",
-    isSensitive: true,
-  },
-  {
-    id: 12,
-    title: "ECAS Institute Green Procurement Policy",
-    date: "2025",
-    type: "Operations",
-    country: "ECAS Institute",
-    pages: "Internal",
-    tags: ["Operations", "Procurement"],
-    summary: "Procurement guidelines focused on sustainability, prioritizing eco-friendly vendors, energy-efficient goods, and minimal footprint services.",
-    url: "/pdfs/ECAS-Institute-_Green-Procurement-Policy.docx",
-    isSensitive: false,
-  },
-  {
-    id: 13,
-    title: "Financial Policy and Procedures",
-    date: "2025",
-    type: "Financial",
-    country: "ECAS Institute",
-    pages: "Internal",
-    tags: ["Financial", "Procedures"],
-    summary: "Guidelines and standardized procedures governing financial transactions, budgeting, audits, and monetary controls at ECAS Institute.",
-    url: "#",
-    isSensitive: true,
-  },
-];
+import { dataService } from '@/lib/dataService';
 
 const PoliciesLaws = () => {
+  const policies = dataService.getPolicies();
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');

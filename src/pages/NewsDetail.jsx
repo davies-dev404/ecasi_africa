@@ -4,10 +4,11 @@ import { ArrowLeft, Calendar, Tag, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { newsItems } from '@/data/newsData';
+import { dataService } from '@/lib/dataService';
 
 const NewsDetail = () => {
   const { id } = useParams();
+  const newsItems = dataService.getNews();
   const article = newsItems.find(item => item.id === id);
 
   useEffect(() => {

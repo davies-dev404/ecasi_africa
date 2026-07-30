@@ -5,11 +5,10 @@ import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
 import { FileText, Eye, Calendar, ArrowLeft, Tag, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import reportsData from '@/data/reportsData.json';
-
-const reports = reportsData;
+import { dataService } from '@/lib/dataService';
 
 const Reports = () => {
+  const reports = dataService.getReports();
   const [expandedId, setExpandedId] = useState(null);
   const [selectedType, setSelectedType] = useState('All');
 

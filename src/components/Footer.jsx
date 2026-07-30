@@ -140,7 +140,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/60 text-center">
-          <p>Copyright © ECAS Institute, {year}. powered by JengaWeb</p>
+          <p>Copyright © ECAS Institute, {year}. powered by JengaWeb • <Link to="/admin" className="hover:text-white transition-colors">Admin Portal</Link></p>
         </div>
       </div>
     </footer>

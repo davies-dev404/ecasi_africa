@@ -5,11 +5,10 @@ import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
 import { BookOpen, Eye, Calendar, ArrowLeft, Search, FileText, Tag, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import publicationsData from '@/data/publicationsData.json';
-
-const publications = publicationsData;
+import { dataService } from '@/lib/dataService';
 
 const Publications = () => {
+  const publications = dataService.getPublications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [expandedId, setExpandedId] = useState(null);

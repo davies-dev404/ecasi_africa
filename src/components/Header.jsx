@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu, X, Phone, Clock, ChevronDown, ChevronRight, Mail, Search
 } from "lucide-react";
+import { dataService } from "@/lib/dataService";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -76,53 +77,7 @@ const Header = () => {
     { label: "Vacancies", path: "/vacancies" },
   ];
 
-  const coursesLinks = [
-    {
-      label: "Climate Change",
-      path: "/executive-training/climate-change",
-      id: "climate-change",
-      children: [
-        { label: "Energy and Green Economy", path: "/executive-training/energy" },
-        { label: "Climate-Smart Forestry", path: "/executive-training/climate-smart-forestry" },
-        { label: "Energy Transition and Mobility", path: "/executive-training/energy-transition-and-mobility" },
-        { label: "Agricultural carbon credit markets", path: "/executive-training/agricultural-carbon-credit-markets" },
-        { label: "Agriculture and Food Systems", path: "/executive-training/agriculture-and-food-systems" },
-        { label: "An Introduction to Climate Change and Human Rights", path: "/executive-training/an-introduction-to-climate-change-and-human-rights" },
-        { label: "Certified Expert in Climate Adaptation Finance", path: "/executive-training/certified-expert-in-climate-adaptation-finance" }
-      ]
-    },
-    { label: "Biodiversity and Natural Resources", path: "/executive-training/biodiversity-and-natural-resources" },
-    { label: "Business Sustainability Management", path: "/executive-training/business-sustainability-management" },
-    {
-      label: "Carbon Markets",
-      path: "/executive-training/carbon-markets",
-      id: "carbon-markets",
-      children: [
-        { label: "Carbon Accounting & Carbon Offsetting Course", path: "/executive-training/carbon-accounting-carbon-offsetting-course" },
-        { label: "Certificate Course on Nature Based Solutions for Disaster and Climate Resilience", path: "/executive-training/certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience" },
-        { label: "Certificate in Green Finance", path: "/executive-training/certificate-in-green-finance" },
-        { label: "Certified Expert in Biodiversity Finance", path: "/executive-training/certified-expert-in-biodiversity-finance" },
-        { label: "Certified Expert in Environmental Accounting, Leadership and Sustainability", path: "/executive-training/certified-expert-in-environmental-accounting" },
-        { label: "Certified Expert in Sustainable Finance", path: "/executive-training/certified-expert-in-sustainable-finance" },
-        { label: "Climate & Biodiversity Certificate Program", path: "/executive-training/climate-biodiversity-certificate-program" },
-        { label: "CLIMATE AND HEALTH CERTIFICATE COURSE", path: "/executive-training/climate-and-health-certificate-course" },
-        { label: "Climate Change and Water", path: "/executive-training/climate-change-and-water" }
-      ]
-    },
-    { label: "Human Resources Professional Courses", path: "/executive-training/human-resources-professional-courses" },
-    { label: "Green Skills Development", path: "/executive-training/green-skills-development" },
-    {
-      label: "Past Training",
-      path: "/executive-training/past-training",
-      id: "past-training",
-      children: [
-        { label: "CLIMATE RESILIENT INFRASTRACTURE DEVELOPMENT TRAINING COURSE", path: "/executive-training/climate-resilient-infrastructure" },
-        { label: "ENVIRONMENT, CLIMATE CHANGE, ENERGY, AND SUSTAINABILITY COURSES", path: "/executive-training/environment-climate-change-courses" },
-        { label: "REGIONAL WORKSHOP: CLIMATE CHANGE AND FOOD SYSTEMS TRANSFORMATION", path: "/executive-training/regional-workshop" },
-        { label: "TRAINING ON CARBON MARKETS AND TRADING", path: "/executive-training/training-on-carbon-markets" }
-      ]
-    }
-  ];
+  const coursesLinks = dataService.getCoursesLinks();
 
   return (
     <>

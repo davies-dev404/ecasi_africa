@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
+import { dataService } from '@/lib/dataService';
 
 const galleryCategories = [
   { id: 'all', label: 'All Photos' },
@@ -12,166 +13,6 @@ const galleryCategories = [
   { id: 'fieldwork', label: 'Field Work' },
   { id: 'training', label: 'Training Programs' },
   { id: 'community', label: 'Community Engagement' }
-];
-
-const galleryImages = [
-  {
-    src: "/images/courses/mentorship_group.jpg",
-    category: "training",
-    title: "Capacity Strengthening & Mentorship",
-    description: "ECAS Institute mentorship and capacity building session participants."
-  },
-  {
-    src: "/images/research/evidence_based_research.jpg",
-    category: "events",
-    title: "Kenya National Public Transport Summit 2025",
-    description: "ECASI representatives sharing insights at the National Public Transport Summit."
-  },
-  {
-    src: "/images/research/field_research.jpg",
-    category: "fieldwork",
-    title: "Field Research & Systematic Observation",
-    description: "Conducting fieldwork, stakeholder mapping, and community evaluations."
-  },
-  {
-    src: "/images/courses/executive_training.jpg",
-    category: "training",
-    title: "Executive Training Workshop",
-    description: "Interactive session focusing on environmental policies and climate change."
-  },
-  {
-    src: "/images/Gallery/22406524_1476238209097228_3116608044468378115_n.jpg",
-    category: "fieldwork",
-    title: "Field Research Session",
-    description: "ECASI team conducting environmental field assessments."
-  },
-  {
-    src: "/images/research/IMG_20241112_163109285-1024x683.jpg",
-    category: "training",
-    title: "Technical Training Workshop",
-    description: "Participants engaged in a hands-on capacity building workshop."
-  },
-  {
-    src: "/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg",
-    category: "events",
-    title: "UNEA-6 Briefing Session",
-    description: "ECAS Institute representatives at the UNEA-6 briefing in December 2023."
-  },
-  {
-    src: "/images/research/1713864387984-1024x768.jpg",
-    category: "events",
-    title: "Pan-African Conference",
-    description: "Experts gathered for a high-level climate policy discussion."
-  },
-  {
-    src: "/images/research/57213763_2128957177158658_1134502275364945920_n.jpg",
-    category: "community",
-    title: "Community Engagement",
-    description: "Engaging local communities on environmental policies and their impact."
-  },
-  {
-    src: "/images/research/pi.jpg",
-    category: "community",
-    title: "Migration & Community",
-    description: "Addressing environment, migration, and mobility challenges in vulnerable communities."
-  },
-  {
-    src: "/images/courses/IMGM1984-1024x683.jpg",
-    category: "training",
-    title: "Executive Training Program",
-    description: "Participants at ECASI's executive training on climate and sustainability."
-  },
-  {
-    src: "/images/courses/20241003_133952069-1-1024x683.jpg",
-    category: "training",
-    title: "Carbon Markets Training",
-    description: "Workshop participants learning about carbon trading and markets."
-  },
-  {
-    src: "/images/courses/62262333_1035153403346851_5273722628304011264_n-1024x681.jpg",
-    category: "events",
-    title: "Regional Workshop",
-    description: "ECASI hosted a regional workshop on climate change and food systems."
-  },
-  {
-    src: "/images/courses/hd.jpg",
-    category: "community",
-    title: "Stakeholder Consultation",
-    description: "A multi-stakeholder consultation session on sustainable development."
-  },
-  {
-    src: "/images/courses/ok.jpg",
-    category: "fieldwork",
-    title: "Northern Programme",
-    description: "Assessing marine ecosystem and coastal resource health."
-  },
-  {
-    src: "/images/research/famers.png",
-    category: "fieldwork",
-    title: "Field Team Deployment",
-    description: "ECASI field team during an environmental migration assessment."
-  },
-  
-  {
-    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.40.jpeg",
-    category: "events",
-    title: "ECASI Partnership",
-    description: "ECASI Africa team and partners."
-  },
-  {
-    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41.jpeg",
-    category: "events",
-    title: "Partnership Engagement",
-    description: "Collaborative event with partners."
-  },
-  {
-    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41%20(1).jpeg",
-    category: "events",
-    title: "Team Session",
-    description: "ECASI team members at a recent event."
-  },
-  {
-    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41%20(2).jpeg",
-    category: "events",
-    title: "Breathe Cities Partnership",
-    description: "ECASI Africa partnering with Breathe Cities."
-  },
-  {
-    src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.41%20(3).jpeg",
-    category: "events",
-    title: "Stakeholder Meeting",
-    description: "Meeting with key stakeholders and partners."
-  },
-  {
-    src: "/images/Gallery/G0BhQmUXcAAI77B.jpg",
-    category: "events",
-    title: "5th Regional Conference",
-    description: "Delegates and presenters discussing climate justice and sustainable policy at the regional conference."
-  },
-  {
-    src: "/images/Gallery/514A9527.jpg",
-    category: "events",
-    title: "Inaugural Ceremony",
-    description: "Distinguished guests participating in the ribbon and cake cutting ceremony to launch new climate initiatives."
-  },
-  {
-    src: "/images/Gallery/1716991845122.jpg",
-    category: "events",
-    title: "Regional Policy Dialogue",
-    description: "High-level delegates and partners gathered for a collaborative regional policy dialogue."
-  },
-  {
-    src: "/images/Gallery/1729710108119.jpg",
-    category: "events",
-    title: "County Stakeholder Presentation",
-    description: "Presenting policy frameworks and climate coordination strategies to Nairobi City County representatives."
-  },
-  {
-    src: "/images/Gallery/1730827985704.jpg",
-    category: "events",
-    title: "Stakeholder Consultative Workshop",
-    description: "Roundtable discussions and strategy alignment during the annual stakeholder consultation."
-  }
 ];
 
 const GalleryImage = ({ image, categoryLabel }) => {
@@ -213,6 +54,7 @@ const GalleryImage = ({ image, categoryLabel }) => {
 
 const Gallery = () => {
   const [activeTab, setActiveTab] = useState("all");
+  const galleryImages = dataService.getGalleryImages();
 
   const filteredImages = activeTab === "all" 
     ? galleryImages 

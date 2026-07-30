@@ -9,7 +9,7 @@ import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-import coursesData from '@/data/coursesData.json';
+import { dataService } from '@/lib/dataService';
 
 /* ── Framer Motion Variants ── */
 const containerVariants = {
@@ -202,6 +202,7 @@ const extractDuration = (htmlContent, slug) => {
 
 const ExecutiveTraining = () => {
   const { slug } = useParams();
+  const coursesData = dataService.getCourses();
 
   const courseInfo = coursesData[slug];
   const title = formatTitle(slug);

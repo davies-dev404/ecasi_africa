@@ -52,6 +52,7 @@ import ResearchConsultancy from "./pages/ResearchConsultancy.jsx";
 import Training from "./pages/Training.jsx";
 import PolicyAnalysis from "./pages/PolicyAnalysis.jsx";
 import Search from "./pages/Search.jsx";
+import Admin from "./pages/Admin.jsx";
 
 import Analytics from "@/components/Analytics";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -115,6 +116,7 @@ const App = () => (
           <Route path="/research/:slug" element={<ResearchConsultancy />} />
           <Route path="/consultancy" element={<Navigate to="/research/consulting" replace />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieBanner />

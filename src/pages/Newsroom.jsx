@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import LinkedInFeed from '@/components/LinkedInFeed';
-import { eventsData } from '@/data/eventsData';
 import SEO from '@/components/SEO';
+import { dataService } from '@/lib/dataService';
 
 const Newsroom = () => {
+  const eventsData = dataService.getEvents();
   // Newsletter state
   const [email, setEmail] = useState("");
   const [subStatus, setSubStatus] = useState({ loading: false, message: "", type: "" });

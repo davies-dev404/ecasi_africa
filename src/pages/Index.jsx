@@ -6,7 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ScrollAnimation from '@/components/ScrollAnimation';
 import LinkedInFeed from '@/components/LinkedInFeed';
-import { eventsData as upcomingEvents } from '@/data/eventsData';
+import { dataService } from '@/lib/dataService';
 import beryleImg from '@/assets/beryle.png';
 import yasukoImg from '@/assets/yasuko.png';
 // ─── Partners Data for Ticker Carousel ────────────────────────────────────────
@@ -453,6 +453,7 @@ const testimonials = [
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Index = () => {
+  const upcomingEvents = dataService.getEvents();
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [currentStat, setCurrentStat] = useState(0);
 
