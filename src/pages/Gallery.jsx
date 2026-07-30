@@ -40,7 +40,7 @@ const galleryImages = [
     description: "Interactive session focusing on environmental policies and climate change."
   },
   {
-    src: "/images/research/1710846398420-1-1-1024x683.jpg",
+    src: "/images/Gallery/22406524_1476238209097228_3116608044468378115_n.jpg",
     category: "fieldwork",
     title: "Field Research Session",
     description: "ECASI team conducting environmental field assessments."
@@ -70,6 +70,12 @@ const galleryImages = [
     description: "Engaging local communities on environmental policies and their impact."
   },
   {
+    src: "/images/research/pi.jpg",
+    category: "community",
+    title: "Migration & Community",
+    description: "Addressing environment, migration, and mobility challenges in vulnerable communities."
+  },
+  {
     src: "/images/courses/IMGM1984-1024x683.jpg",
     category: "training",
     title: "Executive Training Program",
@@ -94,23 +100,18 @@ const galleryImages = [
     description: "A multi-stakeholder consultation session on sustainable development."
   },
   {
-    src: "/images/programmes/migration-community.png",
-    category: "community",
-    title: "Migration & Community",
-    description: "Addressing environment, migration, and mobility challenges in vulnerable communities."
+    src: "/images/courses/ok.jpg",
+    category: "fieldwork",
+    title: "Northern Programme",
+    description: "Assessing marine ecosystem and coastal resource health."
   },
   {
-    src: "/images/programmes/migration-team.png",
+    src: "/images/research/famers.png",
     category: "fieldwork",
     title: "Field Team Deployment",
     description: "ECASI field team during an environmental migration assessment."
   },
-  {
-    src: "/images/programmes/contact-hero.jpg",
-    category: "fieldwork",
-    title: "Coastal Programme",
-    description: "Assessing marine ecosystem and coastal resource health."
-  },
+  
   {
     src: "/images/WhatsApp%20Image%202026-07-15%20at%2012.25.40.jpeg",
     category: "events",
@@ -140,6 +141,36 @@ const galleryImages = [
     category: "events",
     title: "Stakeholder Meeting",
     description: "Meeting with key stakeholders and partners."
+  },
+  {
+    src: "/images/Gallery/G0BhQmUXcAAI77B.jpg",
+    category: "events",
+    title: "5th Regional Conference",
+    description: "Delegates and presenters discussing climate justice and sustainable policy at the regional conference."
+  },
+  {
+    src: "/images/Gallery/514A9527.jpg",
+    category: "events",
+    title: "Inaugural Ceremony",
+    description: "Distinguished guests participating in the ribbon and cake cutting ceremony to launch new climate initiatives."
+  },
+  {
+    src: "/images/Gallery/1716991845122.jpg",
+    category: "events",
+    title: "Regional Policy Dialogue",
+    description: "High-level delegates and partners gathered for a collaborative regional policy dialogue."
+  },
+  {
+    src: "/images/Gallery/1729710108119.jpg",
+    category: "events",
+    title: "County Stakeholder Presentation",
+    description: "Presenting policy frameworks and climate coordination strategies to Nairobi City County representatives."
+  },
+  {
+    src: "/images/Gallery/1730827985704.jpg",
+    category: "events",
+    title: "Stakeholder Consultative Workshop",
+    description: "Roundtable discussions and strategy alignment during the annual stakeholder consultation."
   }
 ];
 
