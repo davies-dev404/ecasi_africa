@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { 
   Lock, LayoutDashboard, BookOpen, FileText, Image as ImageIcon, Scale, 
-  Briefcase, Video, Book, FileBadge, Calendar, Newspaper, GraduationCap,
+  Briefcase, Video, Book, FileBadge, Calendar, GraduationCap,
   Plus, Edit2, Trash2, LogOut, CheckCircle2, AlertTriangle, HelpCircle, 
-  RotateCcw, Download, Copy, Eye, FileCode, Upload, ArrowUpRight, ChevronDown, ListCollapse
+  RotateCcw, Download, Copy, FileCode, Upload, ListCollapse
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -96,7 +95,7 @@ const Admin = () => {
         window.removeEventListener(eventName, resetTimer);
       });
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, handleLogout, toast]);
 
   const loadAllData = () => {
     setPublications(dataService.getPublications());
@@ -444,12 +443,10 @@ const Admin = () => {
       } else {
         // Child link update
         // 1. Remove from original parent
-        let found = false;
         updatedMenu = updatedMenu.map(m => {
           if (m.children) {
             const filteredChildren = m.children.filter(c => c.label !== menuEditItem.originalLabel);
             if (filteredChildren.length !== m.children.length) {
-              found = true;
               return { ...m, children: filteredChildren };
             }
           }
@@ -829,7 +826,7 @@ const Admin = () => {
                     </div>
                     <div>
                       <h2 className="text-xl font-bold">Course Dropdown Menu Manager</h2>
-                      <p className="text-slate-500 text-xs">Add new categories or links to organize the "Executive Training" header menu.</p>
+                      <p className="text-slate-500 text-xs">Add new categories or links to organize the &quot;Executive Training&quot; header menu.</p>
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
