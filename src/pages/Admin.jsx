@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Lock, LayoutDashboard, BookOpen, FileText, Image as ImageIcon, Scale, 
   Briefcase, Video, Book, FileBadge, Calendar, GraduationCap,
@@ -46,6 +46,29 @@ const Admin = () => {
   // Special editing states for Course Links
   const [menuEditItem, setMenuEditItem] = useState(null);
   const [showMenuModal, setShowMenuModal] = useState(false);
+
+  const loadAllData = () => {
+    setPublications(dataService.getPublications());
+    setReports(dataService.getReports());
+    setGallery(dataService.getGalleryImages());
+    setPolicies(dataService.getPolicies());
+    setVacancies(dataService.getVacancies());
+    setVideos(dataService.getVideos());
+    setBooks(dataService.getBooks());
+    setBriefs(dataService.getPolicyBriefs());
+    setEvents(dataService.getEvents());
+    setCourses(dataService.getCourses());
+    setCoursesLinks(dataService.getCoursesLinks());
+  };
+
+  const handleLogout = useCallback(() => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('ecasi_admin_auth');
+    toast({
+      title: "Logged Out",
+      description: "You have been securely logged out.",
+    });
+  }, [toast]);
 
   // Check auth on load
   useEffect(() => {
@@ -97,20 +120,6 @@ const Admin = () => {
     };
   }, [isAuthenticated, handleLogout, toast]);
 
-  const loadAllData = () => {
-    setPublications(dataService.getPublications());
-    setReports(dataService.getReports());
-    setGallery(dataService.getGalleryImages());
-    setPolicies(dataService.getPolicies());
-    setVacancies(dataService.getVacancies());
-    setVideos(dataService.getVideos());
-    setBooks(dataService.getBooks());
-    setBriefs(dataService.getPolicyBriefs());
-    setEvents(dataService.getEvents());
-    setCourses(dataService.getCourses());
-    setCoursesLinks(dataService.getCoursesLinks());
-  };
-
   const handleLogin = (e) => {
     e.preventDefault();
     if (passcode === 'admin123') {
@@ -124,15 +133,6 @@ const Admin = () => {
     } else {
       setAuthError('Incorrect passcode. Please try again.');
     }
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    sessionStorage.removeItem('ecasi_admin_auth');
-    toast({
-      title: "Logged Out",
-      description: "You have been securely logged out.",
-    });
   };
 
   // Reset to default
