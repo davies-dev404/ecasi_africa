@@ -18,6 +18,8 @@ const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState('');
   const [authError, setAuthError] = useState('');
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutTime, setLockoutTime] = useState(0);
 
   // Active tab state
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -70,6 +72,15 @@ const Admin = () => {
     });
   }, [toast]);
 
+  // Handle failed login attempt lockout countdown
+  useEffect(() => {
+    if (lockoutTime <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutTime(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutTime]);
+
   // Check auth on load
   useEffect(() => {
     const sessionAuth = sessionStorage.getItem('ecasi_admin_auth');
@@ -85,7 +96,7 @@ const Admin = () => {
     }
   }, [isAuthenticated]);
 
-  // Inactivity timeout: 10 seconds
+  // Inactivity timeout: 15 minutes
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -97,10 +108,10 @@ const Admin = () => {
         handleLogout();
         toast({
           title: "Session Expired",
-          description: "Logged out automatically due to 10 seconds of inactivity.",
+          description: "Logged out automatically due to 15 minutes of inactivity.",
           variant: "destructive"
         });
-      }, 10000); // 10 seconds
+      }, 15 * 60 * 1000); // 15 minutes
     };
 
     // Track user interaction events
@@ -122,16 +133,33 @@ const Admin = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (passcode === 'admin123') {
+    if (lockoutTime > 0) return;
+
+    const correctPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
+
+    if (passcode === correctPasscode) {
       setIsAuthenticated(true);
       sessionStorage.setItem('ecasi_admin_auth', 'true');
       setAuthError('');
+      setFailedAttempts(0);
       toast({
         title: "Access Granted",
         description: "Welcome back to the ECASI Admin Portal.",
       });
     } else {
-      setAuthError('Incorrect passcode. Please try again.');
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      if (newAttempts >= 5) {
+        setLockoutTime(30);
+        setAuthError('Too many failed attempts. Locked out for 30 seconds.');
+        toast({
+          title: "Brute-force protection",
+          description: "Access disabled temporarily due to too many failed attempts.",
+          variant: "destructive"
+        });
+      } else {
+        setAuthError(`Incorrect passcode. Please try again. (${5 - newAttempts} attempts remaining)`);
+      }
     }
   };
 
@@ -589,8 +617,9 @@ const Admin = () => {
                   value={passcode}
                   onChange={e => setPasscode(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all"
+                  className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   required
+                  disabled={lockoutTime > 0}
                 />
               </div>
               
@@ -603,9 +632,10 @@ const Admin = () => {
               
               <button 
                 type="submit" 
-                className="w-full bg-ecasi-green hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-ecasi-green/10 flex items-center justify-center gap-2"
+                disabled={lockoutTime > 0}
+                className="w-full bg-ecasi-green hover:bg-emerald-600 active:bg-emerald-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-ecasi-green/10 flex items-center justify-center gap-2"
               >
-                Access Portal
+                {lockoutTime > 0 ? `Locked Out (${lockoutTime}s)` : 'Access Portal'}
               </button>
             </form>
           </div>
