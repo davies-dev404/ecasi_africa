@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -56,11 +57,18 @@ import Admin from "./pages/Admin.jsx";
 
 import Analytics from "@/components/Analytics";
 import ScrollToTop from "@/components/ScrollToTop";
+import { dataService } from "@/lib/dataService";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => {
+  useEffect(() => {
+    dataService.syncAllData();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -123,6 +131,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

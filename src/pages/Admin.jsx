@@ -16,10 +16,26 @@ const Admin = () => {
   
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passcode, setPasscode] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [isMfaRequired, setIsMfaRequired] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaRequired, setCaptchaRequired] = useState(false);
+  const [adminUser, setAdminUser] = useState(null); // { username, role }
   const [authError, setAuthError] = useState('');
-  const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutTime, setLockoutTime] = useState(0);
+
+  // 2FA Setup state
+  const [isSettingUp2FA, setIsSettingUp2FA] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [pendingSecret, setPendingSecret] = useState('');
+  const [setupCode, setSetupCode] = useState('');
+
+  // Admin Registration state (for Super Admins)
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regRole, setRegRole] = useState('Admin');
 
   // Active tab state
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -64,15 +80,20 @@ const Admin = () => {
   };
 
   const handleLogout = useCallback(() => {
-    setIsAuthenticated(false);
-    sessionStorage.removeItem('ecasi_admin_auth');
-    toast({
-      title: "Logged Out",
-      description: "You have been securely logged out.",
-    });
+    fetch('/api/auth.php?action=logout')
+      .finally(() => {
+        setIsAuthenticated(false);
+        setAdminUser(null);
+        setIsMfaRequired(false);
+        setMfaCode('');
+        toast({
+          title: "Logged Out",
+          description: "You have been securely logged out.",
+        });
+      });
   }, [toast]);
 
-  // Handle failed login attempt lockout countdown
+  // Handle lockout countdown
   useEffect(() => {
     if (lockoutTime <= 0) return;
     const timer = setInterval(() => {
@@ -83,10 +104,20 @@ const Admin = () => {
 
   // Check auth on load
   useEffect(() => {
-    const sessionAuth = sessionStorage.getItem('ecasi_admin_auth');
-    if (sessionAuth === 'true') {
-      setIsAuthenticated(true);
-    }
+    fetch('/api/auth.php?action=status')
+      .then(res => {
+        if (!res.ok) throw new Error("Unauthenticated");
+        return res.json();
+      })
+      .then(data => {
+        if (data.status === 'authenticated') {
+          setIsAuthenticated(true);
+          setAdminUser({ username: data.username, role: data.role, two_factor_enabled: data.two_factor_enabled });
+        }
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+      });
   }, []);
 
   // Fetch all data when authenticated
@@ -114,13 +145,11 @@ const Admin = () => {
       }, 15 * 60 * 1000); // 15 minutes
     };
 
-    // Track user interaction events
     const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
     activityEvents.forEach(eventName => {
       window.addEventListener(eventName, resetTimer);
     });
 
-    // Initialize timer
     resetTimer();
 
     return () => {
@@ -134,46 +163,191 @@ const Admin = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     if (lockoutTime > 0) return;
+    setAuthError('');
 
-    const correctPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
-
-    if (passcode === correctPasscode) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('ecasi_admin_auth', 'true');
-      setAuthError('');
-      setFailedAttempts(0);
-      toast({
-        title: "Access Granted",
-        description: "Welcome back to the ECASI Admin Portal.",
+    fetch('/api/auth.php?action=login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, captcha_token: captchaToken })
+    })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || `Error ${res.status}`);
+        }
+        return data;
+      })
+      .then(data => {
+        if (data.status === '2fa_required') {
+          setIsMfaRequired(true);
+          setAuthError('');
+          toast({
+            title: "MFA Required",
+            description: "Please enter your 2FA verification code.",
+          });
+        } else if (data.status === 'authenticated') {
+          setIsAuthenticated(true);
+          setAdminUser({ username: data.username, role: data.role, two_factor_enabled: data.two_factor_enabled });
+          setAuthError('');
+          setPassword('');
+          toast({
+            title: "Access Granted",
+            description: `Welcome back, ${data.username}.`,
+          });
+        }
+      })
+      .catch(err => {
+        setAuthError(err.message);
+        if (err.message.includes('Locked out') || err.message.includes('429')) {
+          setLockoutTime(900); // 15 minutes lockout
+        }
       });
-    } else {
-      const newAttempts = failedAttempts + 1;
-      setFailedAttempts(newAttempts);
-      if (newAttempts >= 5) {
-        setLockoutTime(30);
-        setAuthError('Too many failed attempts. Locked out for 30 seconds.');
+  };
+
+  const handle2FAVerify = (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    fetch('/api/auth.php?action=verify_2fa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: mfaCode })
+    })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'MFA validation failed');
+        return data;
+      })
+      .then(data => {
+        setIsAuthenticated(true);
+        setAdminUser({ username: data.username, role: data.role, two_factor_enabled: data.two_factor_enabled });
+        setIsMfaRequired(false);
+        setMfaCode('');
+        setPassword('');
         toast({
-          title: "Brute-force protection",
-          description: "Access disabled temporarily due to too many failed attempts.",
+          title: "Access Granted",
+          description: `Logged in securely with 2FA as ${data.username}.`,
+        });
+      })
+      .catch(err => {
+        setAuthError(err.message);
+      });
+  };
+
+  const start2FASetup = () => {
+    fetch('/api/auth.php?action=setup_2fa')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          setPendingSecret(data.secret);
+          // Use standard qrserver API to render a secure TOTP setup QR code
+          setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.otpauth_url)}`);
+          setIsSettingUp2FA(true);
+        } else {
+          toast({
+            title: "Setup Failed",
+            description: data.message || "Failed to initialize 2FA.",
+            variant: "destructive"
+          });
+        }
+      })
+      .catch(() => {
+        toast({
+          title: "Setup Error",
+          description: "Could not connect to authentication API.",
           variant: "destructive"
         });
-      } else {
-        setAuthError(`Incorrect passcode. Please try again. (${5 - newAttempts} attempts remaining)`);
-      }
-    }
+      });
+  };
+
+  const confirm2FASetup = (e) => {
+    e.preventDefault();
+    fetch('/api/auth.php?action=confirm_2fa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: setupCode })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          setAdminUser(prev => ({ ...prev, two_factor_enabled: true }));
+          setIsSettingUp2FA(false);
+          setSetupCode('');
+          toast({
+            title: "2FA Enabled",
+            description: "Two-Factor Authentication has been successfully enabled on your account.",
+          });
+        } else {
+          toast({
+            title: "Verification Failed",
+            description: data.message || "Incorrect code entered.",
+            variant: "destructive"
+          });
+        }
+      })
+      .catch(() => {
+        toast({
+          title: "Error",
+          description: "Could not verify code.",
+          variant: "destructive"
+        });
+      });
+  };
+
+  const handleRegisterAdmin = (e) => {
+    e.preventDefault();
+    fetch('/api/auth.php?action=register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: regUsername, password: regPassword, role: regRole })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          toast({
+            title: "Account Registered",
+            description: `Successfully registered new ${regRole} account for ${regUsername}.`,
+          });
+          setRegUsername('');
+          setRegPassword('');
+        } else {
+          toast({
+            title: "Registration Failed",
+            description: data.message || "Error creating account.",
+            variant: "destructive"
+          });
+        }
+      })
+      .catch(() => {
+        toast({
+          title: "Error",
+          description: "Network communication failure.",
+          variant: "destructive"
+        });
+      });
   };
 
   // Reset to default
   const handleResetDefaults = () => {
-    if (window.confirm("Are you sure you want to reset ALL data to their original defaults? All your modifications will be lost.")) {
-      dataService.resetAllData();
-      loadAllData();
-      toast({
-        title: "Data Reset Complete",
-        description: "All resources have been restored to original files.",
-      });
+    if (window.confirm("Are you sure you want to reset ALL database contents to their original defaults? This will erase all database changes!")) {
+      dataService.resetAllData()
+        .then(() => {
+          loadAllData();
+          toast({
+            title: "Database Reset Complete",
+            description: "All database resources have been restored to original file defaults.",
+          });
+        })
+        .catch(() => {
+          toast({
+            title: "Reset Failed",
+            description: "Error resetting content.",
+            variant: "destructive"
+          });
+        });
     }
   };
+
 
   // Save changes wrapper
   const saveCategoryData = (category, data) => {
@@ -609,35 +783,89 @@ const Admin = () => {
             <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-white">Admin Login</h1>
             <p className="text-slate-400 text-sm mb-8">Access restricted to ECAS Institute administrators.</p>
             
-            <form onSubmit={handleLogin} className="space-y-5 text-left">
-              <div>
-                <label className="block text-slate-300 text-sm font-semibold mb-2">Admin Passcode</label>
-                <input 
-                  type="password" 
-                  value={passcode}
-                  onChange={e => setPasscode(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  required
-                  disabled={lockoutTime > 0}
-                />
-              </div>
-              
-              {authError && (
-                <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/30 border border-red-900/50 p-3 rounded-xl">
-                  <AlertTriangle size={16} />
-                  <span>{authError}</span>
+            {isMfaRequired ? (
+              <form onSubmit={handle2FAVerify} className="space-y-5 text-left">
+                <div>
+                  <label className="block text-slate-300 text-sm font-semibold mb-2">Two-Factor Authentication Code</label>
+                  <input 
+                    type="text" 
+                    value={mfaCode}
+                    onChange={e => setMfaCode(e.target.value)}
+                    placeholder="123456"
+                    maxLength={6}
+                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 tracking-widest text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all"
+                    required
+                  />
+                  <p className="text-slate-500 text-xs mt-2 text-center">Open your Authenticator app (e.g. Google Authenticator) to get the code.</p>
                 </div>
-              )}
-              
-              <button 
-                type="submit" 
-                disabled={lockoutTime > 0}
-                className="w-full bg-ecasi-green hover:bg-emerald-600 active:bg-emerald-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-ecasi-green/10 flex items-center justify-center gap-2"
-              >
-                {lockoutTime > 0 ? `Locked Out (${lockoutTime}s)` : 'Access Portal'}
-              </button>
-            </form>
+                
+                {authError && (
+                  <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/30 border border-red-900/50 p-3 rounded-xl">
+                    <AlertTriangle size={16} />
+                    <span>{authError}</span>
+                  </div>
+                )}
+                
+                <div className="flex gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => { setIsMfaRequired(false); setAuthError(''); }}
+                    className="flex-1 bg-slate-850 hover:bg-slate-800 text-slate-300 font-bold py-3 rounded-xl transition-all border border-slate-800"
+                  >
+                    Back
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex-1 bg-ecasi-green hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg"
+                  >
+                    Verify
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-5 text-left">
+                <div>
+                  <label className="block text-slate-300 text-sm font-semibold mb-2">Username</label>
+                  <input 
+                    type="text" 
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="username"
+                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    required
+                    disabled={lockoutTime > 0}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 text-sm font-semibold mb-2">Password</label>
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    required
+                    disabled={lockoutTime > 0}
+                  />
+                </div>
+                
+                {authError && (
+                  <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/30 border border-red-900/50 p-3 rounded-xl">
+                    <AlertTriangle size={16} />
+                    <span>{authError}</span>
+                  </div>
+                )}
+                
+                <button 
+                  type="submit" 
+                  disabled={lockoutTime > 0}
+                  className="w-full bg-ecasi-green hover:bg-emerald-600 active:bg-emerald-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-ecasi-green/10 flex items-center justify-center gap-2"
+                >
+                  {lockoutTime > 0 ? `Locked Out (${Math.ceil(lockoutTime / 60)}m)` : 'Access Portal'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
         <Footer />
@@ -745,20 +973,135 @@ const Admin = () => {
               <div className="space-y-6">
                 
                 {/* Intro message */}
-                <div className="bg-slate-950/20 border border-slate-850 p-6 rounded-3xl flex items-start gap-4">
-                  <div className="p-3 bg-ecasi-green/10 text-ecasi-green rounded-xl shrink-0">
-                    <CheckCircle2 size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white mb-1">Local Browser Database Connected</h2>
-                    <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                      The admin panel syncs edits immediately. You can now **upload local images and PDF documents** directly from your device which will be embedded as Base64 strings.
-                    </p>
-                    <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col md:flex-row gap-4 items-center justify-between text-xs text-slate-400">
-                      <span>💡 <strong>Developer/Deployer Tip:</strong> Overwriting the files in the `src/data/` folder with code copied from the **Deployment Export Center** below saves all edits permanently.</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-slate-950/20 border border-slate-850 p-6 rounded-3xl flex items-start gap-4">
+                    <div className="p-3 bg-ecasi-green/10 text-ecasi-green rounded-xl shrink-0">
+                      <CheckCircle2 size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-1">Secure Admin Database Connected</h2>
+                      <p className="text-slate-400 text-sm leading-relaxed mb-2">
+                        You are logged in as <strong className="text-white">{adminUser?.username}</strong> ({adminUser?.role}). Administrative actions on this portal are fully audited and logged securely.
+                      </p>
+                      <span className="inline-block text-[11px] text-slate-500">
+                        IP Address: Logged | HTTPS: Enforced
+                      </span>
                     </div>
                   </div>
+
+                  {/* Two-Factor Authentication Status & Setup */}
+                  <div className="bg-slate-950/20 border border-slate-850 p-6 rounded-3xl flex flex-col justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                        {adminUser?.two_factor_enabled ? '🔒 2FA Enabled' : '⚠️ 2FA Recommended'}
+                      </h2>
+                      <p className="text-slate-400 text-xs leading-relaxed mb-4">
+                        {adminUser?.two_factor_enabled 
+                          ? 'Two-Factor Authentication is currently securing your administrative account.' 
+                          : 'Secure your admin account from unauthorized access by setting up 2-Factor Authentication (2FA/TOTP).'}
+                      </p>
+                    </div>
+
+                    {isSettingUp2FA ? (
+                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-4">
+                        <p className="text-xs text-slate-300 font-semibold">1. Scan this QR Code with Authenticator app:</p>
+                        {qrCodeUrl && (
+                          <img src={qrCodeUrl} alt="TOTP QR Code" className="mx-auto border-4 border-white rounded-xl" />
+                        )}
+                        <p className="text-xs text-slate-450">Or enter secret key manually:</p>
+                        <code className="block text-[11px] font-mono select-all bg-slate-950 border border-slate-850 p-2 rounded text-center text-emerald-400">{pendingSecret}</code>
+                        
+                        <form onSubmit={confirm2FASetup} className="space-y-3">
+                          <label className="block text-xs text-slate-300 font-semibold">2. Enter 6-digit confirmation code:</label>
+                          <input 
+                            type="text" 
+                            value={setupCode} 
+                            onChange={e => setSetupCode(e.target.value)} 
+                            placeholder="e.g. 123456" 
+                            maxLength={6} 
+                            className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-center text-sm font-bold tracking-widest text-white focus:outline-none focus:ring-2 focus:ring-ecasi-green" 
+                            required 
+                          />
+                          <div className="flex gap-2">
+                            <button 
+                              type="button" 
+                              onClick={() => setIsSettingUp2FA(false)} 
+                              className="flex-1 py-2 bg-slate-800 hover:bg-slate-750 text-xs font-bold rounded-xl"
+                            >
+                              Cancel
+                            </button>
+                            <button 
+                              type="submit" 
+                              className="flex-1 py-2 bg-ecasi-green hover:bg-emerald-600 text-xs font-bold rounded-xl text-white shadow"
+                            >
+                              Enable 2FA
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    ) : (
+                      !adminUser?.two_factor_enabled && (
+                        <button 
+                          onClick={start2FASetup}
+                          className="w-full py-2 bg-ecasi-green/20 hover:bg-ecasi-green/30 border border-ecasi-green/30 text-ecasi-green rounded-xl text-xs font-bold transition-all"
+                        >
+                          Configure 2FA
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
+
+                {/* Super Admin - Account Registration Panel */}
+                {adminUser?.role === 'Super Admin' && (
+                  <div className="bg-slate-950/20 border border-slate-850 p-6 rounded-3xl">
+                    <h2 className="text-lg font-bold text-white mb-1">Create New Admin Account</h2>
+                    <p className="text-slate-500 text-xs mb-4">Register new administrative users. This section is restricted to Super Admins only.</p>
+                    
+                    <form onSubmit={handleRegisterAdmin} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                      <div>
+                        <label className="block text-slate-400 text-xs font-semibold mb-1">Username</label>
+                        <input 
+                          type="text" 
+                          value={regUsername} 
+                          onChange={e => setRegUsername(e.target.value)} 
+                          placeholder="new_admin" 
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-ecasi-green" 
+                          required 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-xs font-semibold mb-1">Password</label>
+                        <input 
+                          type="password" 
+                          value={regPassword} 
+                          onChange={e => setRegPassword(e.target.value)} 
+                          placeholder="••••••••" 
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-ecasi-green" 
+                          required 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-xs font-semibold mb-1">Access Role</label>
+                        <select 
+                          value={regRole} 
+                          onChange={e => setRegRole(e.target.value)} 
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-ecasi-green"
+                        >
+                          <option value="Admin">Standard Admin</option>
+                          <option value="Super Admin">Super Admin</option>
+                        </select>
+                      </div>
+                      <button 
+                        type="submit" 
+                        className="py-2.5 bg-ecasi-green hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition-all shadow"
+                      >
+                        Register Admin
+                      </button>
+                    </form>
+                  </div>
+                )}
+
 
                 {/* Counts Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">

@@ -8,7 +8,7 @@ const teamMembers = [
   {
     name: "Jacob Olonde",
     role: "Founder & Chief Executive Officer",
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/06/IMG_6632.jpg",
+    image: "/images/team/olonde.png",
     department: "Leadership",
     email: "jacob@ecasiafrica.org",
     initials: "JO",
@@ -46,7 +46,7 @@ const teamMembers = [
   {
     name: "Gift Rioba",
     role: "Corporate Marketing and Communications Advisor",
-    image: "/images/team/gift.jpeg",
+    image: "/images/team/Gift.png",
     department: "Communications",
     email: "riobag@ecasiafrica.org",
     initials: "GR",
