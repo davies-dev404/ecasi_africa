@@ -23,15 +23,10 @@ if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 // =====================================================================
-// OPTION 1: Save to MySQL Database
+// Database connection (credentials loaded from .env via db.php)
 // =====================================================================
 
-$db_host = "localhost";
-$db_user = "ecasorke_wp169";
-$db_pass = "pk0396)MS(";
-$db_name = "ecasorke_wp169";
-
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+$conn = require_once __DIR__ . '/db.php';
 
 if ($conn->connect_error) {
     http_response_code(500);
