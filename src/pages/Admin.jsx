@@ -973,7 +973,7 @@ const Admin = () => {
               <div className="space-y-6">
                 
                 {/* Intro message */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   <div className="bg-slate-950/20 border border-slate-850 p-6 rounded-3xl flex items-start gap-4">
                     <div className="p-3 bg-ecasi-green/10 text-ecasi-green rounded-xl shrink-0">
                       <CheckCircle2 size={24} />
@@ -987,68 +987,6 @@ const Admin = () => {
                         IP Address: Logged | HTTPS: Enforced
                       </span>
                     </div>
-                  </div>
-
-                  {/* Two-Factor Authentication Status & Setup */}
-                  <div className="bg-slate-950/20 border border-slate-850 p-6 rounded-3xl flex flex-col justify-between">
-                    <div>
-                      <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                        {adminUser?.two_factor_enabled ? '🔒 2FA Enabled' : '⚠️ 2FA Recommended'}
-                      </h2>
-                      <p className="text-slate-400 text-xs leading-relaxed mb-4">
-                        {adminUser?.two_factor_enabled 
-                          ? 'Two-Factor Authentication is currently securing your administrative account.' 
-                          : 'Secure your admin account from unauthorized access by setting up 2-Factor Authentication (2FA/TOTP).'}
-                      </p>
-                    </div>
-
-                    {isSettingUp2FA ? (
-                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-4">
-                        <p className="text-xs text-slate-300 font-semibold">1. Scan this QR Code with Authenticator app:</p>
-                        {qrCodeUrl && (
-                          <img src={qrCodeUrl} alt="TOTP QR Code" className="mx-auto border-4 border-white rounded-xl" />
-                        )}
-                        <p className="text-xs text-slate-450">Or enter secret key manually:</p>
-                        <code className="block text-[11px] font-mono select-all bg-slate-950 border border-slate-850 p-2 rounded text-center text-emerald-400">{pendingSecret}</code>
-                        
-                        <form onSubmit={confirm2FASetup} className="space-y-3">
-                          <label className="block text-xs text-slate-300 font-semibold">2. Enter 6-digit confirmation code:</label>
-                          <input 
-                            type="text" 
-                            value={setupCode} 
-                            onChange={e => setSetupCode(e.target.value)} 
-                            placeholder="e.g. 123456" 
-                            maxLength={6} 
-                            className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-center text-sm font-bold tracking-widest text-white focus:outline-none focus:ring-2 focus:ring-ecasi-green" 
-                            required 
-                          />
-                          <div className="flex gap-2">
-                            <button 
-                              type="button" 
-                              onClick={() => setIsSettingUp2FA(false)} 
-                              className="flex-1 py-2 bg-slate-800 hover:bg-slate-750 text-xs font-bold rounded-xl"
-                            >
-                              Cancel
-                            </button>
-                            <button 
-                              type="submit" 
-                              className="flex-1 py-2 bg-ecasi-green hover:bg-emerald-600 text-xs font-bold rounded-xl text-white shadow"
-                            >
-                              Enable 2FA
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-                    ) : (
-                      !adminUser?.two_factor_enabled && (
-                        <button 
-                          onClick={start2FASetup}
-                          className="w-full py-2 bg-ecasi-green/20 hover:bg-ecasi-green/30 border border-ecasi-green/30 text-ecasi-green rounded-xl text-xs font-bold transition-all"
-                        >
-                          Configure 2FA
-                        </button>
-                      )
-                    )}
                   </div>
                 </div>
 

@@ -85,16 +85,20 @@ if ($row['count'] == 0) {
     $options = ['cost' => 12];
     $pass_hash = password_hash($initial_pass, PASSWORD_BCRYPT, $options);
     
-    // Seed with 2FA enabled and a default secret key for Google Authenticator setup
+    // Seed with 2FA disabled
     $default_secret = 'JBSWY3DPEHPK3PXP';
-    $stmt = $conn->prepare("INSERT INTO admins (username, password_hash, role, two_factor_secret, two_factor_enabled) VALUES (?, ?, 'Super Admin', ?, 1)");
+    $stmt = $conn->prepare("INSERT INTO admins (username, password_hash, role, two_factor_secret, two_factor_enabled) VALUES (?, ?, 'Super Admin', ?, 0)");
     $stmt->bind_param("sss", $initial_user, $pass_hash, $default_secret);
     if ($stmt->execute()) {
-        $response["messages"][] = "Seeded initial Super Admin account: '$initial_user' with 2FA enabled.";
+        $response["messages"][] = "Seeded initial Super Admin account: '$initial_user' with 2FA disabled.";
     } else {
         $response["messages"][] = "Warning: Failed to seed initial Super Admin: " . $stmt->error;
     }
     $stmt->close();
+} else {
+    // Ensure all existing admin accounts have 2FA disabled since it's removed
+    $conn->query("UPDATE admins SET two_factor_enabled = 0");
+    $response["messages"][] = "Ensured all administrative accounts have 2FA disabled.";
 }
 
 // 6. Prepopulate site_content categories if they are empty
