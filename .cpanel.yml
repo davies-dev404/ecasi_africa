@@ -3,7 +3,10 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/ecasorke/public_html
 
-    # Copy the built website
+    # Remove old assets
+    - /bin/rm -rf $DEPLOYPATH/assets
+
+    # Copy the Vite build
     - /bin/cp -R dist/* $DEPLOYPATH/
 
     # Copy the PHP API
