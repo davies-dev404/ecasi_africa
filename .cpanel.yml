@@ -1,0 +1,10 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/ecasorke/public_html
+
+    # Copy the built website
+    - /bin/cp -R dist/* $DEPLOYPATH/
+
+    # Copy the PHP API
+    - /bin/cp -R public/api $DEPLOYPATH/
