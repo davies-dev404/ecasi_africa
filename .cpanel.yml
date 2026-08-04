@@ -3,11 +3,11 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/ecasorke/public_html
 
-    # Remove old assets
+    # Clean old build assets to avoid accumulation of old hashed files
     - /bin/rm -rf $DEPLOYPATH/assets
 
-    # Copy the Vite build
+    # Copy the production build files
     - /bin/cp -R dist/* $DEPLOYPATH/
 
-    # Copy the PHP API
-    - /bin/cp -R public/api $DEPLOYPATH/
+    # Copy .htaccess for React Router SPA routing & HTTPS enforcement (dotfiles aren't matched by dist/*)
+    - /bin/cp dist/.htaccess $DEPLOYPATH/ 2>/dev/null || /bin/cp public/.htaccess $DEPLOYPATH/
