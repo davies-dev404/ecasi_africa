@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -60,6 +60,23 @@ import ScrollToTop from "@/components/ScrollToTop";
 const queryClient = new QueryClient();
 
 const App = () => {
+  useEffect(() => {
+    const imagesToPreload = [
+      "/images/team/olonde.png",
+      "/images/team/derrick.png",
+      "/images/team/mwalasha.png",
+      "https://ecasiafrica.org/wp-content/uploads/2024/06/Fro2fvzXoAMhCbn-1024x698.jpg",
+      "/images/team/Gift.png",
+      "/images/team/HR.png",
+      "/images/team/daniel.png",
+      "/images/team/image copy.png"
+    ];
+    imagesToPreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
 
