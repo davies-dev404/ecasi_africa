@@ -14,13 +14,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Connect to the database
 $conn = require_once __DIR__ . '/db.php';
 
+// Check HTTPS and local status
+$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+         || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+         || $_SERVER['SERVER_PORT'] == 443;
+$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
+$is_local = (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false);
+
 // Initialize session
 if (session_status() === PHP_SESSION_NONE) {
     session_name('__Secure-ECASI-Session');
     session_start([
         'cookie_lifetime' => 3600,
         'cookie_path' => '/',
-        'cookie_secure' => true,
+        'cookie_secure' => $is_https,
         'cookie_httponly' => true,
         'cookie_samesite' => 'Strict',
         'use_strict_mode' => true
@@ -71,12 +78,8 @@ if ($action === 'get') {
 // Write Operations (Require Valid HTTPS and Administrator Session)
 // -------------------------------------------------------------
 
-// Enforce HTTPS
-$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
-         || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
-         || $_SERVER['SERVER_PORT'] == 443;
-
-if (!$is_https) {
+// Enforce HTTPS (except on localhost for development)
+if (!$is_https && !$is_local) {
     http_response_code(403);
     echo json_encode(["status" => "error", "message" => "HTTPS is required for all administrative traffic."]);
     exit();
