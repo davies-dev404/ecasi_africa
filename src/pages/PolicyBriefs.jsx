@@ -31,7 +31,7 @@ const PolicyBriefs = () => {
       } else {
         alert("This document is currently being updated and will be available for download shortly. Please check back later.");
       }
-    } catch (err) {
+    } catch {
       alert("We are unable to process your download request at this time. Please try again later.");
     }
   };

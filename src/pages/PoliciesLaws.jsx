@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import RequestDocumentModal from '@/components/RequestDocumentModal';
 import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
-import { Scale, Download, Eye, Calendar, ArrowLeft, Tag, Search, ShieldCheck } from 'lucide-react';
+import { Scale, Eye, Calendar, ArrowLeft, Tag, Search, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { dataService } from '@/lib/dataService';
@@ -37,7 +37,7 @@ const PoliciesLaws = () => {
       } else {
         alert("This document is currently being updated and will be available for viewing shortly. Please check back later.");
       }
-    } catch (err) {
+    } catch {
       alert("We are unable to process your request at this time. Please try again later.");
     }
   };

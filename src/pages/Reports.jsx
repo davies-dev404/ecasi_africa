@@ -81,7 +81,7 @@ const Reports = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filtered.map((item, index) => (
+            {filtered.map((item) => (
               <ScrollAnimation key={item.id} delay={0} animation="fade-up">
                 <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
                   <div className="h-44 overflow-hidden relative bg-gray-100">

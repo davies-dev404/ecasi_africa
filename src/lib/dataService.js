@@ -229,7 +229,7 @@ export const dataService = {
         const parsed = JSON.parse(text);
         saveLocalStorageData(storageKey, parsed);
       }
-    } catch (e) {
+    } catch {
       // Offline or network error - fail silently and keep local cache
     }
   },

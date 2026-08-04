@@ -205,32 +205,50 @@ if ($action === 'login') {
             $_SESSION['temp_two_factor_secret'] = $user['two_factor_secret'];
             $_SESSION['temp_two_factor_enabled'] = true;
             
+            // Check if this is the default initial admin requiring setup
+            if ($user['username'] === 'ecasike' && $user['two_factor_secret'] === 'JBSWY3DPEHPK3PXP') {
+                $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+                $temp_secret = '';
+                for ($i = 0; $i < 16; $i++) {
+                    $temp_secret .= $chars[rand(0, 31)];
+                }
+                $_SESSION['temp_two_factor_secret'] = $temp_secret;
+                $_SESSION['temp_two_factor_enabled'] = false; // Setup in progress
+
+                echo json_encode([
+                    "status" => "setup_required",
+                    "message" => "Initial administrator account setup is required.",
+                    "secret" => $temp_secret
+                ]);
+                exit();
+            }
+
             echo json_encode([
                 "status" => "2fa_required",
                 "message" => "Please enter your 2FA code."
             ]);
             exit();
         } else {
-            // Login immediately
-            $_SESSION['admin_logged_in'] = true;
-            $_SESSION['admin_username'] = $user['username'];
-            $_SESSION['admin_role'] = $user['role'];
-            $_SESSION['two_factor_enabled'] = false;
-            $_SESSION['last_activity'] = time();
-
-            // Clear temporary sessions
-            unset($_SESSION['temp_admin_username']);
-            unset($_SESSION['temp_admin_role']);
-            unset($_SESSION['temp_two_factor_secret']);
-            unset($_SESSION['temp_two_factor_enabled']);
-
-            logAdminAction($conn, $user['username'], "Login", "Successful login");
+            // Force 2FA setup for standard admins who haven't enabled it yet
+            $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            $secret = '';
+            for ($i = 0; $i < 16; $i++) {
+                $secret .= $chars[rand(0, 31)];
+            }
+            $db_username = urlencode($user['username']);
+            $issuer = urlencode("ECASI Africa");
+            $otpauth_url = "otpauth://totp/{$issuer}:{$db_username}?secret={$secret}&issuer={$issuer}&algorithm=SHA1&digits=6&period=30";
+            
+            $_SESSION['temp_admin_username'] = $user['username'];
+            $_SESSION['temp_admin_role'] = $user['role'];
+            $_SESSION['temp_two_factor_secret'] = $secret;
+            $_SESSION['temp_two_factor_enabled'] = false; // Setup in progress
             
             echo json_encode([
-                "status" => "authenticated",
-                "username" => $user['username'],
-                "role" => $user['role'],
-                "two_factor_enabled" => false
+                "status" => "2fa_setup_required",
+                "message" => "Google Authenticator setup is required for your account.",
+                "secret" => $secret,
+                "otpauth_url" => $otpauth_url
             ]);
             exit();
         }
@@ -278,12 +296,21 @@ if ($action === 'verify_2fa') {
         $_SESSION['last_activity'] = time();
 
         $username = $_SESSION['admin_username'];
+
+        // If this was first-time 2FA setup, persist it to DB
+        if (isset($_SESSION['temp_two_factor_enabled']) && $_SESSION['temp_two_factor_enabled'] === false) {
+            $stmt = $conn->prepare("UPDATE admins SET two_factor_secret = ?, two_factor_enabled = 1 WHERE username = ?");
+            $stmt->bind_param("ss", $_SESSION['temp_two_factor_secret'], $username);
+            $stmt->execute();
+            $stmt->close();
+        }
+
         unset($_SESSION['temp_admin_username']);
         unset($_SESSION['temp_admin_role']);
         unset($_SESSION['temp_two_factor_secret']);
         unset($_SESSION['temp_two_factor_enabled']);
 
-        logAdminAction($conn, $username, "Login", "Successful login with 2FA");
+        logAdminAction($conn, $username, "Login", "Successful login with 2FA Setup");
 
         echo json_encode([
             "status" => "authenticated",
@@ -369,6 +396,73 @@ if ($action === 'confirm_2fa') {
     } else {
         http_response_code(400);
         echo json_encode(["status" => "error", "message" => "Verification failed. The code entered was incorrect."]);
+        exit();
+    }
+}
+
+// -------------------------------------------------------------
+// Action: Initial Admin Setup (Default user customization)
+// -------------------------------------------------------------
+if ($action === 'initial_setup') {
+    $new_username = isset($input['new_username']) ? trim($input['new_username']) : '';
+    $new_password = isset($input['new_password']) ? trim($input['new_password']) : '';
+    $code = isset($input['code']) ? trim($input['code']) : '';
+    
+    if (!isset($_SESSION['temp_admin_username']) || $_SESSION['temp_admin_username'] !== 'ecasike') {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Initial setup is not active."]);
+        exit();
+    }
+    
+    if (empty($new_username) || empty($new_password) || empty($code)) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "All fields are required."]);
+        exit();
+    }
+    
+    // Verify 2FA code
+    if (!verify_totp($_SESSION['temp_two_factor_secret'], $code)) {
+        http_response_code(401);
+        echo json_encode(["status" => "error", "message" => "Invalid 2FA verification code."]);
+        exit();
+    }
+    
+    // Hash new password
+    $pass_hash = password_hash($new_password, PASSWORD_BCRYPT, ['cost' => 12]);
+    $new_secret = $_SESSION['temp_two_factor_secret'];
+    
+    // Update the default account 'ecasike' to the new username, password, and secret
+    $stmt = $conn->prepare("UPDATE admins SET username = ?, password_hash = ?, two_factor_secret = ?, two_factor_enabled = 1 WHERE username = 'ecasike'");
+    $stmt->bind_param("sss", $new_username, $pass_hash, $new_secret);
+    
+    if ($stmt->execute()) {
+        $stmt->close();
+        
+        // Log them in
+        $_SESSION['admin_logged_in'] = true;
+        $_SESSION['admin_username'] = $new_username;
+        $_SESSION['admin_role'] = 'Super Admin';
+        $_SESSION['two_factor_enabled'] = true;
+        $_SESSION['last_activity'] = time();
+        
+        unset($_SESSION['temp_admin_username']);
+        unset($_SESSION['temp_admin_role']);
+        unset($_SESSION['temp_two_factor_secret']);
+        unset($_SESSION['temp_two_factor_enabled']);
+        
+        logAdminAction($conn, $new_username, "Initial Setup", "Initial admin setup complete");
+        
+        echo json_encode([
+            "status" => "authenticated",
+            "username" => $new_username,
+            "role" => "Super Admin",
+            "two_factor_enabled" => true
+        ]);
+        exit();
+    } else {
+        $stmt->close();
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => "Failed to update administrator account."]);
         exit();
     }
 }

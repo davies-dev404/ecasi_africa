@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
-import { Book, Download, Eye, Calendar, ArrowLeft } from 'lucide-react';
+import { Book, Eye, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { dataService } from '@/lib/dataService';
 

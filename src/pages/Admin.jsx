@@ -19,9 +19,8 @@ const Admin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
+  const [captchaToken] = useState('');
   const [isMfaRequired, setIsMfaRequired] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState('');
-  const [captchaRequired, setCaptchaRequired] = useState(false);
   const [adminUser, setAdminUser] = useState(null); // { username, role }
   const [authError, setAuthError] = useState('');
   const [lockoutTime, setLockoutTime] = useState(0);
@@ -31,6 +30,12 @@ const Admin = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [pendingSecret, setPendingSecret] = useState('');
   const [setupCode, setSetupCode] = useState('');
+
+  // Initial and MFA setup states
+  const [isInitialSetupRequired, setIsInitialSetupRequired] = useState(false);
+  const [isMfaSetupRequired, setIsMfaSetupRequired] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   // Admin Registration state (for Super Admins)
   const [regUsername, setRegUsername] = useState('');
@@ -178,7 +183,24 @@ const Admin = () => {
         return data;
       })
       .then(data => {
-        if (data.status === '2fa_required') {
+        if (data.status === 'setup_required') {
+          setPendingSecret(data.secret);
+          setIsInitialSetupRequired(true);
+          setAuthError('');
+          toast({
+            title: "Setup Required",
+            description: "Please configure your permanent admin account credentials.",
+          });
+        } else if (data.status === '2fa_setup_required') {
+          setPendingSecret(data.secret);
+          setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.otpauth_url)}`);
+          setIsMfaSetupRequired(true);
+          setAuthError('');
+          toast({
+            title: "2FA Setup Required",
+            description: "Please register your account in Google Authenticator.",
+          });
+        } else if (data.status === '2fa_required') {
           setIsMfaRequired(true);
           setAuthError('');
           toast({
@@ -201,6 +223,72 @@ const Admin = () => {
         if (err.message.includes('Locked out') || err.message.includes('429')) {
           setLockoutTime(900); // 15 minutes lockout
         }
+      });
+  };
+
+  const handleInitialSetupSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    fetch('/api/auth.php?action=initial_setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        new_username: newUsername, 
+        new_password: newPassword, 
+        code: setupCode 
+      })
+    })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Initial setup failed');
+        return data;
+      })
+      .then(data => {
+        setIsAuthenticated(true);
+        setAdminUser({ username: data.username, role: data.role, two_factor_enabled: data.two_factor_enabled });
+        setIsInitialSetupRequired(false);
+        setNewUsername('');
+        setNewPassword('');
+        setSetupCode('');
+        setPassword('');
+        toast({
+          title: "Setup Complete",
+          description: `Super Admin account initialized. Logged in as ${data.username}.`,
+        });
+      })
+      .catch(err => {
+        setAuthError(err.message);
+      });
+  };
+
+  const handleMfaSetupVerify = (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    fetch('/api/auth.php?action=verify_2fa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: setupCode })
+    })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || '2FA setup verification failed');
+        return data;
+      })
+      .then(data => {
+        setIsAuthenticated(true);
+        setAdminUser({ username: data.username, role: data.role, two_factor_enabled: data.two_factor_enabled });
+        setIsMfaSetupRequired(false);
+        setSetupCode('');
+        setPassword('');
+        toast({
+          title: "2FA Configured",
+          description: `Google Authenticator enabled successfully. Logged in as ${data.username}.`,
+        });
+      })
+      .catch(err => {
+        setAuthError(err.message);
       });
   };
 
@@ -771,20 +859,169 @@ const Admin = () => {
   };
 
   if (!isAuthenticated) {
+    // Generate QR details on-the-fly for initial setup
+    const initialOtpauthUrl = `otpauth://totp/ECASI%20Africa:${encodeURIComponent(newUsername || 'Admin')}?secret=${pendingSecret}&issuer=ECASI%20Africa&algorithm=SHA1&digits=6&period=30`;
+    const initialQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(initialOtpauthUrl)}`;
+
+    const resetFlow = () => {
+      setIsInitialSetupRequired(false);
+      setIsMfaSetupRequired(false);
+      setIsMfaRequired(false);
+      setNewUsername('');
+      setNewPassword('');
+      setSetupCode('');
+      setMfaCode('');
+      setAuthError('');
+    };
+
     return (
       <div className="min-h-screen bg-slate-900 text-white flex flex-col font-sans">
         <SEO title="Admin Login | ECASI Africa" description="Administrator Login Portal" />
         <Header />
         <div className="flex-grow flex items-center justify-center py-24 px-4 bg-slate-950/80">
           <div className="bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-slate-800 w-full max-w-md text-center">
-            <div className="w-16 h-16 bg-ecasi-green/20 text-ecasi-green border border-ecasi-green/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Lock size={32} />
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-white">Admin Login</h1>
-            <p className="text-slate-400 text-sm mb-8">Access restricted to ECAS Institute administrators.</p>
             
-            {isMfaRequired ? (
+            {isInitialSetupRequired ? (
+              <div className="space-y-6">
+                <div className="w-16 h-16 bg-ecasi-green/20 text-ecasi-green border border-ecasi-green/30 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Lock size={32} />
+                </div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-white text-center">Initial Setup Required</h1>
+                <p className="text-slate-400 text-xs leading-relaxed text-center">
+                  You are logging in using the default setup account. Please choose a custom permanent username and password, then pair Google Authenticator.
+                </p>
+
+                <form onSubmit={handleInitialSetupSubmit} className="space-y-4 text-left">
+                  <div>
+                    <label className="block text-slate-300 text-xs font-semibold mb-1">New Username</label>
+                    <input 
+                      type="text" 
+                      value={newUsername}
+                      onChange={e => setNewUsername(e.target.value)}
+                      placeholder="e.g. jdoe_admin"
+                      className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-650 focus:outline-none focus:ring-2 focus:ring-ecasi-green transition-all"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 text-xs font-semibold mb-1">New Password</label>
+                    <input 
+                      type="password" 
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-650 focus:outline-none focus:ring-2 focus:ring-ecasi-green transition-all"
+                      required
+                    />
+                  </div>
+
+                  <div className="bg-slate-950/30 border border-slate-850 p-4 rounded-2xl text-center space-y-3">
+                    <p className="text-xs text-slate-300 font-semibold">1. Scan QR Code in Authenticator app:</p>
+                    <img src={initialQrCodeUrl} alt="TOTP QR Code" className="mx-auto border-4 border-white rounded-xl h-44 w-44" />
+                    <p className="text-[10px] text-slate-450">Or secret key: <code className="text-emerald-400 font-mono select-all">{pendingSecret}</code></p>
+                    
+                    <div className="space-y-1">
+                      <label className="block text-left text-xs text-slate-300 font-semibold">2. Enter 6-digit confirmation code:</label>
+                      <input 
+                        type="text" 
+                        value={setupCode} 
+                        onChange={e => setSetupCode(e.target.value)} 
+                        placeholder="123456" 
+                        maxLength={6} 
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-center text-sm font-bold tracking-widest text-white focus:outline-none focus:ring-2 focus:ring-ecasi-green" 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  {authError && (
+                    <div className="flex items-center gap-2 text-red-400 text-xs bg-red-950/30 border border-red-900/50 p-3 rounded-xl">
+                      <AlertTriangle size={14} />
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button 
+                      type="button" 
+                      onClick={resetFlow}
+                      className="flex-1 py-2.5 bg-slate-850 hover:bg-slate-800 text-slate-300 font-bold rounded-xl border border-slate-800 text-xs transition-all"
+                    >
+                      Back
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="flex-1 py-2.5 bg-ecasi-green hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg text-xs transition-all"
+                    >
+                      Complete Setup
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : isMfaSetupRequired ? (
+              <div className="space-y-6">
+                <div className="w-16 h-16 bg-ecasi-green/20 text-ecasi-green border border-ecasi-green/30 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Lock size={32} />
+                </div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-white text-center">MFA Registration</h1>
+                <p className="text-slate-400 text-xs leading-relaxed text-center">
+                  Your administrator account requires Two-Factor Authentication. Please register your account in Google Authenticator.
+                </p>
+
+                <form onSubmit={handleMfaSetupVerify} className="space-y-4 text-left">
+                  <div className="bg-slate-950/30 border border-slate-850 p-4 rounded-2xl text-center space-y-3">
+                    <p className="text-xs text-slate-300 font-semibold">1. Scan QR Code in Authenticator app:</p>
+                    {qrCodeUrl && (
+                      <img src={qrCodeUrl} alt="TOTP QR Code" className="mx-auto border-4 border-white rounded-xl h-44 w-44" />
+                    )}
+                    <p className="text-[10px] text-slate-450">Or secret key: <code className="text-emerald-400 font-mono select-all">{pendingSecret}</code></p>
+                    
+                    <div className="space-y-1">
+                      <label className="block text-left text-xs text-slate-300 font-semibold">2. Enter 6-digit confirmation code:</label>
+                      <input 
+                        type="text" 
+                        value={setupCode} 
+                        onChange={e => setSetupCode(e.target.value)} 
+                        placeholder="123456" 
+                        maxLength={6} 
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-center text-sm font-bold tracking-widest text-white focus:outline-none focus:ring-2 focus:ring-ecasi-green" 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  {authError && (
+                    <div className="flex items-center gap-2 text-red-400 text-xs bg-red-950/30 border border-red-900/50 p-3 rounded-xl">
+                      <AlertTriangle size={14} />
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button 
+                      type="button" 
+                      onClick={resetFlow}
+                      className="flex-1 py-2.5 bg-slate-850 hover:bg-slate-800 text-slate-300 font-bold rounded-xl border border-slate-800 text-xs transition-all"
+                    >
+                      Back
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="flex-1 py-2.5 bg-ecasi-green hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg text-xs transition-all"
+                    >
+                      Verify & Activate
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : isMfaRequired ? (
               <form onSubmit={handle2FAVerify} className="space-y-5 text-left">
+                <div className="w-16 h-16 bg-ecasi-green/20 text-ecasi-green border border-ecasi-green/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Lock size={32} />
+                </div>
+                <h1 className="text-2xl font-extrabold tracking-tight mb-2 text-center text-white">MFA Verification</h1>
+                <p className="text-slate-400 text-xs text-center mb-6">Enter the 6-digit Google Authenticator code for your account.</p>
                 <div>
                   <label className="block text-slate-300 text-sm font-semibold mb-2">Two-Factor Authentication Code</label>
                   <input 
@@ -793,7 +1030,7 @@ const Admin = () => {
                     onChange={e => setMfaCode(e.target.value)}
                     placeholder="123456"
                     maxLength={6}
-                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 tracking-widest text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all"
+                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-650 tracking-widest text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all"
                     required
                   />
                   <p className="text-slate-500 text-xs mt-2 text-center">Open your Authenticator app (e.g. Google Authenticator) to get the code.</p>
@@ -809,7 +1046,7 @@ const Admin = () => {
                 <div className="flex gap-3">
                   <button 
                     type="button" 
-                    onClick={() => { setIsMfaRequired(false); setAuthError(''); }}
+                    onClick={resetFlow}
                     className="flex-1 bg-slate-850 hover:bg-slate-800 text-slate-300 font-bold py-3 rounded-xl transition-all border border-slate-800"
                   >
                     Back
@@ -824,6 +1061,12 @@ const Admin = () => {
               </form>
             ) : (
               <form onSubmit={handleLogin} className="space-y-5 text-left">
+                <div className="w-16 h-16 bg-ecasi-green/20 text-ecasi-green border border-ecasi-green/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Lock size={32} />
+                </div>
+                <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-center text-white">Admin Login</h1>
+                <p className="text-slate-400 text-sm mb-8 text-center">Access restricted to ECAS Institute administrators.</p>
+                
                 <div>
                   <label className="block text-slate-300 text-sm font-semibold mb-2">Username</label>
                   <input 
@@ -831,7 +1074,7 @@ const Admin = () => {
                     value={username}
                     onChange={e => setUsername(e.target.value)}
                     placeholder="username"
-                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-650 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                     disabled={lockoutTime > 0}
                   />
@@ -844,7 +1087,7 @@ const Admin = () => {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-650 focus:outline-none focus:ring-2 focus:ring-ecasi-green focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                     disabled={lockoutTime > 0}
                   />

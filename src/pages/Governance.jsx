@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Users, FileText, Briefcase, Landmark, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Users, FileText, Landmark, ShieldCheck, ArrowRight } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
