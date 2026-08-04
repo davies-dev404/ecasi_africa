@@ -73,11 +73,11 @@ const Mining = () => {
           className="mb-10 flex justify-center"
         >
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/image-11.png"
+            src="/images/Gallery/1723110570258.jpg"
             alt="Mining landscape and extractives site"
             className="w-full max-w-[700px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1710846398298.jpg";
             }}
           />
         </motion.div>

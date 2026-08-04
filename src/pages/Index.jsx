@@ -11,7 +11,7 @@ import beryleImg from '@/assets/beryle.png';
 import yasukoImg from '@/assets/yasuko.png';
 // ─── Partners Data for Ticker Carousel ────────────────────────────────────────
 const partners = [
-  { name: "Clean Air Fund", logo: "https://ecasiafrica.org/wp-content/uploads/2025/04/CLEAN-AIR-FUND.png", url: "https://www.cleanairfund.org/" },
+  { name: "Clean Air Fund", logo: "/images/partners/breathe_cities_logo.png", url: "https://www.cleanairfund.org/" },
   { name: "Bloomberg Philanthropies", logo: "/images/bloomberg.png", url: "https://www.bloomberg.org/" },
   { name: "Breathe Cities", logo: "/images/breaths.png", url: "https://breathecities.org/" },
   { name: "Nairobi City County", logo: "/images/partners/nairobi_county.png", url: "https://nairobi.go.ke/" },
@@ -33,7 +33,7 @@ const partners = [
 // Base: 1200×600px fullwidth | Autoplay: 5 000 ms | Transition: horizontal 800 ms easeOutQuad
 const heroSlides = [
   {
-    bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg",
+    bg: "/images/Gallery/1717137016602.jpg",
     title: "Air Quality Training &\nClimate Resilience",
     subtitle: "Empowering stakeholders and communities with technical knowledge to drive climate resilient actions and policies globally.",
     cta:  { label: "Our Programmes", to: "/training-education-public-awareness" },
@@ -41,7 +41,7 @@ const heroSlides = [
     position: "object-center md:object-[center_20%] xl:object-[center_30%]",
   },
   {
-    bg: "https://ecasiafrica.org/wp-content/uploads/2026/05/DSC_0990-1.jpg",
+    bg: "/images/Gallery/DSC_0055.JPG",
     title: "Advancing Sustainability\nGlobally",
     subtitle: "We serve as an independent global think tank supporting green growth and evidence-based environment policies.",
     cta:  { label: "About ECAS", to: "/about" },

@@ -35,11 +35,11 @@ const GhgInventories = () => {
         {/* Centered Image */}
         <div className="mb-10 flex justify-center">
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1-768x461.jpg"
+            src="/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg"
             alt="UNEA-6 Briefing"
             className="w-full max-w-[650px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1716991685597.jpg";
             }}
           />
         </div>

@@ -35,11 +35,11 @@ const NationalCommunications = () => {
         {/* Centered Image */}
         <div className="mb-10 flex justify-center">
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/1717137016602-1024x545.jpg"
+            src="/images/Gallery/1717137016602.jpg"
             alt="National Communications Workshop"
             className="w-full max-w-[650px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1710846398298.jpg";
             }}
           />
         </div>

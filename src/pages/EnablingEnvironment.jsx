@@ -48,11 +48,11 @@ const EnablingEnvironment = () => {
           className="mb-10 flex justify-center"
         >
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/images.png"
+            src="/images/Gallery/1714399114741.jpg"
             alt="Kenya Gazette Supplement"
             className="w-full max-w-[400px] h-auto border border-gray-200 shadow-sm"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1710846398298.jpg";
             }}
           />
         </motion.div>
@@ -108,11 +108,11 @@ const EnablingEnvironment = () => {
           </div>
           <div className="md:col-span-5 flex justify-center">
             <img
-              src="https://ecasiafrica.org/wp-content/uploads/2025/08/1714399114741.jpg"
+              src="/images/Gallery/1714419347884.jpg"
               alt="Institutional Frameworks"
               className="w-full max-w-[360px] h-auto rounded-lg shadow-md border border-gray-100"
               onError={(e) => {
-                e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+                e.target.src = "/images/Gallery/1716991685597.jpg";
               }}
             />
           </div>
@@ -133,11 +133,11 @@ const EnablingEnvironment = () => {
           </div>
           <div className="md:col-span-5 flex justify-center">
             <img
-              src="https://ecasiafrica.org/wp-content/uploads/2025/08/1714411123684-1024x682.jpg"
+              src="/images/Gallery/1715195548735.jpg"
               alt="Policy & Regulatory Frameworks"
               className="w-full max-w-[360px] h-auto rounded-lg shadow-md border border-gray-100"
               onError={(e) => {
-                e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+                e.target.src = "/images/Gallery/1716991685597.jpg";
               }}
             />
           </div>
@@ -159,11 +159,11 @@ const EnablingEnvironment = () => {
           <div className="md:col-span-5 flex flex-col items-center">
             <div className="relative w-full max-w-[360px] rounded-lg overflow-hidden shadow-md border border-gray-100 bg-black">
               <img
-                src="https://ecasiafrica.org/wp-content/uploads/2025/05/image-8.png"
+                src="/images/Gallery/1715195551211.jpg"
                 alt="The Future of Public Transport in Kenya"
                 className="w-full h-auto block"
                 onError={(e) => {
-                  e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+                  e.target.src = "/images/Gallery/1710846398298.jpg";
                 }}
               />
               <div className="bg-[#cc0000] text-white text-center py-2 px-3 text-xs md:text-sm font-bold tracking-wide uppercase">

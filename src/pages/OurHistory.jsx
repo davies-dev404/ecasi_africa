@@ -111,7 +111,7 @@ const OurHistory = () => {
                 <motion.img
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.7 }}
-                  src="https://ecasiafrica.org/wp-content/uploads/2026/05/1729710108119.jpg"
+                  src="/images/Gallery/1729710108119.jpg"
                   alt="ECAS Institute — Pan-African Policy Think-tank"
                   className="w-full object-cover"
                   loading="eager"

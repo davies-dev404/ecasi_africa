@@ -264,7 +264,7 @@ const PolicyAnalysis = () => {
                 <div className="absolute -inset-4 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-3xl blur-xl opacity-40" />
                 <div className="relative bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
                   <img
-                    src="https://ecasiafrica.org/wp-content/uploads/2026/05/Group-photo-during-Air-Quality-Training.jpg"
+                    src="/images/Gallery/1717137013866.jpg"
                     alt="ECAS Institute Policy Analysis team during Air Quality Training"
                     className="w-full h-64 md:h-80 object-cover"
                   />
@@ -509,7 +509,7 @@ const PolicyAnalysis = () => {
             className="relative rounded-3xl overflow-hidden shadow-2xl"
           >
             <img
-              src="https://ecasiafrica.org/wp-content/uploads/2026/05/DSC_0990-1.jpg"
+              src="/images/Gallery/DSC_0085.JPG"
               alt="ECAS Institute advancing sustainability across Africa"
               className="w-full h-64 md:h-96 object-cover"
             />

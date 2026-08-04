@@ -84,11 +84,11 @@ const Waste = () => {
           className="mb-12 flex justify-center"
         >
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/circulareconomyimage2chart-1024x1024.png"
+            src="/images/Gallery/1732710492385.jpg"
             alt="Circular Economy Process Diagram"
             className="w-full max-w-[600px] h-auto"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1710846398298.jpg";
             }}
           />
         </motion.div>
@@ -231,11 +231,11 @@ const Waste = () => {
           className="mt-14 flex justify-center border-t pt-10"
         >
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/1_Q-076RSkpQEwS08jPVpuYQ.png"
+            src="/images/Gallery/1752822191402.jpg"
             alt="Nature and Circular Economy cycle"
             className="w-full max-w-[550px] h-auto"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-2.jpg";
+              e.target.src = "/images/Gallery/1675324665806.jpg";
             }}
           />
         </motion.div>

@@ -35,11 +35,11 @@ const ResearchSystematicObservation = () => {
         {/* Centered Image */}
         <div className="mb-10 flex justify-center">
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/08/57213763_2128957177158658_1134502275364945920_n-768x576.jpg"
+            src="/images/research/57213763_2128957177158658_1134502275364945920_n.jpg"
             alt="Research and Systematic Observation"
             className="w-full max-w-[650px] h-auto border border-gray-100 shadow-sm"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1710846398298.jpg";
             }}
           />
         </div>

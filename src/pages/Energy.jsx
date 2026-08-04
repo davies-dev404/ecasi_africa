@@ -73,11 +73,11 @@ const Energy = () => {
           className="max-w-2xl mx-auto mb-10 overflow-hidden rounded-lg border border-gray-200 shadow-sm"
         >
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/20241003_133952069-1-1024x683.jpg"
+            src="/images/Gallery/1714399115076.jpg"
             alt="Geothermal Spa Group"
             className="w-full h-auto object-cover hover:scale-102 transition-transform duration-500"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1710846398298.jpg";
             }}
           />
         </motion.div>

@@ -35,11 +35,11 @@ const ClimateChangeProgramming = () => {
         {/* Centered Image */}
         <div className="mb-10 flex justify-center">
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/IMG-20201212-WA0046-768x576.jpg"
+            src="/images/Gallery/1717137013154.jpg"
             alt="Integrated Programming for Climate Change"
             className="w-full max-w-[650px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1710846398298.jpg";
             }}
           />
         </div>

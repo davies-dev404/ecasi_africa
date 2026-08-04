@@ -73,11 +73,11 @@ const Forests = () => {
           className="mb-10 flex justify-center"
         >
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/IMG-20201212-WA0046-1024x768.jpg"
+            src="/images/Gallery/1716991845122.jpg"
             alt="People in field, reforestation project"
             className="w-full max-w-[700px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/Gallery/1710846398298.jpg";
             }}
           />
         </motion.div>
@@ -218,11 +218,11 @@ const Forests = () => {
           className="mt-12 flex justify-center border-t pt-10"
         >
           <img
-            src="https://ecasiafrica.org/wp-content/uploads/2025/05/347549576_187525630473651_6083702411160806148_n-768x1024.jpg"
+            src="/images/Gallery/1716991736876.jpg"
             alt="Scientist examining seedling in tree nursery"
             className="w-full max-w-[500px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-2.jpg";
+              e.target.src = "/images/Gallery/1675324665806.jpg";
             }}
           />
         </motion.div>
