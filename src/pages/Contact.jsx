@@ -58,7 +58,7 @@ const Contact = () => {
             className="flex justify-center"
           >
             <img
-              src="/images/team/image copy.png"
+              src="/images/team/image"
               alt="ECASI Africa Group photo"
               className="w-full max-w-[480px] h-auto object-cover rounded-2xl shadow-xl border border-slate-100"
             />
