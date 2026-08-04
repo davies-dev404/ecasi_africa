@@ -70,7 +70,7 @@ const Waste = () => {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
-          className="text-base md:text-lg text-justify text-[#032e42] font-semibold mb-10 leading-relaxed text-center px-4"
+          className="text-base md:text-lg text-justify text-[#032e42] font-semibold mb-10 leading-relaxed px-4"
         >
           Our program on Sustainable Waste & Circular Economy focuses on implementing zero-waste strategies, promoting sustainable waste management, and fostering circular economy practices. This involves developing policies, supporting innovative solutions, and engaging with various stakeholders to reduce waste and enhance resource efficiency.
         </motion.p>

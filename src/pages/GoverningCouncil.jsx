@@ -1,9 +1,8 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Award, BookOpen, Globe2, Users, MapPin, Briefcase, GraduationCap, Star, ChevronRight } from 'lucide-react';
+import { Award, BookOpen, Globe2, Users, Briefcase, GraduationCap, Star } from 'lucide-react';
 
 const councilMembers = [
   {
@@ -105,7 +104,7 @@ const Doctors = () => {
                 <Star className="h-8 w-8 text-primary" />
               </div>
               <p className="text-slate-600 leading-relaxed text-lg font-medium text-center md:text-left">
-                ECAS Institute's Governing Council consists of members with diverse skills. The primary mandate
+                ECAS Institute&apos;s Governing Council consists of members with diverse skills. The primary mandate
                 of the Governing Council is to provide governance oversight in ensuring the Institute functions
                 to the highest standards to execute its mission. The Governing Council has delegated the
                 day-to-day management to the Chief Executive Officer who is assisted by senior management teams.

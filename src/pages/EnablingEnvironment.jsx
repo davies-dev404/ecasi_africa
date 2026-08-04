@@ -65,7 +65,7 @@ const EnablingEnvironment = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-base md:text-lg text-[#008000] font-medium text-justify mb-10 leading-relaxed"
         >
-          This program involves creating the necessary conditions for effective climate action, particularly by the private sector and communities. This includes supportive policies, regulations, incentives, and institutions that encourage investments and actions to reduce greenhouse gas emissions and adapt to climate impacts. It's about fostering a landscape where climate-friendly solutions are prioritized and readily adopted
+          This program involves creating the necessary conditions for effective climate action, particularly by the private sector and communities. This includes supportive policies, regulations, incentives, and institutions that encourage investments and actions to reduce greenhouse gas emissions and adapt to climate impacts. It&apos;s about fostering a landscape where climate-friendly solutions are prioritized and readily adopted
         </motion.p>
 
         {/* Section A: Legal & Political Arrangements */}
