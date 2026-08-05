@@ -135,6 +135,15 @@ const App = () => {
           <Route path="/research/:slug" element={<ResearchConsultancy />} />
           <Route path="/consultancy" element={<Navigate to="/research/consulting" replace />} />
           <Route path="/search" element={<Search />} />
+
+          {/* Sitelink Redirects to handle Google's indexed URLs and prevent 404s */}
+          <Route path="/programmes" element={<Navigate to="/our-strategic-focus" replace />} />
+          <Route path="/programs" element={<Navigate to="/our-strategic-focus" replace />} />
+          <Route path="/courses" element={<Navigate to="/institute-overview" replace />} />
+          <Route path="/executive-training" element={<Navigate to="/institute-overview" replace />} />
+          <Route path="/the-institute" element={<Navigate to="/about" replace />} />
+          <Route path="/research" element={<Navigate to="/research/overview" replace />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieBanner />
