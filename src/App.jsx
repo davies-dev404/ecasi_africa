@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index.jsx";
 import About from "./pages/About.jsx";
+import Programmes from "./pages/Programmes.jsx";
 import GoverningCouncil from "./pages/GoverningCouncil.jsx";
 import CleanAirProgramme from "./pages/CleanAirProgramme.jsx";
 import Newsroom from "./pages/Newsroom.jsx";
@@ -137,8 +138,8 @@ const App = () => {
           <Route path="/search" element={<Search />} />
 
           {/* Sitelink Redirects to handle Google's indexed URLs and prevent 404s */}
-          <Route path="/programmes" element={<Navigate to="/our-strategic-focus" replace />} />
-          <Route path="/programs" element={<Navigate to="/our-strategic-focus" replace />} />
+          <Route path="/programmes" element={<Programmes />} />
+          <Route path="/programs" element={<Programmes />} />
           <Route path="/courses" element={<Navigate to="/institute-overview" replace />} />
           <Route path="/executive-training" element={<Navigate to="/institute-overview" replace />} />
           <Route path="/the-institute" element={<Navigate to="/about" replace />} />
