@@ -94,19 +94,9 @@ const itemVariants = {
 const OurPolicies = () => {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState(null);
-  const handleView = async (e, url) => {
+  const handleView = (e, url) => {
     e.preventDefault();
-    try {
-      const res = await fetch(url, { method: 'HEAD' });
-      if (res.ok) {
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        alert("This document is currently being updated and will be available for viewing shortly. Please check back later.");
-      }
-    } catch (err) {
-      console.error("Error viewing policy:", err);
-      alert("We are unable to process your request at this time. Please try again later.");
-    }
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (

@@ -15,19 +15,8 @@ const Reports = () => {
   const types = ['All', ...new Set(reports.map(r => r.type))];
   const filtered = selectedType === 'All' ? reports : reports.filter(r => r.type === selectedType);
 
-  const handleView = async (url) => {
-    try {
-      const res = await fetch(url, { method: 'HEAD' });
-      const contentType = res.headers.get('content-type');
-      if (res.ok && contentType && !contentType.includes('text/html')) {
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        alert("This document is currently being updated and will be available for viewing shortly. Please check back later.");
-      }
-    } catch (err) {
-      console.error("Error viewing report:", err);
-      alert("We are unable to process your request at this time. Please try again later.");
-    }
+  const handleView = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (

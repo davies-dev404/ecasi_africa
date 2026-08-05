@@ -28,18 +28,8 @@ const PoliciesLaws = () => {
   });
 
 
-  const handleView = async (url) => {
-    try {
-      // Check if file exists locally or accessible remotely
-      const res = await fetch(url, { method: 'HEAD' });
-      if (res.ok) {
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        alert("This document is currently being updated and will be available for viewing shortly. Please check back later.");
-      }
-    } catch {
-      alert("We are unable to process your request at this time. Please try again later.");
-    }
+  const handleView = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (

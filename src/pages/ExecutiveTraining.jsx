@@ -102,7 +102,7 @@ const popularCourses = [
 ];
 
 const formatTitle = (slug) => {
-  if (!slug) return 'Executive Training';
+  if (!slug) return 'Institute Overview';
   return slug
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -397,7 +397,7 @@ const ExecutiveTraining = () => {
                 ) : (
                   <div className="py-12 px-4 text-center max-w-2xl mx-auto">
                     <GraduationCap size={48} className="mx-auto mb-6 text-ecasi-green/50" />
-                    <h3 className="text-3xl font-bold text-ecasi-navy mb-4">Welcome to Executive Training</h3>
+                    <h3 className="text-3xl font-bold text-ecasi-navy mb-4">Welcome to ECAS Institute</h3>
                     <p className="text-lg text-gray-600 mb-6 leading-relaxed">
                       Explore our comprehensive suite of executive training programmes. Please select a course from the menu to view detailed information, curriculum, and enrollment options.
                     </p>
