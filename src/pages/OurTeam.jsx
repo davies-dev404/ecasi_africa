@@ -36,7 +36,7 @@ const teamMembers = [
   {
     name: "Gibson Gisore",
     role: "Legal & Policy Advisor",
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/06/Fro2fvzXoAMhCbn-1024x698.jpg",
+    image: "/images/team/gg.png",
     department: "Legal",
     email: "gibsong@ecasiafrica.org",
     initials: "GG",
