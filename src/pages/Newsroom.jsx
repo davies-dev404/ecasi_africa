@@ -75,7 +75,7 @@ const Newsroom = () => {
       <section className="relative min-h-[50vh] flex items-center justify-center text-center overflow-hidden">
         <div className="absolute inset-0 w-full h-full">
           <img
-            src="WhatsApp Image 2026-07-15 at 12.25.41 (3).jpeg"
+            src="/images/WhatsApp Image 2026-07-15 at 12.25.41 (3).jpeg"
             alt="training"
             fetchPriority="high"
             className="w-full h-full object-cover transform scale-105"

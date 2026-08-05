@@ -7,6 +7,11 @@ import Footer from '@/components/Footer';
 
 import researchData from '@/data/researchData.json';
 
+const cleanContent = (htmlContent) => {
+  if (!htmlContent) return '';
+  return htmlContent.replace(/\s+srcset="[^"]*"/gi, '').replace(/\s+sizes="[^"]*"/gi, '');
+};
+
 const Consultancy = () => {
   const data = researchData['consulting'];
 
@@ -46,7 +51,7 @@ const Consultancy = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="prose prose-lg max-w-none prose-headings:text-ecasi-navy prose-a:text-ecasi-green hover:prose-a:text-ecasi-blue prose-img:rounded-xl prose-img:shadow-md"
-            dangerouslySetInnerHTML={{ __html: data.content }}
+            dangerouslySetInnerHTML={{ __html: cleanContent(data ? data.content : '') }}
           />
         </div>
       </section>

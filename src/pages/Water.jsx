@@ -85,7 +85,7 @@ const Water = () => {
             alt="Aerial view of Tana River and forests"
             className="w-full max-w-[500px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-2.jpg";
+              e.target.src = "/images/programmes/water-river-aerial.png";
             }}
           />
         </motion.div>

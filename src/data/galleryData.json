@@ -99,7 +99,7 @@
   },
   {
     "id": "gal-15",
-    "src": "/images/courses/ok.jpg",
+    "src": "/images/Gallery/hd.jpg",
     "category": "fieldwork",
     "title": "Northern Programme",
     "description": "Assessing marine ecosystem and coastal resource health."
@@ -180,5 +180,61 @@
     "category": "events",
     "title": "Stakeholder Consultative Workshop",
     "description": "Roundtable discussions and strategy alignment during the annual stakeholder consultation."
+  },
+  {
+    "id": "gal-27",
+    "src": "/images/Gallery/makueni training.jpg",
+    "category": "training",
+    "title": "Makueni County Training",
+    "description": "Capacity building and skills training session conducted in Makueni County."
+  },
+  {
+    "id": "gal-28",
+    "src": "/images/Gallery/juba training.jpg",
+    "category": "training",
+    "title": "Juba Training Programme",
+    "description": "ECASI facilitated a climate and environmental training workshop in Juba, South Sudan."
+  },
+  {
+    "id": "gal-29",
+    "src": "/images/Gallery/somalia_climate_change.jpg.webp",
+    "category": "fieldwork",
+    "title": "Somalia Climate Change Engagement",
+    "description": "On-the-ground climate change awareness and field engagement in Somalia."
+  },
+  {
+    "id": "gal-30",
+    "src": "/images/Gallery/DSC_0057.JPG",
+    "category": "events",
+    "title": "Conference Session",
+    "description": "Participants at an ECASI regional conference session."
+  },
+  {
+    "id": "gal-31",
+    "src": "/images/Gallery/DSC_0060.JPG",
+    "category": "events",
+    "title": "Workshop Plenary",
+    "description": "A plenary discussion at an ECASI-hosted workshop."
+  },
+  {
+    "id": "gal-32",
+    "src": "/images/Gallery/DSC_0082.JPG",
+    "category": "fieldwork",
+    "title": "Field Site Assessment",
+    "description": "ECASI team undertaking on-site environmental assessment and data collection."
+  },
+  {
+    "id": "gal-33",
+    "src": "/images/Gallery/DSC_0090.JPG",
+    "category": "fieldwork",
+    "title": "Community Field Visit",
+    "description": "Community members and ECASI representatives during a field monitoring visit."
+  },
+  {
+    "id": "gal-34",
+    "src": "/images/Gallery/ecas 1.jpg",
+    "category": "community",
+    "title": "ECASI Community Dialogue",
+    "description": "ECAS Institute facilitators engaging community leaders in a structured dialogue on climate resilience."
   }
 ]

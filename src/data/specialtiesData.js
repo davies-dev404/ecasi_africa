@@ -848,7 +848,7 @@ export const specialtiesData = [
         <li><strong>Creation of an Enabling Environment</strong> — Working with governments to establish legal, regulatory, and institutional frameworks that mainstream climate change into national development planning.</li>
       </ul>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/courses/executive_training.jpg",
     icon: Leaf,
     benefits: [
       { icon: Target, title: "NDC & NAP Support", description: "Technical assistance for national climate policy frameworks." },
@@ -878,7 +878,7 @@ export const specialtiesData = [
         <li><strong>Research & Analysis</strong> — Conducting energy system analyses, market assessments, and feasibility studies to inform investment and policy decisions.</li>
       </ul>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/courses/energy-transition.png",
     icon: Zap,
     benefits: [
       { icon: TrendingUp, title: "Energy Policy", description: "Enabling regulatory frameworks for clean energy investment." },
@@ -908,7 +908,7 @@ export const specialtiesData = [
         <li><strong>Research & Innovation</strong> — Generating evidence on sustainable agricultural technologies, practices, and policies to inform decision-making.</li>
       </ul>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/programmes/agriculture_crops.png",
     icon: Wheat,
     benefits: [
       { icon: Leaf, title: "Climate-Smart Agriculture", description: "Resilient farming practices for a changing climate." },
@@ -938,7 +938,7 @@ export const specialtiesData = [
         <li><strong>Transport Research & Analysis</strong> — Conducting transport emission inventories, modal shift assessments, and feasibility studies to inform investment decisions.</li>
       </ul>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/research/evidence_based_research.jpg",
     icon: Truck,
     benefits: [
       { icon: Zap, title: "E-Mobility Policy", description: "Enabling frameworks for electric vehicle adoption." },
@@ -969,7 +969,7 @@ export const specialtiesData = [
         <li><strong>Waste-to-Energy</strong> — Assessing and advising on appropriate waste-to-energy technologies in the African context.</li>
       </ul>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/Gallery/1710846398420 (1).jpg",
     icon: Recycle,
     benefits: [
       { icon: Target, title: "Circular Economy Policy", description: "Enabling frameworks for circular economy transitions." },
@@ -998,7 +998,7 @@ export const specialtiesData = [
         <li><strong>Oceans & Marine Programme</strong> — Promoting sustainable ocean governance, marine conservation, and the blue economy across Africa's coastal and island states.</li>
       </ul>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/programmes/tana_river.png",
     icon: TreePine,
     benefits: [
       { icon: TreePine, title: "Forest & Biodiversity", description: "Sustainable forest management and conservation." },
@@ -1017,7 +1017,7 @@ export const specialtiesData = [
       <p>Mining and extractive industries play a significant role in Africa's economies, generating revenues, employment, and infrastructure. But poorly governed extractives sectors can also lead to environmental destruction, community displacement, health risks, and conflict.</p>
       <p>ECAS Institute works with governments, mining companies, communities, and civil society to promote responsible, sustainable, and equitable mining practices. Our services span environmental impact assessment, regulatory reform, community engagement, and monitoring of mining impacts.</p>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/research/pi.jpg",
     icon: Anchor,
     benefits: [
       { icon: Shield, title: "Environmental Assessment", description: "Environmental impact assessment for mining projects." },
@@ -1036,7 +1036,7 @@ export const specialtiesData = [
       <p>The links between environmental change, climate variability, and human mobility are becoming increasingly clear. Droughts, floods, land degradation, and other environmental stressors are key drivers of displacement and migration across Africa. At the same time, migration itself can be a form of adaptation — allowing communities to manage environmental risk and access new livelihood opportunities.</p>
       <p>ECAS Institute conducts research and provides policy advisory services on the environment-migration nexus, helping governments and institutions develop responses that protect the rights and dignity of environmentally displaced people while building long-term community resilience.</p>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/programmes/migration-community.png",
     icon: Globe,
     benefits: [
       { icon: BookOpen, title: "Research & Analysis", description: "Evidence on drivers of environmental migration." },
@@ -1055,7 +1055,7 @@ export const specialtiesData = [
       <p>Freshwater is one of Africa's most precious and most threatened resources. Population growth, urbanisation, agricultural expansion, pollution, and climate change are increasing pressure on the continent's rivers, lakes, and groundwater systems. Many communities face water scarcity, poor water quality, and inadequate sanitation.</p>
       <p>ECAS Institute's Freshwater Programme provides technical advisory and capacity building services on integrated water resources management, transboundary water cooperation, water security planning, and watershed management. We support governments, river basin authorities, and local communities in managing their freshwater resources sustainably.</p>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/programmes/water-river-aerial.png",
     icon: Droplet,
     benefits: [
       { icon: Droplet, title: "IWRM", description: "Integrated water resources management planning." },
@@ -1074,7 +1074,7 @@ export const specialtiesData = [
       <p>Africa's coastal and island states are custodians of vast ocean territories rich in biodiversity, fisheries, minerals, and potential for blue economy development. Yet marine ecosystems face growing threats from overfishing, pollution, habitat destruction, and climate change impacts including ocean acidification and sea-level rise.</p>
       <p>ECAS Institute supports African coastal states in developing sustainable ocean governance frameworks, marine spatial planning, fisheries management strategies, and blue economy development plans that balance economic opportunity with conservation.</p>
     `,
-    image: "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg",
+    image: "/images/programmes/ocean_sustainable.png",
     icon: Anchor,
     benefits: [
       { icon: Anchor, title: "Marine Governance", description: "Sustainable ocean governance frameworks." },

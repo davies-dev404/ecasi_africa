@@ -71,11 +71,11 @@ const Migration = () => {
           className="mb-8 flex justify-center"
         >
           <img
-            src="/images/programmes/migration-team.png"
-            alt="ECASI team in the field - environment, migration and mobility programme"
+            src="/images/programmes/migration-community.png"
+            alt="Environment, migration and mobility programme - community resilience"
             className="w-full max-w-[700px] h-auto rounded-lg shadow-sm"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/research/field_research.jpg";
             }}
           />
         </motion.div>
@@ -225,11 +225,11 @@ const Migration = () => {
           className="mt-8 flex justify-center"
         >
           <img
-            src="/images/programmes/migration-community.png"
-            alt="ECASI community engagement and migration programme"
+            src="/images/research/famers.png"
+            alt="ECASI community engagement and field resilience assessment"
             className="w-full max-w-[700px] h-auto rounded-lg shadow-sm"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-2.jpg";
+              e.target.src = "/images/research/field_research.jpg";
             }}
           />
         </motion.div>

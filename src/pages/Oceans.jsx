@@ -85,7 +85,7 @@ const Oceans = () => {
             alt="Beautiful wide shot of a pristine ocean"
             className="w-full max-w-[500px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/programmes/ocean_sustainable.png";
             }}
           />
         </motion.div>

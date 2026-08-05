@@ -122,7 +122,7 @@ const Agriculture = () => {
         >
           <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm w-full max-w-4xl">
             <img
-              src="/famers.png"
+              src="/images/programmes/agriculture_farmers.png"
               alt="Farmers"
               className="w-full h-auto object-cover hover:scale-102 transition-transform duration-500"
               onError={(e) => {

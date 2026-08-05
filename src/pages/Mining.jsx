@@ -73,11 +73,11 @@ const Mining = () => {
           className="mb-10 flex justify-center"
         >
           <img
-            src="/images/Gallery/1723110570258.jpg"
-            alt="Mining landscape and extractives site"
+            src="/images/research/pi.jpg"
+            alt="Sustainable Mining & Extractives environmental impact assessment"
             className="w-full max-w-[700px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "/images/Gallery/1710846398298.jpg";
+              e.target.src = "/images/research/image-2.png";
             }}
           />
         </motion.div>

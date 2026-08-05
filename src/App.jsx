@@ -65,7 +65,7 @@ const App = () => {
       "/images/team/olonde.png",
       "/images/team/derrick.png",
       "/images/team/mwalasha.png",
-      "https://ecasiafrica.org/wp-content/uploads/2024/06/Fro2fvzXoAMhCbn-1024x698.jpg",
+      "/images/courses/executive_training.jpg",
       "/images/team/Gift.png",
       "/images/team/HR.png",
       "/images/team/daniel.png",

@@ -101,6 +101,14 @@ const consultancySlugs = [
   'environmental-audits', 'energy-audits', 'scoping-studies'
 ];
 
+const cleanContent = (htmlContent) => {
+  if (!htmlContent) return '';
+  let cleaned = htmlContent;
+  cleaned = cleaned.replace(/\s+srcset="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s+sizes="[^"]*"/gi, '');
+  return cleaned;
+};
+
 const formatTitle = (slug) => {
   if (!slug) return 'Research & Consultancy';
   return slug
@@ -191,7 +199,7 @@ const ResearchConsultancy = () => {
                       prose-img:rounded-xl prose-img:shadow-md
                       prose-li:marker:text-ecasi-green
                       prose-strong:text-ecasi-navy"
-                    dangerouslySetInnerHTML={{ __html: pageInfo.content }}
+                    dangerouslySetInnerHTML={{ __html: cleanContent(pageInfo.content) }}
                   />
                 ) : (
                   <div className="py-12 px-4 text-center max-w-2xl mx-auto">

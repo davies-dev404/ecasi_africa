@@ -73,11 +73,11 @@ const Forests = () => {
           className="mb-10 flex justify-center"
         >
           <img
-            src="/images/Gallery/1716991845122.jpg"
-            alt="People in field, reforestation project"
+            src="/images/programmes/tana_river.png"
+            alt="Forests, Biodiversity and Ecosystems - aerial forest canopy and river"
             className="w-full max-w-[700px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "/images/Gallery/1710846398298.jpg";
+              e.target.src = "/images/courses/biodiversity.png";
             }}
           />
         </motion.div>
@@ -218,11 +218,11 @@ const Forests = () => {
           className="mt-12 flex justify-center border-t pt-10"
         >
           <img
-            src="/images/Gallery/1716991736876.jpg"
-            alt="Scientist examining seedling in tree nursery"
+            src="/images/courses/biodiversity.png"
+            alt="Forest biodiversity and ecosystem conservation"
             className="w-full max-w-[500px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "/images/Gallery/1675324665806.jpg";
+              e.target.src = "/images/programmes/tana_river.png";
             }}
           />
         </motion.div>

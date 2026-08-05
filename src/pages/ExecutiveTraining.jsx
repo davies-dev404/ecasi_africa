@@ -62,6 +62,33 @@ const slugIcons = {
   'training-on-carbon-markets': Scale,
 };
 
+const courseFeaturedImages = {
+  'energy': '/images/courses/20241003_133952069-1-1024x683.jpg',
+  'climate-smart-forestry': '/images/courses/biodiversity.png',
+  'energy-transition-and-mobility': '/images/courses/energy-transition.png',
+  'agricultural-carbon-credit-markets': '/images/courses/field.png',
+  'agriculture-and-food-systems': '/images/courses/ok.jpg',
+  'an-introduction-to-climate-change-and-human-rights': '/images/courses/executive_training.jpg',
+  'certified-expert-in-climate-adaptation-finance': '/images/courses/exec.png',
+  'biodiversity-and-natural-resources': '/images/courses/biodiversity.png',
+  'business-sustainability-management': '/images/courses/exec.png',
+  'carbon-accounting-carbon-offsetting-course': '/images/courses/image-8.png',
+  'certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience': '/images/courses/biodiversity.png',
+  'certificate-in-green-finance': '/images/courses/exec.png',
+  'certified-expert-in-biodiversity-finance': '/images/courses/biodiversity.png',
+  'certified-expert-in-environmental-accounting': '/images/courses/exec.png',
+  'certified-expert-in-sustainable-finance': '/images/courses/exec.png',
+  'climate-biodiversity-certificate-program': '/images/courses/biodiversity.png',
+  'climate-and-health-certificate-course': '/images/courses/executive_training.jpg',
+  'climate-change-and-water': '/images/courses/field.png',
+  'human-resources-professional-courses': '/images/courses/target_participants.jpg',
+  'green-skills-development': '/images/courses/85079752_1227263344135855_2280708113273192448_n.jpg',
+  'climate-resilient-infrastructure': '/images/courses/PHOTO-2024-05-15-17-51-09-723x1024.jpg',
+  'environment-climate-change-courses': '/images/courses/biodiversity.png',
+  'regional-workshop': '/images/courses/hd.jpg',
+  'training-on-carbon-markets': '/images/courses/IMGM1984-1024x683.jpg',
+};
+
 /* ── Related courses for sidebar ── */
 const popularCourses = [
   { label: 'Carbon Accounting & Offsetting', slug: 'carbon-accounting-carbon-offsetting-course' },
@@ -156,6 +183,10 @@ const cleanContent = (htmlContent) => {
     cleaned = cleaned.replace(regex2, `$1${item.svg}${item.key}$2`);
   });
 
+  // Remove srcset and sizes from image tags to prevent requesting dead WordPress URLs
+  cleaned = cleaned.replace(/\s+srcset="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s+sizes="[^"]*"/gi, '');
+
   return cleaned;
 };
 
@@ -207,6 +238,7 @@ const ExecutiveTraining = () => {
   const courseInfo = coursesData[slug];
   const title = formatTitle(slug);
   const IconComponent = slugIcons[slug] || GraduationCap;
+  const courseFeaturedImage = courseFeaturedImages[slug] || '/images/courses/executive_training.jpg';
   
   const courseDuration = courseInfo ? extractDuration(courseInfo.content, slug) : '5 Days';
 
@@ -276,6 +308,23 @@ const ExecutiveTraining = () => {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-10">
                 {courseInfo ? (
                   <div className="space-y-8">
+                    {/* Course Featured Image */}
+                    <div className="relative w-full h-56 md:h-72 rounded-2xl overflow-hidden shadow-md mb-2">
+                      <img
+                        src={courseFeaturedImage}
+                        alt={title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-ecasi-navy/40 to-transparent" />
+                      <div className="absolute bottom-4 left-5">
+                        <span className="inline-flex items-center gap-1.5 bg-ecasi-green text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow">
+                          <IconComponent size={12} />
+                          {title}
+                        </span>
+                      </div>
+                    </div>
+
                     {/* Course Quick Stats Panel */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 bg-gradient-to-br from-ecasi-navy/[0.03] to-ecasi-navy/[0.01] rounded-2xl border border-gray-100 mb-8 shadow-sm">
                       <div className="flex items-center gap-3">

@@ -10,7 +10,7 @@ const partnersList = [
   // Financial Partners
   {
     name: "Clean Air Fund",
-    logo: "https://ecasiafrica.org/wp-content/uploads/2025/04/CLEAN-AIR-FUND.png",
+    logo: "/images/partners/clean.png",
     website: "https://www.cleanairfund.org/",
     category: "financial",
     type: "Financial Partner",

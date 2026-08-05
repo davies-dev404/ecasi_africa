@@ -39,7 +39,7 @@ const InstitutionalCapacityBuilding = () => {
             alt="Institutional Capacity Building"
             className="w-full max-w-[650px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "https://ecasiafrica.org/wp-content/uploads/2024/05/ecas-1.jpg";
+              e.target.src = "/images/courses/mentorship_group.jpg";
             }}
           />
         </div>
