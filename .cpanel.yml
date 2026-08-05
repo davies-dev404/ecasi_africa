@@ -6,6 +6,9 @@ deployment:
     # Clean old build assets to avoid accumulation of old hashed files
     - /bin/rm -rf $DEPLOYPATH/assets
 
+    # Clean legacy physical folders/files that interfere with SPA routes
+    - /bin/rm -rf $DEPLOYPATH/contact $DEPLOYPATH/gallery $DEPLOYPATH/contact.html $DEPLOYPATH/gallery.html $DEPLOYPATH/contact.php $DEPLOYPATH/gallery.php
+
     # Copy the production build files
     - /bin/cp -R dist/* $DEPLOYPATH/
 
