@@ -4,8 +4,8 @@ import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { 
-  Wind, Zap, Leaf, Truck, Recycle, TreePine, Globe, 
-  ArrowRight, ShieldAlert, GraduationCap, Brain, Compass
+  Wind, Zap, Leaf, Truck, TreePine, Globe, 
+  ArrowRight, ShieldAlert, GraduationCap, Brain, Compass, Briefcase
 } from 'lucide-react';
 
 const coreProgrammes = [
@@ -38,11 +38,11 @@ const coreProgrammes = [
     color: "bg-blue-50 text-blue-600 border-blue-100",
   },
   {
-    icon: Recycle,
-    title: "Waste & Circular Economy",
-    description: "Advancing circularity principles, waste resource recovery systems, and sustainable materials management frameworks.",
-    path: "/specialties/waste-and-circular-economy",
-    color: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    icon: Briefcase,
+    title: "Vacancies",
+    description: "Explore current job openings and opportunities to join the ECAS Institute team and contribute to sustainable development across Africa.",
+    path: "/vacancies",
+    color: "bg-violet-50 text-violet-600 border-violet-100",
   },
 ];
 
