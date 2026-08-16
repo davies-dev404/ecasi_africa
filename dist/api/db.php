@@ -2,35 +2,33 @@
 // Secure Database Connection Helper
 
 // Load .env file if it exists
-if (!function_exists('loadEnv')) {
-    function loadEnv($path) {
-        if (!file_exists($path)) {
-            return;
+$loadEnv = function($path) {
+    if (!file_exists($path)) {
+        return;
+    }
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) {
+            continue;
         }
-        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (strpos(trim($line), '#') === 0) {
-                continue;
-            }
-            if (strpos($line, '=') === false) {
-                continue;
-            }
-            list($name, $value) = explode('=', $line, 2);
-            $name = trim($name);
-            $value = trim($value);
-            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
-                putenv(sprintf('%s=%s', $name, $value));
-                $_ENV[$name] = $value;
-                $_SERVER[$name] = $value;
-            }
+        if (strpos($line, '=') === false) {
+            continue;
+        }
+        list($name, $value) = explode('=', $line, 2);
+        $name = trim($name);
+        $value = trim($value);
+        if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+            putenv(sprintf('%s=%s', $name, $value));
+            $_ENV[$name] = $value;
+            $_SERVER[$name] = $value;
         }
     }
-}
+};
 
 // Check parent directories for .env (since API is inside public/api)
-loadEnv(__DIR__ . '/../../.env');
-loadEnv(__DIR__ . '/../.env');
-loadEnv(__DIR__ . '/.env');
+$loadEnv(__DIR__ . '/../../.env');
+$loadEnv(__DIR__ . '/../.env');
+$loadEnv(__DIR__ . '/.env');
 
 // Retrieve DB configuration from environment variables with fallbacks
 $db_host = getenv('DB_HOST') ?: 'localhost';

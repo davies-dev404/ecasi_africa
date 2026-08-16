@@ -33,68 +33,52 @@ const partners = [
 // Base: 1200×600px fullwidth | Autoplay: 5 000 ms | Transition: horizontal 800 ms easeOutQuad
 const heroSlides = [
   {
-    bg: "/images/Gallery/1717137016602.jpg",
+    bg: "/images/Gallery/air_quality_handshake.jpg",
     title: "Air Quality Training &\nClimate Resilience",
     subtitle: "Empowering stakeholders and communities with technical knowledge to drive climate resilient actions and policies globally.",
     cta:  { label: "Our Programmes", to: "/training-education-public-awareness" },
     cta2: { label: "Contact Us",     to: "/contact" },
-    position: "object-center md:object-[center_20%] xl:object-[center_30%]",
+    focalX: '50%', focalY: '30%',
   },
   {
-    bg: "/images/Gallery/DSC_0055.JPG",
-    title: "Advancing Sustainability\nGlobally",
-    subtitle: "We serve as an independent global think tank supporting green growth and evidence-based environment policies.",
-    cta:  { label: "About ECAS", to: "/about" },
-    cta2: { label: "Our Team",   to: "/our-team" },
-    position: "object-top md:object-[center_20%] xl:object-[center_30%]",
+    bg: "/images/courses/professional_training.png",
+    title: "Professional Training &\nCapacity Development",
+    subtitle: "Empowering professionals with hands-on technical knowledge in climate change, green economy, and sustainable development through targeted workshops.",
+    cta:  { label: "View Courses", to: "/institute-overview" },
+    cta2: { label: "Register",     to: "/contact" },
+    focalX: '50%', focalY: '35%',
   },
   {
-    bg: "/images/courses/mentorship_group.jpg",
-    title: "Capacity Strengthening &\nMentorship Programs",
-    subtitle: "Building the green skills required to navigate carbon markets, sustainable finance, and environment impact assessments.",
-    cta:  { label: "Training Courses", to: "/institute-overview" },
-    cta2: { label: "Register Now",     to: "/contact" },
-    position: "object-center md:object-[center_30%]",
+    bg: "/images/Gallery/1710846398298.jpg",
+    title: "Capacity\nDevelopment",
+    subtitle: "Professional courses, executive workshops, and mentorship programs in climate change, green economy, and sustainable development.",
+    cta:  { label: "View Courses", to: "/institute-overview" },
+    cta2: { label: "Register",     to: "/contact" },
+    focalX: '50%', focalY: '25%',
   },
   {
-    bg: "/images/research/evidence_based_research.jpg",
-    title: "Evidence-Based Research\n& Specialized Advisory",
-    subtitle: "Delivering rigorous analysis that powers policy decisions across Africa and beyond.",
+    bg: "/images/research/IMG_20241112_163109285-1024x683.jpg",
+    title: "Consultancy and\nBusiness Advisory",
+    subtitle: "Providing environmental assessments, ESG advisory, and strategic consultancy to guide sustainable infrastructure and green investment decisions.",
     cta:  { label: "Consultancy Services", to: "/research/consulting" },
-    cta2: { label: "Learn More",           to: "/about" },
-    position: "object-top md:object-[center_20%]",
+    cta2: { label: "Contact Us",           to: "/contact" },
+    focalX: '50%', focalY: '35%',
   },
   {
     bg: "/images/research/field_research.jpg",
-    title: "Field Research &\nSystemic Observation",
-    subtitle: "Conducting in-depth research and delivering evidence-based recommendations for policy makers globally.",
+    title: "Research and\nInnovation",
+    subtitle: "Conducting rigorous field research, systematic observation, and evidence-based analysis that powers policy decisions across Africa.",
     cta:  { label: "Research Areas", to: "/research-systematic-observation" },
     cta2: { label: "Our Work",       to: "/our-strategic-focus" },
-    position: "object-center md:object-[center_30%]",
+    focalX: '50%', focalY: '25%',
   },
   {
-    bg: "/images/courses/ok.jpg",
-    title: "Environmental Impact\nAssessments",
-    subtitle: "Delivering strategic environmental and social impact assessments that guide sustainable infrastructure and investment decisions.",
-    cta:  { label: "Consultancy", to: "/research/consulting" },
-    cta2: { label: "Contact Us",  to: "/contact" },
-    position: "object-top md:object-[center_20%]",
-  },
-  {
-    bg: "/images/research/1713864387984-1024x768.jpg",
-    title: "Policy Advocacy &\nInternational Engagement",
-    subtitle: "Driving impactful multilateral policy outcomes in global environmental forums.",
+    bg: "/images/research/technis.png",
+    title: "Policy and\nTechnical Support",
+    subtitle: "Driving impactful multilateral policy outcomes, policy advocacy, and enabling environments for sustainable development.",
     cta:  { label: "Our Policies", to: "/our-policies" },
     cta2: { label: "Learn More",   to: "/about" },
-    position: "object-bottom",
-  },
-  {
-    bg: "/images/courses/executive_training.jpg",
-    title: "Executive Training\nWorkshops",
-    subtitle: "Professional courses in climate change, green economy, and sustainable development delivered by leading experts.",
-    cta:  { label: "View Courses", to: "/institute-overview" },
-    cta2: { label: "Register",     to: "/contact" },
-    position: "object-[center_40%]",
+    focalX: '50%', focalY: '35%',
   },
 ];
 
@@ -143,7 +127,7 @@ const HeroSlider = () => {
         position: 'relative',
         overflow: 'hidden',
         width: '100%',
-        height: 'clamp(320px, 50vw, 600px)',
+        height: 'clamp(520px, 85vh, 960px)',
         background: '#032e42',
       }}
     >
@@ -168,15 +152,27 @@ const HeroSlider = () => {
               position: 'absolute', inset: 0,
               transform, transition, zIndex,
               willChange: 'transform',
+              background: '#032e42',
             }}
           >
+            {/* Blurred fill layer — prevents dark bars on any aspect ratio */}
+            <img
+              src={s.bg}
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 select-none pointer-events-none"
+              style={{ objectPosition: `${s.focalX || '50%'} ${s.focalY || '40%'}` }}
+            />
+            {/* Sharp primary image — object-cover with per-slide focal point */}
             <img
               src={s.bg}
               alt={`Slide ${idx + 1}`}
               fetchPriority={idx === 0 ? 'high' : 'auto'}
               loading={idx === 0 ? 'eager' : 'lazy'}
-              className={`w-full h-full object-cover ${s.position || 'object-center'}`}
-              style={{ filter: 'saturate(1.12) contrast(1.06) brightness(1.02)' }}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{
+                objectPosition: `${s.focalX || '50%'} ${s.focalY || '40%'}`,
+                filter: 'saturate(1.1) contrast(1.05) brightness(1.02)',
+              }}
             />
           </div>
         );

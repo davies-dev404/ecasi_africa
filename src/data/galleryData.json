@@ -236,5 +236,68 @@
     "category": "community",
     "title": "ECASI Community Dialogue",
     "description": "ECAS Institute facilitators engaging community leaders in a structured dialogue on climate resilience."
+  },
+  {
+    "id": "gal-35",
+    "src": "/images/Gallery/breathe_cities_presentation.jpg",
+    "category": "events",
+    "title": "Air Quality Policy Presentation",
+    "description": "Expert presenting on Kenya's ambient air quality regulations at the Breathe Cities & ECASI joint event at Royal Canaan."
+  },
+  {
+    "id": "gal-36",
+    "src": "/images/Gallery/breathe_cities_panel.jpg",
+    "category": "events",
+    "title": "Panel Discussion – Breathe Cities Event",
+    "description": "Panelists engaged in a high-level discussion on air quality governance and Nairobi's environmental policy framework."
+  },
+  {
+    "id": "gal-37",
+    "src": "/images/Gallery/breathe_cities_report.jpg",
+    "category": "events",
+    "title": "Report Launch – ECASI & Breathe Cities",
+    "description": "Officials and delegates mark the handover of an air quality research report at the ECASI and Breathe Cities collaboration event."
+  },
+  {
+    "id": "gal-38",
+    "src": "/images/Gallery/breathe_cities_cake.jpg",
+    "category": "events",
+    "title": "Appreciation Celebration",
+    "description": "Team members and guests celebrating milestones with a cake cutting ceremony at the ECASI Breathe Cities event."
+  },
+  {
+    "id": "gal-39",
+    "src": "/images/Gallery/breathe_cities_speaker.jpg",
+    "category": "events",
+    "title": "Keynote Address – Air Quality Forum",
+    "description": "A keynote speaker delivering remarks on climate change and environmental sustainability at the Royal Canaan, Nairobi."
+  },
+  {
+    "id": "gal-40",
+    "src": "/images/Gallery/training_workshop_session.jpg",
+    "category": "training",
+    "title": "Training Workshop Session",
+    "description": "Participants attending a capacity building workshop facilitated by ECASI, with a presenter addressing the audience."
+  },
+  {
+    "id": "gal-41",
+    "src": "/images/Gallery/stakeholder_meeting_boardroom.jpg",
+    "category": "events",
+    "title": "Stakeholder Boardroom Meeting",
+    "description": "A small-group stakeholder consultation session with ECASI representatives and partners discussing environmental frameworks."
+  },
+  {
+    "id": "gal-42",
+    "src": "/images/Gallery/regulation_training_group.jpg",
+    "category": "training",
+    "title": "Regulation & Policy Training",
+    "description": "Participants engaged in a training workshop on environmental regulations, reviewing presentations on compliance frameworks."
+  },
+  {
+    "id": "gal-43",
+    "src": "/images/Gallery/training_facilitator_methodology.jpg",
+    "category": "training",
+    "title": "Facilitator Presenting Methodology",
+    "description": "An ECASI facilitator presenting research methodology and findings to training participants."
   }
 ]

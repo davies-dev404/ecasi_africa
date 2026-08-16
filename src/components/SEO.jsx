@@ -14,6 +14,7 @@ const SEO = ({ title, description, keywords, image }) => {
       <meta name="description" content={description || defaultDescription} />
       <meta name="keywords" content={keywords || defaultKeywords} />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="theme-color" content="#006837" />
       <meta name="google-site-verification" content="K3tyeQb5qs4t6mrjxytSj80FvaoI69hmo6L7qEEN9x4" />
 
       {/* Open Graph / Facebook */}

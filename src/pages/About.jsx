@@ -480,7 +480,7 @@ const About = () => {
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)", backgroundSize: "18px 18px" }} />
                 <div className="relative z-10">
                   <p className="text-white font-bold text-sm">Partner With ECAS Institute</p>
-                  <p className="text-white/60 text-xs">Whether you're in government, private sector, or civil society — let's work together.</p>
+                  <p className="text-white/60 text-xs">Whether you&apos;re in government, private sector, or civil society — let&apos;s work together.</p>
                 </div>
                 <Link to="/contact" className="flex-shrink-0 relative z-10">
                   <button className="bg-green-400 text-slate-900 font-bold px-5 py-2 rounded-lg hover:bg-green-300 transition-all shadow-md text-xs">
