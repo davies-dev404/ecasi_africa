@@ -269,6 +269,15 @@
     }
   }
 
+  /* Mobile: constrain hero height so content below is visible */
+  @media (max-width: 768px) {
+    .n2ss-hero {
+      height: 45vh !important;
+      max-height: 320px !important;
+      min-height: 220px !important;
+    }
+  }
+
   /* ── Slide content fade-in (layer in-animation: mainInEnd) ── */
   @keyframes n2ssContentIn {
     from { opacity: 0; transform: translateY(10px); }
