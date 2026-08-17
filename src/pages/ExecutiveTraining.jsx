@@ -116,10 +116,10 @@ const cleanContent = (htmlContent) => {
   // Also strip any other occurrences of Duration: X Days or Duration: ...
   cleaned = cleaned.replace(/<p[^>]*>\s*(?:<strong>)?\s*Duration:\s*(?:<\/strong>)?\s*[^<]*Days?\s*<\/p>/gi, '');
 
-  // Fix the "A<strong>CCOMMODATION</strong>" typo (where the letter 'A' is left outside the strong tags)
-  cleaned = cleaned.replace(/A\s*<strong>\s*CCOMMODATION\s*<\/strong>/gi, '<strong>ACCOMMODATION</strong>');
-  cleaned = cleaned.replace(/A\s*<b>\s*CCOMMODATION\s*<\/b>/gi, '<b>ACCOMMODATION</b>');
-  cleaned = cleaned.replace(/A\s*CCOMMODATION/gi, 'ACCOMMODATION');
+  // Remove any remaining ACCOMMODATION heading + following content block
+  cleaned = cleaned.replace(/<p[^>]*>\s*(?:A\s*)?(?:<(?:strong|b)>\s*)?(?:A?CCOMMODATION|ACCOMMODATION)\s*(?:<\/(?:strong|b)>)?\s*<\/p>\s*<(?:p|ul)[^>]*>[\s\S]*?<\/(?:p|ul)>/gi, '');
+  // Also strip any leftover ACCOMMODATION heading paragraph alone
+  cleaned = cleaned.replace(/<p[^>]*>\s*A?<(?:strong|b)>\s*C?COMMODATION\s*<\/(?:strong|b)>\s*<\/p>/gi, '');
 
   // Prepend inline SVG icons to headings inside the course content prose
   const iconMap = [
@@ -159,10 +159,7 @@ const cleanContent = (htmlContent) => {
       key: 'TRAINING FEE',
       svg: `<svg class="inline-block w-5 h-5 mr-2 text-ecasi-green align-text-bottom" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M12 16v1m4-12H8a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2z"></path></svg>`
     },
-    {
-      key: 'ACCOMMODATION',
-      svg: `<svg class="inline-block w-5 h-5 mr-2 text-ecasi-green align-text-bottom" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>`
-    },
+
     {
       key: 'TRAINING CUSTOMIZATION',
       svg: `<svg class="inline-block w-5 h-5 mr-2 text-ecasi-green align-text-bottom" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>`
