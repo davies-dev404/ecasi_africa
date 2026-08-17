@@ -127,7 +127,7 @@ const HeroSlider = () => {
         position: 'relative',
         overflow: 'hidden',
         width: '100%',
-        height: 'clamp(520px, 85vh, 960px)',
+        height: 'clamp(300px, 60vh, 700px)',
         background: '#032e42',
       }}
     >
@@ -211,18 +211,6 @@ const HeroSlider = () => {
                   animation: visible && !sliding ? 'n2ssContentIn 0.5s ease-out' : 'none',
                 }}
               >
-                {/* Eyebrow */}
-                <p style={{
-                  color: 'rgba(255,255,255,0.85)',
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.12em',
-                  marginBottom: '12px',
-                  fontFamily: "'Roboto', sans-serif",
-                  fontWeight: 500,
-                }}>
-                  ECAS INSTITUTE — BRIDGING THE NEXUS BETWEEN RESEARCH, POLICY AND PRACTICE
-                </p>
 
                 {/* Heading — n2-style heading box: dark bg, orange hover */}
                 <h1 className="n2ss-heading" style={{
@@ -295,44 +283,7 @@ const HeroSlider = () => {
         </div>
       </div>
 
-      {/* ── Arrow: previous (nextend-arrow-previous) ── */}
-      <button
-        onClick={() => { goPrev(); resetTimer(); }}
-        aria-label="Previous slide"
-        className="n2ss-arrow n2ss-arrow-prev"
-        style={{
-          position: 'absolute', left: '16px', top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 25, cursor: 'pointer', background: 'none', border: 'none', padding: 0,
-          lineHeight: 0,
-        }}
-      >
-        {/* WP uses img arrows (26px wide); we replicate with an SVG chevron */}
-        <span className="n2ss-arrow-inner" style={{ display: 'flex' }}>
-          <svg width="26" height="44" viewBox="0 0 26 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="20,6 6,22 20,38" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </span>
-      </button>
 
-      {/* ── Arrow: next (nextend-arrow-next) ── */}
-      <button
-        onClick={() => { goNext(); resetTimer(); }}
-        aria-label="Next slide"
-        className="n2ss-arrow n2ss-arrow-next"
-        style={{
-          position: 'absolute', right: '16px', top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 25, cursor: 'pointer', background: 'none', border: 'none', padding: 0,
-          lineHeight: 0,
-        }}
-      >
-        <span className="n2ss-arrow-inner" style={{ display: 'flex' }}>
-          <svg width="26" height="44" viewBox="0 0 26 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="6,6 20,22 6,38" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </span>
-      </button>
 
       {/* ── Dot bullets (bottom-center) ── */}
       <div style={{
