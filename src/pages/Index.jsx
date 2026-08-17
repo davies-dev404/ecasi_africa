@@ -157,7 +157,7 @@ const HeroSlider = () => {
         position: 'relative',
         overflow: 'hidden',
         width: '100%',
-        height: 'clamp(300px, 60vh, 700px)',
+        height: 'clamp(250px, 40vh, 500px)',
         background: '#032e42',
       }}
     >
