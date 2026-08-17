@@ -46,7 +46,7 @@ const GhgInventories = () => {
 
         {/* Introductory Paragraph */}
         <p className="text-sm md:text-base mb-10 text-justify font-medium text-[#032e42]">
-          Our Greenhouse Gas (GHG) Inventory programme for climate change promotes systems for quantifying a nation's emissions and removals of greenhouse gases, crucial for tracking progress towards climate goals. We employ Intergovernmental Panel on Climate Change (IPCC) methodological guidance. These inventories are essential for informed decision-making, policy development, and measuring the effectiveness of climate change mitigation efforts.
+          Our Greenhouse Gas (GHG) Inventory programme for climate change promotes systems for quantifying a nation&apos;s emissions and removals of greenhouse gases, crucial for tracking progress towards climate goals. We employ Intergovernmental Panel on Climate Change (IPCC) methodological guidance. These inventories are essential for informed decision-making, policy development, and measuring the effectiveness of climate change mitigation efforts.
         </p>
 
         {/* Section Heading */}

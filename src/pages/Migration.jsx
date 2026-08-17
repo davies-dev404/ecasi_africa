@@ -96,7 +96,7 @@ const Migration = () => {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="text-sm md:text-base text-justify mb-8"
         >
-          Here's a more detailed breakdown of what our programme entail:
+          Here&apos;s a more detailed breakdown of what our programme entail:
         </motion.p>
 
         {/* Section 1: Understanding the Interconnections */}

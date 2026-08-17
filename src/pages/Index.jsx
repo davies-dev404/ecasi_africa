@@ -106,7 +106,7 @@ const HeroSlider = () => {
   }, [sliding, current]);
 
   const goNext = useCallback(() => goTo((current + 1) % n), [current, n, goTo]);
-  const goPrev = useCallback(() => goTo((current - 1 + n) % n), [current, n, goTo]);
+  // const goPrev = useCallback(() => goTo((current - 1 + n) % n), [current, n, goTo]);
 
   // Reset autoplay timer on every interaction
   const resetTimer = useCallback(() => {
