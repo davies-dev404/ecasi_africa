@@ -106,13 +106,40 @@ const HeroSlider = () => {
   }, [sliding, current]);
 
   const goNext = useCallback(() => goTo((current + 1) % n), [current, n, goTo]);
-  // const goPrev = useCallback(() => goTo((current - 1 + n) % n), [current, n, goTo]);
+  const goPrev = useCallback(() => goTo((current - 1 + n) % n), [current, n, goTo]);
 
   // Reset autoplay timer on every interaction
   const resetTimer = useCallback(() => {
     clearInterval(timerRef.current);
     timerRef.current = setInterval(goNext, 5000);
   }, [goNext]);
+
+  // Touch handlers for swipe
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      goNext();
+      resetTimer();
+    }
+    if (isRightSwipe) {
+      goPrev();
+      resetTimer();
+    }
+  };
 
   useEffect(() => {
     timerRef.current = setInterval(goNext, 5000);
@@ -123,6 +150,9 @@ const HeroSlider = () => {
     // n2-ss-slider-1 → n2-ss-slider-2 → n2-ss-slider-3
     <div
       className="n2ss-hero"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
       style={{
         position: 'relative',
         overflow: 'hidden',
