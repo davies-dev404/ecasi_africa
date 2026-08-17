@@ -13,9 +13,7 @@ const Footer = () => {
           {/* Column 1: Brand */}
           <div className="col-span-2 lg:col-span-1 space-y-5">
             <Link to="/" className="flex items-center gap-3">
-              <div className="bg-white rounded-lg flex items-center justify-center p-1.5 flex-shrink-0">
-                <img src="/logo.png" alt="ECASI Africa Logo" className="h-10 w-auto object-contain mix-blend-multiply" />
-              </div>
+              <img src="/logo_transparent.png" alt="ECASI Africa Logo" className="h-14 w-auto object-contain" />
             </Link>
 
             <p className="text-white/75 text-sm leading-relaxed">
