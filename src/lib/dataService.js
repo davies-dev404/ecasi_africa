@@ -22,8 +22,8 @@ const KEYS = {
   POLICY_BRIEFS: 'ecasi_policy_briefs',
   EVENTS: 'ecasi_events',
   NEWS: 'ecasi_news',
-  COURSES: 'ecasi_courses',
-  COURSES_LINKS: 'ecasi_courses_links'
+  COURSES: 'ecasi_courses_v2026_v2',
+  COURSES_LINKS: 'ecasi_courses_links_v2026_v2'
 };
 
 const getLocalStorageData = (key) => {
@@ -71,7 +71,69 @@ export const dataService = {
     return getLocalStorageData(KEYS.NEWS) || defaultNews;
   },
   getCourses() {
-    return getLocalStorageData(KEYS.COURSES) || defaultCourses;
+    const cached = getLocalStorageData(KEYS.COURSES);
+    return cached ? { ...defaultCourses, ...cached } : defaultCourses;
+  },
+  getCoursesList() {
+    const courses = this.getCourses();
+    if (!courses) return [];
+    if (Array.isArray(courses)) return courses;
+    return Object.entries(courses).map(([slugKey, courseObj]) => ({
+      slug: slugKey,
+      ...(courseObj || {})
+    }));
+  },
+  getCourseBySlug(slug) {
+    if (!slug) return null;
+    const cleanSlug = String(slug).trim().toLowerCase();
+    const courses = this.getCourses();
+    if (!courses) return null;
+
+    // Direct lookup in object
+    if (courses[cleanSlug]) {
+      return { slug: cleanSlug, ...courses[cleanSlug] };
+    }
+
+    const list = this.getCoursesList();
+    
+    // 1. Exact match on slug or id
+    const exact = list.find((c) => (c?.slug || '').toLowerCase() === cleanSlug || (c?.id || '').toLowerCase() === cleanSlug);
+    if (exact) return exact;
+
+    // 2. Normalized slug match (stripping punctuation/extra hyphens)
+    const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanNorm = normalize(cleanSlug);
+    const normalizedMatch = list.find((c) => normalize(c?.slug) === cleanNorm || normalize(c?.title) === cleanNorm);
+    if (normalizedMatch) return normalizedMatch;
+
+    // 3. Known aliases map
+    const aliases = {
+      'gender-equality-diversity-and-social-inclusion': 'gender-equality-diversity-and-social-inclusion-gedsi',
+      'monitoring-evaluation-accountability-learning-and-outcome-harvesting': 'monitoring-evaluation-accountability-learning-meal-and-outcome-harvesting',
+      'climate-finance': 'climate-finance-and-investment-strategies',
+      'climate-change': 'climate-change-mitigation-adaptation-and-ndcs',
+      'artificial-intelligence-in-project-management-me': 'artificial-intelligence-in-project-management-monitoring-and-evaluation-me',
+      'artificial-intelligence-in-project-management': 'artificial-intelligence-in-project-management-monitoring-and-evaluation-me',
+      'modern-office-productivity': 'modern-office-productivity-time-workflow-and-digital-work-management',
+      'public-procurement-process-and-asset-management': 'public-procurement-process-and-asset-management',
+      'environmental-health-safety-hse-safeguards': 'environmental-health-safety-hse-and-safeguards',
+      'climate-risk-data-intelligence': 'climate-risk-data-intelligence-and-information-systems'
+    };
+
+    if (aliases[cleanSlug]) {
+      const aliasTarget = aliases[cleanSlug];
+      const foundAlias = list.find((c) => (c?.slug || '').toLowerCase() === aliasTarget || (c?.id || '').toLowerCase() === aliasTarget);
+      if (foundAlias) return foundAlias;
+    }
+
+    // 4. Substring / Prefix match fallback
+    const partialMatch = list.find((c) => {
+      const s = (c?.slug || '').toLowerCase();
+      return (s.startsWith(cleanSlug) || cleanSlug.startsWith(s)) && Math.abs(s.length - cleanSlug.length) < 15;
+    });
+    if (partialMatch) return partialMatch;
+
+    return null;
   },
   getCoursesLinks() {
     return getLocalStorageData(KEYS.COURSES_LINKS) || defaultCoursesLinks;

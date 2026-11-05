@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import ReactGA from 'react-ga4';
+import Clarity from '@microsoft/clarity';
 
 // Environment variables or fallback defaults
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-XXXXXXXXXX';
 const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || 'YOUR_META_PIXEL_ID';
-const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID || 'YOUR_CLARITY_PROJECT_ID';
-const CLOUDFLARE_BEACON_TOKEN = import.meta.env.VITE_CLOUDFLARE_BEACON_TOKEN || 'YOUR_CLOUDFLARE_BEACON_TOKEN';
+const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID || 'z8r4lta50m';
+const CLOUDFLARE_BEACON_TOKEN = import.meta.env.VITE_CLOUDFLARE_BEACON_TOKEN || '11c976ef086b4f4e859a8634d7e65a65';
 
 const Analytics = () => {
   const location = useLocation();
@@ -55,14 +56,7 @@ const Analytics = () => {
     // 3. Microsoft Analytics (Microsoft Clarity)
     if (CLARITY_PROJECT_ID && CLARITY_PROJECT_ID !== 'YOUR_CLARITY_PROJECT_ID') {
       try {
-        (function (c, l, a, r, i, t, y) {
-          c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
-          t = l.createElement(r);
-          t.async = 1;
-          t.src = 'https://www.clarity.ms/tag/' + i;
-          y = l.getElementsByTagName(r)[0];
-          y.parentNode.insertBefore(t, y);
-        })(window, document, 'clarity', 'script', CLARITY_PROJECT_ID);
+        Clarity.init(CLARITY_PROJECT_ID);
       } catch (err) {
         console.warn('Microsoft Clarity Initialization Error:', err);
       }
@@ -90,7 +84,7 @@ const Analytics = () => {
     if (GA_MEASUREMENT_ID && GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX') {
       try {
         ReactGA.send({ hitType: 'pageview', page: path });
-      } catch (err) {
+      } catch {
         // Ignore uninitialized errors
       }
     }
@@ -99,8 +93,8 @@ const Analytics = () => {
     if (META_PIXEL_ID && META_PIXEL_ID !== 'YOUR_META_PIXEL_ID' && typeof window.fbq === 'function') {
       try {
         window.fbq('track', 'PageView');
-      } catch (err) {
-        // Ignore uninitialized errors
+      } catch {
+        // Ignore errors
       }
     }
   }, [location]);
@@ -109,4 +103,3 @@ const Analytics = () => {
 };
 
 export default Analytics;
-

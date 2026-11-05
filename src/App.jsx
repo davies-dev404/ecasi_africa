@@ -50,6 +50,7 @@ import Oceans from "./pages/Oceans.jsx";
 import Migration from "./pages/Migration.jsx";
 import Water from "./pages/Water.jsx";
 import ExecutiveTraining from "./pages/ExecutiveTraining.jsx";
+import Register from "./pages/Register.jsx";
 import ResearchConsultancy from "./pages/ResearchConsultancy.jsx";
 import Training from "./pages/Training.jsx";
 import PolicyAnalysis from "./pages/PolicyAnalysis.jsx";
@@ -57,6 +58,7 @@ import Search from "./pages/Search.jsx";
 
 import Analytics from "@/components/Analytics";
 import ScrollToTop from "@/components/ScrollToTop";
+import WhatsAppWidget from "@/components/WhatsAppWidget";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +88,7 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <WhatsAppWidget />
         <Analytics />
         <Routes>
           <Route path="/" element={<Index />} />
@@ -132,6 +135,7 @@ const App = () => {
           <Route path="/training-2" element={<Training />} />
           <Route path="/institute-overview" element={<ExecutiveTraining />} />
           <Route path="/executive-training/:slug" element={<ExecutiveTraining />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/policy-analysis" element={<PolicyAnalysis />} />
           <Route path="/research/:slug" element={<ResearchConsultancy />} />
           <Route path="/consultancy" element={<Navigate to="/research/consulting" replace />} />

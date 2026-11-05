@@ -1,15 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import SEO from '@/components/SEO';
-import { GraduationCap, Briefcase, Brain, Landmark, Calendar, MapPin, Quote, User } from 'lucide-react';
+import {
+  ArrowUpRight, Search, Landmark, Wallet, CloudSun, Cpu,
+  FolderKanban, Briefcase, Award, Building2, Users, Globe,
+  ChevronLeft, ChevronRight, Star, CheckCircle2, MapPin, Clock, X, Sparkles
+} from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ScrollAnimation from '@/components/ScrollAnimation';
-import LinkedInFeed from '@/components/LinkedInFeed';
-import { dataService } from '@/lib/dataService';
 import beryleImg from '@/assets/beryle.png';
 import yasukoImg from '@/assets/yasuko.png';
-// ─── Partners Data for Ticker Carousel ────────────────────────────────────────
+
+// ─── ECAS Partners Data (Retained) ───────────────────────────────────────────
 const partners = [
   { name: "Clean Air Fund", logo: "/images/partners/breathe_cities_logo.png", url: "https://www.cleanairfund.org/" },
   { name: "Bloomberg Philanthropies", logo: "/images/bloomberg.png", url: "https://www.bloomberg.org/" },
@@ -28,380 +31,317 @@ const partners = [
   { name: "Pan African Climate Justice Alliance", logo: "/images/partners/pacja.png", url: "https://www.pacja.org/" },
 ];
 
-// ─── Hero Slider ─────────────────────────────────────────────────────────────
-// Slides mirror the WordPress Smart Slider 3 (n2-ss-3) on ecasiafrica.org
-// Base: 1200×600px fullwidth | Autoplay: 5 000 ms | Transition: horizontal 800 ms easeOutQuad
-const heroSlides = [
+// ─── Hero Background Slides for Dynamic Video/Visual Effect ──────────────────
+const heroBgs = [
+  "/images/Gallery/1732710492385.jpg",
+  "/images/Gallery/training_workshop_session.jpg",
+  "/images/courses/executive_training.jpg",
+  "/images/courses/IMGM1984-1024x683.jpg",
+];
+
+// ─── Course Search Dropdown Options ──────────────────────────────────────────
+const searchCategories = [
+  { value: "climate-finance", label: "Climate Finance & Public Financial Management" },
+  { value: "climate-change", label: "Climate Change & Sustainability" },
+  { value: "carbon-markets", label: "Carbon Markets & ESG" },
+  { value: "leadership-and-corporate-governance", label: "Leadership, Governance & Anti-Corruption" },
+  { value: "project-management-and-me", label: "Project Management, Procurement & M&E" },
+  { value: "human-resources", label: "Human Resources & 5IR Office Administration" },
+  { value: "communication-and-public-relations", label: "Communication, PR & Government Protocol" },
+  { value: "data-and-it", label: "Big Data, Analytics, IT & Cybersecurity" },
+  { value: "artificial-intelligence", label: "Artificial Intelligence & Machine Learning" },
+  { value: "environmental-health-and-safety", label: "Air Quality, Environmental Health & Safety" },
+  { value: "organizational-change-management", label: "Organizational Change Management" },
+  { value: "design-thinking-in-policy-reforms", label: "Design Thinking in Policy Reforms" },
+];
+
+const searchLocations = [
+  "Nairobi - Kenya",
+  "Mombasa - Kenya",
+  "Naivasha - Kenya",
+  "Arusha - Tanzania",
+  "Dar es Salaam - Tanzania",
+  "Kigali - Rwanda",
+  "Kampala - Uganda",
+  "Dubai - UAE",
+  "Abuja - Nigeria",
+  "Accra - Ghana",
+  "Pretoria - South Africa",
+];
+
+const searchFormats = [
+  { value: "Classroom", label: "Classroom" },
+  { value: "Online", label: "Online" },
+  { value: "In-House", label: "In-House / Custom Cohort" },
+];
+
+const searchMonths = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+// ─── Why Choose ECAS Institute (Devimpact 6 Value Cards) ─────────────────────
+const whyChooseItems = [
   {
-    bg: "/images/Gallery/air_quality_handshake.jpg",
-    title: "Air Quality Training &\nClimate Resilience",
-    subtitle: "Empowering stakeholders and communities with technical knowledge to drive climate resilient actions and policies globally.",
-    cta:  { label: "Our Programmes", to: "/training-education-public-awareness" },
-    cta2: { label: "Contact Us",     to: "/contact" },
-    focalX: '50%', focalY: '30%',
+    title: "Expert Trainers",
+    desc: "Our facilitators are industry leaders, policy experts, and practitioners who bring a wealth of experience to the classroom. They blend global best practices with local expertise - ensuring participants gain knowledge that’s relevant, practical, and immediately applicable."
   },
   {
-    bg: "/images/courses/professional_training.png",
-    title: "Professional Training &\nCapacity Development",
-    subtitle: "Empowering professionals with hands-on technical knowledge in climate change, green economy, and sustainable development through targeted workshops.",
-    cta:  { label: "View Courses", to: "/institute-overview" },
-    cta2: { label: "Register",     to: "/contact" },
-    focalX: '50%', focalY: '35%',
+    title: "Excellence You Can Trust",
+    desc: "We have successfully delivered hundreds of training programs for government ministries, state departments, development partners, financial institutions, and private organizations. Our clients choose us for our consistency, NITA & NEMA accreditation, professionalism, and proven results."
   },
   {
-    bg: "/images/Gallery/1710846398298.jpg",
-    title: "Capacity\nDevelopment",
-    subtitle: "Professional courses, executive workshops, and mentorship programs in climate change, green economy, and sustainable development.",
-    cta:  { label: "View Courses", to: "/institute-overview" },
-    cta2: { label: "Register",     to: "/contact" },
-    focalX: '50%', focalY: '25%',
+    title: "Customized Learning",
+    desc: "We don’t believe in one-size-fits-all. Every training program is carefully and strategically tailored to meet your organization’s unique goals and context - with case studies, exercises, and discussions designed to make learning highly engaging and impactful."
   },
   {
-    bg: "/images/research/IMG_20241112_163109285-1024x683.jpg",
-    title: "Consultancy and\nBusiness Advisory",
-    subtitle: "Providing environmental assessments, ESG advisory, and strategic consultancy to guide sustainable infrastructure and green investment decisions.",
-    cta:  { label: "Consultancy Services", to: "/research/consulting" },
-    cta2: { label: "Contact Us",           to: "/contact" },
-    focalX: '50%', focalY: '35%',
+    title: "Flexible and Accessible Learning",
+    desc: "Whether you prefer in-person classroom cohorts, virtual sessions, or blended in-house training, our training formats are designed for flexibility. We make learning accessible and convenient for busy professionals and teams spread across different regions."
   },
   {
-    bg: "/images/research/field_research.jpg",
-    title: "Research and\nInnovation",
-    subtitle: "Conducting rigorous field research, systematic observation, and evidence-based analysis that powers policy decisions across Africa.",
-    cta:  { label: "Research Areas", to: "/research-systematic-observation" },
-    cta2: { label: "Our Work",       to: "/our-strategic-focus" },
-    focalX: '50%', focalY: '25%',
+    title: "Quality and Measurable Impact",
+    desc: "Quality is our hallmark. From course design to delivery, institutional action planning, and post-training evaluation, we focus on achieving measurable outcomes - helping individuals grow and organizations thrive."
   },
   {
-    bg: "/images/research/technis.png",
-    title: "Policy and\nTechnical Support",
-    subtitle: "Driving impactful multilateral policy outcomes, policy advocacy, and enabling environments for sustainable development.",
-    cta:  { label: "Our Policies", to: "/our-policies" },
-    cta2: { label: "Learn More",   to: "/about" },
-    focalX: '50%', focalY: '35%',
+    title: "Ongoing Support",
+    desc: "Our engagement doesn’t end when the training concludes. We provide participants with post-training support, actionable toolkits, access to resources, and opportunities for continuous learning."
+  }
+];
+
+// ─── Our Course Categories (Devimpact Dark Grid Layout with ECAS Courses) ─────
+const courseCategoriesGrid = [
+  {
+    title: "Governance, Leadership & Organizational Development",
+    path: "/executive-training/leadership-and-corporate-governance",
+    icon: Landmark,
+    links: [
+      { label: "Governance, Ethics and Anti-Corruption Reforms", path: "/executive-training/governance-ethics-and-anti-corruption-reforms" },
+      { label: "Proactive Management & Strategic Leadership", path: "/executive-training/proactive-management-and-strategic-leadership" },
+      { label: "Management Course for Office Administrators (5IR & AI)", path: "/executive-training/management-course-for-office-administrators-5ir-ai" },
+      { label: "Modern Office Productivity: Time, Workflow & Digital Work", path: "/executive-training/modern-office-productivity-time-workflow-and-digital-work-management" },
+      { label: "21st Century, Public Relations and Interpersonal Skills", path: "/executive-training/21st-century-public-relations-and-interpersonal-skills" },
+      { label: "Government Protocol, Etiquette and Events Management", path: "/executive-training/government-protocol-etiquette-and-events-management" },
+      { label: "Organizational Change Management Programme", path: "/executive-training/organizational-change-management" },
+      { label: "Design Thinking in Policy Reforms", path: "/executive-training/design-thinking-in-policy-reforms" },
+    ]
+  },
+  {
+    title: "Climate Finance, Budgeting & Public Finance (PFM)",
+    path: "/executive-training/climate-finance",
+    icon: Wallet,
+    links: [
+      { label: "Climate Finance and Investment Strategies", path: "/executive-training/climate-finance-and-investment-strategies" },
+      { label: "Climate-Responsive Budgeting & Strategic Fiscal Management", path: "/executive-training/climate-responsive-budgeting-and-strategic-fiscal-management" },
+      { label: "Strategic Climate Finance Budgeting, Tracking & Reporting", path: "/executive-training/strategic-climate-finance-budgeting-tracking-and-performance-reporting" },
+      { label: "Innovations in PFM: Climate Finance, AI & Ethical Leadership", path: "/executive-training/innovations-in-public-financial-management-climate-finance-ai-ethical-leadership" },
+      { label: "Certified Expert in Climate Adaptation Finance", path: "/executive-training/certified-expert-in-climate-adaptation-finance" },
+      { label: "Certificate in Green Finance", path: "/executive-training/certificate-in-green-finance" },
+      { label: "Certified Expert in Sustainable Finance", path: "/executive-training/certified-expert-in-sustainable-finance" },
+      { label: "Certified Expert in Biodiversity Finance", path: "/executive-training/certified-expert-in-biodiversity-finance" },
+    ]
+  },
+  {
+    title: "Business, Procurement & Corporate Sustainability",
+    path: "/executive-training/carbon-markets",
+    icon: Briefcase,
+    links: [
+      { label: "Public Procurement Process and Asset Management", path: "/executive-training/public-procurement-process-and-asset-management" },
+      { label: "Structuring & Managing Special Purpose Vehicle (SPV) for PPP", path: "/executive-training/structuring-and-managing-special-purpose-vehicle-for-ppp" },
+      { label: "Environmental, Social and Governance (ESG) Courses", path: "/executive-training/esg" },
+      { label: "Carbon Accounting & Carbon Offsetting Course", path: "/executive-training/carbon-accounting-carbon-offsetting-course" },
+      { label: "Agricultural Carbon Credit Markets", path: "/executive-training/agricultural-carbon-credit-markets" },
+      { label: "Training on Carbon Markets and Trading", path: "/executive-training/training-on-carbon-markets" },
+      { label: "Business Sustainability Management", path: "/executive-training/business-sustainability-management" },
+      { label: "Certified Expert in Environmental Accounting", path: "/executive-training/certified-expert-in-environmental-accounting" },
+    ]
+  },
+  {
+    title: "Environment, Climate Change & Sustainability",
+    path: "/executive-training/climate-change",
+    icon: CloudSun,
+    links: [
+      { label: "Climate Change Mitigation, Adaptation & Technology Responses", path: "/executive-training/introduction-to-climate-change-mitigation-adaptation-and-technology-responses" },
+      { label: "Air Quality Policy, Monitoring & Management", path: "/executive-training/air-quality" },
+      { label: "Renewable Energy, Green Economy & Just Transition", path: "/executive-training/energy" },
+      { label: "Energy Transition and Sustainable Mobility", path: "/executive-training/energy-transition-and-mobility" },
+      { label: "Agriculture and Sustainable Food Systems", path: "/executive-training/agriculture-and-food-systems" },
+      { label: "Climate-Smart Forestry & Biodiversity", path: "/executive-training/climate-smart-forestry" },
+      { label: "Nature-Based Solutions for Disaster & Climate Resilience", path: "/executive-training/certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience" },
+      { label: "Health, Safety and Environment (HSE) Workshop", path: "/executive-training/health-safety-and-environment-hse-workshop" },
+    ]
+  },
+  {
+    title: "Digital, Data, Artificial Intelligence & Technology",
+    path: "/executive-training/data-and-it",
+    icon: Cpu,
+    links: [
+      { label: "Learning from Big Data, Data Mining & Business Analytics", path: "/executive-training/learning-from-big-data-data-mining-and-business-analytics" },
+      { label: "Secure Coding for Software Security Engineering Programme", path: "/executive-training/secure-coding-for-software-security-engineering-programme" },
+      { label: "Artificial Intelligence in Project Management & M&E", path: "/executive-training/artificial-intelligence-in-project-management-me" },
+      { label: "Artificial Intelligence & Machine Learning Executive Courses", path: "/executive-training/artificial-intelligence" },
+      { label: "Data Analytics Using MS Excel & Power BI", path: "/executive-training/data-analytics-using-ms-excel-power-bi" },
+      { label: "Mobile Data Collection (ODK, ONA, CommCare & Kobo)", path: "/executive-training/mobile-data-collection-using-odk-ona-commcare-and-kobo-toolbox" },
+      { label: "Climate Risk Data Intelligence & Information Systems", path: "/executive-training/climate-risk-data-intelligence-and-information-systems" },
+      { label: "Information Security and Data Governance", path: "/executive-training/information-security-and-data-management-training" },
+    ]
+  },
+  {
+    title: "Project Management, Monitoring & Evaluation",
+    path: "/executive-training/project-management-and-me",
+    icon: FolderKanban,
+    links: [
+      { label: "AI in Project Management, Monitoring and Evaluation (M&E)", path: "/executive-training/artificial-intelligence-in-project-management-me" },
+      { label: "Monitoring, Evaluation, Accountability & Learning (MEAL)", path: "/executive-training/monitoring-evaluation-accountability-learning-meal-and-outcome-harvesting" },
+      { label: "Project Design, Restructuring & Performance Contracting", path: "/executive-training/project-design-management-restructuring-and-performance-contracting" },
+      { label: "Feasibility Studies: Preparation, Analysis and Evaluation", path: "/executive-training/feasibility-studies-preparation-analysis-and-evaluation" },
+      { label: "Conducting Environmental Impact Assessment (EIA) for Projects", path: "/executive-training/conducting-environmental-impact-assessment-for-projects-and-operations" },
+      { label: "Developing Grant Proposals and Fundraising Techniques", path: "/executive-training/developing-grant-proposals-and-fundraising-techniques" },
+      { label: "Climate Resilient Infrastructure Development", path: "/executive-training/climate-resilient-infrastructure" },
+      { label: "Gender Equality, Diversity and Social Inclusion (GEDSI)", path: "/executive-training/gender-equality-diversity-and-social-inclusion-gedsi" },
+    ]
+  }
+];
+
+// ─── Featured Flagship Executive Courses (From Ecasi_Courses.rar) ────────────
+const flagshipCourses = [
+  {
+    title: "Climate-Responsive Budgeting and Strategic Fiscal Management",
+    slug: "climate-responsive-budgeting-and-strategic-fiscal-management",
+    category: "Climate Finance & PFM",
+    duration: "3 Weeks (15 Days)",
+    location: "Nairobi / Arusha / Mombasa",
+    image: "/images/Gallery/1732710492385.jpg",
+  },
+  {
+    title: "Strategic Climate Finance Budgeting, Tracking and Performance Reporting",
+    slug: "strategic-climate-finance-budgeting-tracking-and-performance-reporting",
+    category: "Climate Finance & PFM",
+    duration: "3 Weeks (15 Days)",
+    location: "Nairobi / Arusha / Mombasa",
+    image: "/images/Gallery/1715195551211.jpg",
+  },
+  {
+    title: "Innovations in Public Financial Management: Climate Finance, AI & Ethical Leadership",
+    slug: "innovations-in-public-financial-management-climate-finance-ai-ethical-leadership",
+    category: "Executive Cohort Programme",
+    duration: "4 Weeks (20 Days)",
+    location: "Arusha, Tanzania / Nairobi",
+    image: "/images/courses/mentorship_group.jpg",
+  },
+  {
+    title: "Artificial Intelligence in Project Management, Monitoring and Evaluation (M&E)",
+    slug: "artificial-intelligence-in-project-management-me",
+    category: "AI & Project Management",
+    duration: "2 Weeks (10 Days)",
+    location: "Nairobi / Kigali / Online",
+    image: "/images/research/tech.png",
+  },
+  {
+    title: "Climate Finance and Investment Strategies",
+    slug: "climate-finance-and-investment-strategies",
+    category: "Climate Finance",
+    duration: "2 Weeks (10 Days)",
+    location: "Nairobi / Naivasha",
+    image: "/images/courses/IMGM1984-1024x683.jpg",
+  },
+  {
+    title: "Governance, Ethics and Anti-Corruption Reforms",
+    slug: "governance-ethics-and-anti-corruption-reforms",
+    category: "Governance & Leadership",
+    duration: "2 Weeks (10 Days)",
+    location: "Nairobi / Mombasa",
+    image: "/images/Gallery/regulation_training_group.jpg",
+  },
+  {
+    title: "Management Course for Office Administrators (5IR & AI-Enabled Administration)",
+    slug: "management-course-for-office-administrators-5ir-ai",
+    category: "HR & Office Administration",
+    duration: "2 Weeks (10 Days)",
+    location: "Nairobi / Mombasa / Naivasha",
+    image: "/images/Gallery/DSC_0055.JPG",
+  },
+  {
+    title: "Modern Office Productivity: Time, Workflow and Digital Work Management",
+    slug: "modern-office-productivity-time-workflow-and-digital-work-management",
+    category: "Office Productivity & AI",
+    duration: "3 Weeks (15 Days)",
+    location: "Nairobi / Arusha / Mombasa",
+    image: "/images/Gallery/DSC_0085.JPG",
+  },
+  {
+    title: "Public Procurement Process and Asset Management",
+    slug: "public-procurement-process-and-asset-management",
+    category: "Procurement & Asset Mgmt",
+    duration: "2 Weeks (10 Days)",
+    location: "Nairobi / Mombasa",
+    image: "/images/research/policy_advisory_meeting.jpg",
+  },
+  {
+    title: "Structuring and Managing a Special Purpose Vehicle (SPV) for PPP",
+    slug: "structuring-and-managing-special-purpose-vehicle-for-ppp",
+    category: "PPP & Infrastructure Finance",
+    duration: "5 Days",
+    location: "Nairobi / Naivasha / Dubai",
+    image: "/images/Gallery/1730827985704.jpg",
+  },
+  {
+    title: "Secure Coding for Software Security Engineering Programme",
+    slug: "secure-coding-for-software-security-engineering-programme",
+    category: "Cybersecurity & IT",
+    duration: "5 Days",
+    location: "Nairobi / Online",
+    image: "/images/Gallery/DSC_0082.JPG",
+  },
+  {
+    title: "Learning from Big Data, Data Mining and Business Analytics",
+    slug: "learning-from-big-data-data-mining-and-business-analytics",
+    category: "Data & Business Analytics",
+    duration: "1 Week (5 Days)",
+    location: "Nairobi / Online",
+    image: "/images/Gallery/DSC_0091.JPG",
   },
 ];
 
-// ─── Smart Slider 3 – faithful React recreation ───────────────────────────────
-// Matches WP config:
-//   • fullwidth, max-width 1200 px limiter (n2-ss-slide-limiter)
-//   • horizontal translateX transition, 800 ms, cubic-bezier(0.25,0.46,0.45,0.94) ≈ easeOutQuad
-//   • 5 000 ms autoplay
-//   • Arrow: 26 px image-like chevron, orange (#ff9139) on hover
-//   • Heading box: RGBA(0,0,0,0.67) bg → RGBA(255,145,57,1) on hover, border-radius 3 px
-//   • Dot bullets at bottom-center
-const HeroSlider = () => {
-  const [current, setCurrent] = useState(0);
-  const [prev, setPrev] = useState(null);
-  const [sliding, setSliding] = useState(false);
-  const timerRef = useRef(null);
-  const n = heroSlides.length;
-
-  const goTo = useCallback((next) => {
-    if (sliding || next === current) return;
-    setPrev(current);
-    setCurrent(next);
-    setSliding(true);
-    setTimeout(() => { setPrev(null); setSliding(false); }, 820);
-  }, [sliding, current]);
-
-  const goNext = useCallback(() => goTo((current + 1) % n), [current, n, goTo]);
-  const goPrev = useCallback(() => goTo((current - 1 + n) % n), [current, n, goTo]);
-
-  // Reset autoplay timer on every interaction
-  const resetTimer = useCallback(() => {
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(goNext, 5000);
-  }, [goNext]);
-
-  // Touch handlers for swipe
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    if (isLeftSwipe) {
-      goNext();
-      resetTimer();
-    }
-    if (isRightSwipe) {
-      goPrev();
-      resetTimer();
-    }
-  };
-
-  useEffect(() => {
-    timerRef.current = setInterval(goNext, 5000);
-    return () => clearInterval(timerRef.current);
-  }, [current, goNext]);
-
-  return (
-    // n2-ss-slider-1 → n2-ss-slider-2 → n2-ss-slider-3
-    <div
-      className="n2ss-hero"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-        width: '100%',
-        height: 'clamp(350px, 70vh, 800px)',
-        background: '#032e42',
-      }}
-    >
-      {/* ── Slide backgrounds (n2-ss-slide-backgrounds) ── */}
-      {heroSlides.map((s, idx) => {
-        const isActive = idx === current;
-
-        // Calculate shortest path distance with modulo
-        let diff = idx - current;
-        diff = ((diff + n/2) % n + n) % n - n/2;
-
-        const transform = `translateX(${diff * 100}%)`;
-        const transition = (isActive || idx === prev) && sliding
-          ? 'transform 820ms cubic-bezier(0.25,0.46,0.45,0.94)'
-          : 'none';
-        const zIndex = isActive ? 12 : (idx === prev ? 11 : 10);
-
-        return (
-          <div
-            key={idx}
-            style={{
-              position: 'absolute', inset: 0,
-              transform, transition, zIndex,
-              willChange: 'transform',
-              background: '#032e42',
-            }}
-          >
-            {/* Blurred fill layer — prevents dark bars on any aspect ratio */}
-            <img
-              src={s.bg}
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 select-none pointer-events-none"
-              style={{ objectPosition: `${s.focalX || '50%'} ${s.focalY || '40%'}` }}
-            />
-            {/* Sharp primary image — object-cover with per-slide focal point */}
-            <img
-              src={s.bg}
-              alt={`Slide ${idx + 1}`}
-              fetchPriority={idx === 0 ? 'high' : 'auto'}
-              loading={idx === 0 ? 'eager' : 'lazy'}
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{
-                objectPosition: `${s.focalX || '50%'} ${s.focalY || '40%'}`,
-                filter: 'saturate(1.1) contrast(1.05) brightness(1.02)',
-              }}
-            />
-          </div>
-        );
-      })}
-
-      {/* ── Dark gradient overlay (matches WP ecasi-hero-overlay) ── */}
-      <div
-        style={{
-          position: 'absolute', inset: 0, zIndex: 15, pointerEvents: 'none',
-          background: `
-            linear-gradient(to bottom,
-              rgba(3,46,66,0.08) 0%,
-              rgba(3,46,66,0.28) 55%,
-              rgba(3,46,66,0.60) 100%),
-            radial-gradient(circle at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.18) 100%)
-          `,
-        }}
-      />
-
-      {/* ── Slide content (n2-ss-slider-4 / n2-ss-slide) ── */}
-      {/* n2-ss-slide-limiter: max-width 1200 px centered */}
-      <div
-        style={{
-          position: 'absolute', inset: 0, zIndex: 20,
-          display: 'flex', alignItems: 'center',
-        }}
-      >
-        <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 32px' }}>
-          {heroSlides.map((s, idx) => {
-            const visible = idx === current;
-            return (
-              <div
-                key={idx}
-                style={{
-                  display: visible ? 'block' : 'none',
-                  animation: visible && !sliding ? 'n2ssContentIn 0.5s ease-out' : 'none',
-                }}
-              >
-
-                {/* Heading — n2-style heading box: dark bg, orange hover */}
-                <h1 className="n2ss-heading" style={{
-                  display: 'inline-block',
-                  fontFamily: "'Fira Sans', sans-serif",
-                  fontWeight: 700,
-                  fontSize: 'clamp(22px, 3.4vw, 42px)',
-                  lineHeight: 1.18,
-                  color: '#ffffff',
-                  whiteSpace: 'pre-line',
-                  marginBottom: '28px',
-                }}>
-                  {s.title}
-                </h1>
-
-                {/* CTA Buttons */}
-                <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {s.cta && (
-                    <Link
-                      to={s.cta.to}
-                      onClick={resetTimer}
-                      style={{
-                        background: '#008000',
-                        color: '#ffffff',
-                        fontFamily: "'Roboto', sans-serif",
-                        fontWeight: 600,
-                        fontSize: '13px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        padding: '10px 26px',
-                        borderRadius: '3px',
-                        textDecoration: 'none',
-                        display: 'inline-block',
-                        transition: 'background 0.25s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#252628'}
-                      onMouseLeave={e => e.currentTarget.style.background = '#008000'}
-                    >
-                      {s.cta.label}
-                    </Link>
-                  )}
-                  {s.cta2 && (
-                    <Link
-                      to={s.cta2.to}
-                      onClick={resetTimer}
-                      style={{
-                        border: '2px solid rgba(255,255,255,0.85)',
-                        color: '#ffffff',
-                        fontFamily: "'Roboto', sans-serif",
-                        fontWeight: 600,
-                        fontSize: '13px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        padding: '8px 24px',
-                        borderRadius: '3px',
-                        textDecoration: 'none',
-                        display: 'inline-block',
-                        transition: 'background 0.25s, color 0.25s, border-color 0.25s',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#032e42'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ffffff'; }}
-                    >
-                      {s.cta2.label}
-                    </Link>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-
-
-      {/* ── Dot bullets (bottom-center) ── */}
-      <div style={{
-        position: 'absolute', bottom: '18px', left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex', gap: '7px', zIndex: 25,
-      }}>
-        {heroSlides.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => { goTo(i, i > current ? 1 : -1); resetTimer(); }}
-            aria-label={`Slide ${i + 1}`}
-            style={{
-              height: '8px',
-              width: i === current ? '28px' : '8px',
-              borderRadius: '4px',
-              background: i === current ? '#ffffff' : 'rgba(255,255,255,0.45)',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              transition: 'width 0.3s, background 0.3s',
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ─── Stats Bar ───────────────────────────────────────────────────────────────
-const stats = [
-  { value: "30+", label: "Organizations Worked With" },
-  { value: "8+", label: "Countries Delivered Services" },
-  { value: "5000+", label: "Participants Inspired" },
-  { value: "10+", label: "Years of Experience" },
-  { value: "50+", label: "Physical & Online Sessions" },
+// ─── Beyond the Classroom Cards (Retained) ───────────────────────────────────
+const beyondClassroomCards = [
+  {
+    title: "The City Walk",
+    image: "/images/beyond/city_walk.jpg",
+    desc: "Alongside your learning journey, you will have the opportunity to extend your Nairobi experience beyond the classroom and enjoy the city’s dynamic energy.",
+    details: "Our guided Nairobi City Walk takes international and regional training delegates through Nairobi's historic landmarks, vibrant central district, parliamentary precinct, and cultural heritage sites—providing an enriching afternoon of networking and cultural immersion."
+  },
+  {
+    title: "Above the City",
+    image: "/images/beyond/above_the_city.jpg",
+    desc: "Embark on an unforgettable journey to the top of Nairobi's iconic Kenyatta International Convention Centre (KICC) and experience the city's breathtaking beauty like never before.",
+    details: "Experience a 360-degree panoramic view of Nairobi's skyline, Nairobi National Park in the distance, and the lush green hills surrounding the capital from the famous KICC Helipad rooftop."
+  },
+  {
+    title: "Magical Visit to the Giraffe Centre",
+    image: "/images/beyond/giraffe_centre.jpg",
+    desc: "Enjoy a memorable visit to the Giraffe Centre, where you can interact with these gentle giants and learn about ongoing conservation efforts in a serene natural setting.",
+    details: "Feed endangered Rothschild's giraffes from an elevated observation platform, walk the serene indigenous forest nature trail in Karen, and learn firsthand about Kenya's pioneering wildlife conservation and environmental education initiatives."
+  },
+  {
+    title: "A Taste of Nairobi Shopping",
+    image: "/images/beyond/nairobi_shopping.png",
+    desc: "Step into Nairobi’s lively shopping scene, where modern malls, colorful local markets, and artisan boutiques create a truly unique experience.",
+    details: "Explore authentic Kenyan craftsmanship at the vibrant Maasai Market and Nairobi's premier shopping hubs, featuring hand-carved sculptures, beadwork, textiles, Kenyan coffee, and souvenirs to take home."
+  }
 ];
 
-// ─── Programmes ──────────────────────────────────────────────────────────────
-const programmes = [
-  {
-    variant: "green",
-    title: "TRAINING",
-    desc: "We offer technical, knowledge, and green skills-based courses covering climate change, policy, finance, sustainability, governance, technology and research.",
-    link: "/institute-overview",
-    icon: <GraduationCap size={28} />,
-  },
-  {
-    variant: "teal",
-    title: "RESEARCH",
-    desc: "As a think tank, we serve as a centre for research and analysis, conducting in-depth research to guide decision-makers and stakeholders.",
-    link: "/research/overview",
-    icon: <Brain size={28} className="text-white" />,
-  },
-  {
-    variant: "green",
-    title: "CONSULTANCY",
-    desc: "We provide integrated consultancy and advisory services supporting governments, development partners, and private sector actors.",
-    link: "/consultancy",
-    icon: <Briefcase size={28} />,
-  },
-  {
-    variant: "teal",
-    title: "POLICY ADVISORY",
-    desc: "We offer support in policy development and review, providing evidence-based recommendations to inform and influence policy decisions.",
-    link: "/our-policies",
-    icon: <Landmark size={28} className="text-white" />,
-  },
-  {
-    variant: "green",
-    title: "TECHNICAL ASSISTANCE",
-    desc: "Our multidisciplinary team contributes to capacity building, stakeholder consultations, and technical implementation of sustainability programs.",
-    link: "/our-strategic-focus",
-    icon: <Briefcase size={28} />,
-  },
-  {
-    variant: "teal",
-    title: "AIR QUALITY",
-    desc: "Empowering stakeholders and communities with technical knowledge to drive clean air initiatives and sustainable environments.",
-    link: "/specialties/clean-air-programme",
-    icon: <Brain size={28} className="text-white" />,
-  },
-];
-
-// ─── Events (Imported from data) ────────────────────────────────────────────────
-
-// ─── Testimonials ─────────────────────────────────────────────────────────────
-const testimonials = [
+// ─── Training Testimonials (Retained & Expanded in Devimpact Google-Review Style) ───
+const trainingTestimonials = [
   {
     name: "Beryl Omolo",
     role: "Konza Technopolis Authority",
@@ -409,333 +349,764 @@ const testimonials = [
     image: beryleImg
   },
   {
-    name: "Clifford Siocha",
-    role: "Senior environmentalist, KETRACO",
-    quote: "I’m quite delighted to be among the participants of the training on carbon markets as offered by NETFUND in collaboration with ECAS. We got to realize about the opportunity to train through an invitation letter sent to us.",
-    image: ""
-  },
-  {
     name: "Yasuko Inoue",
-    role: "Projects expert, JICA",
+    role: "Projects Expert, JICA",
     quote: "I really thank the organizers of this training that is NETFUND and ECAS. There’s a lot of people who are interested in carbon markets and we are learning with each other, as we interact with various people who are very passionate.",
     image: yasukoImg
+  },
+  {
+    name: "Clifford Siocha",
+    role: "Senior Environmentalist, KETRACO",
+    quote: "I’m quite delighted to be among the participants of the training on carbon markets as offered by NETFUND in collaboration with ECAS. Very structured training content and well organized facilitators.",
+    image: ""
   },
   {
     name: "Robert Ayaga",
     role: "Electrical Engineer, KETRACO",
     quote: "My experience in this workshop, actually I was very green... I really appreciate this training. I intend to take this to KETRACO where I want to take advantage of our credit points. I appreciate this opportunity and I believe that we are going to keep in touch.",
     image: ""
+  },
+  {
+    name: "Mosele Mahana",
+    role: "Public Sector Finance Delegate",
+    quote: "Very nice experience I had at ECAS Institute, well organized staff members and very structured executive training content on climate-responsive budgeting and fiscal management.",
+    image: ""
+  },
+  {
+    name: "William Bigirwa",
+    role: "Regional Programme Coordinator",
+    quote: "I've had a wonderful experience with the training team and I'd highly recommend them for any executive capacity building needs. My facilitator was well versed in the topic area and the fun activities around Nairobi after classes were amazing as well.",
+    image: ""
   }
 ];
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-const Index = () => {
-  const upcomingEvents = dataService.getEvents();
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [currentStat, setCurrentStat] = useState(0);
+// ─── Milestones Counter Data (Retained & Animated on Open / Scroll) ─────────
+const milestones = [
+  { target: 15, suffix: "+", label: "Years of Experience", icon: Award },
+  { target: 30, suffix: "+", label: "Impacted Organizations", icon: Building2 },
+  { target: 5, suffix: "K+", label: "Impacted Professionals", icon: Users },
+  { target: 8, suffix: "+", label: "Impacted Countries", icon: Globe },
+];
 
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
+function AnimatedMilestoneCard({ milestone }) {
+  const [count, setCount] = useState(0);
+  const cardRef = useRef(null);
+  const IconComp = milestone.icon;
 
-  const processedEvents = upcomingEvents.map(ev => {
-    const eventDate = new Date(ev.date);
-    return {
-      ...ev,
-      isPast: eventDate < now,
-      dateObj: eventDate
+  useEffect(() => {
+    let animationFrameId;
+    const duration = 1800; // 1.8s smooth count-up
+
+    const runCounter = () => {
+      const startTime = performance.now();
+      const step = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease-out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setCount(Math.round(eased * milestone.target));
+        if (progress < 1) {
+          animationFrameId = requestAnimationFrame(step);
+        } else {
+          setCount(milestone.target);
+        }
+      };
+      setCount(0);
+      animationFrameId = requestAnimationFrame(step);
     };
-  }).sort((a, b) => {
-    if (a.isPast !== b.isPast) return a.isPast ? 1 : -1;
-    if (!a.isPast) return a.dateObj - b.dateObj;
-    return b.dateObj - a.dateObj;
-  });
+
+    // Run on page open AND re-trigger when scrolled into view
+    runCounter();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            runCounter();
+          }
+        });
+      },
+      { threshold: 0.25 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
+    };
+  }, [milestone.target]);
+
+  return (
+    <div
+      ref={cardRef}
+      className="bg-[#032e42] border-b-4 border-[#008000] text-white rounded-xl p-7 text-center flex flex-col items-center justify-center transition-transform duration-300 hover:-translate-y-1 shadow-md"
+    >
+      <div className="w-14 h-14 rounded-full bg-[#008000] flex items-center justify-center mb-3 text-white shadow-sm">
+        <IconComp size={28} />
+      </div>
+      <div
+        className="text-3xl sm:text-4xl font-extrabold text-white mb-1 tabular-nums"
+        style={{ fontFamily: "'Fira Sans', sans-serif" }}
+      >
+        {count}
+        {milestone.suffix}
+      </div>
+      <h3 className="text-white/90 text-sm sm:text-base font-bold">
+        {milestone.label}
+      </h3>
+    </div>
+  );
+}
+
+const Index = () => {
+  const navigate = useNavigate();
+
+  // Hero background crossfade
+  const [heroBgIdx, setHeroBgIdx] = useState(0);
+
+  // Course filter state
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedFormat, setSelectedFormat] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [keywordQuery, setKeywordQuery] = useState("");
+
+  // Carousels state
+  const [whyIndex, setWhyIndex] = useState(0);
+  const [whyPaused, setWhyPaused] = useState(false);
+  const [beyondModal, setBeyondModal] = useState(null);
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [testimonialPaused, setTestimonialPaused] = useState(false);
+
+  // Newsletter state
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
 
   useEffect(() => {
-    const t = setInterval(() => setActiveTestimonial((c) => (c + 1) % testimonials.length), 6000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => {
+      setHeroBgIdx((prev) => (prev + 1) % heroBgs.length);
+    }, 5500);
+    return () => clearInterval(timer);
   }, []);
 
+  // Automatic moving carousel for "Why Choose ECAS Institute"
   useEffect(() => {
-    const t = setInterval(() => setCurrentStat((c) => (c + 1) % stats.length), 3000);
-    return () => clearInterval(t);
-  }, []);
+    if (whyPaused) return;
+    const interval = setInterval(() => {
+      setWhyIndex((prev) => (prev + 1) % whyChooseItems.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [whyPaused]);
+
+  // Automatic moving carousel for "Training Testimonials"
+  useEffect(() => {
+    if (testimonialPaused) return;
+    const interval = setInterval(() => {
+      setTestimonialIndex((prev) => (prev + 1) % trainingTestimonials.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [testimonialPaused]);
+
+  const handleFilterSubmit = (e) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set("category", selectedCategory);
+    if (selectedLocation) params.set("location", selectedLocation);
+    if (selectedFormat) params.set("format", selectedFormat);
+    if (selectedMonth) params.set("month", selectedMonth);
+    navigate(`/institute-overview?${params.toString()}`);
+  };
+
+  const handleKeywordSubmit = (e) => {
+    e.preventDefault();
+    if (keywordQuery.trim()) {
+      navigate(`/institute-overview?q=${encodeURIComponent(keywordQuery.trim())}`);
+    } else {
+      navigate(`/institute-overview`);
+    }
+  };
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault();
+    if (newsletterEmail.trim()) {
+      setNewsletterSubmitted(true);
+      setNewsletterEmail("");
+      setTimeout(() => setNewsletterSubmitted(false), 5000);
+    }
+  };
 
   return (
     <>
       <SEO
-        title="ECAS Institute — Bridging the Nexus Between Research, Policy and Practice"
-        description="Environmental Capacities and Sustainability (ECAS) Institute is an independent Pan-African think tank advancing sustainable development through research, policy advisory, and capacity building."
+        title="Professional Executive Training Courses in Kenya & Africa | ECAS Institute"
+        description="Build practical skills with ECAS Institute’s professional executive training courses in Nairobi and beyond. Explore classroom, online and tailored in-house training in Climate Finance, AI, PFM, Governance, Carbon Markets & Project Management."
       />
       <div className="min-h-screen flex flex-col bg-white">
         <Header />
 
-        {/* ── Hero Slider ── */}
-        <HeroSlider />
+        {/* ══════════════════════════════════════════════════════════════════════
+            1. HERO SECTION (Devimpact Layout & Typography)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section className="relative min-h-[480px] md:min-h-[540px] flex items-center justify-center overflow-hidden bg-[#021d38]">
+          {/* Crossfading background images */}
+          {heroBgs.map((bg, idx) => (
+            <img
+              key={bg}
+              src={bg}
+              alt="ECAS Executive Training"
+              fetchPriority={idx === 0 ? "high" : "auto"}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 scale-105 ${
+                idx === heroBgIdx ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ))}
 
-        {/* ── Stats Bar ── */}
-        <div className="bg-ecasi-navy py-0 overflow-hidden">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-            {/* Desktop View (lg and up) */}
-            <div className="hidden lg:grid lg:grid-cols-5">
-              {stats.map((s, i) => (
-                <div
-                  key={i}
-                  className="py-3 px-5 text-center border-r border-white/10 last:border-r-0"
-                >
-                  <div
-                    className="text-2xl font-bold text-ecasi-orange mb-0.5"
-                    style={{ fontFamily: "'Fira Sans', sans-serif", color: "#fda128" }}
+          {/* ECAS Navy & Green overlay with enhanced visibility for background training images */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(180deg, rgba(3, 46, 66, 0.58) 0%, rgba(3, 46, 66, 0.68) 55%, rgba(0, 102, 0, 0.62) 100%)"
+            }}
+          />
+
+          {/* Centered Hero Content */}
+          <div className="relative z-10 max-w-[1380px] w-full mx-auto px-4 sm:px-6 py-16 md:py-24 text-center">
+            <h1
+              className="text-white font-extrabold tracking-tight mb-6 leading-[1.18]"
+              style={{
+                fontFamily: "'Fira Sans', 'Nunito Sans', sans-serif",
+                fontSize: "clamp(28px, 4.5vw, 52px)",
+              }}
+            >
+              Practical Training Solutions for <br className="hidden sm:inline" />
+              Professionals
+            </h1>
+
+            <p
+              className="text-white/95 max-w-4xl mx-auto text-center text-base md:text-lg leading-relaxed mb-9 font-normal"
+              style={{ fontFamily: "'Roboto', 'Nunito', sans-serif", textAlign: "center" }}
+            >
+              Enroll in our flexible online or instructor-led classroom training programs and gain in-demand workplace skills guided by seasoned industry professionals. Our courses combine practical learning, real-world application, and internationally relevant best practices to help you advance your career and earn recognized professional certifications.
+            </p>
+
+            {/* Two Pill CTA Buttons in ECAS Green & ECAS Blue */}
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+              <Link
+                to="/institute-overview"
+                className="inline-flex items-center gap-2.5 bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm md:text-base px-7 py-3.5 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                <ArrowUpRight size={18} className="stroke-[2.5]" />
+                <span>Explore Courses</span>
+              </Link>
+
+              <a
+                href="#course-categories"
+                className="inline-flex items-center gap-2.5 bg-[#1e73be] hover:bg-[#032e42] text-white font-bold text-sm md:text-base px-7 py-3.5 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                <ArrowUpRight size={18} className="stroke-[2.5]" />
+                <span>Executive Trainings</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            2. COURSE FILTER & SEARCH BAR (Devimpact 2-Row Filter + Search)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section className="relative z-20 -mt-8 md:-mt-10 px-4 sm:px-6">
+          <div
+            className="max-w-[1380px] w-full mx-auto bg-white rounded-xl p-5 md:p-7 border border-[#032e42]/10"
+            style={{ boxShadow: "0px 4px 20px rgba(3, 46, 66, 0.16)" }}
+          >
+            {/* Row 1: Category, Location, Format, Month + Submit */}
+            <form
+              onSubmit={handleFilterSubmit}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 mb-4"
+            >
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                aria-label="Select Category"
+                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 bg-gray-50/70 text-[#032e42] text-sm font-medium focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+              >
+                <option value="">Select Category</option>
+                {searchCategories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedLocation}
+                onChange={(e) => setSelectedLocation(e.target.value)}
+                aria-label="Select Location"
+                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 bg-gray-50/70 text-[#032e42] text-sm font-medium focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+              >
+                <option value="">Select Location</option>
+                {searchLocations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedFormat}
+                onChange={(e) => setSelectedFormat(e.target.value)}
+                aria-label="Select Format"
+                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 bg-gray-50/70 text-[#032e42] text-sm font-medium focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+              >
+                <option value="">Select Format</option>
+                {searchFormats.map((fmt) => (
+                  <option key={fmt.value} value={fmt.value}>
+                    {fmt.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                aria-label="Select Month"
+                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 bg-gray-50/70 text-[#032e42] text-sm font-medium focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+              >
+                <option value="">Select Month</option>
+                {searchMonths.map((m) => (
+                  <option key={m.value} value={m.label}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="submit"
+                className="w-full h-11 bg-[#032e42] hover:bg-[#008000] text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors shadow-sm cursor-pointer"
+              >
+                Submit
+              </button>
+            </form>
+
+            {/* Row 2: Keyword Search Input + Search Button */}
+            <form onSubmit={handleKeywordSubmit} className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={keywordQuery}
+                  onChange={(e) => setKeywordQuery(e.target.value)}
+                  placeholder="Search Courses (e.g., Climate Finance, AI in Project Management, Procurement, SPV for PPP, Office Administration...)"
+                  className="w-full h-11 pl-10 pr-4 rounded-lg border border-gray-300 bg-white text-[#032e42] text-sm placeholder-gray-400 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+                />
+              </div>
+              <button
+                type="submit"
+                className="h-11 px-8 bg-[#008000] hover:bg-[#1e73be] text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors shadow-sm cursor-pointer shrink-0"
+              >
+                Search
+              </button>
+            </form>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            3. ABOUT ECAS INSTITUTE (Devimpact Centered Style)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section className="pt-14 pb-10 px-4 sm:px-6 bg-white">
+          <div className="max-w-[1380px] w-full mx-auto text-center">
+            <ScrollAnimation animation="slide-up">
+              <h2
+                className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[35px] mb-5"
+                style={{ fontFamily: "'Fira Sans', sans-serif" }}
+              >
+                About ECAS Institute
+              </h2>
+              <p
+                className="text-[#1a202c] text-base md:text-[17px] leading-relaxed max-w-4xl mx-auto"
+                style={{ textAlign: "center" }}
+              >
+                We are dedicated to empowering professionals and organizations through transformative learning experiences that build practical skills, enhance performance, and drive sustainable impact. Founded in 2011 and accredited by NITA and NEMA, ECAS Institute combines international best practices with African relevance across Climate Finance, Public Financial Management, Governance, Artificial Intelligence, Project Management, and Sustainability—ensuring that learning is both meaningful and applicable to real-world challenges.
+              </p>
+            </ScrollAnimation>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            4. WHY CHOOSE ECAS INSTITUTE (Automatic Moving Carousel)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section
+          className="py-10 md:py-14 px-4 sm:px-6 bg-white"
+          onMouseEnter={() => setWhyPaused(true)}
+          onMouseLeave={() => setWhyPaused(false)}
+        >
+          <div className="max-w-[1380px] w-full mx-auto">
+            <ScrollAnimation animation="slide-up">
+              <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+                <div className="text-center sm:text-left">
+                  <h2
+                    className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[35px]"
+                    style={{ fontFamily: "'Fira Sans', sans-serif" }}
                   >
-                    {s.value}
+                    Why Choose ECAS Institute
+                  </h2>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Excellence, accredited certifications, and real-world African leadership experience.
+                  </p>
+                </div>
+                {/* Carousel Navigation Buttons */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setWhyIndex((prev) => (prev === 0 ? whyChooseItems.length - 1 : prev - 1))
+                    }
+                    aria-label="Previous slide"
+                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-[#032e42] hover:bg-[#008000] hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setWhyIndex((prev) => (prev + 1) % whyChooseItems.length)
+                    }
+                    aria-label="Next slide"
+                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-[#032e42] hover:bg-[#008000] hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+            </ScrollAnimation>
+
+            {/* Desktop 3-Card Carousel Track with Continuous Smooth Slide */}
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-700 ease-in-out"
+                style={{
+                  transform: `translateX(-${whyIndex * (100 / (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1))}%)`
+                }}
+              >
+                {whyChooseItems.concat(whyChooseItems.slice(0, 3)).map((item, idx) => (
+                  <div
+                    key={`${item.title}-${idx}`}
+                    className="w-full md:w-1/2 lg:w-1/3 shrink-0 px-3"
+                  >
+                    <div
+                      className="bg-white rounded-[12px] p-7 h-full flex flex-col justify-between border-t-4 border-[#008000] hover:-translate-y-1.5 transition-transform"
+                      style={{
+                        boxShadow: "0px 4px 20px rgba(3, 46, 66, 0.12)",
+                        minHeight: "340px"
+                      }}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="w-9 h-9 rounded-full bg-[#008000]/10 text-[#008000] font-black text-sm flex items-center justify-center">
+                            0{(idx % whyChooseItems.length) + 1}
+                          </span>
+                          <span className="text-[11px] font-bold tracking-wider uppercase text-gray-400">
+                            ECASI Hallmark
+                          </span>
+                        </div>
+                        <h3
+                          className="text-[#032e42] font-bold text-[20px] mb-3 leading-snug"
+                          style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                        >
+                          {item.title}
+                        </h3>
+                        <p
+                          className="text-[#1a202c] text-[15px] leading-[1.65] font-normal"
+                          style={{ textAlign: "justify" }}
+                        >
+                          {item.desc}
+                        </p>
+                      </div>
+
+                      <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-[#008000]">Accredited Excellence</span>
+                        <CheckCircle2 size={16} className="text-[#008000]" />
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-white/70 text-xs uppercase tracking-wide whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                    {s.label}
+                ))}
+              </div>
+            </div>
+
+            {/* Carousel Slide Indicators */}
+            <div className="flex justify-center items-center gap-2 mt-8">
+              {whyChooseItems.map((_, dotIdx) => (
+                <button
+                  key={dotIdx}
+                  type="button"
+                  onClick={() => setWhyIndex(dotIdx)}
+                  aria-label={`Go to slide ${dotIdx + 1}`}
+                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                    whyIndex === dotIdx ? "w-8 bg-[#008000]" : "w-2.5 bg-gray-300 hover:bg-gray-400"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            5. OUR COURSE CATEGORIES (Devimpact Dark #003B80 Backdrop + Gold Titles)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section id="course-categories" className="pt-8 pb-4 bg-white">
+          <div className="max-w-[1380px] w-full mx-auto px-4 sm:px-6 mb-6">
+            <h2
+              className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[35px] text-center"
+              style={{ fontFamily: "'Fira Sans', sans-serif" }}
+            >
+              Our Course Categories
+            </h2>
+          </div>
+
+          {/* Dark ECAS Navy Backdrop Container */}
+          <div className="relative bg-[#032e42] py-14 md:py-16 overflow-hidden">
+            {/* Subtle background image with dark overlay */}
+            <img
+              src="/images/courses/professional_training.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none"
+            />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: "linear-gradient(180deg, rgba(3, 46, 66, 0.92) 0%, rgba(3, 46, 66, 0.96) 100%)"
+              }}
+            />
+
+            <div className="relative z-10 max-w-[1380px] w-full mx-auto px-4 sm:px-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+                {courseCategoriesGrid.map((cat, idx) => {
+                  const IconComp = cat.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className="flex flex-col border-b border-white/15 pb-8 lg:border-b-0 lg:pb-0"
+                    >
+                      {/* Icon + ECAS Green Underlined Uppercase Category Header */}
+                      <div className="flex items-start gap-3.5 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-[#008000] flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm">
+                          <IconComp size={22} />
+                        </div>
+                        <h3 className="text-[16px] font-bold uppercase leading-snug tracking-wide">
+                          <Link
+                            to={cat.path}
+                            className="text-[#4ade80] hover:text-white underline decoration-[#008000] underline-offset-4 transition-colors"
+                          >
+                            {cat.title}
+                          </Link>
+                        </h3>
+                      </div>
+
+                      {/* Course / Sub-category Links List */}
+                      <ul className="space-y-2.5 pl-1">
+                        {cat.links.map((item, lIdx) => (
+                          <li key={lIdx} className="border-b border-white/10 pb-2 last:border-b-0">
+                            <Link
+                              to={item.path}
+                              className="flex items-center justify-between gap-2 text-white hover:text-[#4ade80] text-[14.5px] font-medium leading-snug transition-colors group"
+                            >
+                              <span>{item.label}</span>
+                              <ChevronRight
+                                size={14}
+                                className="shrink-0 opacity-75 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-[#4ade80]"
+                              />
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Bottom CTA bar inside Course Categories */}
+              <div className="mt-12 pt-8 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+                <div>
+                  <p className="text-white font-bold text-lg" style={{ textAlign: "left" }}>
+                    Looking for our complete 2026–2030 Executive Training Catalogue?
+                  </p>
+                  <p className="text-white/80 text-sm" style={{ textAlign: "left" }}>
+                    Browse over 180+ specialized courses across 13 departments or request a tailored in-house programme.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 shrink-0">
+                  <Link
+                    to="/institute-overview"
+                    className="inline-flex items-center gap-2 bg-[#008000] hover:bg-[#1e73be] text-white font-extrabold text-sm px-6 py-3 rounded-full shadow-md transition-all"
+                  >
+                    <span>View All 2026 Courses</span>
+                    <ArrowUpRight size={17} />
+                  </Link>
+                  <a
+                    href="/ECASI_Training_Profile.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white font-bold text-sm px-6 py-3 rounded-full border border-white/30 transition-all"
+                  >
+                    <span>Download Training Profile</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            5B. FEATURED 2026 EXECUTIVE TRAINING PROGRAMMES
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section className="py-12 md:py-16 px-4 sm:px-6 bg-gray-50/70">
+          <div className="max-w-[1380px] w-full mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-9 gap-4">
+              <div>
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-[#008000] bg-[#008000]/10 px-3 py-1 rounded-full mb-2">
+                  <Sparkles size={13} /> 2026 Executive Cohorts Now Open
+                </span>
+                <h2
+                  className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[33px]"
+                  style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                >
+                  Featured Executive Training Programmes
+                </h2>
+              </div>
+              <Link
+                to="/institute-overview"
+                className="inline-flex items-center gap-1.5 text-sm font-bold text-[#032e42] hover:text-[#008000] transition-colors"
+              >
+                <span>Open Course Finder</span>
+                <ArrowUpRight size={16} />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {flagshipCourses.map((course, idx) => (
+                <div
+                  key={course.slug}
+                  className="bg-white rounded-[10px] overflow-hidden flex flex-col justify-between transition-all duration-300 hover:-translate-y-1"
+                  style={{ boxShadow: "0px 0px 5px 0px rgba(3, 46, 66, 0.3)" }}
+                >
+                  <div>
+                    <div className="relative h-44 overflow-hidden">
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                      <div className="absolute top-3 left-3 bg-[#032e42]/90 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded">
+                        {course.category}
+                      </div>
+                      <div className="absolute bottom-3 right-3 bg-[#008000] text-white text-[11px] font-extrabold px-2.5 py-1 rounded shadow">
+                        {course.duration}
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      <h3
+                        className="text-[#032e42] font-bold text-[16.5px] leading-snug mb-3 line-clamp-2 hover:text-[#008000] transition-colors"
+                        style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                      >
+                        <Link to={`/executive-training/${course.slug}`}>
+                          {course.title}
+                        </Link>
+                      </h3>
+
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 mb-4">
+                        <span className="flex items-center gap-1">
+                          <MapPin size={13} className="text-[#008000]" />
+                          {course.location}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={13} className="text-[#1e73be]" />
+                          Classroom / Online
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-100 mt-auto">
+                    <Link
+                      to={`/executive-training/${course.slug}`}
+                      className="mt-3 inline-flex items-center gap-1.5 bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold px-4 py-2 rounded transition-colors"
+                    >
+                      <span>Course Details</span>
+                      <ArrowUpRight size={14} />
+                    </Link>
+                    <Link
+                      to={`/register?schedule=${400827 + idx}&course=${encodeURIComponent(course.slug)}&title=${encodeURIComponent(course.title)}&venue=${encodeURIComponent(course.location)}&fee=1200`}
+                      className="mt-3 text-xs font-bold text-[#008000] hover:underline"
+                    >
+                      Register Now →
+                    </Link>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
+        </section>
 
-            {/* Mobile/Tablet View (below lg) - Carousel */}
-            <div className="lg:hidden relative overflow-hidden py-4">
-              <div 
-                className="flex transition-transform duration-500 ease-in-out"
-                style={{ transform: `translateX(-${currentStat * 100}%)` }}
+        {/* ══════════════════════════════════════════════════════════════════════
+            6. BEYOND THE CLASSROOM (Retained as Requested!)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section className="py-14 md:py-16 px-4 sm:px-6 bg-white">
+          <div className="max-w-[1380px] w-full mx-auto">
+            <ScrollAnimation animation="slide-up">
+              <h2
+                className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[35px] text-center mb-4"
+                style={{ fontFamily: "'Fira Sans', sans-serif" }}
               >
-                {stats.map((s, i) => (
-                  <div
-                    key={i}
-                    className="w-full flex-shrink-0 text-center px-4"
-                  >
-                    <div
-                      className="text-3xl font-bold text-ecasi-orange mb-1"
-                      style={{ fontFamily: "'Fira Sans', sans-serif", color: "#fda128" }}
-                    >
-                      {s.value}
-                    </div>
-                    <div className="text-white/80 text-xs uppercase tracking-wider" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                      {s.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Pagination Dots */}
-              <div className="flex justify-center gap-1.5 mt-3">
-                {stats.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentStat(i)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${i === currentStat ? 'w-4 bg-ecasi-orange' : 'w-1.5 bg-white/30'}`}
-                    aria-label={`Go to stat ${i + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Our Big Idea ── */}
-        <section className="py-16 md:py-20 bg-white">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-            <ScrollAnimation animation="slide-up">
-              <p className="ecasi-section-title text-2xl md:text-3xl mb-2">OUR BIG IDEA</p>
-              <div className="ecasi-section-divider mb-8" />
-              <div className="max-w-4xl">
-                <p
-                  className="ecasi-drop-cap text-ecasi-body text-base md:text-lg leading-relaxed mb-5"
-                  style={{ fontFamily: "'Roboto', sans-serif" }}
-                >
-                  Environmental Capacities and Sustainability (ECAS) Institute is a Pan-African think tank advancing capacity development through training, research, policy advisory, technical assistance and consultancy. We operate across East Africa, West Africa, and have a Global Reach, supporting green growth and evidence-based environment policies.
-                </p>
-                <p className="text-ecasi-body text-base leading-relaxed" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                  Over the years, ECAS has trained thousands of professionals and communities, mentored young leaders, conducted research assignments, and delivered advisory and consultancy services that drive evidence-based solutions, institutional growth, and sustainable impact across Africa and beyond.
-                </p>
-              </div>
-            </ScrollAnimation>
-          </div>
-        </section>
-
-        {/* Divider line */}
-        <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-          <div className="h-px bg-gradient-to-r from-ecasi-green via-ecasi-teal to-transparent" />
-        </div>
-
-        {/* ── Our Specialized Programmes ── */}
-        <section className="py-16 md:py-20 bg-ecasi-section">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-            <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
-              {/* Label column */}
-              <div className="lg:w-56 flex-shrink-0">
-                <ScrollAnimation animation="slide-in-left">
-                  <p className="ecasi-section-title text-xl mb-2">OUR SPECIALIZED</p>
-                  <p className="ecasi-section-title text-xl">PROGRAMMES</p>
-                  <div className="ecasi-section-divider" />
-                  <p className="text-ecasi-body text-sm leading-relaxed mt-4" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                    Delivering excellence across all areas of capacity planning, environmental policy, and green transitions.
-                  </p>
-                  <Link to="/our-strategic-focus" className="ecasi-btn-primary mt-6 inline-block text-xs">
-                    View All Focus Areas
-                  </Link>
-                </ScrollAnimation>
-              </div>
-
-              {/* Cards grid */}
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {programmes.map((p, i) => (
-                  <ScrollAnimation key={i} animation="scale-in" delay={i * 80}>
-                    <div className={p.variant === "green" ? "ecasi-card-green" : "ecasi-card-teal"}>
-                      <div className="ecasi-card-wave" />
-                      <div className="relative z-10 p-7 pt-8">
-                        <div className="mb-4 opacity-90 text-white">{p.icon}</div>
-                        <h3
-                          className="text-white font-bold text-base mb-3 leading-snug"
-                          style={{ fontFamily: "'Fira Sans', sans-serif" }}
-                        >
-                          {p.title}
-                        </h3>
-                        <p className="text-white/85 text-sm leading-relaxed mb-5" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                          {p.desc}
-                        </p>
-                        <p className="text-sm font-bold" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                          <span className="text-white/80">LEARN MORE? – </span>
-                          <Link to={p.link} className="ecasi-learn-more text-white underline font-bold">
-                            YES PLEASE!!
-                          </Link>
-                        </p>
-                      </div>
-                    </div>
-                  </ScrollAnimation>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Partners Section ── */}
-        <section className="py-12 bg-white border-t border-gray-100 overflow-hidden select-none relative w-full">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16 mb-10">
-            <ScrollAnimation animation="slide-up">
-              <p className="ecasi-section-title text-2xl md:text-3xl mb-2 text-center">OUR PARTNERS</p>
-              <div className="flex justify-center mb-6">
-                <div className="ecasi-section-divider" />
-              </div>
-              <p className="text-center text-ecasi-body text-base max-w-2xl mx-auto">
-                We collaborate with leading institutions to drive impact across Africa.
+                Beyond the Classroom
+              </h2>
+              <p
+                className="text-[#1a202c] text-base md:text-[16.5px] leading-relaxed max-w-4xl mx-auto mb-10"
+                style={{ textAlign: "center" }}
+              >
+                Give your training journey an unforgettable local touch. Designed for our international participants, these exclusive experiences allow you to discover Nairobi’s vibrant culture, iconic landmarks, and stunning natural surroundings creating the perfect balance between learning, exploration, and connection.
               </p>
             </ScrollAnimation>
-          </div>
 
-          <div className="relative w-full overflow-hidden flex flex-col justify-center">
-            {/* Gradient Mask for Fade Effect at Edges */}
-            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-
-            <div className="flex w-[200%] gap-12 items-center animate-marquee whitespace-nowrap py-4">
-              {/* Copy 1 */}
-              <div className="flex justify-around items-center gap-16 min-w-full shrink-0">
-                {partners.map((partner, idx) => (
-                  <a
-                    key={`p1-${idx}`}
-                    href={partner.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-14 flex items-center transition-all duration-300 transform hover:scale-105 shrink-0"
-                    title={partner.name}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {beyondClassroomCards.map((card, idx) => (
+                <ScrollAnimation key={card.title} animation="scale-in" delay={idx * 80}>
+                  <div
+                    className="bg-white rounded-[10px] p-3.5 h-full flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1"
+                    style={{
+                      boxShadow: "0px 0px 5px 0px rgba(23, 37, 129, 0.5)",
+                    }}
                   >
-                    <img
-                      src={partner.logo}
-                      alt={partner.name}
-                      className="h-full object-contain max-w-[160px]"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400 uppercase tracking-wider">${partner.name}</span>`;
-                      }}
-                    />
-                  </a>
-                ))}
-              </div>
-              {/* Copy 2 */}
-              <div className="flex justify-around items-center gap-16 min-w-full shrink-0">
-                {partners.map((partner, idx) => (
-                  <a
-                    key={`p2-${idx}`}
-                    href={partner.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-14 flex items-center transition-all duration-300 transform hover:scale-105 shrink-0"
-                    title={partner.name}
-                  >
-                    <img
-                      src={partner.logo}
-                      alt={partner.name}
-                      className="h-full object-contain max-w-[160px]"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400 uppercase tracking-wider">${partner.name}</span>`;
-                      }}
-                    />
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Upcoming Events ── */}
-        <section className="py-16 md:py-20 bg-white">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-            <div className="flex items-end justify-between mb-10">
-              <ScrollAnimation animation="slide-up">
-                <p className="ecasi-section-title text-2xl md:text-3xl mb-2">UPCOMING EVENTS</p>
-                <div className="ecasi-section-divider" />
-              </ScrollAnimation>
-              <Link to="/newsroom" className="ecasi-btn-outline text-xs mt-4 md:mt-0">
-                View All Events
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {processedEvents.map((ev, i) => (
-                <ScrollAnimation key={i} animation="slide-up" delay={i * 100}>
-                  <div className={`ecasi-event-card ${ev.isPast ? 'opacity-80 bg-gray-50' : ''}`}>
-                    {/* Color header bar */}
-                    <div
-                      className="h-2"
-                      style={{ background: ev.isPast ? '#9ca3af' : (i % 2 === 0 ? "#008000" : "#20b2aa") }}
-                    />
-                    <div className="p-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <span
-                          className="inline-block text-xs font-semibold px-3 py-1 rounded-full text-white"
-                          style={{ background: ev.isPast ? '#9ca3af' : (i % 2 === 0 ? "#008000" : "#20b2aa"), fontFamily: "'Roboto', sans-serif" }}
-                        >
-                          {ev.type}
-                        </span>
-                        {ev.isPast && (
-                          <span className="inline-block text-[10px] font-bold px-2 py-1 rounded border border-red-300 bg-red-50 text-red-600 uppercase tracking-wider">
-                            Past Event
-                          </span>
-                        )}
+                    <div>
+                      <div className="mb-4 overflow-hidden rounded-[10px]" style={{ boxShadow: "0px 0px 10px 0px rgba(23, 37, 129, 0.35)" }}>
+                        <img
+                          src={card.image}
+                          alt={card.title}
+                          className="w-full h-[155px] object-cover rounded-[10px] transition-transform duration-500 hover:scale-105"
+                        />
                       </div>
                       <h3
-                        className="text-ecasi-navy font-bold text-base mb-3 leading-snug"
+                        className="text-[#032e42] font-bold text-[17.5px] mb-2 leading-snug"
                         style={{ fontFamily: "'Fira Sans', sans-serif" }}
                       >
-                        {ev.title}
+                        {card.title}
                       </h3>
-                      <p className="text-ecasi-body text-sm leading-relaxed mb-4" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                        {ev.desc}
+                      <p className="text-[#1a202c] text-[14px] leading-[1.45] mb-4">
+                        {card.desc}
                       </p>
-                      <div className="space-y-2 text-xs text-ecasi-body border-t border-gray-100 pt-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar size={13} className="text-ecasi-green flex-shrink-0" />
-                          <span>{new Date(ev.date).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "long", day: "numeric" })}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin size={13} className="text-ecasi-green flex-shrink-0" />
-                          <span>{ev.venue}</span>
-                        </div>
-                      </div>
+                    </div>
+
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setBeyondModal(card)}
+                        className="inline-block bg-[#032e42] hover:bg-[#008000] text-white font-semibold text-sm px-4 py-2 rounded-[3px] transition-colors cursor-pointer"
+                      >
+                        Learn More
+                      </button>
                     </div>
                   </div>
                 </ScrollAnimation>
@@ -744,115 +1115,320 @@ const Index = () => {
           </div>
         </section>
 
-        {/* ── LinkedIn Feed ── */}
-        <section className="py-16 md:py-20 bg-gray-50 border-t border-gray-200">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16">
-            <ScrollAnimation animation="slide-up">
-              <p className="ecasi-section-title text-2xl md:text-3xl mb-2">LATEST FROM LINKEDIN</p>
-              <div className="ecasi-section-divider mb-8" />
-            </ScrollAnimation>
-            <LinkedInFeed />
+        {/* Modal for Beyond the Classroom Details */}
+        {beyondModal && (
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setBeyondModal(null)}
+          >
+            <div
+              className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative h-56">
+                <img
+                  src={beyondModal.image}
+                  alt={beyondModal.title}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setBeyondModal(null)}
+                  className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-6">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#008000]">
+                  Beyond the Classroom — Nairobi Excursion
+                </span>
+                <h3 className="text-2xl font-bold text-[#032e42] mt-1 mb-3">
+                  {beyondModal.title}
+                </h3>
+                <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                  {beyondModal.desc}
+                </p>
+                <p className="text-gray-600 text-sm leading-relaxed mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  {beyondModal.details}
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBeyondModal(null)}
+                    className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900"
+                  >
+                    Close
+                  </button>
+                  <Link
+                    to="/contact"
+                    onClick={() => setBeyondModal(null)}
+                    className="px-5 py-2 bg-[#008000] hover:bg-[#006600] text-white text-sm font-bold rounded-lg transition-colors"
+                  >
+                    Inquire About Excursions
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
-        </section>
+        )}
 
-        {/* ── Client Testimonials ── */}
-        <section className="py-8 md:py-10 bg-gray-50 relative overflow-hidden">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16 relative z-10">
-            <ScrollAnimation animation="fade-in">
-              <p
-                className="text-center text-xl md:text-2xl font-bold mb-2 uppercase tracking-wide text-[#032e42]"
+        {/* ══════════════════════════════════════════════════════════════════════
+            7. OUR PARTNERS (Retained ECAS Partners in Devimpact Elevated Box)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section className="py-12 md:py-14 px-4 sm:px-6 bg-white">
+          <div className="max-w-[1380px] w-full mx-auto">
+            <ScrollAnimation animation="slide-up">
+              <h2
+                className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[35px] text-center mb-8"
                 style={{ fontFamily: "'Fira Sans', sans-serif" }}
               >
-                WHAT OUR PARTNERS SAY
-              </p>
-              <div className="flex justify-center mb-6">
-                <div className="ecasi-section-divider" style={{ background: "linear-gradient(90deg,#20b2aa,#008000)" }} />
-              </div>
+                Our Partners
+              </h2>
             </ScrollAnimation>
 
-            <div className="max-w-3xl mx-auto overflow-hidden">
-              <div
-                className="flex transition-transform duration-700 ease-in-out"
-                style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
-              >
-                {testimonials.map((testimonial, i) => (
-                  <div key={i} className="min-w-full px-4 flex flex-col items-center text-center">
-                    <Quote size={32} className="mx-auto mb-3 opacity-20 text-[#008000]" />
-                    <p className="text-gray-600 italic text-sm">
-                      &quot;{testimonial.quote}&quot;
-                    </p>
-                    <div className="flex flex-col items-center gap-1 mt-4">
-                      {testimonial.image ? (
-                        <img
-                          src={testimonial.image}
-                          alt={testimonial.name}
-                          className="w-12 h-12 rounded-full object-cover mb-1 border-2 border-[#008000]"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gray-200 mb-1 border-2 border-[#008000]">
-                          <User size={24} className="text-gray-500" />
-                        </div>
-                      )}
-                      <span className="text-[#032e42] font-bold text-sm" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
-                        {testimonial.name}
-                      </span>
-                      <span className="text-gray-500 text-xs font-medium">{testimonial.role}</span>
+            <div
+              className="bg-white rounded-[10px] py-8 px-4 md:px-8 overflow-hidden relative"
+              style={{
+                boxShadow: "0px 0px 5px 0px rgba(23, 37, 129, 0.5)",
+              }}
+            >
+              {/* Auto-scrolling Marquee of ECAS Partner Logos */}
+              <div className="relative w-full overflow-hidden">
+                <div className="flex w-[200%] gap-12 items-center animate-marquee whitespace-nowrap py-2">
+                  {[0, 1].map((copyIdx) => (
+                    <div key={copyIdx} className="flex justify-around items-center gap-12 min-w-full shrink-0">
+                      {partners.map((partner, idx) => (
+                        <a
+                          key={`p-${copyIdx}-${idx}`}
+                          href={partner.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-16 flex items-center justify-center transition-transform duration-300 hover:scale-105 shrink-0 px-2"
+                          title={partner.name}
+                        >
+                          <img
+                            src={partner.logo}
+                            alt={partner.name}
+                            className="max-h-14 w-auto object-contain max-w-[150px]"
+                          />
+                        </a>
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              {/* Dots */}
-              <div className="flex justify-center gap-3 mt-5">
-                {testimonials.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveTestimonial(i)}
-                    className={`h-2 rounded-full transition-all duration-300 ${i === activeTestimonial ? "w-8 bg-[#008000]" : "w-2 bg-gray-300"}`}
-                    aria-label={`Testimonial ${i + 1}`}
-                  />
-                ))}
+              {/* Load More Button matching Devimpact */}
+              <div className="mt-6 text-center">
+                <Link
+                  to="/partners"
+                  className="inline-block bg-[#032e42] hover:bg-[#008000] text-white font-semibold text-sm px-6 py-2.5 rounded-[3px] transition-colors"
+                >
+                  Load More
+                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── Call to Action ── */}
-        <section className="py-16 bg-ecasi-green relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full border-2 border-white" />
-            <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full border-2 border-white" />
-          </div>
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-16 relative z-10">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-              <div>
-                <h2
-                  className="text-white text-2xl md:text-3xl font-bold mb-3"
-                  style={{ fontFamily: "'Fira Sans', sans-serif" }}
+        {/* ══════════════════════════════════════════════════════════════════════
+            8. TRAINING TESTIMONIALS (Retained & Styled Like Devimpact Review Slider)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section
+          className="py-12 md:py-16 px-4 sm:px-6 bg-[#f9fafb]"
+          onMouseEnter={() => setTestimonialPaused(true)}
+          onMouseLeave={() => setTestimonialPaused(false)}
+        >
+          <div className="max-w-[1380px] w-full mx-auto">
+            <ScrollAnimation animation="slide-up">
+              <h2
+                className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[35px] text-center mb-10"
+                style={{ fontFamily: "'Fira Sans', sans-serif" }}
+              >
+                Training Testimonials
+              </h2>
+            </ScrollAnimation>
+
+            <div className="relative">
+              {/* Prev / Next Controls */}
+              <div className="flex justify-end gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTestimonialIndex((prev) =>
+                      prev === 0 ? Math.max(0, trainingTestimonials.length - 3) : prev - 1
+                    )
+                  }
+                  aria-label="Previous review"
+                  className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-[#032e42] hover:bg-[#008000] hover:text-white transition-colors cursor-pointer"
                 >
-                  Advance Your Sustainable Development Capacity
-                </h2>
-                <p className="text-white/80 text-base max-w-xl" style={{ fontFamily: "'Roboto', sans-serif" }}>
-                  Register for our upcoming executive courses or reach out for specialized consultancy services.
-                </p>
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTestimonialIndex((prev) =>
+                      prev >= trainingTestimonials.length - 3 ? 0 : prev + 1
+                    )
+                  }
+                  aria-label="Next review"
+                  className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-[#032e42] hover:bg-[#008000] hover:text-white transition-colors cursor-pointer"
+                >
+                  <ChevronRight size={18} />
+                </button>
               </div>
-              <div className="flex gap-4 flex-shrink-0">
-                <Link
-                  to="/contact"
-                  className="bg-white text-ecasi-green font-bold px-8 py-3 rounded text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors"
-                  style={{ fontFamily: "'Roboto', sans-serif" }}
+
+              {/* Continuous Smooth Review Slider */}
+              <div className="overflow-hidden">
+                <div
+                  className="flex transition-transform duration-700 ease-in-out"
+                  style={{
+                    transform: `translateX(-${testimonialIndex * (100 / (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1))}%)`
+                  }}
                 >
-                  Register / Inquire
-                </Link>
-                <Link
-                  to="/about"
-                  className="border-2 border-white text-white font-semibold px-8 py-3 rounded text-sm uppercase tracking-wider hover:bg-white/10 transition-colors"
-                  style={{ fontFamily: "'Roboto', sans-serif" }}
-                >
-                  Learn More
-                </Link>
+                  {trainingTestimonials.concat(trainingTestimonials.slice(0, 3)).map((review, idx) => (
+                    <div
+                      key={`${review.name}-${idx}`}
+                      className="w-full md:w-1/2 lg:w-1/3 shrink-0 px-3"
+                    >
+                      <div
+                        className="bg-white rounded-xl p-6 border border-gray-100 flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1 h-full"
+                        style={{
+                          boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
+                          minHeight: "280px"
+                        }}
+                      >
+                        <div>
+                          {/* Stars + Verified Badge */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, sIdx) => (
+                                <Star
+                                  key={sIdx}
+                                  size={16}
+                                  className="fill-[#fbbc04] text-[#fbbc04]"
+                                />
+                              ))}
+                              <CheckCircle2
+                                size={15}
+                                className="text-[#1e73be] ml-1"
+                                title="Verified Training Participant"
+                              />
+                            </div>
+                            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                              Verified Review
+                            </span>
+                          </div>
+
+                          {/* Review Text */}
+                          <p className="text-[#1a202c] text-[14.5px] leading-relaxed mb-6">
+                            “{review.quote}”
+                          </p>
+                        </div>
+
+                        {/* Reviewer Profile Header */}
+                        <div className="flex items-center gap-3 pt-4 border-t border-gray-100 mt-auto">
+                          {review.image ? (
+                            <img
+                              src={review.image}
+                              alt={review.name}
+                              className="w-11 h-11 rounded-full object-cover border border-[#008000]"
+                            />
+                          ) : (
+                            <div className="w-11 h-11 rounded-full bg-[#008000] text-white font-bold text-sm flex items-center justify-center shrink-0">
+                              {review.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-bold text-[#032e42] text-sm">
+                              {review.name}
+                            </div>
+                            <div className="text-xs text-gray-500 font-medium">
+                              {review.role}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            9. MILESTONES SECTION (Retained & Styled Like Devimpact Funfact Grid)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section className="py-14 md:py-16 px-4 sm:px-6 bg-white">
+          <div className="max-w-[1380px] w-full mx-auto">
+            <ScrollAnimation animation="slide-up">
+              <h2
+                className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[35px] text-center mb-10"
+                style={{ fontFamily: "'Fira Sans', sans-serif" }}
+              >
+                Milestones
+              </h2>
+            </ScrollAnimation>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {milestones.map((m, idx) => (
+                <ScrollAnimation key={m.label} animation="scale-in" delay={idx * 80}>
+                  <AnimatedMilestoneCard milestone={m} />
+                </ScrollAnimation>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            10. SUBSCRIBE TO OUR NEWSLETTER! (Devimpact Pre-Footer Banner)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <section className="py-12 px-4 sm:px-6 bg-[#f2f5f9] border-t border-gray-200">
+          <div className="max-w-[900px] mx-auto text-center">
+            <h2
+              className="text-[#032e42] font-bold text-2xl sm:text-3xl mb-3"
+              style={{ fontFamily: "'Fira Sans', sans-serif" }}
+            >
+              Subscribe to our Newsletter!
+            </h2>
+            <p
+              className="text-gray-600 text-sm sm:text-base mb-6 max-w-xl mx-auto"
+              style={{ textAlign: "center" }}
+            >
+              Stay updated with our upcoming 2026 executive training cohorts, new courses, workshops, and policy insights.
+            </p>
+
+            <form
+              onSubmit={handleNewsletterSubmit}
+              className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto"
+            >
+              <input
+                type="email"
+                required
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                placeholder="Enter your email address..."
+                className="flex-1 h-12 px-4 rounded-lg border border-gray-300 bg-white text-[#032e42] text-sm focus:outline-none focus:border-[#008000]"
+              />
+              <button
+                type="submit"
+                className="h-12 px-8 bg-[#008000] hover:bg-[#003B80] text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+              >
+                Subscribe
+              </button>
+            </form>
+
+            {newsletterSubmitted && (
+              <p className="text-[#008000] font-semibold text-sm mt-3" style={{ textAlign: "center" }}>
+                Thank you for subscribing to ECAS Institute’s Executive Training updates!
+              </p>
+            )}
           </div>
         </section>
 

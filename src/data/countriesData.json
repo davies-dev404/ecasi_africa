@@ -1,0 +1,1374 @@
+[
+  {
+    "country": "Kenya",
+    "code": "+254",
+    "flag": "🇰🇪",
+    "iso": "ke",
+    "flagUrl": "https://flagcdn.com/w40/ke.png"
+  },
+  {
+    "country": "Afghanistan",
+    "code": "+93",
+    "flag": "🇦🇫",
+    "iso": "af",
+    "flagUrl": "https://flagcdn.com/w40/af.png"
+  },
+  {
+    "country": "Albania",
+    "code": "+355",
+    "flag": "🇦🇱",
+    "iso": "al",
+    "flagUrl": "https://flagcdn.com/w40/al.png"
+  },
+  {
+    "country": "Algeria",
+    "code": "+213",
+    "flag": "🇩🇿",
+    "iso": "dz",
+    "flagUrl": "https://flagcdn.com/w40/dz.png"
+  },
+  {
+    "country": "Andorra",
+    "code": "+376",
+    "flag": "🇦🇩",
+    "iso": "ad",
+    "flagUrl": "https://flagcdn.com/w40/ad.png"
+  },
+  {
+    "country": "Angola",
+    "code": "+244",
+    "flag": "🇦🇴",
+    "iso": "ao",
+    "flagUrl": "https://flagcdn.com/w40/ao.png"
+  },
+  {
+    "country": "Antigua and Barbuda",
+    "code": "+1-268",
+    "flag": "🇦🇬",
+    "iso": "ag",
+    "flagUrl": "https://flagcdn.com/w40/ag.png"
+  },
+  {
+    "country": "Argentina",
+    "code": "+54",
+    "flag": "🇦🇷",
+    "iso": "ar",
+    "flagUrl": "https://flagcdn.com/w40/ar.png"
+  },
+  {
+    "country": "Armenia",
+    "code": "+374",
+    "flag": "🇦🇲",
+    "iso": "am",
+    "flagUrl": "https://flagcdn.com/w40/am.png"
+  },
+  {
+    "country": "Australia",
+    "code": "+61",
+    "flag": "🇦🇺",
+    "iso": "au",
+    "flagUrl": "https://flagcdn.com/w40/au.png"
+  },
+  {
+    "country": "Austria",
+    "code": "+43",
+    "flag": "🇦🇹",
+    "iso": "at",
+    "flagUrl": "https://flagcdn.com/w40/at.png"
+  },
+  {
+    "country": "Azerbaijan",
+    "code": "+994",
+    "flag": "🇦🇿",
+    "iso": "az",
+    "flagUrl": "https://flagcdn.com/w40/az.png"
+  },
+  {
+    "country": "Bahamas",
+    "code": "+1-242",
+    "flag": "🇧🇸",
+    "iso": "bs",
+    "flagUrl": "https://flagcdn.com/w40/bs.png"
+  },
+  {
+    "country": "Bahrain",
+    "code": "+973",
+    "flag": "🇧🇭",
+    "iso": "bh",
+    "flagUrl": "https://flagcdn.com/w40/bh.png"
+  },
+  {
+    "country": "Bangladesh",
+    "code": "+880",
+    "flag": "🇧🇩",
+    "iso": "bd",
+    "flagUrl": "https://flagcdn.com/w40/bd.png"
+  },
+  {
+    "country": "Barbados",
+    "code": "+1-246",
+    "flag": "🇧🇧",
+    "iso": "bb",
+    "flagUrl": "https://flagcdn.com/w40/bb.png"
+  },
+  {
+    "country": "Belarus",
+    "code": "+375",
+    "flag": "🇧🇾",
+    "iso": "by",
+    "flagUrl": "https://flagcdn.com/w40/by.png"
+  },
+  {
+    "country": "Belgium",
+    "code": "+32",
+    "flag": "🇧🇪",
+    "iso": "be",
+    "flagUrl": "https://flagcdn.com/w40/be.png"
+  },
+  {
+    "country": "Belize",
+    "code": "+501",
+    "flag": "🇧🇿",
+    "iso": "bz",
+    "flagUrl": "https://flagcdn.com/w40/bz.png"
+  },
+  {
+    "country": "Benin",
+    "code": "+229",
+    "flag": "🇧🇯",
+    "iso": "bj",
+    "flagUrl": "https://flagcdn.com/w40/bj.png"
+  },
+  {
+    "country": "Bhutan",
+    "code": "+975",
+    "flag": "🇧🇹",
+    "iso": "bt",
+    "flagUrl": "https://flagcdn.com/w40/bt.png"
+  },
+  {
+    "country": "Bolivia",
+    "code": "+591",
+    "flag": "🇧🇴",
+    "iso": "bo",
+    "flagUrl": "https://flagcdn.com/w40/bo.png"
+  },
+  {
+    "country": "Bosnia and Herzegovina",
+    "code": "+387",
+    "flag": "🇧🇦",
+    "iso": "ba",
+    "flagUrl": "https://flagcdn.com/w40/ba.png"
+  },
+  {
+    "country": "Botswana",
+    "code": "+267",
+    "flag": "🇧🇼",
+    "iso": "bw",
+    "flagUrl": "https://flagcdn.com/w40/bw.png"
+  },
+  {
+    "country": "Brazil",
+    "code": "+55",
+    "flag": "🇧🇷",
+    "iso": "br",
+    "flagUrl": "https://flagcdn.com/w40/br.png"
+  },
+  {
+    "country": "Brunei",
+    "code": "+673",
+    "flag": "🇧🇳",
+    "iso": "bn",
+    "flagUrl": "https://flagcdn.com/w40/bn.png"
+  },
+  {
+    "country": "Bulgaria",
+    "code": "+359",
+    "flag": "🇧🇬",
+    "iso": "bg",
+    "flagUrl": "https://flagcdn.com/w40/bg.png"
+  },
+  {
+    "country": "Burkina Faso",
+    "code": "+226",
+    "flag": "🇧🇫",
+    "iso": "bf",
+    "flagUrl": "https://flagcdn.com/w40/bf.png"
+  },
+  {
+    "country": "Burundi",
+    "code": "+257",
+    "flag": "🇧🇮",
+    "iso": "bi",
+    "flagUrl": "https://flagcdn.com/w40/bi.png"
+  },
+  {
+    "country": "Cabo Verde",
+    "code": "+238",
+    "flag": "🇨🇻",
+    "iso": "cv",
+    "flagUrl": "https://flagcdn.com/w40/cv.png"
+  },
+  {
+    "country": "Cambodia",
+    "code": "+855",
+    "flag": "🇰🇭",
+    "iso": "kh",
+    "flagUrl": "https://flagcdn.com/w40/kh.png"
+  },
+  {
+    "country": "Cameroon",
+    "code": "+237",
+    "flag": "🇨🇲",
+    "iso": "cm",
+    "flagUrl": "https://flagcdn.com/w40/cm.png"
+  },
+  {
+    "country": "Canada",
+    "code": "+1",
+    "flag": "🇨🇦",
+    "iso": "ca",
+    "flagUrl": "https://flagcdn.com/w40/ca.png"
+  },
+  {
+    "country": "Central African Republic",
+    "code": "+236",
+    "flag": "🇨🇫",
+    "iso": "cf",
+    "flagUrl": "https://flagcdn.com/w40/cf.png"
+  },
+  {
+    "country": "Chad",
+    "code": "+235",
+    "flag": "🇹🇩",
+    "iso": "td",
+    "flagUrl": "https://flagcdn.com/w40/td.png"
+  },
+  {
+    "country": "Chile",
+    "code": "+56",
+    "flag": "🇨🇱",
+    "iso": "cl",
+    "flagUrl": "https://flagcdn.com/w40/cl.png"
+  },
+  {
+    "country": "China",
+    "code": "+86",
+    "flag": "🇨🇳",
+    "iso": "cn",
+    "flagUrl": "https://flagcdn.com/w40/cn.png"
+  },
+  {
+    "country": "Colombia",
+    "code": "+57",
+    "flag": "🇨🇴",
+    "iso": "co",
+    "flagUrl": "https://flagcdn.com/w40/co.png"
+  },
+  {
+    "country": "Comoros",
+    "code": "+269",
+    "flag": "🇰🇲",
+    "iso": "km",
+    "flagUrl": "https://flagcdn.com/w40/km.png"
+  },
+  {
+    "country": "Congo (Republic of the)",
+    "code": "+242",
+    "flag": "🇨🇬",
+    "iso": "cg",
+    "flagUrl": "https://flagcdn.com/w40/cg.png"
+  },
+  {
+    "country": "Costa Rica",
+    "code": "+506",
+    "flag": "🇨🇷",
+    "iso": "cr",
+    "flagUrl": "https://flagcdn.com/w40/cr.png"
+  },
+  {
+    "country": "Ivory Coast",
+    "code": "+225",
+    "flag": "🇨🇮",
+    "iso": "ci",
+    "flagUrl": "https://flagcdn.com/w40/ci.png"
+  },
+  {
+    "country": "Croatia",
+    "code": "+385",
+    "flag": "🇭🇷",
+    "iso": "hr",
+    "flagUrl": "https://flagcdn.com/w40/hr.png"
+  },
+  {
+    "country": "Cuba",
+    "code": "+53",
+    "flag": "🇨🇺",
+    "iso": "cu",
+    "flagUrl": "https://flagcdn.com/w40/cu.png"
+  },
+  {
+    "country": "Cyprus",
+    "code": "+357",
+    "flag": "🇨🇾",
+    "iso": "cy",
+    "flagUrl": "https://flagcdn.com/w40/cy.png"
+  },
+  {
+    "country": "Czechia",
+    "code": "+420",
+    "flag": "🇨🇿",
+    "iso": "cz",
+    "flagUrl": "https://flagcdn.com/w40/cz.png"
+  },
+  {
+    "country": "Democratic Republic of the Congo",
+    "code": "+243",
+    "flag": "🇨🇩",
+    "iso": "cd",
+    "flagUrl": "https://flagcdn.com/w40/cd.png"
+  },
+  {
+    "country": "Denmark",
+    "code": "+45",
+    "flag": "🇩🇰",
+    "iso": "dk",
+    "flagUrl": "https://flagcdn.com/w40/dk.png"
+  },
+  {
+    "country": "Djibouti",
+    "code": "+253",
+    "flag": "🇩🇯",
+    "iso": "dj",
+    "flagUrl": "https://flagcdn.com/w40/dj.png"
+  },
+  {
+    "country": "Dominica",
+    "code": "+1-767",
+    "flag": "🇩🇲",
+    "iso": "dm",
+    "flagUrl": "https://flagcdn.com/w40/dm.png"
+  },
+  {
+    "country": "Dominican Republic",
+    "code": "+1-809",
+    "flag": "🇩🇴",
+    "iso": "do",
+    "flagUrl": "https://flagcdn.com/w40/do.png"
+  },
+  {
+    "country": "Ecuador",
+    "code": "+593",
+    "flag": "🇪🇨",
+    "iso": "ec",
+    "flagUrl": "https://flagcdn.com/w40/ec.png"
+  },
+  {
+    "country": "Egypt",
+    "code": "+20",
+    "flag": "🇪🇬",
+    "iso": "eg",
+    "flagUrl": "https://flagcdn.com/w40/eg.png"
+  },
+  {
+    "country": "El Salvador",
+    "code": "+503",
+    "flag": "🇸🇻",
+    "iso": "sv",
+    "flagUrl": "https://flagcdn.com/w40/sv.png"
+  },
+  {
+    "country": "Equatorial Guinea",
+    "code": "+240",
+    "flag": "🇬🇶",
+    "iso": "gq",
+    "flagUrl": "https://flagcdn.com/w40/gq.png"
+  },
+  {
+    "country": "Eritrea",
+    "code": "+291",
+    "flag": "🇪🇷",
+    "iso": "er",
+    "flagUrl": "https://flagcdn.com/w40/er.png"
+  },
+  {
+    "country": "Estonia",
+    "code": "+372",
+    "flag": "🇪🇪",
+    "iso": "ee",
+    "flagUrl": "https://flagcdn.com/w40/ee.png"
+  },
+  {
+    "country": "Eswatini",
+    "code": "+268",
+    "flag": "🇸🇿",
+    "iso": "sz",
+    "flagUrl": "https://flagcdn.com/w40/sz.png"
+  },
+  {
+    "country": "Ethiopia",
+    "code": "+251",
+    "flag": "🇪🇹",
+    "iso": "et",
+    "flagUrl": "https://flagcdn.com/w40/et.png"
+  },
+  {
+    "country": "Fiji",
+    "code": "+679",
+    "flag": "🇫🇯",
+    "iso": "fj",
+    "flagUrl": "https://flagcdn.com/w40/fj.png"
+  },
+  {
+    "country": "Finland",
+    "code": "+358",
+    "flag": "🇫🇮",
+    "iso": "fi",
+    "flagUrl": "https://flagcdn.com/w40/fi.png"
+  },
+  {
+    "country": "France",
+    "code": "+33",
+    "flag": "🇫🇷",
+    "iso": "fr",
+    "flagUrl": "https://flagcdn.com/w40/fr.png"
+  },
+  {
+    "country": "Gabon",
+    "code": "+241",
+    "flag": "🇬🇦",
+    "iso": "ga",
+    "flagUrl": "https://flagcdn.com/w40/ga.png"
+  },
+  {
+    "country": "Gambia",
+    "code": "+220",
+    "flag": "🇬🇲",
+    "iso": "gm",
+    "flagUrl": "https://flagcdn.com/w40/gm.png"
+  },
+  {
+    "country": "Georgia",
+    "code": "+995",
+    "flag": "🇬🇪",
+    "iso": "ge",
+    "flagUrl": "https://flagcdn.com/w40/ge.png"
+  },
+  {
+    "country": "Germany",
+    "code": "+49",
+    "flag": "🇩🇪",
+    "iso": "de",
+    "flagUrl": "https://flagcdn.com/w40/de.png"
+  },
+  {
+    "country": "Ghana",
+    "code": "+233",
+    "flag": "🇬🇭",
+    "iso": "gh",
+    "flagUrl": "https://flagcdn.com/w40/gh.png"
+  },
+  {
+    "country": "Greece",
+    "code": "+30",
+    "flag": "🇬🇷",
+    "iso": "gr",
+    "flagUrl": "https://flagcdn.com/w40/gr.png"
+  },
+  {
+    "country": "Grenada",
+    "code": "+1-473",
+    "flag": "🇬🇩",
+    "iso": "gd",
+    "flagUrl": "https://flagcdn.com/w40/gd.png"
+  },
+  {
+    "country": "Guatemala",
+    "code": "+502",
+    "flag": "🇬🇹",
+    "iso": "gt",
+    "flagUrl": "https://flagcdn.com/w40/gt.png"
+  },
+  {
+    "country": "Guinea",
+    "code": "+224",
+    "flag": "🇬🇳",
+    "iso": "gn",
+    "flagUrl": "https://flagcdn.com/w40/gn.png"
+  },
+  {
+    "country": "Guinea-Bissau",
+    "code": "+245",
+    "flag": "🇬🇼",
+    "iso": "gw",
+    "flagUrl": "https://flagcdn.com/w40/gw.png"
+  },
+  {
+    "country": "Guyana",
+    "code": "+592",
+    "flag": "🇬🇾",
+    "iso": "gy",
+    "flagUrl": "https://flagcdn.com/w40/gy.png"
+  },
+  {
+    "country": "Haiti",
+    "code": "+509",
+    "flag": "🇭🇹",
+    "iso": "ht",
+    "flagUrl": "https://flagcdn.com/w40/ht.png"
+  },
+  {
+    "country": "Honduras",
+    "code": "+504",
+    "flag": "🇭🇳",
+    "iso": "hn",
+    "flagUrl": "https://flagcdn.com/w40/hn.png"
+  },
+  {
+    "country": "Hungary",
+    "code": "+36",
+    "flag": "🇭🇺",
+    "iso": "hu",
+    "flagUrl": "https://flagcdn.com/w40/hu.png"
+  },
+  {
+    "country": "Iceland",
+    "code": "+354",
+    "flag": "🇮🇸",
+    "iso": "is",
+    "flagUrl": "https://flagcdn.com/w40/is.png"
+  },
+  {
+    "country": "India",
+    "code": "+91",
+    "flag": "🇮🇳",
+    "iso": "in",
+    "flagUrl": "https://flagcdn.com/w40/in.png"
+  },
+  {
+    "country": "Indonesia",
+    "code": "+62",
+    "flag": "🇮🇩",
+    "iso": "id",
+    "flagUrl": "https://flagcdn.com/w40/id.png"
+  },
+  {
+    "country": "Iran",
+    "code": "+98",
+    "flag": "🇮🇷",
+    "iso": "ir",
+    "flagUrl": "https://flagcdn.com/w40/ir.png"
+  },
+  {
+    "country": "Iraq",
+    "code": "+964",
+    "flag": "🇮🇶",
+    "iso": "iq",
+    "flagUrl": "https://flagcdn.com/w40/iq.png"
+  },
+  {
+    "country": "Ireland",
+    "code": "+353",
+    "flag": "🇮🇪",
+    "iso": "ie",
+    "flagUrl": "https://flagcdn.com/w40/ie.png"
+  },
+  {
+    "country": "Israel",
+    "code": "+972",
+    "flag": "🇮🇱",
+    "iso": "il",
+    "flagUrl": "https://flagcdn.com/w40/il.png"
+  },
+  {
+    "country": "Italy",
+    "code": "+39",
+    "flag": "🇮🇹",
+    "iso": "it",
+    "flagUrl": "https://flagcdn.com/w40/it.png"
+  },
+  {
+    "country": "Jamaica",
+    "code": "+1-876",
+    "flag": "🇯🇲",
+    "iso": "jm",
+    "flagUrl": "https://flagcdn.com/w40/jm.png"
+  },
+  {
+    "country": "Japan",
+    "code": "+81",
+    "flag": "🇯🇵",
+    "iso": "jp",
+    "flagUrl": "https://flagcdn.com/w40/jp.png"
+  },
+  {
+    "country": "Jordan",
+    "code": "+962",
+    "flag": "🇯🇴",
+    "iso": "jo",
+    "flagUrl": "https://flagcdn.com/w40/jo.png"
+  },
+  {
+    "country": "Kazakhstan",
+    "code": "+7",
+    "flag": "🇰🇿",
+    "iso": "kz",
+    "flagUrl": "https://flagcdn.com/w40/kz.png"
+  },
+  {
+    "country": "Kiribati",
+    "code": "+686",
+    "flag": "🇰🇮",
+    "iso": "ki",
+    "flagUrl": "https://flagcdn.com/w40/ki.png"
+  },
+  {
+    "country": "Kuwait",
+    "code": "+965",
+    "flag": "🇰🇼",
+    "iso": "kw",
+    "flagUrl": "https://flagcdn.com/w40/kw.png"
+  },
+  {
+    "country": "Kyrgyzstan",
+    "code": "+996",
+    "flag": "🇰🇬",
+    "iso": "kg",
+    "flagUrl": "https://flagcdn.com/w40/kg.png"
+  },
+  {
+    "country": "Laos",
+    "code": "+856",
+    "flag": "🇱🇦",
+    "iso": "la",
+    "flagUrl": "https://flagcdn.com/w40/la.png"
+  },
+  {
+    "country": "Latvia",
+    "code": "+371",
+    "flag": "🇱🇻",
+    "iso": "lv",
+    "flagUrl": "https://flagcdn.com/w40/lv.png"
+  },
+  {
+    "country": "Lebanon",
+    "code": "+961",
+    "flag": "🇱🇧",
+    "iso": "lb",
+    "flagUrl": "https://flagcdn.com/w40/lb.png"
+  },
+  {
+    "country": "Lesotho",
+    "code": "+266",
+    "flag": "🇱🇸",
+    "iso": "ls",
+    "flagUrl": "https://flagcdn.com/w40/ls.png"
+  },
+  {
+    "country": "Liberia",
+    "code": "+231",
+    "flag": "🇱🇷",
+    "iso": "lr",
+    "flagUrl": "https://flagcdn.com/w40/lr.png"
+  },
+  {
+    "country": "Libya",
+    "code": "+218",
+    "flag": "🇱🇾",
+    "iso": "ly",
+    "flagUrl": "https://flagcdn.com/w40/ly.png"
+  },
+  {
+    "country": "Liechtenstein",
+    "code": "+423",
+    "flag": "🇱🇮",
+    "iso": "li",
+    "flagUrl": "https://flagcdn.com/w40/li.png"
+  },
+  {
+    "country": "Lithuania",
+    "code": "+370",
+    "flag": "🇱🇹",
+    "iso": "lt",
+    "flagUrl": "https://flagcdn.com/w40/lt.png"
+  },
+  {
+    "country": "Luxembourg",
+    "code": "+352",
+    "flag": "🇱🇺",
+    "iso": "lu",
+    "flagUrl": "https://flagcdn.com/w40/lu.png"
+  },
+  {
+    "country": "Madagascar",
+    "code": "+261",
+    "flag": "🇲🇬",
+    "iso": "mg",
+    "flagUrl": "https://flagcdn.com/w40/mg.png"
+  },
+  {
+    "country": "Malawi",
+    "code": "+265",
+    "flag": "🇲🇼",
+    "iso": "mw",
+    "flagUrl": "https://flagcdn.com/w40/mw.png"
+  },
+  {
+    "country": "Malaysia",
+    "code": "+60",
+    "flag": "🇲🇾",
+    "iso": "my",
+    "flagUrl": "https://flagcdn.com/w40/my.png"
+  },
+  {
+    "country": "Maldives",
+    "code": "+960",
+    "flag": "🇲🇻",
+    "iso": "mv",
+    "flagUrl": "https://flagcdn.com/w40/mv.png"
+  },
+  {
+    "country": "Mali",
+    "code": "+223",
+    "flag": "🇲🇱",
+    "iso": "ml",
+    "flagUrl": "https://flagcdn.com/w40/ml.png"
+  },
+  {
+    "country": "Malta",
+    "code": "+356",
+    "flag": "🇲🇹",
+    "iso": "mt",
+    "flagUrl": "https://flagcdn.com/w40/mt.png"
+  },
+  {
+    "country": "Marshall Islands",
+    "code": "+692",
+    "flag": "🇲🇭",
+    "iso": "mh",
+    "flagUrl": "https://flagcdn.com/w40/mh.png"
+  },
+  {
+    "country": "Mauritania",
+    "code": "+222",
+    "flag": "🇲🇷",
+    "iso": "mr",
+    "flagUrl": "https://flagcdn.com/w40/mr.png"
+  },
+  {
+    "country": "Mauritius",
+    "code": "+230",
+    "flag": "🇲🇺",
+    "iso": "mu",
+    "flagUrl": "https://flagcdn.com/w40/mu.png"
+  },
+  {
+    "country": "Mexico",
+    "code": "+52",
+    "flag": "🇲🇽",
+    "iso": "mx",
+    "flagUrl": "https://flagcdn.com/w40/mx.png"
+  },
+  {
+    "country": "Micronesia",
+    "code": "+691",
+    "flag": "🇫🇲",
+    "iso": "fm",
+    "flagUrl": "https://flagcdn.com/w40/fm.png"
+  },
+  {
+    "country": "Moldova",
+    "code": "+373",
+    "flag": "🇲🇩",
+    "iso": "md",
+    "flagUrl": "https://flagcdn.com/w40/md.png"
+  },
+  {
+    "country": "Monaco",
+    "code": "+377",
+    "flag": "🇲🇨",
+    "iso": "mc",
+    "flagUrl": "https://flagcdn.com/w40/mc.png"
+  },
+  {
+    "country": "Mongolia",
+    "code": "+976",
+    "flag": "🇲🇳",
+    "iso": "mn",
+    "flagUrl": "https://flagcdn.com/w40/mn.png"
+  },
+  {
+    "country": "Montenegro",
+    "code": "+382",
+    "flag": "🇲🇪",
+    "iso": "me",
+    "flagUrl": "https://flagcdn.com/w40/me.png"
+  },
+  {
+    "country": "Morocco",
+    "code": "+212",
+    "flag": "🇲🇦",
+    "iso": "ma",
+    "flagUrl": "https://flagcdn.com/w40/ma.png"
+  },
+  {
+    "country": "Mozambique",
+    "code": "+258",
+    "flag": "🇲🇿",
+    "iso": "mz",
+    "flagUrl": "https://flagcdn.com/w40/mz.png"
+  },
+  {
+    "country": "Myanmar",
+    "code": "+95",
+    "flag": "🇲🇲",
+    "iso": "mm",
+    "flagUrl": "https://flagcdn.com/w40/mm.png"
+  },
+  {
+    "country": "Namibia",
+    "code": "+264",
+    "flag": "🇳🇦",
+    "iso": "na",
+    "flagUrl": "https://flagcdn.com/w40/na.png"
+  },
+  {
+    "country": "Nauru",
+    "code": "+674",
+    "flag": "🇳🇷",
+    "iso": "nr",
+    "flagUrl": "https://flagcdn.com/w40/nr.png"
+  },
+  {
+    "country": "Nepal",
+    "code": "+977",
+    "flag": "🇳🇵",
+    "iso": "np",
+    "flagUrl": "https://flagcdn.com/w40/np.png"
+  },
+  {
+    "country": "Netherlands",
+    "code": "+31",
+    "flag": "🇳🇱",
+    "iso": "nl",
+    "flagUrl": "https://flagcdn.com/w40/nl.png"
+  },
+  {
+    "country": "New Zealand",
+    "code": "+64",
+    "flag": "🇳🇿",
+    "iso": "nz",
+    "flagUrl": "https://flagcdn.com/w40/nz.png"
+  },
+  {
+    "country": "Nicaragua",
+    "code": "+505",
+    "flag": "🇳🇮",
+    "iso": "ni",
+    "flagUrl": "https://flagcdn.com/w40/ni.png"
+  },
+  {
+    "country": "Niger",
+    "code": "+227",
+    "flag": "🇳🇪",
+    "iso": "ne",
+    "flagUrl": "https://flagcdn.com/w40/ne.png"
+  },
+  {
+    "country": "Nigeria",
+    "code": "+234",
+    "flag": "🇳🇬",
+    "iso": "ng",
+    "flagUrl": "https://flagcdn.com/w40/ng.png"
+  },
+  {
+    "country": "North Korea",
+    "code": "+850",
+    "flag": "🇰🇵",
+    "iso": "kp",
+    "flagUrl": "https://flagcdn.com/w40/kp.png"
+  },
+  {
+    "country": "North Macedonia",
+    "code": "+389",
+    "flag": "🇲🇰",
+    "iso": "mk",
+    "flagUrl": "https://flagcdn.com/w40/mk.png"
+  },
+  {
+    "country": "Norway",
+    "code": "+47",
+    "flag": "🇳🇴",
+    "iso": "no",
+    "flagUrl": "https://flagcdn.com/w40/no.png"
+  },
+  {
+    "country": "Oman",
+    "code": "+968",
+    "flag": "🇴🇲",
+    "iso": "om",
+    "flagUrl": "https://flagcdn.com/w40/om.png"
+  },
+  {
+    "country": "Pakistan",
+    "code": "+92",
+    "flag": "🇵🇰",
+    "iso": "pk",
+    "flagUrl": "https://flagcdn.com/w40/pk.png"
+  },
+  {
+    "country": "Palau",
+    "code": "+680",
+    "flag": "🇵🇼",
+    "iso": "pw",
+    "flagUrl": "https://flagcdn.com/w40/pw.png"
+  },
+  {
+    "country": "Panama",
+    "code": "+507",
+    "flag": "🇵🇦",
+    "iso": "pa",
+    "flagUrl": "https://flagcdn.com/w40/pa.png"
+  },
+  {
+    "country": "Papua New Guinea",
+    "code": "+675",
+    "flag": "🇵🇬",
+    "iso": "pg",
+    "flagUrl": "https://flagcdn.com/w40/pg.png"
+  },
+  {
+    "country": "Paraguay",
+    "code": "+595",
+    "flag": "🇵🇾",
+    "iso": "py",
+    "flagUrl": "https://flagcdn.com/w40/py.png"
+  },
+  {
+    "country": "Peru",
+    "code": "+51",
+    "flag": "🇵🇪",
+    "iso": "pe",
+    "flagUrl": "https://flagcdn.com/w40/pe.png"
+  },
+  {
+    "country": "Philippines",
+    "code": "+63",
+    "flag": "🇵🇭",
+    "iso": "ph",
+    "flagUrl": "https://flagcdn.com/w40/ph.png"
+  },
+  {
+    "country": "Poland",
+    "code": "+48",
+    "flag": "🇵🇱",
+    "iso": "pl",
+    "flagUrl": "https://flagcdn.com/w40/pl.png"
+  },
+  {
+    "country": "Portugal",
+    "code": "+351",
+    "flag": "🇵🇹",
+    "iso": "pt",
+    "flagUrl": "https://flagcdn.com/w40/pt.png"
+  },
+  {
+    "country": "Qatar",
+    "code": "+974",
+    "flag": "🇶🇦",
+    "iso": "qa",
+    "flagUrl": "https://flagcdn.com/w40/qa.png"
+  },
+  {
+    "country": "Romania",
+    "code": "+40",
+    "flag": "🇷🇴",
+    "iso": "ro",
+    "flagUrl": "https://flagcdn.com/w40/ro.png"
+  },
+  {
+    "country": "Russia",
+    "code": "+7",
+    "flag": "🇷🇺",
+    "iso": "ru",
+    "flagUrl": "https://flagcdn.com/w40/ru.png"
+  },
+  {
+    "country": "Rwanda",
+    "code": "+250",
+    "flag": "🇷🇼",
+    "iso": "rw",
+    "flagUrl": "https://flagcdn.com/w40/rw.png"
+  },
+  {
+    "country": "Saint Kitts and Nevis",
+    "code": "+1-869",
+    "flag": "🇰🇳",
+    "iso": "kn",
+    "flagUrl": "https://flagcdn.com/w40/kn.png"
+  },
+  {
+    "country": "Saint Lucia",
+    "code": "+1-758",
+    "flag": "🇱🇨",
+    "iso": "lc",
+    "flagUrl": "https://flagcdn.com/w40/lc.png"
+  },
+  {
+    "country": "Saint Vincent and the Grenadines",
+    "code": "+1-784",
+    "flag": "🇻🇨",
+    "iso": "vc",
+    "flagUrl": "https://flagcdn.com/w40/vc.png"
+  },
+  {
+    "country": "Samoa",
+    "code": "+685",
+    "flag": "🇼🇸",
+    "iso": "ws",
+    "flagUrl": "https://flagcdn.com/w40/ws.png"
+  },
+  {
+    "country": "San Marino",
+    "code": "+378",
+    "flag": "🇸🇲",
+    "iso": "sm",
+    "flagUrl": "https://flagcdn.com/w40/sm.png"
+  },
+  {
+    "country": "Sao Tome and Principe",
+    "code": "+239",
+    "flag": "🇸🇹",
+    "iso": "st",
+    "flagUrl": "https://flagcdn.com/w40/st.png"
+  },
+  {
+    "country": "Saudi Arabia",
+    "code": "+966",
+    "flag": "🇸🇦",
+    "iso": "sa",
+    "flagUrl": "https://flagcdn.com/w40/sa.png"
+  },
+  {
+    "country": "Senegal",
+    "code": "+221",
+    "flag": "🇸🇳",
+    "iso": "sn",
+    "flagUrl": "https://flagcdn.com/w40/sn.png"
+  },
+  {
+    "country": "Serbia",
+    "code": "+381",
+    "flag": "🇷🇸",
+    "iso": "rs",
+    "flagUrl": "https://flagcdn.com/w40/rs.png"
+  },
+  {
+    "country": "Seychelles",
+    "code": "+248",
+    "flag": "🇸🇨",
+    "iso": "sc",
+    "flagUrl": "https://flagcdn.com/w40/sc.png"
+  },
+  {
+    "country": "Sierra Leone",
+    "code": "+232",
+    "flag": "🇸🇱",
+    "iso": "sl",
+    "flagUrl": "https://flagcdn.com/w40/sl.png"
+  },
+  {
+    "country": "Singapore",
+    "code": "+65",
+    "flag": "🇸🇬",
+    "iso": "sg",
+    "flagUrl": "https://flagcdn.com/w40/sg.png"
+  },
+  {
+    "country": "Slovakia",
+    "code": "+421",
+    "flag": "🇸🇰",
+    "iso": "sk",
+    "flagUrl": "https://flagcdn.com/w40/sk.png"
+  },
+  {
+    "country": "Slovenia",
+    "code": "+386",
+    "flag": "🇸🇮",
+    "iso": "si",
+    "flagUrl": "https://flagcdn.com/w40/si.png"
+  },
+  {
+    "country": "Solomon Islands",
+    "code": "+677",
+    "flag": "🇸🇧",
+    "iso": "sb",
+    "flagUrl": "https://flagcdn.com/w40/sb.png"
+  },
+  {
+    "country": "Somalia",
+    "code": "+252",
+    "flag": "🇸🇴",
+    "iso": "so",
+    "flagUrl": "https://flagcdn.com/w40/so.png"
+  },
+  {
+    "country": "South Africa",
+    "code": "+27",
+    "flag": "🇿🇦",
+    "iso": "za",
+    "flagUrl": "https://flagcdn.com/w40/za.png"
+  },
+  {
+    "country": "South Korea",
+    "code": "+82",
+    "flag": "🇰🇷",
+    "iso": "kr",
+    "flagUrl": "https://flagcdn.com/w40/kr.png"
+  },
+  {
+    "country": "South Sudan",
+    "code": "+211",
+    "flag": "🇸🇸",
+    "iso": "ss",
+    "flagUrl": "https://flagcdn.com/w40/ss.png"
+  },
+  {
+    "country": "Spain",
+    "code": "+34",
+    "flag": "🇪🇸",
+    "iso": "es",
+    "flagUrl": "https://flagcdn.com/w40/es.png"
+  },
+  {
+    "country": "Sri Lanka",
+    "code": "+94",
+    "flag": "🇱🇰",
+    "iso": "lk",
+    "flagUrl": "https://flagcdn.com/w40/lk.png"
+  },
+  {
+    "country": "State of Palestine",
+    "code": "+970",
+    "flag": "🇵🇸",
+    "iso": "ps",
+    "flagUrl": "https://flagcdn.com/w40/ps.png"
+  },
+  {
+    "country": "Sudan",
+    "code": "+249",
+    "flag": "🇸🇩",
+    "iso": "sd",
+    "flagUrl": "https://flagcdn.com/w40/sd.png"
+  },
+  {
+    "country": "Suriname",
+    "code": "+597",
+    "flag": "🇸🇷",
+    "iso": "sr",
+    "flagUrl": "https://flagcdn.com/w40/sr.png"
+  },
+  {
+    "country": "Sweden",
+    "code": "+46",
+    "flag": "🇸🇪",
+    "iso": "se",
+    "flagUrl": "https://flagcdn.com/w40/se.png"
+  },
+  {
+    "country": "Switzerland",
+    "code": "+41",
+    "flag": "🇨🇭",
+    "iso": "ch",
+    "flagUrl": "https://flagcdn.com/w40/ch.png"
+  },
+  {
+    "country": "Syria",
+    "code": "+963",
+    "flag": "🇸🇾",
+    "iso": "sy",
+    "flagUrl": "https://flagcdn.com/w40/sy.png"
+  },
+  {
+    "country": "Tajikistan",
+    "code": "+992",
+    "flag": "🇹🇯",
+    "iso": "tj",
+    "flagUrl": "https://flagcdn.com/w40/tj.png"
+  },
+  {
+    "country": "Tanzania",
+    "code": "+255",
+    "flag": "🇹🇿",
+    "iso": "tz",
+    "flagUrl": "https://flagcdn.com/w40/tz.png"
+  },
+  {
+    "country": "Thailand",
+    "code": "+66",
+    "flag": "🇹🇭",
+    "iso": "th",
+    "flagUrl": "https://flagcdn.com/w40/th.png"
+  },
+  {
+    "country": "Timor-Leste",
+    "code": "+670",
+    "flag": "🇹🇱",
+    "iso": "tl",
+    "flagUrl": "https://flagcdn.com/w40/tl.png"
+  },
+  {
+    "country": "Togo",
+    "code": "+228",
+    "flag": "🇹🇬",
+    "iso": "tg",
+    "flagUrl": "https://flagcdn.com/w40/tg.png"
+  },
+  {
+    "country": "Tonga",
+    "code": "+676",
+    "flag": "🇹🇴",
+    "iso": "to",
+    "flagUrl": "https://flagcdn.com/w40/to.png"
+  },
+  {
+    "country": "Trinidad and Tobago",
+    "code": "+1-868",
+    "flag": "🇹🇹",
+    "iso": "tt",
+    "flagUrl": "https://flagcdn.com/w40/tt.png"
+  },
+  {
+    "country": "Tunisia",
+    "code": "+216",
+    "flag": "🇹🇳",
+    "iso": "tn",
+    "flagUrl": "https://flagcdn.com/w40/tn.png"
+  },
+  {
+    "country": "Turkey",
+    "code": "+90",
+    "flag": "🇹🇷",
+    "iso": "tr",
+    "flagUrl": "https://flagcdn.com/w40/tr.png"
+  },
+  {
+    "country": "Turkmenistan",
+    "code": "+993",
+    "flag": "🇹🇲",
+    "iso": "tm",
+    "flagUrl": "https://flagcdn.com/w40/tm.png"
+  },
+  {
+    "country": "Tuvalu",
+    "code": "+688",
+    "flag": "🇹🇻",
+    "iso": "tv",
+    "flagUrl": "https://flagcdn.com/w40/tv.png"
+  },
+  {
+    "country": "Uganda",
+    "code": "+256",
+    "flag": "🇺🇬",
+    "iso": "ug",
+    "flagUrl": "https://flagcdn.com/w40/ug.png"
+  },
+  {
+    "country": "Ukraine",
+    "code": "+380",
+    "flag": "🇺🇦",
+    "iso": "ua",
+    "flagUrl": "https://flagcdn.com/w40/ua.png"
+  },
+  {
+    "country": "United Arab Emirates",
+    "code": "+971",
+    "flag": "🇦🇪",
+    "iso": "ae",
+    "flagUrl": "https://flagcdn.com/w40/ae.png"
+  },
+  {
+    "country": "United Kingdom",
+    "code": "+44",
+    "flag": "🇬🇧",
+    "iso": "gb",
+    "flagUrl": "https://flagcdn.com/w40/gb.png"
+  },
+  {
+    "country": "United States",
+    "code": "+1",
+    "flag": "🇺🇸",
+    "iso": "us",
+    "flagUrl": "https://flagcdn.com/w40/us.png"
+  },
+  {
+    "country": "Uruguay",
+    "code": "+598",
+    "flag": "🇺🇾",
+    "iso": "uy",
+    "flagUrl": "https://flagcdn.com/w40/uy.png"
+  },
+  {
+    "country": "Uzbekistan",
+    "code": "+998",
+    "flag": "🇺🇿",
+    "iso": "uz",
+    "flagUrl": "https://flagcdn.com/w40/uz.png"
+  },
+  {
+    "country": "Vanuatu",
+    "code": "+678",
+    "flag": "🇻🇺",
+    "iso": "vu",
+    "flagUrl": "https://flagcdn.com/w40/vu.png"
+  },
+  {
+    "country": "Vatican City",
+    "code": "+379",
+    "flag": "🇻🇦",
+    "iso": "va",
+    "flagUrl": "https://flagcdn.com/w40/va.png"
+  },
+  {
+    "country": "Venezuela",
+    "code": "+58",
+    "flag": "🇻🇪",
+    "iso": "ve",
+    "flagUrl": "https://flagcdn.com/w40/ve.png"
+  },
+  {
+    "country": "Vietnam",
+    "code": "+84",
+    "flag": "🇻🇳",
+    "iso": "vn",
+    "flagUrl": "https://flagcdn.com/w40/vn.png"
+  },
+  {
+    "country": "Yemen",
+    "code": "+967",
+    "flag": "🇾🇪",
+    "iso": "ye",
+    "flagUrl": "https://flagcdn.com/w40/ye.png"
+  },
+  {
+    "country": "Zambia",
+    "code": "+260",
+    "flag": "🇿🇲",
+    "iso": "zm",
+    "flagUrl": "https://flagcdn.com/w40/zm.png"
+  },
+  {
+    "country": "Zimbabwe",
+    "code": "+263",
+    "flag": "🇿🇼",
+    "iso": "zw",
+    "flagUrl": "https://flagcdn.com/w40/zw.png"
+  },
+  {
+    "country": "Other",
+    "code": "+",
+    "flag": "🌐",
+    "iso": "un",
+    "flagUrl": "https://flagcdn.com/w40/un.png"
+  }
+]

@@ -1,47 +1,242 @@
 [
   {
-    "label": "Climate Change",
+    "label": "Climate Finance & Public Financial Management",
+    "path": "/executive-training/climate-finance",
+    "id": "climate-finance",
+    "children": [
+      {
+        "label": "Climate Finance and Investment Strategies (2 Weeks)",
+        "path": "/executive-training/climate-finance-and-investment-strategies"
+      },
+      {
+        "label": "Climate-Responsive Budgeting & Strategic Fiscal Management (3 Weeks)",
+        "path": "/executive-training/climate-responsive-budgeting-and-strategic-fiscal-management"
+      },
+      {
+        "label": "Strategic Climate Finance Budgeting, Tracking & Reporting (3 Weeks)",
+        "path": "/executive-training/strategic-climate-finance-budgeting-tracking-and-performance-reporting"
+      },
+      {
+        "label": "Innovations in PFM: Climate Finance, AI & Ethical Leadership (4 Weeks)",
+        "path": "/executive-training/innovations-in-public-financial-management-climate-finance-ai-ethical-leadership"
+      },
+      {
+        "label": "Certified Expert in Climate Adaptation Finance",
+        "path": "/executive-training/certified-expert-in-climate-adaptation-finance"
+      },
+      {
+        "label": "Certificate in Green Finance",
+        "path": "/executive-training/certificate-in-green-finance"
+      },
+      {
+        "label": "Certified Expert in Biodiversity Finance",
+        "path": "/executive-training/certified-expert-in-biodiversity-finance"
+      },
+      {
+        "label": "Certified Expert in Sustainable Finance",
+        "path": "/executive-training/certified-expert-in-sustainable-finance"
+      }
+    ]
+  },
+  {
+    "label": "Climate Change & Sustainability",
     "path": "/executive-training/climate-change",
     "id": "climate-change",
     "children": [
-      { "label": "Energy and Green Economy", "path": "/executive-training/energy" },
-      { "label": "Climate-Smart Forestry", "path": "/executive-training/climate-smart-forestry" },
-      { "label": "Energy Transition and Mobility", "path": "/executive-training/energy-transition-and-mobility" },
-      { "label": "Agricultural carbon credit markets", "path": "/executive-training/agricultural-carbon-credit-markets" },
-      { "label": "Agriculture and Food Systems", "path": "/executive-training/agriculture-and-food-systems" },
-      { "label": "An Introduction to Climate Change and Human Rights", "path": "/executive-training/an-introduction-to-climate-change-and-human-rights" },
-      { "label": "Certified Expert in Climate Adaptation Finance", "path": "/executive-training/certified-expert-in-climate-adaptation-finance" }
+      {
+        "label": "Energy and Green Economy",
+        "path": "/executive-training/energy"
+      },
+      {
+        "label": "Climate-Smart Forestry",
+        "path": "/executive-training/climate-smart-forestry"
+      },
+      {
+        "label": "Energy Transition and Mobility",
+        "path": "/executive-training/energy-transition-and-mobility"
+      },
+      {
+        "label": "Agriculture and Food Systems",
+        "path": "/executive-training/agriculture-and-food-systems"
+      },
+      {
+        "label": "Climate Change and Human Rights",
+        "path": "/executive-training/an-introduction-to-climate-change-and-human-rights"
+      },
+      {
+        "label": "Nature-Based Solutions for Disaster & Climate Resilience",
+        "path": "/executive-training/certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience"
+      },
+      {
+        "label": "Climate & Biodiversity Certificate Program",
+        "path": "/executive-training/climate-biodiversity-certificate-program"
+      },
+      {
+        "label": "Climate and Health Certificate Course",
+        "path": "/executive-training/climate-and-health-certificate-course"
+      },
+      {
+        "label": "Climate Change and Water",
+        "path": "/executive-training/climate-change-and-water"
+      },
+      {
+        "label": "Climate Resilient Infrastructure Development",
+        "path": "/executive-training/climate-resilient-infrastructure"
+      }
     ]
   },
-  { "label": "Biodiversity and Natural Resources", "path": "/executive-training/biodiversity-and-natural-resources" },
-  { "label": "Business Sustainability Management", "path": "/executive-training/business-sustainability-management" },
   {
-    "label": "Carbon Markets",
+    "label": "Carbon Markets & ESG",
     "path": "/executive-training/carbon-markets",
     "id": "carbon-markets",
     "children": [
-      { "label": "Carbon Accounting & Carbon Offsetting Course", "path": "/executive-training/carbon-accounting-carbon-offsetting-course" },
-      { "label": "Certificate Course on Nature Based Solutions for Disaster and Climate Resilience", "path": "/executive-training/certificate-course-on-nature-based-solutions-for-disaster-and-climate-resilience" },
-      { "label": "Certificate in Green Finance", "path": "/executive-training/certificate-in-green-finance" },
-      { "label": "Certified Expert in Biodiversity Finance", "path": "/executive-training/certified-expert-in-biodiversity-finance" },
-      { "label": "Certified Expert in Environmental Accounting, Leadership and Sustainability", "path": "/executive-training/certified-expert-in-environmental-accounting" },
-      { "label": "Certified Expert in Sustainable Finance", "path": "/executive-training/certified-expert-in-sustainable-finance" },
-      { "label": "Climate & Biodiversity Certificate Program", "path": "/executive-training/climate-biodiversity-certificate-program" },
-      { "label": "CLIMATE AND HEALTH CERTIFICATE COURSE", "path": "/executive-training/climate-and-health-certificate-course" },
-      { "label": "Climate Change and Water", "path": "/executive-training/climate-change-and-water" }
+      {
+        "label": "Carbon Accounting & Carbon Offsetting Course",
+        "path": "/executive-training/carbon-accounting-carbon-offsetting-course"
+      },
+      {
+        "label": "Agricultural Carbon Credit Markets",
+        "path": "/executive-training/agricultural-carbon-credit-markets"
+      },
+      {
+        "label": "Training on Carbon Markets and Trading",
+        "path": "/executive-training/training-on-carbon-markets"
+      },
+      {
+        "label": "Environmental, Social and Governance (ESG)",
+        "path": "/executive-training/esg"
+      },
+      {
+        "label": "Certified Expert in Environmental Accounting & Sustainability",
+        "path": "/executive-training/certified-expert-in-environmental-accounting"
+      },
+      {
+        "label": "Business Sustainability Management",
+        "path": "/executive-training/business-sustainability-management"
+      }
     ]
   },
-  { "label": "Human Resources Professional Courses", "path": "/executive-training/human-resources-professional-courses" },
-  { "label": "Green Skills Development", "path": "/executive-training/green-skills-development" },
   {
-    "label": "Past Training",
-    "path": "/executive-training/past-training",
-    "id": "past-training",
+    "label": "Leadership, Governance & Public Sector",
+    "path": "/executive-training/leadership-and-corporate-governance",
+    "id": "leadership-governance",
     "children": [
-      { "label": "CLIMATE RESILIENT INFRASTRACTURE DEVELOPMENT TRAINING COURSE", "path": "/executive-training/climate-resilient-infrastructure" },
-      { "label": "ENVIRONMENT, CLIMATE CHANGE, ENERGY, AND SUSTAINABILITY COURSES", "path": "/executive-training/environment-climate-change-courses" },
-      { "label": "REGIONAL WORKSHOP: CLIMATE CHANGE AND FOOD SYSTEMS TRANSFORMATION", "path": "/executive-training/regional-workshop" },
-      { "label": "TRAINING ON CARBON MARKETS AND TRADING", "path": "/executive-training/training-on-carbon-markets" }
+      {
+        "label": "Governance, Ethics and Anti-Corruption Reforms (2 Weeks)",
+        "path": "/executive-training/governance-ethics-and-anti-corruption-reforms"
+      },
+      {
+        "label": "Proactive Management & Strategic Leadership (2 Weeks)",
+        "path": "/executive-training/proactive-management-and-strategic-leadership"
+      },
+      {
+        "label": "Innovations in PFM, Climate Finance, AI & Ethical Leadership",
+        "path": "/executive-training/innovations-in-public-financial-management-climate-finance-ai-ethical-leadership"
+      },
+      {
+        "label": "Organizational Change Management",
+        "path": "/executive-training/organizational-change-management"
+      },
+      {
+        "label": "Design Thinking in Policy Reforms",
+        "path": "/executive-training/design-thinking-in-policy-reforms"
+      }
+    ]
+  },
+  {
+    "label": "Project Management, Procurement & M&E",
+    "path": "/executive-training/project-management-and-me",
+    "id": "project-management",
+    "children": [
+      {
+        "label": "AI in Project Management, Monitoring & Evaluation (2 Weeks)",
+        "path": "/executive-training/artificial-intelligence-in-project-management-me"
+      },
+      {
+        "label": "Public Procurement Process and Asset Management (2 Weeks)",
+        "path": "/executive-training/public-procurement-process-and-asset-management"
+      },
+      {
+        "label": "Structuring & Managing a Special Purpose Vehicle (SPV) for PPP",
+        "path": "/executive-training/structuring-and-managing-special-purpose-vehicle-for-ppp"
+      }
+    ]
+  },
+  {
+    "label": "HR, Office Administration & PR",
+    "path": "/executive-training/human-resources",
+    "id": "hr-admin",
+    "children": [
+      {
+        "label": "Management Course for Office Administrators: 5IR & AI (2 Weeks)",
+        "path": "/executive-training/management-course-for-office-administrators-5ir-ai"
+      },
+      {
+        "label": "Modern Office Productivity: Time, Workflow & Digital Work (3 Weeks)",
+        "path": "/executive-training/modern-office-productivity-time-workflow-and-digital-work-management"
+      },
+      {
+        "label": "Government Protocol, Etiquette and Events Management (2 Weeks)",
+        "path": "/executive-training/government-protocol-etiquette-and-events-management"
+      },
+      {
+        "label": "21st Century, Public Relations and Interpersonal Skills (2 Weeks)",
+        "path": "/executive-training/21st-century-public-relations-and-interpersonal-skills"
+      },
+      {
+        "label": "Communication & Public Relations Courses",
+        "path": "/executive-training/communication-and-public-relations"
+      },
+      {
+        "label": "Human Resources Professional Courses",
+        "path": "/executive-training/human-resources-professional-courses"
+      }
+    ]
+  },
+  {
+    "label": "Data, AI, IT & Cybersecurity",
+    "path": "/executive-training/data-and-it",
+    "id": "data-ai-it",
+    "children": [
+      {
+        "label": "Learning from Big Data, Data Mining & Business Analytics",
+        "path": "/executive-training/learning-from-big-data-data-mining-and-business-analytics"
+      },
+      {
+        "label": "Secure Coding for Software Security Engineering Programme",
+        "path": "/executive-training/secure-coding-for-software-security-engineering-programme"
+      },
+      {
+        "label": "Artificial Intelligence in Project Management & M&E",
+        "path": "/executive-training/artificial-intelligence-in-project-management-me"
+      },
+      {
+        "label": "Artificial Intelligence & Machine Learning Courses",
+        "path": "/executive-training/artificial-intelligence"
+      }
+    ]
+  },
+  {
+    "label": "Air Quality, Environment & HSE",
+    "path": "/executive-training/environmental-health-and-safety",
+    "id": "ehs-air-quality",
+    "children": [
+      {
+        "label": "Air Quality Policy, Monitoring & Management",
+        "path": "/executive-training/air-quality"
+      },
+      {
+        "label": "Biodiversity and Natural Resources",
+        "path": "/executive-training/biodiversity-and-natural-resources"
+      },
+      {
+        "label": "Green Skills Development",
+        "path": "/executive-training/green-skills-development"
+      },
+      {
+        "label": "Environment, Climate Change, Energy & Sustainability",
+        "path": "/executive-training/environment-climate-change-courses"
+      }
     ]
   }
 ]

@@ -147,8 +147,8 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/60 text-center">
-          <p>Copyright © ECAS Institute, {year}.</p>
+        <div className="border-t border-white/20 pt-8 flex justify-center items-center text-sm text-white/60 text-center">
+          <p className="w-full text-center">Copyright © ECAS Institute, {year}. All rights reserved.</p>
         </div>
       </div>
     </footer>
