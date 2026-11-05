@@ -1499,6 +1499,18 @@ export default function ExecutiveTraining() {
       }
       const qSearch = searchParams.get('q');
       if (qSearch !== null) setSearchQuery(qSearch);
+
+      const qLoc = searchParams.get('location');
+      if (qLoc) {
+        const matched = TRAINING_VENUES.find((v) =>
+          v.toLowerCase().includes(qLoc.toLowerCase().split('-')[0].trim()) ||
+          qLoc.toLowerCase().includes(v.toLowerCase().split(',')[0].trim())
+        );
+        if (matched) {
+          setSelectedVenues([matched]);
+          setOpenFilterSections((prev) => ({ ...prev, venue: true }));
+        }
+      }
       setCurrentPage(1);
     }
   }, [slug, courseInfo, searchParams]);
@@ -2062,7 +2074,7 @@ export default function ExecutiveTraining() {
                             </span>
                             <span>
                               <MapPin className="w-3.5 h-3.5 text-[#032e42]" />
-                              {course.location || 'Nairobi / Mombasa / Kigali / Online'}
+                              {course.location ? `${course.location.replace(/ \/ Online$/, '')} / Dubai / Malaysia / Online` : 'Nairobi / Mombasa / Kigali / Dubai / Malaysia / Online'}
                             </span>
                           </div>
                         </div>
@@ -2540,7 +2552,7 @@ export default function ExecutiveTraining() {
               </span>
               <span>
                 <MapPin className="w-4 h-4 text-[#008000]" />
-                <strong>Venues:</strong> {courseInfo.location || 'Nairobi, Mombasa, Kigali, Arusha, Dubai & Online'}
+                <strong>Venues:</strong> Nairobi, Mombasa, Kigali, Arusha, Dubai, Malaysia & Online
               </span>
               <span>
                 <Award className="w-4 h-4 text-[#008000]" />
