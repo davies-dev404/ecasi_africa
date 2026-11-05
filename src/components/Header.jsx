@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu, X, Phone, Clock, ChevronDown, ChevronRight, Mail, Search,
@@ -267,6 +267,48 @@ const Header = () => {
 
   const coursesLinks = dataService.getCoursesLinks() || [];
 
+  const groupToCategoryMap = {
+    'climate-finance': 'Climate Finance & Public Financial Management',
+    'climate-change': 'Climate Change & Sustainability',
+    'carbon-markets': 'Carbon Markets & ESG',
+    'leadership-governance': 'Leadership, Governance & Public Sector Transformation',
+    'leadership': 'Leadership, Governance & Public Sector Transformation',
+    'project-management': 'Project Management, Procurement & M&E',
+    'hr-admin': 'Human Resources, Office Administration & Communication',
+    'hr': 'Human Resources, Office Administration & Communication',
+    'data-ai-it': 'Data, Artificial Intelligence, IT & Cybersecurity',
+    'data-it': 'Data, Artificial Intelligence, IT & Cybersecurity',
+    'ehs-air-quality': 'Air Quality, Environmental Health & Safety (EHS)',
+    'environment': 'Air Quality, Environmental Health & Safety (EHS)',
+  };
+
+  const categoryCourseCounts = useMemo(() => {
+    const raw = dataService.getCourses();
+    if (!raw) return {};
+    const courses = Array.isArray(raw) ? raw : Object.values(raw);
+    const counts = {};
+    courses.filter((c) => !c.isCategoryPage).forEach((c) => {
+      const cat = c.category;
+      if (cat) counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  }, []);
+
+  const getCategoryCount = (catGroup) => {
+    const catName = groupToCategoryMap[catGroup.id] || groupToCategoryMap[catGroup.label] || catGroup.label;
+    if (categoryCourseCounts[catName]) {
+      return categoryCourseCounts[catName];
+    }
+    const normTarget = (catName || '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+    for (const [realCat, count] of Object.entries(categoryCourseCounts)) {
+      const normReal = realCat.replace(/[^a-z0-9]/gi, '').toLowerCase();
+      if (normReal === normTarget || normReal.includes(normTarget) || normTarget.includes(normReal)) {
+        return count;
+      }
+    }
+    return (catGroup.children || []).length;
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -492,7 +534,7 @@ const Header = () => {
                                 Executive Training &amp; Professional Capacity Development
                               </h3>
                               <p className="text-xs text-slate-500">
-                                Explore 200+ practical courses across 8 thematic faculties in Nairobi, Mombasa, Kigali, Dubai &amp; Online
+                                Explore 200+ practical courses across 8 thematic faculties in Nairobi, Mombasa, Kigali, Dubai, Malaysia &amp; Online
                               </p>
                             </div>
                           </div>
@@ -554,7 +596,7 @@ const Header = () => {
                                   onClick={() => setActiveDropdown(null)}
                                   className="text-[11.5px] font-bold text-[#008000] hover:text-[#1e73be] inline-flex items-center gap-1"
                                 >
-                                  View all {(catGroup.children || []).length} courses »
+                                  View all {getCategoryCount(catGroup)} courses »
                                 </Link>
                               </div>
                             </div>

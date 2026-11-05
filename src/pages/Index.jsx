@@ -64,6 +64,7 @@ const searchLocations = [
   "Kigali - Rwanda",
   "Kampala - Uganda",
   "Dubai - UAE",
+"Kuala Lumpur - Malaysia",
   "Abuja - Nigeria",
   "Accra - Ghana",
   "Pretoria - South Africa",

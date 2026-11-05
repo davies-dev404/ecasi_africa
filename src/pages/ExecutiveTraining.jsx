@@ -108,7 +108,7 @@ const categoryDescriptions = {
 };
 
 const DELIVERY_FORMATS = ['Classroom (In-Person)', 'Online (Virtual)', 'In-House / Custom'];
-const TRAINING_VENUES = ['Nairobi, Kenya', 'Mombasa, Kenya', 'Naivasha, Kenya', 'Arusha, Tanzania', 'Kigali, Rwanda', 'Dubai, UAE', 'Online / Virtual'];
+const TRAINING_VENUES = ['Nairobi, Kenya', 'Mombasa, Kenya', 'Naivasha, Kenya', 'Arusha, Tanzania', 'Kigali, Rwanda', 'Dubai, UAE', 'Kuala Lumpur, Malaysia', 'Online / Virtual'];
 const TRAINING_DURATIONS = ['5 Days', '10 Days (2 Weeks)', '3 Weeks'];
 
 /* ── Helper to clean and format raw WP/HTML course content into Devimpact style ── */
@@ -2636,7 +2636,7 @@ export default function ExecutiveTraining() {
                 <MapPin className="w-3.5 h-3.5 text-[#008000]" />
                 Venues
               </span>
-              <span className="val">Nairobi, Mombasa, Kigali, Dubai</span>
+              <span className="val">Nairobi, Mombasa, Kigali, Dubai, Malaysia</span>
             </div>
             <div className="course-time-row">
               <span className="label">
