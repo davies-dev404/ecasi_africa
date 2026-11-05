@@ -1613,9 +1613,10 @@ export default function ExecutiveTraining() {
     setModalConfig((prev) => ({ ...prev, isOpen: false }));
   };
 
+
   const handleInquiryAction = (channel) => {
     const isCustomInHouse = modalConfig.type === 'inhouse';
-    const courseTitle = modalConfig.courseTitle || courseInfo?.title || 'Executive Training';
+    const courseTitle = modalConfig.courseTitle || courseInfo?.title || 'Executive Training Programme';
     const dates = modalConfig.cohortDates;
     const venue = modalConfig.cohortVenue;
     const fee = modalConfig.cohortFee;
@@ -1624,52 +1625,37 @@ export default function ExecutiveTraining() {
     closeModal();
 
     if (channel === 'whatsapp') {
-      const msgLines = [
-        `Hello ECAS Institute,`,
-        ``,
-        isCustomInHouse
-          ? `I would like to inquire about a tailored In-House Training proposal for our team regarding:`
-          : `I would like to inquire about enrolling in this upcoming executive training course:`,
-        ``,
-        `• Course: ${courseTitle}`,
-        code ? `• Code: ${code}` : null,
-        dates ? `• Cohort Dates: ${dates}` : null,
-        venue ? `• Venue: ${venue}` : null,
-        fee ? `• Tuition Fee: ${fee}` : null,
-        ``,
-        `Please share the full course brochure, available admission slots, and payment guidelines.`
-      ].filter(Boolean).join('\n');
+      const msg = buildCorporateWhatsAppMessage({
+        type: modalConfig.type,
+        courseTitle,
+        code,
+        dates,
+        venue,
+        fee,
+      });
 
-      const waUrl = `https://wa.me/254728925306?text=${encodeURIComponent(msgLines)}`;
+      const waUrl = `https://wa.me/254728925306?text=${encodeURIComponent(msg)}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
       setToastMessage(`Opening WhatsApp to inquire about "${courseTitle}"...`);
     } else if (channel === 'email') {
       const subject = isCustomInHouse
-        ? `In-House Training Inquiry: ${courseTitle}`
-        : `Course Inquiry: ${courseTitle}`;
+        ? `Official Inquiry: Tailored In-House Training — ${courseTitle}`
+        : `Executive Training Inquiry & Proforma Invoice Request — ${courseTitle}`;
 
-      const emailBody = [
-        `Dear ECAS Institute Training Admissions,`,
-        ``,
-        isCustomInHouse
-          ? `I am writing to inquire about organizing a tailored in-house training program for our organization on the following course:`
-          : `I am writing to inquire about the upcoming cohort and admission details for the following course:`,
-        ``,
-        `Course Title: ${courseTitle}`,
-        code ? `Course Code: ${code}` : null,
-        dates ? `Cohort Dates: ${dates}` : null,
-        venue ? `Venue: ${venue}` : null,
-        fee ? `Tuition Fee: ${fee}` : null,
-        ``,
-        `Kindly provide the full course syllabus, admission requirements, and proforma invoice.`,
-        ``,
-        `Best regards,`
-      ].filter(Boolean).join('\n');
+      const emailBody = buildCorporateEmailTemplate({
+        type: modalConfig.type,
+        courseTitle,
+        courseCode: code,
+        cohortDates: dates,
+        cohortVenue: venue,
+        cohortFormat: modalConfig.cohortFormat,
+        cohortFee: fee,
+      });
 
       // Direct Gmail compose web link:
       const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=info@ecasiafrica.org&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
       window.open(gmailUrl, '_blank', 'noopener,noreferrer');
-      setToastMessage(`Opening Gmail to compose inquiry to info@ecasiafrica.org...`);
+      setToastMessage(`Opening Gmail with corporate inquiry template...`);
     }
 
     setTimeout(() => {
@@ -2762,6 +2748,160 @@ export default function ExecutiveTraining() {
   );
 }
 
+/* ── Corporate Executive Email & WhatsApp Template Builders ── */
+function buildCorporateEmailTemplate({
+  type = 'inquiry',
+  courseTitle = 'Executive Training Programme',
+  courseCode = '',
+  cohortDates = '',
+  cohortVenue = '',
+  cohortFormat = '',
+  cohortFee = '',
+}) {
+  const isCustomInHouse = type === 'inhouse';
+
+  if (isCustomInHouse) {
+    return [
+      'Dear ECAS Institute Executive Training Team,',
+      '',
+      'RE: REQUEST FOR CUSTOMIZED IN-HOUSE INSTITUTIONAL TRAINING PROPOSAL',
+      `Programme Focus: ${courseTitle}`,
+      '',
+      'Our organization is interested in commissioning ECAS Institute to deliver a tailored in-house executive training programme for our team.',
+      '',
+      '══════════════════════════════════════════════════════════',
+      'PROPOSED TRAINING PARAMETERS',
+      '══════════════════════════════════════════════════════════',
+      `• Core Subject Area:       ${courseTitle}`,
+      courseCode ? `• Course Reference Code:   ${courseCode}` : null,
+      cohortVenue ? `• Preferred Venue / City:   ${cohortVenue}` : '• Preferred Venue:          On-Site (Client Premises) / Executive Retreat',
+      cohortDates ? `• Target Dates / Intake:    ${cohortDates}` : '• Target Timeline:          Flexible / Upcoming Quarter 2026',
+      `• Delivery Format:          Tailored In-House (Classroom / Hybrid)`,
+      '',
+      '══════════════════════════════════════════════════════════',
+      'INSTITUTIONAL & CONTACT DETAILS',
+      '══════════════════════════════════════════════════════════',
+      '• Sponsoring Organization:  [Enter Ministry / Organization / Company Name]',
+      '• Department / Division:    [Enter Department or Unit]',
+      '• Contact Person & Title:   [Enter Full Name and Official Designation]',
+      '• Official Work Email:      [Enter Corporate / Institutional Email]',
+      '• Telephone / WhatsApp:     [Enter Direct Phone Number]',
+      '• Estimated Participant Count: [e.g. 5 to 25 Delegates]',
+      '',
+      '══════════════════════════════════════════════════════════',
+      'REQUESTED DELIVERABLES & DOCUMENTATION',
+      '══════════════════════════════════════════════════════════',
+      'To enable our executive management and procurement committee to review and approve this engagement, kindly share:',
+      '1. Tailored modular technical syllabus and day-by-day training agenda',
+      '2. Official institutional quotation / proforma invoice addressed to our organization',
+      '3. Lead facilitator profiles and practical case-study learning methodology',
+      '4. Statutory NITA accreditation credentials for training levy reimbursement',
+      '',
+      'We appreciate your prompt assistance and look forward to receiving your customized proposal.',
+      '',
+      'Yours faithfully,',
+      '',
+      '[Your Full Name]',
+      '[Your Job Title]',
+      '[Your Organization / Ministry / Company]',
+      '[Your Direct Telephone Number]'
+    ].filter(Boolean).join('\n');
+  }
+
+  return [
+    'Dear ECAS Institute Admissions & Executive Development Directorate,',
+    '',
+    'RE: OFFICIAL TRAINING INQUIRY & PROFORMA INVOICE REQUEST',
+    `Programme: ${courseTitle}${courseCode ? ` (Ref Code: ${courseCode})` : ''}`,
+    '',
+    'I am writing on behalf of our institution to formally inquire about enrollment, seat reservation, and admission procedures for the following executive programme at ECAS Institute:',
+    '',
+    '══════════════════════════════════════════════════════════',
+    'EXECUTIVE PROGRAMME DETAILS',
+    '══════════════════════════════════════════════════════════',
+    `• Course Title:      ${courseTitle}`,
+    courseCode ? `• Course Code:       ${courseCode}` : null,
+    cohortDates ? `• Cohort Schedule:   ${cohortDates}` : '• Cohort Schedule:   Upcoming 2026 Intake',
+    cohortVenue ? `• Training Venue:    ${cohortVenue}` : '• Training Venue:    Nairobi / Mombasa / Kigali / Online',
+    cohortFormat ? `• Delivery Mode:     ${cohortFormat}` : '• Delivery Mode:     Classroom (In-Person) or Virtual Online',
+    cohortFee ? `• Standard Tuition:  ${cohortFee}` : null,
+    '',
+    '══════════════════════════════════════════════════════════',
+    'DELEGATE & SPONSOR INFORMATION',
+    '══════════════════════════════════════════════════════════',
+    '• Sponsoring Organization:  [Enter Ministry / Corporate / NGO / Self]',
+    '• Nominated Delegate Name:  [Enter Participant Full Name]',
+    '• Designation / Job Title:  [Enter Current Professional Title]',
+    '• Official Work Email:      [Enter Corporate Email Address]',
+    '• Contact Telephone:        [Enter Mobile / WhatsApp Number]',
+    '• Number of Participants:   [e.g. 1 Delegate / Group Booking]',
+    '',
+    '══════════════════════════════════════════════════════════',
+    'REQUESTED DOCUMENTATION & ACTION',
+    '══════════════════════════════════════════════════════════',
+    'To facilitate our internal review, approval, and invoice processing, kindly furnish us with:',
+    '1. Complete course brochure, learning modules, and daily schedule',
+    '2. Official proforma invoice addressed to our sponsoring organization',
+    '3. Available reservation slots and registration deadlines',
+    '4. Bank wire payment guidelines and official admission instructions',
+    '',
+    'Thank you for your prompt cooperation. We look forward to hearing from you.',
+    '',
+    'Yours faithfully,',
+    '',
+    '[Your Full Name]',
+    '[Your Job Title]',
+    '[Your Organization / Ministry / Company]',
+    '[Your Telephone Number]'
+  ].filter(Boolean).join('\n');
+}
+
+function buildCorporateWhatsAppMessage({
+  type = 'inquiry',
+  courseTitle = 'Executive Training Programme',
+  code = '',
+  dates = '',
+  venue = '',
+  fee = '',
+}) {
+  const isCustomInHouse = type === 'inhouse';
+  if (isCustomInHouse) {
+    return [
+      '*ECAS INSTITUTE — IN-HOUSE TRAINING INQUIRY*',
+      '───────────────────────────────',
+      'Dear Admissions Team,',
+      '',
+      'Our organization would like to request an official in-house training proposal for:',
+      `• *Programme:* ${courseTitle}`,
+      code ? `• *Course Code:* ${code}` : null,
+      dates ? `• *Preferred Timeline:* ${dates}` : null,
+      venue ? `• *Preferred Venue:* ${venue}` : null,
+      '',
+      'Kindly share your customized technical syllabus, trainer profiles, and proforma quotation for institutional review.',
+      '',
+      'Thank you.'
+    ].filter(Boolean).join('\n');
+  }
+
+  return [
+    '*ECAS INSTITUTE — EXECUTIVE TRAINING INQUIRY*',
+    '───────────────────────────────',
+    'Dear Admissions Team,',
+    '',
+    'I am inquiring about seat reservation and admission details for:',
+    `• *Course Title:* ${courseTitle}`,
+    code ? `• *Course Code:* ${code}` : null,
+    dates ? `• *Intake Dates:* ${dates}` : null,
+    venue ? `• *Venue:* ${venue}` : null,
+    fee ? `• *Tuition Fee:* ${fee}` : null,
+    '',
+    'Kindly share the complete course curriculum, official proforma invoice, and registration instructions.',
+    '',
+    'Thank you.'
+  ].filter(Boolean).join('\n');
+}
+
+
 /* ── Shared Modal & Toast Renderer (Devimpact #pum-35380 & .enquiry-overlay style) ── */
 function renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handleInquiryAction, toastMessage) {
   return (
@@ -2866,8 +3006,18 @@ function renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handle
                       <a
                         href={`mailto:info@ecasiafrica.org?subject=${encodeURIComponent(
                           modalConfig.type === 'inhouse'
-                            ? `In-House Training Inquiry: ${modalConfig.courseTitle || 'Executive Training'}`
-                            : `Course Inquiry: ${modalConfig.courseTitle || 'Executive Training'}`
+                            ? `Official Inquiry: Tailored In-House Training — ${modalConfig.courseTitle || 'Executive Training'}`
+                            : `Executive Training Inquiry & Proforma Invoice Request — ${modalConfig.courseTitle || 'Executive Training'}`
+                        )}&body=${encodeURIComponent(
+                          buildCorporateEmailTemplate({
+                            type: modalConfig.type,
+                            courseTitle: modalConfig.courseTitle || 'Executive Training Programme',
+                            courseCode: modalConfig.courseCode,
+                            cohortDates: modalConfig.cohortDates,
+                            cohortVenue: modalConfig.cohortVenue,
+                            cohortFormat: modalConfig.cohortFormat,
+                            cohortFee: modalConfig.cohortFee,
+                          })
                         )}`}
                         onClick={closeModal}
                         className="text-center text-[11px] text-slate-500 hover:text-[#008000] hover:underline py-0.5"
