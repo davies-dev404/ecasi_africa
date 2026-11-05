@@ -35,7 +35,8 @@ export default [
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "no-unused-vars": "warn",
       "no-undef": "error",
-      "react/prop-types": "off" 
+      "react/prop-types": "off",
+      "react/no-unknown-property": ["error", { ignore: ["cmdk-input-wrapper"] }] 
     },
   },
 ];

@@ -157,7 +157,7 @@ const Resources = () => {
               <div className="relative z-10 max-w-2xl mx-auto">
                 <h2 className="text-3xl font-bold text-ecasi-navy mb-4">Need specific research data?</h2>
                 <p className="text-gray-600 mb-8 text-lg">
-                  Can't find what you're looking for? Reach out to our research and consultancy team for tailored insights and data.
+                  Can&apos;t find what you&apos;re looking for? Reach out to our research and consultancy team for tailored insights and data.
                 </p>
                 <Link
                   to="/contact"

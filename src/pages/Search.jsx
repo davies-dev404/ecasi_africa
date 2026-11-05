@@ -45,7 +45,7 @@ const Search = () => {
               </h1>
             </div>
             <p className="text-lg text-white/80 max-w-2xl leading-relaxed">
-              Showing results for: <span className="font-semibold text-white">"{query}"</span>
+              Showing results for: <span className="font-semibold text-white">&ldquo;{query}&rdquo;</span>
             </p>
           </ScrollAnimation>
         </div>
@@ -74,7 +74,7 @@ const Search = () => {
               <div className="text-center py-12 md:py-16">
                 <SearchIcon size={48} className="mx-auto text-gray-300 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-500 mb-2">No results found</h3>
-                <p className="text-gray-400">We couldn't find anything matching "{query}". Please try a different search term.</p>
+                <p className="text-gray-400">We couldn&apos;t find anything matching &ldquo;{query}&rdquo;. Please try a different search term.</p>
               </div>
             )}
           </div>
