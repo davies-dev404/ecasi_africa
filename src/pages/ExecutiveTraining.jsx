@@ -505,15 +505,16 @@ const devimpactCourseStyles = `
     max-width: 1380px;
     width: 100%;
     margin: 0 auto;
-    padding: 36px 24px 64px 24px;
-    display: grid;
-    grid-template-columns: 310px 1fr;
-    gap: 32px;
-    align-items: start;
+    padding: 24px 16px 64px 16px;
+    display: block;
   }
-  @media (max-width: 992px) {
+  @media (min-width: 992px) {
     .courses-loop-wrapper {
-      grid-template-columns: 1fr;
+      display: grid;
+      grid-template-columns: 310px minmax(0, 1fr);
+      gap: 32px;
+      align-items: start;
+      padding: 36px 24px 64px 24px;
     }
   }
 
@@ -524,8 +525,18 @@ const devimpactCourseStyles = `
     border-radius: 10px;
     padding: 18px;
     box-shadow: 0 4px 16px rgba(3, 46, 66, 0.06);
-    position: sticky;
-    top: 96px;
+    position: static;
+  }
+  @media (min-width: 992px) {
+    .course-finder-search-filter {
+      position: sticky;
+      top: 96px;
+    }
+  }
+  @media (max-width: 991px) {
+    .course-finder-search-filter.desktop-only {
+      display: none !important;
+    }
   }
   .course-finder-filter-title {
     font-size: 16px;
@@ -1454,6 +1465,7 @@ export default function ExecutiveTraining() {
   const [viewMode, setViewMode] = useState('list');
   const [currentPage, setCurrentPage] = useState(1);
   const COURSES_PER_PAGE = 14;
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Accordion state in left sidebar filter
   const [openFilterSections, setOpenFilterSections] = useState({
@@ -1519,6 +1531,18 @@ export default function ExecutiveTraining() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [slug]);
+
+  // Lock body scroll when mobile filter drawer is open
+  useEffect(() => {
+    if (mobileFiltersOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileFiltersOpen]);
 
   // Compute unique categories and counts from real courses
   const categoriesWithCounts = useMemo(() => {
@@ -1698,6 +1722,192 @@ export default function ExecutiveTraining() {
   /* ══════════════════════════════════════════════════════════════════════════
      VIEW 1: COURSE CATEGORY ARCHIVE / COURSE FINDER PAGE (Devimpact Clone)
      ══════════════════════════════════════════════════════════════════════════ */
+    const renderFilterControls = (isMobile = false) => (
+    <div>
+      <div className="course-finder-filter-title">
+        <span className="inline-flex items-center gap-2">
+          <SlidersHorizontal className="w-4 h-4 text-[#008000]" />
+          Filter Courses
+        </span>
+        <span className="text-xs font-semibold text-slate-500">
+          {filteredCourses.length} Courses
+        </span>
+      </div>
+
+      {/* Quick keyword input inside sidebar */}
+      <div className="course-finder-search-wrapper">
+        <input
+          type="text"
+          className="course-finder-input-field"
+          placeholder="Quick filter keyword..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+      </div>
+
+      {/* 1. Course Categories Accordion */}
+      <div className="course-finder-toggle-menu">
+        <button
+          type="button"
+          className={`course-finder-toggle-btn ${openFilterSections.categories ? 'active' : ''}`}
+          onClick={() => toggleFilterSection('categories')}
+        >
+          <span>Course Categories</span>
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${openFilterSections.categories ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {openFilterSections.categories && (
+          <div className="course-finder-toggle-content">
+            {categoriesWithCounts.map((cat) => (
+              <label key={cat.name} className="course-finder-checkbox-item">
+                <span className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name={isMobile ? "course_category_mobile" : "course_category"}
+                    checked={selectedCategory === cat.name}
+                    onChange={() => {
+                      setSelectedCategory(cat.name);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <span className="leading-snug">{cat.name}</span>
+                </span>
+                <span className="course-finder-count-pill">{cat.count}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 2. Delivery Format Accordion */}
+      <div className="course-finder-toggle-menu">
+        <button
+          type="button"
+          className={`course-finder-toggle-btn ${openFilterSections.format ? 'active' : ''}`}
+          onClick={() => toggleFilterSection('format')}
+        >
+          <span>Delivery Format</span>
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${openFilterSections.format ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {openFilterSections.format && (
+          <div className="course-finder-toggle-content">
+            {DELIVERY_FORMATS.map((fmt) => (
+              <label key={fmt} className="course-finder-checkbox-item">
+                <span className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedFormats.includes(fmt)}
+                    onChange={() => toggleArrayFilter(setSelectedFormats, fmt)}
+                  />
+                  <span>{fmt}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 3. Training Location / Venue Accordion */}
+      <div className="course-finder-toggle-menu">
+        <button
+          type="button"
+          className={`course-finder-toggle-btn ${openFilterSections.venue ? 'active' : ''}`}
+          onClick={() => toggleFilterSection('venue')}
+        >
+          <span>Training Location</span>
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${openFilterSections.venue ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {openFilterSections.venue && (
+          <div className="course-finder-toggle-content">
+            {TRAINING_VENUES.map((venue) => (
+              <label key={venue} className="course-finder-checkbox-item">
+                <span className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedVenues.includes(venue)}
+                    onChange={() => toggleArrayFilter(setSelectedVenues, venue)}
+                  />
+                  <span>{venue}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 4. Duration Accordion */}
+      <div className="course-finder-toggle-menu">
+        <button
+          type="button"
+          className={`course-finder-toggle-btn ${openFilterSections.duration ? 'active' : ''}`}
+          onClick={() => toggleFilterSection('duration')}
+        >
+          <span>Course Duration</span>
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${openFilterSections.duration ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {openFilterSections.duration && (
+          <div className="course-finder-toggle-content">
+            {TRAINING_DURATIONS.map((dur) => (
+              <label key={dur} className="course-finder-checkbox-item">
+                <span className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedDurations.includes(dur)}
+                    onChange={() => toggleArrayFilter(setSelectedDurations, dur)}
+                  />
+                  <span>{dur}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Reset Filters Button */}
+      <button
+        type="button"
+        className="course-finder-reset-btn"
+        onClick={handleResetFilters}
+      >
+        Reset All Filters
+      </button>
+
+      {/* 2026 Training Calendar Download Box */}
+      <div className="mt-5 p-4 rounded-lg bg-[#032e42] text-white text-center">
+        <Calendar className="w-7 h-7 text-[#008000] mx-auto mb-2" />
+        <h4 className="font-bold text-sm mb-1 text-white">2026 Training Calendar</h4>
+        <p className="text-xs text-white/80 mb-3">
+          Download our full 2026 Executive Training Catalogue & Dates.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            if (isMobile) setMobileFiltersOpen(false);
+            openModal({
+              type: 'calendar',
+              courseTitle: '2026 Executive Training Calendar',
+            });
+          }}
+          className="w-full py-2 px-3 rounded bg-[#008000] hover:bg-[#006600] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 transition"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Download 2026 Calendar
+        </button>
+      </div>
+    </div>
+  );
+
   if (isCategoryOrCatalogView) {
     const activeCatTitle =
       selectedCategory === 'All'
@@ -1788,192 +1998,97 @@ export default function ExecutiveTraining() {
 
         {/* Main Two-Column Loop Wrapper (.courses-loop-wrapper) */}
         <main className="courses-loop-wrapper flex-1">
-          {/* LEFT SIDEBAR: Course Finder Accordion Filter (.course-finder-search-filter) */}
-          <aside className="course-finder-search-filter">
-            <div className="course-finder-filter-title">
-              <span className="inline-flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-[#008000]" />
-                Filter Courses
-              </span>
-              <span className="text-xs font-semibold text-slate-500">
-                {filteredCourses.length} Courses
-              </span>
-            </div>
-
-            {/* Quick keyword input inside sidebar */}
-            <div className="course-finder-search-wrapper">
-              <input
-                type="text"
-                className="course-finder-input-field"
-                placeholder="Quick filter keyword..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-              <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
-            </div>
-
-            {/* 1. Course Categories Accordion */}
-            <div className="course-finder-toggle-menu">
-              <button
-                type="button"
-                className={`course-finder-toggle-btn ${openFilterSections.categories ? 'active' : ''}`}
-                onClick={() => toggleFilterSection('categories')}
-              >
-                <span>Course Categories</span>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${openFilterSections.categories ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {openFilterSections.categories && (
-                <div className="course-finder-toggle-content">
-                  {categoriesWithCounts.map((cat) => (
-                    <label key={cat.name} className="course-finder-checkbox-item">
-                      <span className="inline-flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="course_category"
-                          checked={selectedCategory === cat.name}
-                          onChange={() => {
-                            setSelectedCategory(cat.name);
-                            setCurrentPage(1);
-                          }}
-                        />
-                        <span className="leading-snug">{cat.name}</span>
-                      </span>
-                      <span className="course-finder-count-pill">{cat.count}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 2. Delivery Format Accordion */}
-            <div className="course-finder-toggle-menu">
-              <button
-                type="button"
-                className={`course-finder-toggle-btn ${openFilterSections.format ? 'active' : ''}`}
-                onClick={() => toggleFilterSection('format')}
-              >
-                <span>Delivery Format</span>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${openFilterSections.format ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {openFilterSections.format && (
-                <div className="course-finder-toggle-content">
-                  {DELIVERY_FORMATS.map((fmt) => (
-                    <label key={fmt} className="course-finder-checkbox-item">
-                      <span className="inline-flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedFormats.includes(fmt)}
-                          onChange={() => toggleArrayFilter(setSelectedFormats, fmt)}
-                        />
-                        <span>{fmt}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 3. Training Location / Venue Accordion */}
-            <div className="course-finder-toggle-menu">
-              <button
-                type="button"
-                className={`course-finder-toggle-btn ${openFilterSections.venue ? 'active' : ''}`}
-                onClick={() => toggleFilterSection('venue')}
-              >
-                <span>Training Location</span>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${openFilterSections.venue ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {openFilterSections.venue && (
-                <div className="course-finder-toggle-content">
-                  {TRAINING_VENUES.map((venue) => (
-                    <label key={venue} className="course-finder-checkbox-item">
-                      <span className="inline-flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedVenues.includes(venue)}
-                          onChange={() => toggleArrayFilter(setSelectedVenues, venue)}
-                        />
-                        <span>{venue}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 4. Duration Accordion */}
-            <div className="course-finder-toggle-menu">
-              <button
-                type="button"
-                className={`course-finder-toggle-btn ${openFilterSections.duration ? 'active' : ''}`}
-                onClick={() => toggleFilterSection('duration')}
-              >
-                <span>Course Duration</span>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${openFilterSections.duration ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {openFilterSections.duration && (
-                <div className="course-finder-toggle-content">
-                  {TRAINING_DURATIONS.map((dur) => (
-                    <label key={dur} className="course-finder-checkbox-item">
-                      <span className="inline-flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedDurations.includes(dur)}
-                          onChange={() => toggleArrayFilter(setSelectedDurations, dur)}
-                        />
-                        <span>{dur}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Reset Filters Button */}
-            <button
-              type="button"
-              className="course-finder-reset-btn"
-              onClick={handleResetFilters}
-            >
-              Reset All Filters
-            </button>
-
-            {/* 2026 Training Calendar Download Box */}
-            <div className="mt-5 p-4 rounded-lg bg-[#032e42] text-white text-center">
-              <Calendar className="w-7 h-7 text-[#008000] mx-auto mb-2" />
-              <h4 className="font-bold text-sm mb-1 text-white">2026 Training Calendar</h4>
-              <p className="text-xs text-white/80 mb-3">
-                Download our full 2026 Executive Training Catalogue & Dates.
-              </p>
-              <button
-                type="button"
-                onClick={() =>
-                  openModal({
-                    type: 'calendar',
-                    courseTitle: '2026 Executive Training Calendar',
-                  })
-                }
-                className="w-full py-2 px-3 rounded bg-[#008000] hover:bg-[#006600] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 transition"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Download 2026 Calendar
-              </button>
-            </div>
+          {/* DESKTOP SIDEBAR: Course Finder Accordion Filter (hidden on mobile) */}
+          <aside className="course-finder-search-filter desktop-only hidden lg:block">
+            {renderFilterControls(false)}
           </aside>
 
+          {/* MOBILE OFF-CANVAS SLIDE-OVER DRAWER */}
+          {mobileFiltersOpen && (
+            <div className="fixed inset-0 z-[100] flex lg:hidden">
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                onClick={() => setMobileFiltersOpen(false)}
+                aria-hidden="true"
+              />
+
+              {/* Drawer Content */}
+              <div className="relative ml-auto w-[85%] max-w-[340px] h-full bg-white shadow-2xl flex flex-col z-10 overflow-hidden animate-in slide-in-from-right duration-200">
+                {/* Header */}
+                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <SlidersHorizontal className="w-4 h-4 text-[#008000]" />
+                    <h3 className="font-bold text-sm text-[#032e42]">Filter Courses</h3>
+                    <span className="text-xs bg-[#008000]/10 text-[#008000] font-semibold px-2 py-0.5 rounded-full">
+                      {filteredCourses.length}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileFiltersOpen(false)}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200 transition"
+                    aria-label="Close filters"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Filter Controls Body */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  {renderFilterControls(true)}
+                </div>
+
+                {/* Sticky Drawer Footer */}
+                <div className="p-3 border-t border-slate-200 bg-white flex-shrink-0 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="w-1/3 py-2.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition text-center"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileFiltersOpen(false)}
+                    className="w-2/3 py-2.5 px-4 bg-[#008000] hover:bg-[#006600] text-white font-bold text-xs rounded-lg transition text-center shadow-md"
+                  >
+                    Show ({filteredCourses.length})
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* RIGHT MAIN AREA: Custom Course Loop (.custom-course-loop) */}
-          <section>
+          <section className="min-w-0 w-full">
+            {/* Mobile Filter Trigger Bar (Visible only on mobile < lg / 992px) */}
+            <div className="lg:hidden mb-4 p-3.5 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-[#032e42] truncate">
+                  {selectedCategory === 'All' ? 'All Professional Courses' : selectedCategory}
+                </div>
+                <div className="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
+                  <span>{filteredCourses.length} {filteredCourses.length === 1 ? 'course' : 'courses'} found</span>
+                  {(selectedFormats.length > 0 || selectedVenues.length > 0 || selectedDurations.length > 0 || selectedCategory !== 'All') && (
+                    <span className="text-[#008000] font-semibold bg-[#008000]/10 px-1.5 py-0.5 rounded text-[10px]">
+                      {selectedFormats.length + selectedVenues.length + selectedDurations.length + (selectedCategory !== 'All' ? 1 : 0)} Active
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#008000] hover:bg-[#006600] text-white font-bold text-xs shadow-sm active:scale-95 transition flex-shrink-0"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Filters</span>
+                {(selectedFormats.length > 0 || selectedVenues.length > 0 || selectedDurations.length > 0 || selectedCategory !== 'All') && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                )}
+              </button>
+            </div>
             {/* Header Bar */}
             <div className="custom-course-loop-header">
               <div>
