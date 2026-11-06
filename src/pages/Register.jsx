@@ -760,7 +760,7 @@ export default function Register() {
                     className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
                   >
                     <option value="No">No</option>
-                    <option value="Yes - 4 Star Hotel">Yes - 4 Star Hotel (Nairobi / Mombasa / Kigali)</option>
+                    <option value="Yes - 4 Star Hotel">Yes - 4 Star Hotel (Nairobi / Mombasa / Kigali / Dubai / Kuala Lumpur)</option>
                     <option value="Yes - 5 Star Hotel">Yes - 5 Star Luxury Hotel</option>
                     <option value="Yes - Standard Executive Guest House">Yes - Standard Executive Guest House</option>
                   </select>

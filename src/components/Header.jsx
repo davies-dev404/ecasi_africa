@@ -534,7 +534,7 @@ const Header = () => {
                                 Executive Training &amp; Professional Capacity Development
                               </h3>
                               <p className="text-xs text-slate-500">
-                                Explore 200+ practical courses across 8 thematic faculties in Nairobi, Mombasa, Kigali, Dubai, Malaysia &amp; Online
+                                Explore 200+ practical courses across 8 thematic faculties in Nairobi, Mombasa, Kigali, Dubai, Kuala Lumpur (Malaysia) &amp; Online
                               </p>
                             </div>
                           </div>

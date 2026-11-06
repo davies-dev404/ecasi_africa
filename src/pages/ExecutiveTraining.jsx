@@ -96,7 +96,7 @@ const categorySlugToName = {
 };
 
 const categoryDescriptions = {
-  'All': 'Explore practical, industry-aligned executive training courses in Nairobi, Mombasa, Naivasha, Kigali, Arusha, Dubai, and Online. Build technical capacity across Climate Finance, Carbon Markets, ESG, AI, Data Analytics, Project Management, and Public Sector Governance.',
+  'All': 'Explore practical, industry-aligned executive training courses in Nairobi, Mombasa, Naivasha, Kigali, Arusha, Dubai, Kuala Lumpur (Malaysia), and Online. Build technical capacity across Climate Finance, Carbon Markets, ESG, AI, Data Analytics, Project Management, and Public Sector Governance.',
   'Climate Finance & Public Financial Management': 'Best Climate Finance, Green Bonds, Climate-Responsive Budgeting, and Public Financial Management courses for executives, policymakers, and finance professionals.',
   'Climate Change & Sustainability': 'Comprehensive Climate Change Adaptation, Mitigation, Policy, Nature-Based Solutions, and Resilience courses designed for environmental leaders and government ministries.',
   'Carbon Markets & ESG': 'Hands-on Carbon Accounting, Article 6, Emissions Trading Systems (ETS), Voluntary Carbon Markets (VCM), and ESG Reporting courses for project developers and sustainability teams.',
@@ -219,6 +219,16 @@ function generateCourseSchedules(courseTitle = '', duration = '5 Days') {
       format: 'Classroom',
       feeUsd: '$1,000',
       feeKes: 'KES 95,000',
+    },
+    {
+      id: 'cls-8',
+      scheduleNo: '400834',
+      dates: '07 - 11 Dec 2026',
+      duration: cleanDuration,
+      venue: 'Kuala Lumpur, Malaysia',
+      format: 'Classroom',
+      feeUsd: '$2,450',
+      feeKes: 'KES 220,000',
     },
   ];
 
@@ -1965,8 +1975,7 @@ export default function ExecutiveTraining() {
                   })
                 }
               >
-                <span className="icon">★</span>
-                <span>Request Tailored In-House Training for Your Team</span>
+                                <span>Request Tailored In-House Training for Your Team</span>
               </button>
             </div>
 
@@ -2084,9 +2093,6 @@ export default function ExecutiveTraining() {
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 <span>Filters</span>
-                {(selectedFormats.length > 0 || selectedVenues.length > 0 || selectedDurations.length > 0 || selectedCategory !== 'All') && (
-                  <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                )}
               </button>
             </div>
             {/* Header Bar */}
@@ -2310,7 +2316,7 @@ export default function ExecutiveTraining() {
         description={
           courseInfo.summary ||
           courseInfo.subtitle ||
-          `Executive training course on ${courseInfo.title} offered by ECAS Institute in Nairobi, Mombasa, Kigali, Dubai, and Online.`
+          `Executive training course on ${courseInfo.title} offered by ECAS Institute in Nairobi, Mombasa, Kigali, Dubai, Kuala Lumpur (Malaysia), and Online.`
         }
       />
       <style>{devimpactCourseStyles}</style>
@@ -2949,7 +2955,7 @@ function buildCorporateEmailTemplate({
     `• Course Title:      ${courseTitle}`,
     courseCode ? `• Course Code:       ${courseCode}` : null,
     cohortDates ? `• Cohort Schedule:   ${cohortDates}` : '• Cohort Schedule:   Upcoming 2026 Intake',
-    cohortVenue ? `• Training Venue:    ${cohortVenue}` : '• Training Venue:    Nairobi / Mombasa / Kigali / Online',
+    cohortVenue ? `• Training Venue:    ${cohortVenue}` : '• Training Venue:    Nairobi / Mombasa / Kigali / Dubai / Kuala Lumpur / Online',
     cohortFormat ? `• Delivery Mode:     ${cohortFormat}` : '• Delivery Mode:     Classroom (In-Person) or Virtual Online',
     cohortFee ? `• Standard Tuition:  ${cohortFee}` : null,
     '',

@@ -236,7 +236,7 @@ const flagshipCourses = [
     slug: "innovations-in-public-financial-management-climate-finance-ai-ethical-leadership",
     category: "Executive Cohort Programme",
     duration: "4 Weeks (20 Days)",
-    location: "Arusha, Tanzania / Nairobi",
+    location: "Arusha / Nairobi / Kuala Lumpur",
     image: "/images/courses/mentorship_group.jpg",
   },
   {
@@ -292,7 +292,7 @@ const flagshipCourses = [
     slug: "structuring-and-managing-special-purpose-vehicle-for-ppp",
     category: "PPP & Infrastructure Finance",
     duration: "5 Days",
-    location: "Nairobi / Naivasha / Dubai",
+    location: "Nairobi / Naivasha / Dubai / Kuala Lumpur",
     image: "/images/Gallery/1730827985704.jpg",
   },
   {
