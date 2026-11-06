@@ -573,7 +573,7 @@ const Index = () => {
               key={bg}
               src={bg}
               alt="ECAS Executive Training"
-              fetchPriority={idx === 0 ? "high" : "auto"}
+              loading={idx === 0 ? "eager" : "lazy"}
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 scale-105 ${
                 idx === heroBgIdx ? "opacity-100" : "opacity-0"
               }`}

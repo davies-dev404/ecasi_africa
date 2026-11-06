@@ -77,7 +77,7 @@ const Newsroom = () => {
           <img
             src="/images/WhatsApp Image 2026-07-15 at 12.25.41 (3).jpeg"
             alt="training"
-            fetchPriority="high"
+            loading="eager"
             className="w-full h-full object-cover transform scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
