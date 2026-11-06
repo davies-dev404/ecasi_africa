@@ -497,6 +497,10 @@ const Index = () => {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
 
+  // Course categories compact & filter state (to save scrolling space & time)
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState("all");
+
   useEffect(() => {
     const timer = setInterval(() => {
       setHeroBgIdx((prev) => (prev + 1) % heroBgs.length);
@@ -865,20 +869,20 @@ const Index = () => {
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════════
-            5. OUR COURSE CATEGORIES (Devimpact Dark #003B80 Backdrop + Gold Titles)
+            5. OUR COURSE CATEGORIES (Compact, Space-Saving Layout)
         ══════════════════════════════════════════════════════════════════════ */}
-        <section id="course-categories" className="pt-8 pb-4 bg-white">
-          <div className="max-w-[1380px] w-full mx-auto px-4 sm:px-6 mb-6">
+        <section id="course-categories" className="pt-6 pb-2 bg-white">
+          <div className="max-w-[1380px] w-full mx-auto px-4 sm:px-6 mb-4">
             <h2
-              className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[35px] text-center"
+              className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[32px] text-center"
               style={{ fontFamily: "'Fira Sans', sans-serif" }}
             >
               Our Course Categories
             </h2>
           </div>
 
-          {/* Lighter Course Categories Container with clearly visible background image */}
-          <div className="relative bg-[#0a384f] py-14 md:py-16 overflow-hidden">
+          {/* Compact Course Categories Container with clearly visible background image */}
+          <div className="relative bg-[#0a384f] py-8 sm:py-10 overflow-hidden">
             {/* Clear, visible background image */}
             <img
               src="/images/courses/professional_training.png"
@@ -894,76 +898,150 @@ const Index = () => {
             />
 
             <div className="relative z-10 max-w-[1380px] w-full mx-auto px-4 sm:px-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8">
+              {/* Category Quick Filter Pills (Saves scrolling space & time on mobile & desktop) */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
+                <span className="text-white/70 text-xs font-bold uppercase tracking-wider shrink-0 mr-1 hidden sm:inline">
+                  Filter Faculty:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveCategoryFilter("all")}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    activeCategoryFilter === "all"
+                      ? "bg-[#008000] text-white shadow"
+                      : "bg-white/15 text-white/90 hover:bg-white/25 hover:text-white border border-white/20"
+                  }`}
+                >
+                  All Faculties ({courseCategoriesGrid.length})
+                </button>
                 {courseCategoriesGrid.map((cat, idx) => {
-                  const IconComp = cat.icon;
+                  const shortName = cat.title.split(",")[0].replace(" & Technology", "").trim();
+                  const isSelected = activeCategoryFilter === String(idx);
                   return (
-                    <div
+                    <button
                       key={idx}
-                      className="flex flex-col bg-[#032e42]/70 backdrop-blur-[2px] p-5 rounded-xl border border-white/15 shadow-sm"
+                      type="button"
+                      onClick={() => setActiveCategoryFilter(String(idx))}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#008000] text-white shadow"
+                          : "bg-white/15 text-white/90 hover:bg-white/25 hover:text-white border border-white/20"
+                      }`}
                     >
-                      {/* Icon + ECAS Green Underlined Uppercase Category Header */}
-                      <div className="flex items-start gap-3.5 mb-4">
-                        <div className="w-10 h-10 rounded-lg bg-[#008000] flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm">
-                          <IconComp size={22} />
-                        </div>
-                        <h3 className="text-[16px] font-bold uppercase leading-snug tracking-wide">
-                          <Link
-                            to={cat.path}
-                            className="text-[#4ade80] hover:text-white underline decoration-[#008000] underline-offset-4 transition-colors"
-                          >
-                            {cat.title}
-                          </Link>
-                        </h3>
-                      </div>
-
-                      {/* Course / Sub-category Links List */}
-                      <ul className="space-y-2.5 pl-1">
-                        {cat.links.map((item, lIdx) => (
-                          <li key={lIdx} className="border-b border-white/10 pb-2 last:border-b-0">
-                            <Link
-                              to={item.path}
-                              className="flex items-center justify-between gap-2 text-white hover:text-[#4ade80] text-[14.5px] font-medium leading-snug transition-colors group"
-                            >
-                              <span>{item.label}</span>
-                              <ChevronRight
-                                size={14}
-                                className="shrink-0 opacity-75 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-[#4ade80]"
-                              />
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                      {shortName}
+                    </button>
                   );
                 })}
               </div>
 
+              {/* 3-Column Compact Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-5">
+                {courseCategoriesGrid
+                  .map((cat, originalIdx) => ({ cat, originalIdx }))
+                  .filter(({ originalIdx }) => activeCategoryFilter === "all" || activeCategoryFilter === String(originalIdx))
+                  .map(({ cat, originalIdx }) => {
+                    const IconComp = cat.icon;
+                    const isExpanded = !!expandedCategories[originalIdx];
+                    const displayedLinks = isExpanded ? cat.links : cat.links.slice(0, 4);
+
+                    return (
+                      <div
+                        key={originalIdx}
+                        className="flex flex-col justify-between bg-[#032e42]/75 backdrop-blur-[2px] p-4 sm:p-4.5 rounded-xl border border-white/15 shadow-sm transition-all hover:border-[#008000]/60"
+                      >
+                        <div>
+                          {/* Icon + Green Underlined Category Header */}
+                          <div className="flex items-start gap-2.5 mb-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-[#008000] flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm">
+                              <IconComp size={17} />
+                            </div>
+                            <h3 className="text-[13.5px] sm:text-[14px] font-bold uppercase leading-snug tracking-wide">
+                              <Link
+                                to={cat.path}
+                                className="text-[#4ade80] hover:text-white underline decoration-[#008000] underline-offset-4 transition-colors line-clamp-2"
+                              >
+                                {cat.title}
+                              </Link>
+                            </h3>
+                          </div>
+
+                          {/* Course / Sub-category Links List (Compact, 1-line truncation) */}
+                          <ul className="space-y-1.5 pl-0.5">
+                            {displayedLinks.map((item, lIdx) => (
+                              <li key={lIdx} className="border-b border-white/10 pb-1.5 last:border-b-0">
+                                <Link
+                                  to={item.path}
+                                  title={item.label}
+                                  className="flex items-center justify-between gap-2 text-white hover:text-[#4ade80] text-[12.5px] sm:text-[13px] font-medium leading-snug transition-colors group"
+                                >
+                                  <span className="line-clamp-1">{item.label}</span>
+                                  <ChevronRight
+                                    size={13}
+                                    className="shrink-0 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-[#4ade80]"
+                                  />
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Card Footer: Toggle +N more & View Faculty */}
+                        <div className="mt-3 pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                          {cat.links.length > 4 ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedCategories((prev) => ({
+                                  ...prev,
+                                  [originalIdx]: !prev[originalIdx],
+                                }))
+                              }
+                              className="text-[11px] font-bold text-white/80 hover:text-white py-0.5 px-2 rounded bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                            >
+                              {isExpanded ? "Show less ▲" : `+${cat.links.length - 4} more ▼`}
+                            </button>
+                          ) : (
+                            <span />
+                          )}
+
+                          <Link
+                            to={cat.path}
+                            className="text-[12px] font-bold text-[#4ade80] hover:text-white inline-flex items-center gap-0.5 ml-auto transition-colors"
+                          >
+                            <span>View All ({cat.links.length})</span>
+                            <ChevronRight size={13} />
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
               {/* Bottom CTA bar inside Course Categories */}
-              <div className="mt-12 pt-8 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+              <div className="mt-7 pt-5 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
                 <div>
-                  <p className="text-white font-bold text-lg" style={{ textAlign: "left" }}>
+                  <p className="text-white font-bold text-sm sm:text-base" style={{ textAlign: "left" }}>
                     Looking for our complete 2026–2030 Executive Training Catalogue?
                   </p>
-                  <p className="text-white/80 text-sm" style={{ textAlign: "left" }}>
+                  <p className="text-white/80 text-xs sm:text-sm" style={{ textAlign: "left" }}>
                     Browse over 180+ specialized courses across 13 departments or request a tailored in-house programme.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-3 shrink-0">
+                <div className="flex flex-wrap gap-2.5 shrink-0">
                   <Link
                     to="/institute-overview"
-                    className="inline-flex items-center gap-2 bg-[#008000] hover:bg-[#1e73be] text-white font-extrabold text-sm px-6 py-3 rounded-full shadow-md transition-all"
+                    className="inline-flex items-center gap-1.5 bg-[#008000] hover:bg-[#1e73be] text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-md transition-all"
                   >
                     <span>View All 2026 Courses</span>
-                    <ArrowUpRight size={17} />
+                    <ArrowUpRight size={15} />
                   </Link>
                   <a
                     href="/ECASI_Training_Profile.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white font-bold text-sm px-6 py-3 rounded-full border border-white/30 transition-all"
+                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-full border border-white/30 transition-all"
                   >
-                    <span>Download Training Profile</span>
+                    <span>Download Profile</span>
                   </a>
                 </div>
               </div>
