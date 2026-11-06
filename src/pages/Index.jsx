@@ -236,7 +236,7 @@ const flagshipCourses = [
     slug: "innovations-in-public-financial-management-climate-finance-ai-ethical-leadership",
     category: "Executive Cohort Programme",
     duration: "4 Weeks (20 Days)",
-    location: "Arusha / Nairobi / Kuala Lumpur",
+    location: "Arusha, Tanzania / Nairobi / Kuala Lumpur, Malaysia",
     image: "/images/courses/mentorship_group.jpg",
   },
   {
@@ -292,7 +292,7 @@ const flagshipCourses = [
     slug: "structuring-and-managing-special-purpose-vehicle-for-ppp",
     category: "PPP & Infrastructure Finance",
     duration: "5 Days",
-    location: "Nairobi / Naivasha / Dubai / Kuala Lumpur",
+    location: "Nairobi / Naivasha / Dubai / Kuala Lumpur, Malaysia",
     image: "/images/Gallery/1730827985704.jpg",
   },
   {
@@ -313,31 +313,42 @@ const flagshipCourses = [
   },
 ];
 
-// ─── Beyond the Classroom Cards (Retained) ───────────────────────────────────
+// ─── Beyond the Classroom Cards (5 Curated Nairobi Excursions) ───────────────
 const beyondClassroomCards = [
   {
-    title: "The City Walk",
-    image: "/images/beyond/city_walk.jpg",
-    desc: "Alongside your learning journey, you will have the opportunity to extend your Nairobi experience beyond the classroom and enjoy the city’s dynamic energy.",
-    details: "Our guided Nairobi City Walk takes international and regional training delegates through Nairobi's historic landmarks, vibrant central district, parliamentary precinct, and cultural heritage sites—providing an enriching afternoon of networking and cultural immersion."
-  },
-  {
-    title: "Above the City",
-    image: "/images/beyond/above_the_city.jpg",
-    desc: "Embark on an unforgettable journey to the top of Nairobi's iconic Kenyatta International Convention Centre (KICC) and experience the city's breathtaking beauty like never before.",
-    details: "Experience a 360-degree panoramic view of Nairobi's skyline, Nairobi National Park in the distance, and the lush green hills surrounding the capital from the famous KICC Helipad rooftop."
-  },
-  {
+    slug: "giraffe-centre",
     title: "Magical Visit to the Giraffe Centre",
     image: "/images/beyond/giraffe_centre.jpg",
-    desc: "Enjoy a memorable visit to the Giraffe Centre, where you can interact with these gentle giants and learn about ongoing conservation efforts in a serene natural setting.",
-    details: "Feed endangered Rothschild's giraffes from an elevated observation platform, walk the serene indigenous forest nature trail in Karen, and learn firsthand about Kenya's pioneering wildlife conservation and environmental education initiatives."
+    desc: "Nestled in leafy Lang'ata, this peaceful sanctuary allows visitors an unforgettable, up-close encounter with endangered Rothschild giraffes while promoting conservation, education, and sustainability.",
+    details: "Hand-feed giraffes special food pellets from elevated wooden platforms, learn about wildlife protection at the education centre, and explore the tranquil indigenous forest nature trail."
   },
   {
+    slug: "above-the-city",
+    title: "Above the City: KICC Rooftop & Helipad",
+    image: "/images/beyond/above_the_city.jpg",
+    desc: "Standing tall at the heart of Nairobi’s CBD, visit the iconic KICC rooftop and helipad for breathtaking 360-degree panoramic views of the city skyline and Nairobi National Park.",
+    details: "Experience golden hour and sunset vistas as daylight transitions into a glittering sea of lights. A refreshing, breeze-filled haven for executive cohort networking and reflection high above the city."
+  },
+  {
+    slug: "nairobi-safari-walk",
+    title: "Nairobi Safari Walk",
+    image: "/images/beyond/nairobi_safari_walk.jpg",
+    desc: "Experience Kenya's rich wildlife and botanical heritage along elevated wooden boardwalks meandering through Wetlands, Savannah, and Moist Forest ecosystems at the gate of Nairobi National Park.",
+    details: "Observe the rare mountain bongo, white rhinos, albino zebras, cheetahs, and lions in naturalistic habitats alongside over 150 identified species of indigenous Kenyan trees."
+  },
+  {
+    slug: "city-walk",
+    title: "The City Walk & Nairobi Expressway",
+    image: "/images/beyond/nairobi_expressway.jpg",
+    desc: "Discover Nairobi’s dynamic urban pulse, from the historic Parliament buildings and Dedan Kimathi monument to the elevated 27km Nairobi Expressway and revitalized Nairobi Green City (NGC) parks.",
+    details: "A curated guided walk through Nairobi's civic landmarks and newly landscaped Uhuru Park, concluding with single-origin Kenyan specialty coffee at a historic central roastery."
+  },
+  {
+    slug: "nairobi-shopping",
     title: "A Taste of Nairobi Shopping",
     image: "/images/beyond/nairobi_shopping.png",
-    desc: "Step into Nairobi’s lively shopping scene, where modern malls, colorful local markets, and artisan boutiques create a truly unique experience.",
-    details: "Explore authentic Kenyan craftsmanship at the vibrant Maasai Market and Nairobi's premier shopping hubs, featuring hand-carved sculptures, beadwork, textiles, Kenyan coffee, and souvenirs to take home."
+    desc: "Step into Nairobi’s vibrant shopping scene at the world-famous Maasai Market, artisan boutiques, and craft collectives for handmade jewelry, textiles, and authentic Kenyan coffee & tea.",
+    details: "Shop hand-woven sisal kiondo bags, Maasai beadwork, soapstone carvings, and high-altitude single-origin Kenyan AA coffee with accompanied bargaining guidance and packing support."
   }
 ];
 
@@ -443,19 +454,19 @@ function AnimatedMilestoneCard({ milestone }) {
   return (
     <div
       ref={cardRef}
-      className="bg-[#032e42] border-b-4 border-[#008000] text-white rounded-xl p-7 text-center flex flex-col items-center justify-center transition-transform duration-300 hover:-translate-y-1 shadow-md"
+      className="bg-transparent border-b-4 border-[#008000] rounded-xl p-6 text-center flex flex-col items-center justify-center transition-transform duration-300 hover:-translate-y-1"
     >
       <div className="w-14 h-14 rounded-full bg-[#008000] flex items-center justify-center mb-3 text-white shadow-sm">
-        <IconComp size={28} />
+        <IconComp size={26} />
       </div>
       <div
-        className="text-3xl sm:text-4xl font-extrabold text-white mb-1 tabular-nums"
+        className="text-3xl sm:text-4xl font-extrabold text-[#032e42] mb-1 tabular-nums"
         style={{ fontFamily: "'Fira Sans', sans-serif" }}
       >
         {count}
         {milestone.suffix}
       </div>
-      <h3 className="text-white/90 text-sm sm:text-base font-bold">
+      <h3 className="text-slate-700 text-sm sm:text-base font-bold">
         {milestone.label}
       </h3>
     </div>
@@ -866,30 +877,30 @@ const Index = () => {
             </h2>
           </div>
 
-          {/* Dark ECAS Navy Backdrop Container */}
-          <div className="relative bg-[#032e42] py-14 md:py-16 overflow-hidden">
-            {/* Subtle background image with dark overlay */}
+          {/* Lighter Course Categories Container with clearly visible background image */}
+          <div className="relative bg-[#0a384f] py-14 md:py-16 overflow-hidden">
+            {/* Clear, visible background image */}
             <img
               src="/images/courses/professional_training.png"
-              alt=""
+              alt="ECAS Institute Executive Training"
               aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none"
+              className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
             />
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: "linear-gradient(180deg, rgba(3, 46, 66, 0.92) 0%, rgba(3, 46, 66, 0.96) 100%)"
+                background: "linear-gradient(180deg, rgba(3, 46, 66, 0.60) 0%, rgba(3, 46, 66, 0.72) 100%)"
               }}
             />
 
             <div className="relative z-10 max-w-[1380px] w-full mx-auto px-4 sm:px-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8">
                 {courseCategoriesGrid.map((cat, idx) => {
                   const IconComp = cat.icon;
                   return (
                     <div
                       key={idx}
-                      className="flex flex-col border-b border-white/15 pb-8 lg:border-b-0 lg:pb-0"
+                      className="flex flex-col bg-[#032e42]/70 backdrop-blur-[2px] p-5 rounded-xl border border-white/15 shadow-sm"
                     >
                       {/* Icon + ECAS Green Underlined Uppercase Category Header */}
                       <div className="flex items-start gap-3.5 mb-4">
@@ -1072,46 +1083,70 @@ const Index = () => {
               </p>
             </ScrollAnimation>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
               {beyondClassroomCards.map((card, idx) => (
-                <ScrollAnimation key={card.title} animation="scale-in" delay={idx * 80}>
+                <ScrollAnimation key={card.title} animation="scale-in" delay={idx * 70}>
                   <div
-                    className="bg-white rounded-[10px] p-3.5 h-full flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1"
+                    className="bg-white rounded-[10px] p-3.5 h-full flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1 group"
                     style={{
-                      boxShadow: "0px 0px 5px 0px rgba(23, 37, 129, 0.5)",
+                      boxShadow: "0px 0px 5px 0px rgba(23, 37, 129, 0.4)",
                     }}
                   >
                     <div>
-                      <div className="mb-4 overflow-hidden rounded-[10px]" style={{ boxShadow: "0px 0px 10px 0px rgba(23, 37, 129, 0.35)" }}>
+                      <Link
+                        to={`/beyond-the-classroom/${card.slug}`}
+                        className="block mb-3.5 overflow-hidden rounded-[10px]"
+                        style={{ boxShadow: "0px 0px 8px 0px rgba(23, 37, 129, 0.3)" }}
+                      >
                         <img
                           src={card.image}
                           alt={card.title}
-                          className="w-full h-[155px] object-cover rounded-[10px] transition-transform duration-500 hover:scale-105"
+                          className="w-full h-[155px] object-cover rounded-[10px] transition-transform duration-500 group-hover:scale-105"
                         />
-                      </div>
+                      </Link>
                       <h3
-                        className="text-[#032e42] font-bold text-[17.5px] mb-2 leading-snug"
+                        className="text-[#032e42] font-bold text-[16px] mb-2 leading-snug group-hover:text-[#008000] transition-colors"
                         style={{ fontFamily: "'Fira Sans', sans-serif" }}
                       >
-                        {card.title}
+                        <Link to={`/beyond-the-classroom/${card.slug}`}>
+                          {card.title}
+                        </Link>
                       </h3>
-                      <p className="text-[#1a202c] text-[14px] leading-[1.45] mb-4">
+                      <p className="text-[#1a202c] text-[13.5px] leading-[1.45] mb-4 line-clamp-3">
                         {card.desc}
                       </p>
                     </div>
 
-                    <div>
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={() => setBeyondModal(card)}
-                        className="inline-block bg-[#032e42] hover:bg-[#008000] text-white font-semibold text-sm px-4 py-2 rounded-[3px] transition-colors cursor-pointer"
+                        className="text-xs font-bold text-slate-600 hover:text-[#032e42] py-1.5 px-2.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
                       >
-                        Learn More
+                        Quick View
                       </button>
+                      <Link
+                        to={`/beyond-the-classroom/${card.slug}`}
+                        className="inline-flex items-center gap-1 bg-[#032e42] hover:bg-[#008000] text-white font-bold text-xs px-3 py-1.5 rounded-[4px] transition-colors"
+                      >
+                        <span>Full Page</span>
+                        <ArrowUpRight size={13} />
+                      </Link>
                     </div>
                   </div>
                 </ScrollAnimation>
               ))}
+            </div>
+
+            {/* Bottom link to all excursions */}
+            <div className="mt-10 text-center">
+              <Link
+                to="/beyond-the-classroom"
+                className="inline-flex items-center gap-2 bg-[#008000] hover:bg-[#1e73be] text-white font-extrabold text-sm px-6 py-3 rounded-full shadow-md transition-all"
+              >
+                <span>View Dedicated Beyond the Classroom Hub (All Excursions)</span>
+                <ArrowUpRight size={16} />
+              </Link>
             </div>
           </div>
         </section>
@@ -1153,7 +1188,7 @@ const Index = () => {
                 <p className="text-gray-600 text-sm leading-relaxed mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                   {beyondModal.details}
                 </p>
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-wrap items-center justify-end gap-2.5">
                   <button
                     type="button"
                     onClick={() => setBeyondModal(null)}
@@ -1162,11 +1197,19 @@ const Index = () => {
                     Close
                   </button>
                   <Link
+                    to={`/beyond-the-classroom/${beyondModal.slug}`}
+                    onClick={() => setBeyondModal(null)}
+                    className="px-4 py-2 bg-[#032e42] hover:bg-[#008000] text-white text-sm font-bold rounded-lg transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>View Dedicated Page</span>
+                    <ArrowUpRight size={14} />
+                  </Link>
+                  <Link
                     to="/contact"
                     onClick={() => setBeyondModal(null)}
-                    className="px-5 py-2 bg-[#008000] hover:bg-[#006600] text-white text-sm font-bold rounded-lg transition-colors"
+                    className="px-4 py-2 bg-[#008000] hover:bg-[#006600] text-white text-sm font-bold rounded-lg transition-colors"
                   >
-                    Inquire About Excursions
+                    Inquire For Cohort
                   </Link>
                 </div>
               </div>

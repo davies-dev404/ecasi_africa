@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu, X, Phone, Clock, ChevronDown, ChevronRight, Mail, Search,
-  GraduationCap, BookOpen, ArrowUpRight
+  GraduationCap, BookOpen, ArrowUpRight, Compass
 } from "lucide-react";
 import { dataService } from "@/lib/dataService";
 
@@ -547,6 +547,14 @@ const Header = () => {
                               <BookOpen size={14} />
                               Open Course Finder (All Courses)
                             </Link>
+                            <Link
+                              to="/beyond-the-classroom"
+                              onClick={() => setActiveDropdown(null)}
+                              className="px-3.5 py-2 rounded-md bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors border border-slate-300"
+                            >
+                              <Compass size={14} className="text-[#4ade80]" />
+                              Beyond the Classroom
+                            </Link>
                             <a
                               href="/courses/ECASI-BROCHURE.pdf"
                               target="_blank"
@@ -827,6 +835,13 @@ const Header = () => {
                         className="block py-2 px-3 rounded bg-[#008000] text-white text-xs font-bold text-center"
                       >
                         Course Finder (All 200+ Courses)
+                      </Link>
+                      <Link
+                        to="/beyond-the-classroom"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block py-2 px-3 rounded bg-[#032e42] text-white text-xs font-bold text-center"
+                      >
+                        Beyond the Classroom (Excursions)
                       </Link>
                       {coursesLinks.map((grp, idx) => (
                         <Link

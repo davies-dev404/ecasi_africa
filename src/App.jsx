@@ -55,6 +55,7 @@ import ResearchConsultancy from "./pages/ResearchConsultancy.jsx";
 import Training from "./pages/Training.jsx";
 import PolicyAnalysis from "./pages/PolicyAnalysis.jsx";
 import Search from "./pages/Search.jsx";
+import ExcursionDetail from "./pages/ExcursionDetail.jsx";
 
 import Analytics from "@/components/Analytics";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -140,6 +141,8 @@ const App = () => {
           <Route path="/research/:slug" element={<ResearchConsultancy />} />
           <Route path="/consultancy" element={<Navigate to="/research/consulting" replace />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/beyond-the-classroom" element={<ExcursionDetail />} />
+          <Route path="/beyond-the-classroom/:slug" element={<ExcursionDetail />} />
 
           {/* Sitelink Redirects to handle Google's indexed URLs and prevent 404s */}
           <Route path="/programmes" element={<Programmes />} />
