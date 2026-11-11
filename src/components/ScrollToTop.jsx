@@ -24,10 +24,10 @@ const ScrollToTop = () => {
     };
 
     const calculateScrollProgress = () => {
-      const scrollTop = window.scrollY;
+      const scrollTop = window.scrollY || 0;
       const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      const scrollPercent = (scrollTop / docHeight) * 100;
-      setScrollProgress(scrollPercent);
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setScrollProgress(isNaN(scrollPercent) ? 0 : Math.min(100, Math.max(0, scrollPercent)));
     };
 
     window.addEventListener('scroll', toggleVisibility);
@@ -49,7 +49,9 @@ const ScrollToTop = () => {
   // Circle properties
   const radius = 20;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
+  const strokeDashoffset = isNaN(scrollProgress)
+    ? circumference
+    : circumference - (scrollProgress / 100) * circumference;
 
   return (
     <div 

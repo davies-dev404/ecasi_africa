@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { dataService } from "@/lib/dataService";
 import countryListData from "@/data/countriesData.json";
+import { adminRegistrationService } from "@/services/adminRegistrationService";
 
 const COUNTRY_DIAL_CODES = countryListData;
 
@@ -106,9 +107,16 @@ export default function Register() {
   const recaptchaRef = React.useRef(null);
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LcJIBEuAAAAAFVVFtrAoFN88Hzbpi0ADHuZ9YNw';
 
-  // Auto-render Google reCAPTCHA v2 if global script is loaded and siteKey exists
+  // Check if running on localhost development environment
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.endsWith(".localhost"));
+
+  // Auto-render Google reCAPTCHA v2 if in production and global script is loaded
   useEffect(() => {
-    if (!siteKey) return;
+    if (isLocalhost || !siteKey) return;
     let timerId = null;
     let attempts = 0;
 
@@ -145,7 +153,7 @@ export default function Register() {
     return () => {
       if (timerId) clearInterval(timerId);
     };
-  }, [siteKey]);
+  }, [siteKey, isLocalhost]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -181,21 +189,31 @@ export default function Register() {
       return;
     }
     setRobotError(false);
-    setSubmittedData({
+    const generatedRef = `ECAS-${scheduleId}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const submissionRecord = {
       ...formData,
-      referenceNo: `ECAS-${scheduleId}-${Math.floor(1000 + Math.random() * 9000)}`,
+      referenceNo: generatedRef,
       eventTitle,
+      courseSlug,
       scheduleId,
       venue: venueParam,
       format: formatParam,
       durationText: formatDurationRange(datesParam),
       totalFee: baseFeeNumber * (Number(formData.participantsCount) || 1),
-      submittedAt: new Date().toLocaleDateString("en-GB", {
+      submittedAt: new Date().toISOString(),
+      displayDate: new Date().toLocaleDateString("en-GB", {
         day: "numeric",
         month: "long",
         year: "numeric",
       }),
-    });
+      status: "Pending",
+      paymentStatus: "Unpaid",
+    };
+
+    // Save to Msimamizi Admin Portal persistent repository
+    adminRegistrationService.addRegistration(submissionRecord);
+
+    setSubmittedData(submissionRecord);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -841,102 +859,97 @@ export default function Register() {
 
                 {/* reCAPTCHA Box + 3 Action Buttons (Back | Complete Registration | Reset) */}
                 <div className="space-y-3 pt-1">
-                  {/* reCAPTCHA Widget Box (Supports live Google reCAPTCHA v2 key or built-in verified security check) */}
-                  {siteKey ? (
+                  {/* reCAPTCHA Widget Box (Supports live Google reCAPTCHA v2 in production, or 1-click interactive confirmation on localhost) */}
+                  {!isLocalhost && siteKey ? (
                     <div ref={recaptchaRef} className="min-h-[78px]" />
                   ) : (
-                    <div
-                      onClick={() => {
-                        if (robotLoading || notARobot) return;
-                        setRobotLoading(true);
-                        setRobotError(false);
-                        setTimeout(() => {
-                          setRobotLoading(false);
-                          setNotARobot(true);
-                        }, 550);
-                      }}
-                      role="checkbox"
-                      aria-checked={notARobot}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === " " || e.key === "Enter") {
-                          e.preventDefault();
-                          if (!notARobot && !robotLoading) {
-                            setRobotLoading(true);
+                    <div className="space-y-2">
+                      <div
+                        onClick={() => {
+                          if (robotLoading) return;
+                          setRobotLoading(true);
+                          setRobotError(false);
+                          setTimeout(() => {
+                            setRobotLoading(false);
+                            setNotARobot((prev) => !prev);
+                          }, 250);
+                        }}
+                        role="checkbox"
+                        aria-checked={notARobot}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === " " || e.key === "Enter") {
+                            e.preventDefault();
+                            setNotARobot((prev) => !prev);
                             setRobotError(false);
-                            setTimeout(() => {
-                              setRobotLoading(false);
-                              setNotARobot(true);
-                            }, 550);
                           }
-                        }
-                      }}
-                      className={`w-[302px] h-[74px] bg-[#f9f9f9] hover:bg-[#f5f5f5] border ${
-                        robotError ? "border-[#d83030]" : "border-[#d3d3d3]"
-                      } rounded-[3px] px-3.5 flex items-center justify-between shadow-sm cursor-pointer select-none transition-colors`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-7 h-7 rounded-[2px] border-2 flex items-center justify-center transition-all ${
-                            notARobot
-                              ? "border-[#008000] bg-[#008000] text-white"
-                              : robotLoading
-                              ? "border-blue-500 bg-white"
-                              : "border-[#c1c1c1] bg-white hover:border-[#999]"
-                          }`}
-                        >
-                          {robotLoading ? (
-                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                          ) : notARobot ? (
-                            <Check className="w-5 h-5 stroke-[3]" />
-                          ) : null}
+                        }}
+                        className={`w-[302px] h-[74px] bg-[#f9f9f9] hover:bg-[#f5f5f5] border ${
+                          robotError ? "border-[#d83030]" : notARobot ? "border-[#008000]" : "border-[#d3d3d3]"
+                        } rounded-[3px] px-3.5 flex items-center justify-between shadow-sm cursor-pointer select-none transition-colors`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-7 h-7 rounded-[2px] border-2 flex items-center justify-center transition-all ${
+                              notARobot
+                                ? "border-[#008000] bg-[#008000] text-white"
+                                : robotLoading
+                                ? "border-blue-500 bg-white"
+                                : "border-[#c1c1c1] bg-white hover:border-[#999]"
+                            }`}
+                          >
+                            {robotLoading ? (
+                              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            ) : notARobot ? (
+                              <Check className="w-5 h-5 stroke-[3]" />
+                            ) : null}
+                          </div>
+                          <span className="text-[14px] font-medium text-[#282828]">
+                            {notARobot ? "Verification Complete" : "I'm not a robot"}
+                          </span>
                         </div>
-                        <span className="text-[14px] font-medium text-[#282828]">
-                          {notARobot ? "Verification Complete" : "I'm not a robot"}
-                        </span>
+
+                        <div className="flex flex-col items-center justify-center text-center leading-tight pl-2">
+                          <svg
+                            viewBox="0 0 64 64"
+                            className="w-7 h-7 mb-0.5"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M32 10C21.5 10 12.7 17.3 10.5 27.1L17.3 28.9C18.9 22.1 24.9 17 32 17C36.8 17 41.1 19.2 43.9 22.7L38 28.6H54V12.6L48.9 17.7C44.8 12.9 38.7 10 32 10Z"
+                              fill="#1e73be"
+                            />
+                            <path
+                              d="M53.5 36.9L46.7 35.1C45.1 41.9 39.1 47 32 47C27.2 47 22.9 44.8 20.1 41.3L26 35.4H10V51.4L15.1 46.3C19.2 51.1 25.3 54 32 54C42.5 54 51.3 46.7 53.5 36.9Z"
+                              fill="#008000"
+                            />
+                          </svg>
+                          <span className="text-[9px] text-[#555555] font-semibold">
+                            reCAPTCHA
+                          </span>
+                          <div className="flex gap-1 text-[7.5px] text-[#777777]">
+                            <span>Privacy</span>
+                            <span>•</span>
+                            <span>Terms</span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex flex-col items-center justify-center text-center leading-tight pl-2">
-                        <svg
-                          viewBox="0 0 64 64"
-                          className="w-7 h-7 mb-0.5"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M32 10C21.5 10 12.7 17.3 10.5 27.1L17.3 28.9C18.9 22.1 24.9 17 32 17C36.8 17 41.1 19.2 43.9 22.7L38 28.6H54V12.6L48.9 17.7C44.8 12.9 38.7 10 32 10Z"
-                            fill="#1e73be"
-                          />
-                          <path
-                            d="M53.5 36.9L46.7 35.1C45.1 41.9 39.1 47 32 47C27.2 47 22.9 44.8 20.1 41.3L26 35.4H10V51.4L15.1 46.3C19.2 51.1 25.3 54 32 54C42.5 54 51.3 46.7 53.5 36.9Z"
-                            fill="#008000"
-                          />
-                        </svg>
-                        <span className="text-[9px] text-[#555555] font-semibold">
-                          reCAPTCHA
-                        </span>
-                        <div className="flex gap-1 text-[7.5px] text-[#777777]">
-                          <a
-                            href="https://www.google.com/intl/en/policies/privacy/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:underline"
-                            onClick={(e) => e.stopPropagation()}
+                      {isLocalhost && (
+                        <div className="flex items-center gap-2 pt-1 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNotARobot(true);
+                              setRobotError(false);
+                            }}
+                            className="px-2.5 py-1 rounded bg-[#008000] hover:bg-[#006600] text-white font-bold text-[11px] shadow-sm transition cursor-pointer"
                           >
-                            Privacy
-                          </a>
-                          <span>-</span>
-                          <a
-                            href="https://www.google.com/intl/en/policies/terms/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Terms
-                          </a>
+                            ✓ Click to Confirm Not a Robot (Localhost)
+                          </button>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
 

@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SEO from '@/components/SEO';
 import {
-  ArrowUpRight, Search, Landmark, Wallet, CloudSun, Cpu,
-  FolderKanban, Briefcase, Award, Building2, Users, Globe,
-  ChevronLeft, ChevronRight, Star, CheckCircle2, MapPin, Clock, X, Sparkles
+  ArrowUpRight, ArrowRight, Search, Landmark, Wallet, CloudSun, Cpu,
+  FolderKanban, Briefcase, Award, Users, Globe, FileText,
+  ChevronLeft, ChevronRight, Star, CheckCircle2, MapPin, Clock, X, Sparkles, ChevronDown
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -395,7 +395,7 @@ const trainingTestimonials = [
 // ─── Milestones Counter Data (Retained & Animated on Open / Scroll) ─────────
 const milestones = [
   { target: 15, suffix: "+", label: "Years of Experience", icon: Award },
-  { target: 30, suffix: "+", label: "Impacted Organizations", icon: Building2 },
+  { target: 30, suffix: "+", label: "Impacted Organizations", icon: FileText },
   { target: 5, suffix: "K+", label: "Impacted Professionals", icon: Users },
   { target: 8, suffix: "+", label: "Impacted Countries", icon: Globe },
 ];
@@ -454,19 +454,19 @@ function AnimatedMilestoneCard({ milestone }) {
   return (
     <div
       ref={cardRef}
-      className="bg-transparent border-b-4 border-[#008000] rounded-xl p-6 text-center flex flex-col items-center justify-center transition-transform duration-300 hover:-translate-y-1"
+      className="bg-[#032e42] border-b-4 border-[#008000] rounded-xl p-6 md:p-7 text-center flex flex-col items-center justify-center transition-all duration-300 hover:-translate-y-1 shadow-lg"
     >
-      <div className="w-14 h-14 rounded-full bg-[#008000] flex items-center justify-center mb-3 text-white shadow-sm">
+      <div className="w-14 h-14 rounded-full bg-[#008000] flex items-center justify-center mb-3.5 text-white shadow-md">
         <IconComp size={26} />
       </div>
       <div
-        className="text-3xl sm:text-4xl font-extrabold text-[#032e42] mb-1 tabular-nums"
+        className="text-3xl sm:text-4xl font-extrabold text-white mb-1.5 tabular-nums"
         style={{ fontFamily: "'Fira Sans', sans-serif" }}
       >
         {count}
         {milestone.suffix}
       </div>
-      <h3 className="text-slate-700 text-sm sm:text-base font-bold">
+      <h3 className="text-white text-sm sm:text-base font-bold tracking-wide">
         {milestone.label}
       </h3>
     </div>
@@ -486,6 +486,13 @@ const Index = () => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [keywordQuery, setKeywordQuery] = useState("");
 
+  // Course categories compact view state to save scrolling space
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState("all");
+  const toggleCategoryExpand = (catTitle) => {
+    setExpandedCategories((prev) => ({ ...prev, [catTitle]: !prev[catTitle] }));
+  };
+
   // Carousels state
   const [whyIndex, setWhyIndex] = useState(0);
   const [whyPaused, setWhyPaused] = useState(false);
@@ -496,10 +503,6 @@ const Index = () => {
   // Newsletter state
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
-
-  // Course categories compact & filter state (to save scrolling space & time)
-  const [expandedCategories, setExpandedCategories] = useState({});
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState("all");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -554,11 +557,91 @@ const Index = () => {
     }
   };
 
+  const homeSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": ["EducationalOrganization", "Organization"],
+        "@id": "https://ecasiafrica.org/#organization",
+        "name": "ECAS Institute",
+        "alternateName": ["ECASI", "ECASI Africa", "Environmental Capacities and Sustainability Institute"],
+        "url": "https://ecasiafrica.org",
+        "logo": "https://ecasiafrica.org/logo.png",
+        "image": "https://ecasiafrica.org/images/courses/executive_training.jpg",
+        "description": "Leading Pan-African executive training institution delivering accredited professional short courses, corporate in-house programmes, and certifications across Climate Finance, Public Financial Management, ESG, Carbon Markets, AI, Governance, and Project Management.",
+        "telephone": "+254-722-000-000",
+        "email": "info@ecasiafrica.org",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Nairobi",
+          "addressCountry": "KE"
+        },
+        "sameAs": [
+          "https://www.facebook.com/ecasinstitute",
+          "https://www.linkedin.com/company/ecasi-africa",
+          "https://x.com/ecasinstitute",
+          "https://www.youtube.com/@ecasinstitute"
+        ],
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "2026 Executive Training Catalog",
+          "numberOfItems": 213,
+          "itemListElement": [
+            {
+              "@type": "OfferCatalog",
+              "name": "Governance, Leadership & Public Sector Transformation",
+              "url": "https://ecasiafrica.org/institute-overview?category=Governance%2C%20Leadership%20%26%20Public%20Sector%20Transformation"
+            },
+            {
+              "@type": "OfferCatalog",
+              "name": "Climate Finance & Public Financial Management (PFM)",
+              "url": "https://ecasiafrica.org/institute-overview?category=Financial%20Management"
+            },
+            {
+              "@type": "OfferCatalog",
+              "name": "Carbon Markets, ESG & Corporate Sustainability",
+              "url": "https://ecasiafrica.org/institute-overview?category=Carbon%20Markets%20%26%20ESG"
+            },
+            {
+              "@type": "OfferCatalog",
+              "name": "Environment, Climate Change & Sustainability",
+              "url": "https://ecasiafrica.org/institute-overview?category=Climate%20Change%20%26%20Sustainability"
+            },
+            {
+              "@type": "OfferCatalog",
+              "name": "Data, Artificial Intelligence, IT & Cybersecurity",
+              "url": "https://ecasiafrica.org/institute-overview?category=Data%2C%20Artificial%20Intelligence%2C%20IT%20%26%20Cybersecurity"
+            },
+            {
+              "@type": "OfferCatalog",
+              "name": "Project Management, Procurement & M&E",
+              "url": "https://ecasiafrica.org/institute-overview?category=Project%20Management%2C%20Procurement%20%26%20M%26E"
+            }
+          ]
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://ecasiafrica.org/#website",
+        "url": "https://ecasiafrica.org",
+        "name": "ECAS Institute",
+        "publisher": { "@id": "https://ecasiafrica.org/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://ecasiafrica.org/institute-overview?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  };
+
   return (
     <>
       <SEO
-        title="Professional Executive Training Courses in Kenya & Africa | ECAS Institute"
-        description="Build practical skills with ECAS Institute’s professional executive training courses in Nairobi and beyond. Explore classroom, online and tailored in-house training in Climate Finance, AI, PFM, Governance, Carbon Markets & Project Management."
+        title="Executive Training, Professional Short Courses &amp; Capacity Building in Africa | ECAS Institute"
+        description="Empower your leadership and workforce with ECAS Institute’s accredited executive training courses, short courses, and in-house capacity development in Nairobi, Mombasa, Dubai, Kuala Lumpur (Malaysia), and Online across Climate Finance, AI, PFM, ESG, Governance &amp; Project Management."
+        keywords="executive training Nairobi, professional short courses Kenya, capacity building Africa, climate finance courses, public financial management training, ESG certification Africa, carbon markets and trading course, corporate governance training, AI in project management, procurement short courses, NITA accredited training institution, ECAS Institute, ECASI Africa, training in Nairobi Dubai Kuala Lumpur"
+        schema={homeSchema}
       />
       <div className="min-h-screen flex flex-col bg-white">
         <Header />
@@ -869,147 +952,131 @@ const Index = () => {
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════════
-            5. OUR COURSE CATEGORIES (Compact, Space-Saving Layout)
+            5. OUR COURSE CATEGORIES (Devimpact Executive Grid - Compact & Solid)
         ══════════════════════════════════════════════════════════════════════ */}
         <section id="course-categories" className="pt-6 pb-2 bg-white">
-          <div className="max-w-[1380px] w-full mx-auto px-4 sm:px-6 mb-4">
+          <div className="max-w-[1380px] w-full mx-auto px-4 sm:px-6 mb-3">
             <h2
-              className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[32px] text-center"
+              className="text-[#032e42] font-bold text-2xl sm:text-3xl text-center"
               style={{ fontFamily: "'Fira Sans', sans-serif" }}
             >
               Our Course Categories
             </h2>
           </div>
 
-          {/* Compact Course Categories Container with clearly visible background image */}
-          <div className="relative bg-[#0a384f] py-8 sm:py-10 overflow-hidden">
-            {/* Clear, visible background image */}
-            <img
-              src="/images/courses/professional_training.png"
-              alt="ECAS Institute Executive Training"
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
-            />
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: "linear-gradient(180deg, rgba(3, 46, 66, 0.60) 0%, rgba(3, 46, 66, 0.72) 100%)"
-              }}
-            />
-
+          {/* Course Categories Container - Solid Premium Dark Background matching Image 2 */}
+          <div className="relative bg-[#032e42] py-6 sm:py-8">
             <div className="relative z-10 max-w-[1380px] w-full mx-auto px-4 sm:px-6">
-              {/* Category Quick Filter Pills (Saves scrolling space & time on mobile & desktop) */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
-                <span className="text-white/70 text-xs font-bold uppercase tracking-wider shrink-0 mr-1 hidden sm:inline">
-                  Filter Faculty:
-                </span>
+              {/* Mobile Quick Category Switcher Pills (Saves Massive Scrolling Space on Small Devices) */}
+              <div className="flex sm:hidden overflow-x-auto gap-1.5 pb-2.5 mb-3 scrollbar-none">
                 <button
                   type="button"
                   onClick={() => setActiveCategoryFilter("all")}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                     activeCategoryFilter === "all"
                       ? "bg-[#008000] text-white shadow"
-                      : "bg-white/15 text-white/90 hover:bg-white/25 hover:text-white border border-white/20"
+                      : "bg-white/10 text-white/80 hover:bg-white/20"
                   }`}
                 >
-                  All Faculties ({courseCategoriesGrid.length})
+                  All Categories (6)
                 </button>
-                {courseCategoriesGrid.map((cat, idx) => {
-                  const shortName = cat.title.split(",")[0].replace(" & Technology", "").trim();
-                  const isSelected = activeCategoryFilter === String(idx);
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setActiveCategoryFilter(String(idx))}
-                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-[#008000] text-white shadow"
-                          : "bg-white/15 text-white/90 hover:bg-white/25 hover:text-white border border-white/20"
-                      }`}
-                    >
-                      {shortName}
-                    </button>
-                  );
-                })}
+                {courseCategoriesGrid.map((cat, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveCategoryFilter(cat.title)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                      activeCategoryFilter === cat.title
+                        ? "bg-[#008000] text-white shadow"
+                        : "bg-white/10 text-white/80 hover:bg-white/20"
+                    }`}
+                  >
+                    {cat.title.split(",")[0].split("&")[0].trim()}
+                  </button>
+                ))}
               </div>
 
-              {/* 3-Column Compact Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-5">
+              {/* 3-Column Grid with Reduced Size to Save Scrolling Space on Desktop and Mobile */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4.5">
                 {courseCategoriesGrid
-                  .map((cat, originalIdx) => ({ cat, originalIdx }))
-                  .filter(({ originalIdx }) => activeCategoryFilter === "all" || activeCategoryFilter === String(originalIdx))
-                  .map(({ cat, originalIdx }) => {
+                  .filter(
+                    (cat) =>
+                      activeCategoryFilter === "all" ||
+                      activeCategoryFilter === cat.title
+                  )
+                  .map((cat, idx) => {
                     const IconComp = cat.icon;
-                    const isExpanded = !!expandedCategories[originalIdx];
-                    const displayedLinks = isExpanded ? cat.links : cat.links.slice(0, 4);
+                    const isExpanded = Boolean(expandedCategories[cat.title]);
+                    const visibleLinks = isExpanded ? cat.links : cat.links.slice(0, 5);
+                    const remainingCount = cat.links.length - 5;
 
                     return (
                       <div
-                        key={originalIdx}
-                        className="flex flex-col justify-between bg-[#032e42]/75 backdrop-blur-[2px] p-4 sm:p-4.5 rounded-xl border border-white/15 shadow-sm transition-all hover:border-[#008000]/60"
+                        key={idx}
+                        className="flex flex-col justify-between bg-[#042636] p-3.5 sm:p-4 rounded-xl border border-white/10 shadow-md transition-all duration-300 hover:border-[#008000]/60"
                       >
                         <div>
                           {/* Icon + Green Underlined Category Header */}
-                          <div className="flex items-start gap-2.5 mb-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-[#008000] flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm">
-                              <IconComp size={17} />
+                          <div className="flex items-center gap-2.5 mb-2.5 pb-2 border-b border-white/10">
+                            <div className="w-7 h-7 rounded-md bg-[#008000] flex items-center justify-center text-white shrink-0 shadow-sm">
+                              <IconComp size={15} />
                             </div>
-                            <h3 className="text-[13.5px] sm:text-[14px] font-bold uppercase leading-snug tracking-wide">
+                            <h3 className="text-[12px] sm:text-[13px] font-bold uppercase leading-tight tracking-wide">
                               <Link
                                 to={cat.path}
-                                className="text-[#4ade80] hover:text-white underline decoration-[#008000] underline-offset-4 transition-colors line-clamp-2"
+                                className="text-[#00c853] hover:text-white underline decoration-[#008000] underline-offset-2 transition-colors"
                               >
                                 {cat.title}
                               </Link>
                             </h3>
                           </div>
 
-                          {/* Course / Sub-category Links List (Compact, 1-line truncation) */}
-                          <ul className="space-y-1.5 pl-0.5">
-                            {displayedLinks.map((item, lIdx) => (
-                              <li key={lIdx} className="border-b border-white/10 pb-1.5 last:border-b-0">
+                          {/* Compact Course Links List */}
+                          <ul className="space-y-1 pl-0.5">
+                            {visibleLinks.map((item, lIdx) => (
+                              <li key={lIdx} className="border-b border-white/5 pb-1 last:border-b-0">
                                 <Link
                                   to={item.path}
                                   title={item.label}
-                                  className="flex items-center justify-between gap-2 text-white hover:text-[#4ade80] text-[12.5px] sm:text-[13px] font-medium leading-snug transition-colors group"
+                                  className="flex items-center justify-between gap-1.5 text-white/90 hover:text-white text-[12px] sm:text-[12.5px] font-medium leading-snug transition-colors group"
                                 >
                                   <span className="line-clamp-1">{item.label}</span>
                                   <ChevronRight
-                                    size={13}
-                                    className="shrink-0 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-[#4ade80]"
+                                    size={12}
+                                    className="shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-[#00c853]"
                                   />
                                 </Link>
                               </li>
                             ))}
                           </ul>
-                        </div>
 
-                        {/* Card Footer: Toggle +N more & View Faculty */}
-                        <div className="mt-3 pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                          {cat.links.length > 4 ? (
+                          {/* Quick Expand Toggle for remaining courses */}
+                          {remainingCount > 0 && (
                             <button
                               type="button"
-                              onClick={() =>
-                                setExpandedCategories((prev) => ({
-                                  ...prev,
-                                  [originalIdx]: !prev[originalIdx],
-                                }))
-                              }
-                              className="text-[11px] font-bold text-white/80 hover:text-white py-0.5 px-2 rounded bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                              onClick={() => toggleCategoryExpand(cat.title)}
+                              className="mt-1 text-[11px] font-semibold text-[#00c853] hover:text-white inline-flex items-center gap-1 cursor-pointer transition-colors"
                             >
-                              {isExpanded ? "Show less ▲" : `+${cat.links.length - 4} more ▼`}
+                              <span>{isExpanded ? "Show Less" : `+ ${remainingCount} More Courses`}</span>
+                              <ChevronDown
+                                size={12}
+                                className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                              />
                             </button>
-                          ) : (
-                            <span />
                           )}
+                        </div>
 
+                        {/* Card Footer: Course Count & Explore All link */}
+                        <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11.5px]">
+                          <span className="text-white/60 font-medium">
+                            {cat.links.length} Modules
+                          </span>
                           <Link
                             to={cat.path}
-                            className="text-[12px] font-bold text-[#4ade80] hover:text-white inline-flex items-center gap-0.5 ml-auto transition-colors"
+                            className="font-bold text-[#00c853] hover:text-white inline-flex items-center gap-1 transition-colors"
                           >
-                            <span>View All ({cat.links.length})</span>
-                            <ChevronRight size={13} />
+                            <span>Explore Faculty</span>
+                            <ArrowRight size={12} />
                           </Link>
                         </div>
                       </div>
@@ -1018,7 +1085,7 @@ const Index = () => {
               </div>
 
               {/* Bottom CTA bar inside Course Categories */}
-              <div className="mt-7 pt-5 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+              <div className="mt-5 pt-4 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
                 <div>
                   <p className="text-white font-bold text-sm sm:text-base" style={{ textAlign: "left" }}>
                     Looking for our complete 2026–2030 Executive Training Catalogue?

@@ -56,10 +56,10 @@ import Training from "./pages/Training.jsx";
 import PolicyAnalysis from "./pages/PolicyAnalysis.jsx";
 import Search from "./pages/Search.jsx";
 import ExcursionDetail from "./pages/ExcursionDetail.jsx";
+import MsimamiziAdmin from "./pages/MsimamiziAdmin.jsx";
 
 import Analytics from "@/components/Analytics";
 import ScrollToTop from "@/components/ScrollToTop";
-import WhatsAppWidget from "@/components/WhatsAppWidget";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +81,13 @@ const App = () => {
     });
   }, []);
 
+  // Dedicated domain / subdomain detection for msimamizi.ecasiafrica.org
+  const isMsimamiziDomain =
+    typeof window !== "undefined" &&
+    (window.location.hostname.startsWith("msimamizi.") ||
+      window.location.hostname.includes("msimamizi") ||
+      window.location.search.includes("portal=msimamizi"));
+
   return (
     <QueryClientProvider client={queryClient}>
 
@@ -89,9 +96,21 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
-        <WhatsAppWidget />
-        <Analytics />
+        {!isMsimamiziDomain && <Analytics />}
         <Routes>
+          {/* If accessed via msimamizi.ecasiafrica.org subdomain, root serves the admin portal */}
+          {isMsimamiziDomain && (
+            <>
+              <Route path="/" element={<MsimamiziAdmin />} />
+              <Route path="*" element={<MsimamiziAdmin />} />
+            </>
+          )}
+
+          {/* Dedicated Admin Portal Routes on main domain */}
+          <Route path="/msimamizi" element={<MsimamiziAdmin />} />
+          <Route path="/admin" element={<Navigate to="/msimamizi" replace />} />
+          <Route path="/portal" element={<Navigate to="/msimamizi" replace />} />
+
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
           <Route path="/governing-council" element={<GoverningCouncil />} />

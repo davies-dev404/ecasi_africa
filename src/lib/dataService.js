@@ -137,5 +137,83 @@ export const dataService = {
   },
   getCoursesLinks() {
     return getLocalStorageData(KEYS.COURSES_LINKS) || defaultCoursesLinks;
+  },
+
+  // ─── Course Mutations (Msimamizi Admin Operations) ──────────────────────────
+  saveCourse(courseData) {
+    if (!courseData || !courseData.slug) return false;
+    try {
+      const cleanSlug = String(courseData.slug).trim().toLowerCase();
+      const cached = getLocalStorageData(KEYS.COURSES) || {};
+      const base = defaultCourses[cleanSlug] || {};
+
+      cached[cleanSlug] = {
+        ...base,
+        ...(cached[cleanSlug] || {}),
+        ...courseData,
+        slug: cleanSlug,
+        updatedAt: new Date().toISOString()
+      };
+
+      localStorage.setItem(KEYS.COURSES, JSON.stringify(cached));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ecasi_courses_updated', { detail: { slug: cleanSlug } }));
+      }
+      return true;
+    } catch (e) {
+      console.error("Error saving course to dataService", e);
+      return false;
+    }
+  },
+
+  updateCoursePricing(slug, { fee, feeUsd, feeKes, discountPercent, discountPrice, customCohorts }) {
+    if (!slug) return false;
+    try {
+      const cleanSlug = String(slug).trim().toLowerCase();
+      const cached = getLocalStorageData(KEYS.COURSES) || {};
+      const base = defaultCourses[cleanSlug] || {};
+
+      const updates = {};
+      if (fee !== undefined) updates.fee = fee;
+      if (feeUsd !== undefined) updates.feeUsd = feeUsd;
+      if (feeKes !== undefined) updates.feeKes = feeKes;
+      if (discountPercent !== undefined) updates.discountPercent = discountPercent;
+      if (discountPrice !== undefined) updates.discountPrice = discountPrice;
+      if (customCohorts !== undefined) updates.customCohorts = customCohorts;
+
+      cached[cleanSlug] = {
+        ...base,
+        ...(cached[cleanSlug] || {}),
+        ...updates,
+        slug: cleanSlug,
+        updatedAt: new Date().toISOString()
+      };
+
+      localStorage.setItem(KEYS.COURSES, JSON.stringify(cached));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ecasi_courses_updated', { detail: { slug: cleanSlug } }));
+      }
+      return true;
+    } catch (e) {
+      console.error("Error updating course pricing", e);
+      return false;
+    }
+  },
+
+  deleteCourse(slug) {
+    if (!slug) return false;
+    try {
+      const cleanSlug = String(slug).trim().toLowerCase();
+      const cached = getLocalStorageData(KEYS.COURSES) || {};
+      delete cached[cleanSlug];
+      localStorage.setItem(KEYS.COURSES, JSON.stringify(cached));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ecasi_courses_updated', { detail: { slug: cleanSlug } }));
+      }
+      return true;
+    } catch (e) {
+      console.error("Error deleting course", e);
+      return false;
+    }
   }
 };

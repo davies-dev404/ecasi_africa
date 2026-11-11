@@ -1605,7 +1605,7 @@ export default function ExecutiveTraining() {
       }
       return true;
     });
-  }, [allCourses, selectedCategory, searchQuery, selectedDurations]);
+  }, [allCourses, selectedCategory, searchQuery, selectedDurations, selectedVenues, selectedFormats]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCourses.length / COURSES_PER_PAGE));
   const paginatedCourses = useMemo(() => {
@@ -1933,8 +1933,9 @@ export default function ExecutiveTraining() {
     return (
       <div className="min-h-screen flex flex-col devimpact-page-wrap">
         <SEO
-          title={`${activeCatTitle} | ECAS Institute`}
+          title={`${activeCatTitle} | Executive Training Courses | ECAS Institute`}
           description={activeCatDescription}
+          keywords={`executive training courses, ${activeCatTitle}, professional short courses Nairobi, capacity development Africa, ECAS Institute, training in Kenya Dubai Kuala Lumpur`}
         />
         <style>{devimpactCourseStyles}</style>
         <Header />
@@ -2195,7 +2196,7 @@ export default function ExecutiveTraining() {
                             </span>
                             <span>
                               <MapPin className="w-3.5 h-3.5 text-[#032e42]" />
-                              {course.location ? `${course.location.replace(/ \/ Online$/, '')} / Dubai / Malaysia / Online` : 'Nairobi / Mombasa / Kigali / Dubai / Malaysia / Online'}
+                              Nairobi / Mombasa / Kigali / Dubai / Kuala Lumpur / Online
                             </span>
                           </div>
                         </div>
@@ -2296,10 +2297,23 @@ export default function ExecutiveTraining() {
   }
 
   const courseBannerImg = getCourseImage(courseInfo);
-  const { classroomCohorts, onlineCohorts } = generateCourseSchedules(
+  const defaultSchedules = generateCourseSchedules(
     courseInfo.title,
     courseInfo.duration || '5 Days'
   );
+
+  // If administrator updated custom cohorts or discounts via MsimamiziAdmin, reflect them dynamically
+  const classroomCohorts = (Array.isArray(courseInfo.customCohorts) && courseInfo.customCohorts.length > 0)
+    ? courseInfo.customCohorts.map((dateStr, idx) => ({
+        scheduleNo: 400820 + idx,
+        dates: dateStr,
+        venue: defaultSchedules.classroomCohorts[idx % defaultSchedules.classroomCohorts.length]?.venue || 'Nairobi, Kenya',
+        fee: courseInfo.discountPrice ? `$${courseInfo.discountPrice}` : (courseInfo.fee || '$1,200'),
+        format: 'Classroom'
+      }))
+    : defaultSchedules.classroomCohorts;
+
+  const onlineCohorts = defaultSchedules.onlineCohorts;
   const formattedHtmlContent = formatCourseHtmlContent(courseInfo.content || '');
 
   // Related courses in the same category for the right sidebar
@@ -2309,15 +2323,70 @@ export default function ExecutiveTraining() {
   const sidebarCourses =
     relatedCourses.length > 0 ? relatedCourses : allCourses.filter((c) => c.slug !== slug).slice(0, 5);
 
+  const courseImg = getCourseImage(courseInfo);
+
+  const courseSchema = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": courseInfo.title,
+    "description":
+      courseInfo.summary ||
+      courseInfo.subtitle ||
+      `Executive training course on ${courseInfo.title} offered by ECAS Institute in Nairobi, Mombasa, Kigali, Dubai, Kuala Lumpur (Malaysia), and Online.`,
+    "provider": {
+      "@type": "EducationalOrganization",
+      "name": "ECAS Institute",
+      "url": "https://ecasiafrica.org",
+      "logo": "https://ecasiafrica.org/logo.png"
+    },
+    "url": `https://ecasiafrica.org/executive-training/${slug}`,
+    "educationalCredentialAwarded": "Executive Certificate of Professional Competence",
+    "timeRequired": courseInfo.duration || "5 Days",
+    "offers": {
+      "@type": "Offer",
+      "category": "Tuition Fee",
+      "price": ((courseInfo.fee || "1200").replace(/[^0-9]/g, "") || "1200"),
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "url": `https://ecasiafrica.org/register?course=${encodeURIComponent(slug)}`
+    },
+    "hasCourseInstance": [
+      {
+        "@type": "CourseInstance",
+        "courseMode": "Blended",
+        "courseWorkload": courseInfo.duration || "5 Days",
+        "location": {
+          "@type": "Place",
+          "name": "ECAS Institute Executive Training Center, Nairobi",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Nairobi",
+            "addressCountry": "KE"
+          }
+        }
+      },
+      {
+        "@type": "CourseInstance",
+        "courseMode": "Online",
+        "courseWorkload": courseInfo.duration || "5 Days"
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen flex flex-col devimpact-page-wrap">
       <SEO
-        title={`${courseInfo.title} | ECAS Institute`}
+        title={`${courseInfo.title} | Executive Training Course | ECAS Institute`}
         description={
           courseInfo.summary ||
           courseInfo.subtitle ||
           `Executive training course on ${courseInfo.title} offered by ECAS Institute in Nairobi, Mombasa, Kigali, Dubai, Kuala Lumpur (Malaysia), and Online.`
         }
+        keywords={`${courseInfo.title}, ${courseInfo.category}, executive training Nairobi, short courses Kenya, ECAS Institute, professional certification Africa`}
+        image={courseImg}
+        url={`https://ecasiafrica.org/executive-training/${slug}`}
+        type="article"
+        schema={courseSchema}
       />
       <style>{devimpactCourseStyles}</style>
       <Header />

@@ -1,3 +1,33 @@
+# ECAS Institute (ECASI Africa) robots.txt
+# Focus: Executive Training, Short Courses & Professional Capacity Building
+
 User-agent: *
 Allow: /
+
+# Explicit AI Search Engine Crawlers (Google AI Overviews, Gemini, OpenAI Search, Perplexity, Claude, Applebot)
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Sitemaps & LLM Context
 Sitemap: https://ecasiafrica.org/sitemap.xml

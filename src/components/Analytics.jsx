@@ -62,8 +62,14 @@ const Analytics = () => {
       }
     }
 
-    // 4. Cloudflare Web Analytics
-    if (CLOUDFLARE_BEACON_TOKEN && CLOUDFLARE_BEACON_TOKEN !== 'YOUR_CLOUDFLARE_BEACON_TOKEN') {
+    // 4. Cloudflare Web Analytics (Disabled on localhost to avoid CORS preflight errors with cdn-cgi/rum)
+    const isLocalhost =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.endsWith('.local'));
+
+    if (!isLocalhost && CLOUDFLARE_BEACON_TOKEN && CLOUDFLARE_BEACON_TOKEN !== 'YOUR_CLOUDFLARE_BEACON_TOKEN') {
       try {
         const script = document.createElement('script');
         script.defer = true;

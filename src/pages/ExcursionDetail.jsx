@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header.jsx";
 import Footer from "../components/Footer.jsx";
+import SEO from "../components/SEO.jsx";
 import {
   MapPin,
   Clock,
@@ -338,8 +339,34 @@ const ExcursionDetail = () => {
     setSubmitted(true);
   };
 
+  const excursionSchema = {
+    "@context": "https://schema.org",
+    "@type": "TouristAttraction",
+    "name": currentExcursion.title,
+    "description": currentExcursion.subtitle,
+    "touristType": ["Executive Training Delegates", "Business Travelers"],
+    "location": {
+      "@type": "Place",
+      "name": currentExcursion.location,
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Nairobi",
+        "addressCountry": "KE"
+      }
+    },
+    "image": `https://ecasiafrica.org${currentExcursion.heroImage}`
+  };
+
   return (
     <>
+      <SEO
+        title={`${currentExcursion.title} | Beyond the Classroom | ECAS Institute`}
+        description={currentExcursion.subtitle}
+        keywords={`${currentExcursion.shortTitle}, Nairobi excursions, Beyond the Classroom, ECAS Institute executive training, Kenya cultural tours`}
+        image={`https://ecasiafrica.org${currentExcursion.heroImage}`}
+        url={`https://ecasiafrica.org/beyond-the-classroom/${currentExcursion.slug}`}
+        schema={excursionSchema}
+      />
       <Header />
 
       <main className="bg-[#f8fafc] min-h-screen">
