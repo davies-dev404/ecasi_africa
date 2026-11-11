@@ -2430,21 +2430,21 @@ export default function MsimamiziAdmin() {
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-                    <span className="text-slate-400 block flex items-center gap-1">
+                    <span className="text-slate-400 flex items-center gap-1">
                       <Hotel className="w-3.5 h-3.5 text-[#008000]" />
                       <span>Accommodation</span>
                     </span>
                     <strong className="text-slate-800 mt-1 block">{selectedReg.needAccommodation || 'No'}</strong>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-                    <span className="text-slate-400 block flex items-center gap-1">
+                    <span className="text-slate-400 flex items-center gap-1">
                       <Plane className="w-3.5 h-3.5 text-[#008000]" />
                       <span>Airport Transfer</span>
                     </span>
                     <strong className="text-slate-800 mt-1 block">{selectedReg.needAirportTransfer || 'No'}</strong>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-                    <span className="text-slate-400 block flex items-center gap-1">
+                    <span className="text-slate-400 flex items-center gap-1">
                       <Compass className="w-3.5 h-3.5 text-[#008000]" />
                       <span>Safari / Tour</span>
                     </span>
@@ -2822,7 +2822,7 @@ export default function MsimamiziAdmin() {
 
               {/* Upcoming Cohort Training Dates */}
               <div>
-                <label className="block text-slate-700 font-bold mb-1.5 flex items-center justify-between">
+                <label className="flex items-center justify-between text-slate-700 font-bold mb-1.5">
                   <span>Upcoming Cohort Training Dates (2026 Calendar)</span>
                   <span className="text-[10px] text-slate-400 font-normal">
                     {editForm.customCohorts.length} Scheduled
