@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Users,
   GraduationCap,
@@ -52,6 +51,19 @@ export default function MsimamiziAdmin() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authRemember, setAuthRemember] = useState(true);
   const [authError, setAuthError] = useState('');
+
+  // Dynamic resolution of public website link (handles subdomains vs main domain vs localhost)
+  const publicSiteUrl = useMemo(() => {
+    if (typeof window === 'undefined') return 'https://ecasiafrica.org';
+    if (
+      window.location.hostname.startsWith('msimamizi.') ||
+      window.location.hostname.includes('msimamizi') ||
+      window.location.search.includes('portal=msimamizi')
+    ) {
+      return 'https://ecasiafrica.org';
+    }
+    return '/';
+  }, []);
 
   // Mobile sidebar toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -828,13 +840,13 @@ export default function MsimamiziAdmin() {
               </div>
 
               <div className="pt-2 text-center border-t border-slate-100">
-                <Link
-                  to="/"
-                  className="text-xs font-semibold text-slate-500 hover:text-[#032e42] inline-flex items-center gap-1 transition"
+                <a
+                  href={publicSiteUrl}
+                  className="text-xs font-semibold text-slate-500 hover:text-[#032e42] inline-flex items-center gap-1 transition cursor-pointer"
                 >
                   <span>Return to Public Website (ecasiafrica.org)</span>
                   <ArrowUpRight size={13} />
-                </Link>
+                </a>
               </div>
             </form>
           )}
@@ -946,13 +958,13 @@ export default function MsimamiziAdmin() {
               </div>
 
               <div className="pt-2 text-center border-t border-slate-100">
-                <Link
-                  to="/"
-                  className="text-xs font-semibold text-slate-500 hover:text-[#032e42] inline-flex items-center gap-1 transition"
+                <a
+                  href={publicSiteUrl}
+                  className="text-xs font-semibold text-slate-500 hover:text-[#032e42] inline-flex items-center gap-1 transition cursor-pointer"
                 >
                   <span>Return to Public Website (ecasiafrica.org)</span>
                   <ArrowUpRight size={13} />
-                </Link>
+                </a>
               </div>
             </form>
           )}
@@ -1190,10 +1202,10 @@ export default function MsimamiziAdmin() {
         } ${isMobileMenuOpen ? 'block' : 'hidden md:block'}`}>
           {!isSidebarCollapsed ? (
             <a
-              href="/"
+              href={publicSiteUrl}
               target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition cursor-pointer"
             >
               <span className="flex items-center gap-2">
                 <ExternalLink className="w-3.5 h-3.5 text-[#00c853]" />
@@ -1203,11 +1215,11 @@ export default function MsimamiziAdmin() {
             </a>
           ) : (
             <a
-              href="/"
+              href={publicSiteUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               title="Public Website (ecasiafrica.org)"
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-emerald-400 transition"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-emerald-400 transition cursor-pointer"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
