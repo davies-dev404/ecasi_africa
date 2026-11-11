@@ -41,10 +41,15 @@ import { dataService } from '@/lib/dataService';
 
 export default function MsimamiziAdmin() {
 
-  // Authentication State
+  // Authentication & Dynamic Credentials State
   const [isAuthenticated, setIsAuthenticated] = useState(() => adminRegistrationService.isAuthenticated());
-  const [authEmail, setAuthEmail] = useState('admin@ecasiafrica.org');
+  const [currentUser, setCurrentUser] = useState(() => adminRegistrationService.getCurrentUser());
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'create'
+  const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [createEmail, setCreateEmail] = useState('');
+  const [createPassword, setCreatePassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [authRemember, setAuthRemember] = useState(true);
   const [authError, setAuthError] = useState('');
 
@@ -565,9 +570,30 @@ export default function MsimamiziAdmin() {
     setAuthError('');
     const result = adminRegistrationService.login(authEmail, authPassword, authRemember);
     if (result.success) {
+      setCurrentUser(result.user);
       setIsAuthenticated(true);
     } else {
       setAuthError(result.message || 'Invalid administrative credentials');
+    }
+  };
+
+  // Handle First-Time Administrator Password Creation
+  const handleCreatePasswordSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    if (createPassword !== confirmPassword) {
+      setAuthError('Passwords do not match. Please verify both fields.');
+      return;
+    }
+
+    const result = adminRegistrationService.registerAdmin(createEmail, createPassword, authRemember);
+    if (result.success) {
+      setCurrentUser(result.user);
+      setIsAuthenticated(true);
+      showToast('Administrator credentials created successfully! Welcome to Msimamizi.');
+    } else {
+      setAuthError(result.message);
     }
   };
 
@@ -687,82 +713,249 @@ export default function MsimamiziAdmin() {
             </div>
           </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleLoginSubmit} className="p-6 sm:p-8 space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Administrator Email / Username
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  value={authEmail}
-                  onChange={(e) => setAuthEmail(e.target.value)}
-                  placeholder="admin@ecasiafrica.org"
-                  className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Security Password / Access PIN
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  required
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
-                />
-              </div>
-              <div className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
-                <span>Default PIN: <strong className="text-slate-600 font-mono">msimamizi2026</strong> or <strong className="text-slate-600 font-mono">2026</strong></span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={authRemember}
-                  onChange={(e) => setAuthRemember(e.target.checked)}
-                  className="rounded text-[#008000] focus:ring-[#008000]"
-                />
-                <span>Remember this terminal</span>
-              </label>
-            </div>
-
-            {authError && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{authError}</span>
-              </div>
-            )}
-
+          {/* Dual-Mode Auth Switcher */}
+          <div className="flex border-b border-slate-200 bg-slate-50/80 p-1.5 gap-1.5">
             <button
-              type="submit"
-              className="w-full h-11 bg-[#032e42] hover:bg-[#008000] text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
+              type="button"
+              onClick={() => {
+                setAuthMode('login');
+                setAuthError('');
+              }}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                authMode === 'login'
+                  ? 'bg-white text-[#032e42] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Sign In to Msimamizi Portal</span>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Sign In</span>
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('create');
+                setAuthError('');
+              }}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                authMode === 'create'
+                  ? 'bg-white text-[#008000] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create First Password</span>
+            </button>
+          </div>
 
-            <div className="pt-2 text-center border-t border-slate-100">
-              <Link
-                to="/"
-                className="text-xs font-semibold text-slate-500 hover:text-[#032e42] inline-flex items-center gap-1 transition"
+          {/* Login Form */}
+          {authMode === 'login' && (
+            <form onSubmit={handleLoginSubmit} className="p-6 sm:p-8 space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Administrator Email / Username
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="admin@ecasiafrica.org"
+                    className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Security Password / Access PIN
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    required
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
+                  />
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                  <span>Testing login: <strong className="text-slate-600 font-mono">admin@ecasiafrica.org</strong> (PIN: <strong className="text-slate-600 font-mono">msimamizi2026</strong>)</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={authRemember}
+                    onChange={(e) => setAuthRemember(e.target.checked)}
+                    className="rounded text-[#008000] focus:ring-[#008000]"
+                  />
+                  <span>Remember this terminal</span>
+                </label>
+              </div>
+
+              {authError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full h-11 bg-[#032e42] hover:bg-[#008000] text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Return to Public Website (ecasiafrica.org)</span>
-                <ArrowUpRight size={13} />
-              </Link>
-            </div>
-          </form>
+                <ShieldCheck className="w-4 h-4" />
+                <span>Sign In to Msimamizi Portal</span>
+              </button>
+
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('create');
+                    setAuthError('');
+                  }}
+                  className="text-xs font-semibold text-[#008000] hover:underline cursor-pointer"
+                >
+                  First time logging in? Click here to create your password
+                </button>
+              </div>
+
+              <div className="pt-2 text-center border-t border-slate-100">
+                <Link
+                  to="/"
+                  className="text-xs font-semibold text-slate-500 hover:text-[#032e42] inline-flex items-center gap-1 transition"
+                >
+                  <span>Return to Public Website (ecasiafrica.org)</span>
+                  <ArrowUpRight size={13} />
+                </Link>
+              </div>
+            </form>
+          )}
+
+          {/* First-Time Administrator Password Creation Form */}
+          {authMode === 'create' && (
+            <form onSubmit={handleCreatePasswordSubmit} className="p-6 sm:p-8 space-y-4">
+              <div className="bg-emerald-50 border border-emerald-200/80 rounded-xl p-3 text-xs text-emerald-900 flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#008000] shrink-0 mt-0.5" />
+                <p>
+                  Create your personal administrative password using your authorized <strong>@ecasiafrica.org</strong> email address.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Official Institutional Email
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    value={createEmail}
+                    onChange={(e) => setCreateEmail(e.target.value)}
+                    placeholder="yourname@ecasiafrica.org"
+                    className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Must end with <strong className="font-mono text-slate-700">@ecasiafrica.org</strong>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Create New Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={createPassword}
+                    onChange={(e) => setCreatePassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={authRemember}
+                    onChange={(e) => setAuthRemember(e.target.checked)}
+                    className="rounded text-[#008000] focus:ring-[#008000]"
+                  />
+                  <span>Remember this terminal</span>
+                </label>
+              </div>
+
+              {authError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full h-11 bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Password &amp; Enter Portal</span>
+              </button>
+
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('login');
+                    setAuthError('');
+                  }}
+                  className="text-xs font-semibold text-slate-600 hover:text-[#032e42] hover:underline cursor-pointer"
+                >
+                  Already have an account? Sign In here
+                </button>
+              </div>
+
+              <div className="pt-2 text-center border-t border-slate-100">
+                <Link
+                  to="/"
+                  className="text-xs font-semibold text-slate-500 hover:text-[#032e42] inline-flex items-center gap-1 transition"
+                >
+                  <span>Return to Public Website (ecasiafrica.org)</span>
+                  <ArrowUpRight size={13} />
+                </Link>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
@@ -1021,14 +1214,14 @@ export default function MsimamiziAdmin() {
           )}
 
           <div className={`flex items-center ${isSidebarCollapsed ? 'flex-col gap-2 pt-1' : 'justify-between pt-1'}`}>
-            <div className={`flex items-center gap-2 min-w-0 ${isSidebarCollapsed ? 'justify-center' : ''}`} title="Administrator (admin@ecasiafrica.org)">
-              <div className="w-8 h-8 rounded-full bg-[#008000] flex items-center justify-center text-white font-extrabold text-xs shrink-0">
-                AD
+            <div className={`flex items-center gap-2 min-w-0 ${isSidebarCollapsed ? 'justify-center' : ''}`} title={`${currentUser?.role || 'Administrator'} (${currentUser?.email || 'admin@ecasiafrica.org'})`}>
+              <div className="w-8 h-8 rounded-full bg-[#008000] flex items-center justify-center text-white font-extrabold text-xs shrink-0 uppercase">
+                {currentUser?.email ? currentUser.email.substring(0, 2) : 'AD'}
               </div>
               {!isSidebarCollapsed && (
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-white truncate">Administrator</p>
-                  <p className="text-[10px] text-white/60 truncate font-mono">admin@ecasiafrica.org</p>
+                  <p className="text-xs font-bold text-white truncate">{currentUser?.role || 'Administrator'}</p>
+                  <p className="text-[10px] text-white/60 truncate font-mono">{currentUser?.email || 'admin@ecasiafrica.org'}</p>
                 </div>
               )}
             </div>

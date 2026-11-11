@@ -3,6 +3,8 @@
 
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
+const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
+const ADMIN_CURRENT_USER_KEY = 'ecasi_msimamizi_user';
 
 class AdminRegistrationService {
   constructor() {
@@ -222,14 +224,147 @@ class AdminRegistrationService {
     };
   }
 
+  // Retrieve dynamic administrator accounts from persistent storage
+  getAdminAccounts() {
+    if (typeof window === 'undefined') return [];
+    try {
+      const data = localStorage.getItem(ADMIN_ACCOUNTS_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to parse admin accounts:', e);
+    }
+
+    // Default pre-initialized test accounts for rapid testing
+    const defaultAccounts = [
+      {
+        email: 'admin@ecasiafrica.org',
+        password: 'msimamizi2026',
+        role: 'Super Administrator',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        email: 'msimamizi@ecasiafrica.org',
+        password: 'msimamizi2026',
+        role: 'Registrar',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        email: 'director@ecasiafrica.org',
+        password: 'msimamizi2026',
+        role: 'Executive Director',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    try {
+      localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(defaultAccounts));
+    } catch {
+      // ignore
+    }
+    return defaultAccounts;
+  }
+
+  // Create first password / register new administrator using @ecasiafrica.org email
+  registerAdmin(email, password, remember = true) {
+    if (typeof window === 'undefined') return { success: false, message: 'Browser storage unavailable' };
+
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPass = (password || '').trim();
+
+    if (!cleanEmail) {
+      return { success: false, message: 'Please enter your administrator email.' };
+    }
+
+    // Institutional Email Validation: Must end with @ecasiafrica.org or @ecasi.org
+    if (!cleanEmail.endsWith('@ecasiafrica.org') && !cleanEmail.endsWith('@ecasi.org')) {
+      return {
+        success: false,
+        message: 'Unauthorized domain. You must use an official institutional email ending with @ecasiafrica.org',
+      };
+    }
+
+    if (!cleanPass || cleanPass.length < 6) {
+      return {
+        success: false,
+        message: 'Password must be at least 6 characters long.',
+      };
+    }
+
+    try {
+      const accounts = this.getAdminAccounts();
+      const existingIdx = accounts.findIndex((a) => a.email.toLowerCase() === cleanEmail);
+
+      const userRecord = {
+        email: cleanEmail,
+        password: cleanPass,
+        role: 'Administrator',
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (existingIdx >= 0) {
+        // Update password for existing administrator
+        accounts[existingIdx] = { ...accounts[existingIdx], ...userRecord };
+      } else {
+        // Register new administrator account
+        userRecord.createdAt = new Date().toISOString();
+        accounts.push(userRecord);
+      }
+
+      localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
+
+      // Authenticate session immediately
+      this._setAuthSession(cleanEmail, userRecord.role, remember);
+
+      return {
+        success: true,
+        message: existingIdx >= 0 ? 'Password updated successfully!' : 'Administrator password created successfully!',
+        user: { email: cleanEmail, role: userRecord.role },
+      };
+    } catch (e) {
+      console.error('Failed to save admin account:', e);
+      return { success: false, message: 'Failed to save account credentials. Please try again.' };
+    }
+  }
+
   // Admin authentication check
   isAuthenticated() {
     if (typeof window === 'undefined') return false;
     return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true' || localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
   }
 
+  // Retrieve current authenticated admin profile
+  getCurrentUser() {
+    if (typeof window === 'undefined') return { email: 'admin@ecasiafrica.org', role: 'Administrator' };
+    try {
+      const stored = sessionStorage.getItem(ADMIN_CURRENT_USER_KEY) || localStorage.getItem(ADMIN_CURRENT_USER_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch {
+      // ignore
+    }
+    return { email: 'admin@ecasiafrica.org', role: 'Administrator' };
+  }
+
   login(usernameOrEmail, password, remember = false) {
-    const validUsers = [
+    const inputUser = (usernameOrEmail || '').trim().toLowerCase();
+    const inputPass = (password || '').trim();
+
+    if (!inputUser || !inputPass) {
+      return { success: false, message: 'Please enter both email and password.' };
+    }
+
+    const accounts = this.getAdminAccounts();
+
+    // 1. Check dynamically registered / custom administrator accounts
+    const matched = accounts.find((a) => a.email.toLowerCase() === inputUser);
+    if (matched && matched.password === inputPass) {
+      this._setAuthSession(matched.email, matched.role || 'Administrator', remember);
+      return { success: true, user: { email: matched.email, role: matched.role } };
+    }
+
+    // 2. Fallback testing logins (allows rapid testing with existing credentials)
+    const testUsers = [
       'admin@ecasiafrica.org',
       'msimamizi@ecasiafrica.org',
       'director@ecasiafrica.org',
@@ -237,30 +372,37 @@ class AdminRegistrationService {
       'msimamizi@ecasi.org',
       'admin',
     ];
-    const validPass = 'msimamizi2026';
-    const validPin = '2026';
+    const testPasswords = ['msimamizi2026', '2026', 'ecasi2026!', 'admin123'];
 
-    const inputUser = (usernameOrEmail || '').trim().toLowerCase();
-    const inputPass = (password || '').trim();
-
-    const isUserValid = validUsers.includes(inputUser);
-    const isPassValid = inputPass === validPass || inputPass === validPin;
-
-    if (isUserValid && isPassValid) {
-      if (remember) {
-        localStorage.setItem(ADMIN_AUTH_KEY, 'true');
-      } else {
-        sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
-      }
-      return { success: true, user: { email: inputUser, role: 'Registrar & Administrator' } };
+    if (testUsers.includes(inputUser) && testPasswords.includes(inputPass)) {
+      const activeEmail = inputUser.includes('@') ? inputUser : `${inputUser}@ecasiafrica.org`;
+      this._setAuthSession(activeEmail, 'Administrator', remember);
+      return { success: true, user: { email: activeEmail, role: 'Administrator' } };
     }
-    return { success: false, message: 'Invalid administrative email or password' };
+
+    return {
+      success: false,
+      message: 'Invalid administrative email or password. First time logging in? Click "Create First Password" below.',
+    };
+  }
+
+  _setAuthSession(email, role, remember) {
+    const userPayload = JSON.stringify({ email, role });
+    if (remember) {
+      localStorage.setItem(ADMIN_AUTH_KEY, 'true');
+      localStorage.setItem(ADMIN_CURRENT_USER_KEY, userPayload);
+    } else {
+      sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+      sessionStorage.setItem(ADMIN_CURRENT_USER_KEY, userPayload);
+    }
   }
 
   logout() {
     if (typeof window === 'undefined') return;
     sessionStorage.removeItem(ADMIN_AUTH_KEY);
     localStorage.removeItem(ADMIN_AUTH_KEY);
+    sessionStorage.removeItem(ADMIN_CURRENT_USER_KEY);
+    localStorage.removeItem(ADMIN_CURRENT_USER_KEY);
   }
 }
 
