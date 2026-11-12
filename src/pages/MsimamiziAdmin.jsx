@@ -34,6 +34,7 @@ import {
   LayoutGrid,
   Menu,
   RefreshCw,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
@@ -383,6 +384,8 @@ export default function MsimamiziAdmin() {
     customCohorts: []
   });
   const [newCohortDateInput, setNewCohortDateInput] = useState('');
+  const [cohortStartDate, setCohortStartDate] = useState('');
+  const [cohortEndDate, setCohortEndDate] = useState('');
 
   // Upload New Course Modal State
   const [isNewCourseModalOpen, setIsNewCourseModalOpen] = useState(false);
@@ -433,6 +436,40 @@ export default function MsimamiziAdmin() {
     return () => window.removeEventListener('ecasi_courses_updated', handleCoursesUpdate);
   }, []);
 
+  // 2026 Standard Executive Intake Cohorts
+  const QUICK_2026_COHORTS = [
+    '16 - 27 March 2026',
+    '13 - 24 April 2026',
+    '18 - 29 May 2026',
+    '15 - 26 June 2026',
+    '13 - 24 July 2026',
+    '17 - 28 August 2026',
+    '14 - 25 September 2026',
+    '19 - 30 October 2026',
+    '16 - 27 November 2026',
+    '7 - 18 December 2026',
+  ];
+
+  const formatCohortDatesFromPickers = (startDateStr, endDateStr) => {
+    if (!startDateStr) return '';
+    const [sY, sM, sD] = startDateStr.split('-').map(Number);
+    const start = new Date(sY, sM - 1, sD);
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    if (!endDateStr) {
+      return `${start.getDate()} ${monthNames[start.getMonth()]} ${start.getFullYear()}`;
+    }
+    const [eY, eM, eD] = endDateStr.split('-').map(Number);
+    const end = new Date(eY, eM - 1, eD);
+
+    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+      return `${start.getDate()} - ${end.getDate()} ${monthNames[start.getMonth()]} ${start.getFullYear()}`;
+    }
+    return `${start.getDate()} ${monthNames[start.getMonth()]} - ${end.getDate()} ${monthNames[end.getMonth()]} ${end.getFullYear()}`;
+  };
+
   // Open Edit Course Modal with current pricing & cohorts
   const openEditCourse = (course) => {
     const feeRaw = Number(String(course.fee || 1200).replace(/[^0-9]/g, '')) || 1200;
@@ -461,16 +498,43 @@ export default function MsimamiziAdmin() {
       customCohorts: cohorts
     });
     setNewCohortDateInput('');
+    setCohortStartDate('');
+    setCohortEndDate('');
   };
 
-  // Add new cohort intake date
+  // Add new cohort intake date from custom text input
   const handleAddCohortDate = () => {
     if (!newCohortDateInput.trim()) return;
+    const val = newCohortDateInput.trim();
     setEditForm((prev) => ({
       ...prev,
-      customCohorts: [...prev.customCohorts, newCohortDateInput.trim()]
+      customCohorts: prev.customCohorts.includes(val) ? prev.customCohorts : [...prev.customCohorts, val]
     }));
     setNewCohortDateInput('');
+    showToast(`Added cohort: ${val}`);
+  };
+
+  // Add cohort intake date from date range picker
+  const handleAddCohortDateFromPicker = () => {
+    if (!cohortStartDate) return;
+    const formatted = formatCohortDatesFromPickers(cohortStartDate, cohortEndDate);
+    if (!formatted) return;
+    setEditForm((prev) => ({
+      ...prev,
+      customCohorts: prev.customCohorts.includes(formatted) ? prev.customCohorts : [...prev.customCohorts, formatted]
+    }));
+    setCohortStartDate('');
+    setCohortEndDate('');
+    showToast(`Added cohort: ${formatted}`);
+  };
+
+  // Add 1-click preset 2026 cohort date
+  const handleAddPresetCohort = (preset) => {
+    setEditForm((prev) => ({
+      ...prev,
+      customCohorts: prev.customCohorts.includes(preset) ? prev.customCohorts : [...prev.customCohorts, preset]
+    }));
+    showToast(`Added cohort: ${preset}`);
   };
 
   // Remove cohort intake date
@@ -1607,8 +1671,16 @@ export default function MsimamiziAdmin() {
 
             {/* Registrations Data Table */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+              {/* Mobile Horizontal Scroll Indicator Banner */}
+              <div className="md:hidden bg-slate-50 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between text-[11px] text-slate-600 font-medium">
+                <span className="flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-[#008000]" />
+                  <span>Scroll left &amp; right to view all registration details</span>
+                </span>
+                <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">&larr; swipe &rarr;</span>
+              </div>
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse text-xs min-w-[1050px]">
                   <thead>
                     <tr className="bg-slate-50 text-slate-600 uppercase tracking-wider font-extrabold border-b border-slate-200 text-[11px]">
                       <th className="py-3.5 px-4">Ref &amp; Date</th>
@@ -1619,7 +1691,7 @@ export default function MsimamiziAdmin() {
                       <th className="py-3.5 px-4 text-center">Delegates</th>
                       <th className="py-3.5 px-4">Fee (USD)</th>
                       <th className="py-3.5 px-4">Status</th>
-                      <th className="py-3.5 px-4 text-right">Actions</th>
+                      <th className="py-3.5 px-4 text-right sticky right-0 bg-slate-50/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1701,7 +1773,7 @@ export default function MsimamiziAdmin() {
                             </select>
                           </td>
 
-                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                          <td className="py-3.5 px-4 whitespace-nowrap text-right sticky right-0 bg-white/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">
                             <div className="inline-flex items-center gap-1.5">
                               <button
                                 type="button"
@@ -1993,8 +2065,16 @@ export default function MsimamiziAdmin() {
             ) : courseViewMode === 'table' ? (
               /* ── TABLE VIEW ── */
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
+                {/* Mobile Horizontal Scroll Indicator Banner */}
+                <div className="md:hidden bg-slate-50 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between text-[11px] text-slate-600 font-medium">
+                  <span className="flex items-center gap-1.5">
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-[#008000]" />
+                    <span>Scroll horizontally to view all courses, pricing &amp; actions</span>
+                  </span>
+                  <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">&larr; swipe &rarr;</span>
+                </div>
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left border-collapse text-xs min-w-[950px] sm:min-w-[1050px]">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 uppercase tracking-wider font-extrabold border-b border-slate-200 text-[11px]">
                         <th className="py-3 px-3.5 text-center w-12">#</th>
@@ -2004,7 +2084,7 @@ export default function MsimamiziAdmin() {
                         <th className="py-3 px-3.5 whitespace-nowrap">Standard Fee</th>
                         <th className="py-3 px-3.5 whitespace-nowrap">Promotion</th>
                         <th className="py-3 px-4 min-w-[180px]">Upcoming Cohorts</th>
-                        <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap sticky right-0 bg-slate-50/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -2093,7 +2173,7 @@ export default function MsimamiziAdmin() {
                               </div>
                             </td>
 
-                            <td className="py-3 px-4 whitespace-nowrap text-right">
+                            <td className="py-3 px-4 whitespace-nowrap text-right sticky right-0 bg-white/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">
                               <div className="inline-flex items-center gap-1.5">
                                 <button
                                   type="button"
@@ -2738,9 +2818,9 @@ export default function MsimamiziAdmin() {
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSaveCourseEdit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+            <form onSubmit={handleSaveCourseEdit} className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
               {/* Tuition Fees (USD & KES) */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">
                     Standard Tuition Fee ($ USD)
@@ -2789,7 +2869,7 @@ export default function MsimamiziAdmin() {
                   <span className="font-bold text-emerald-900">Promotional Early-Bird / Corporate Discount</span>
                   <span className="text-[10px] text-emerald-700 font-semibold">Live on website</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-600 font-medium mb-1">Discount Percentage (%)</label>
                     <input
@@ -2832,55 +2912,152 @@ export default function MsimamiziAdmin() {
                 </div>
               </div>
 
-              {/* Upcoming Cohort Training Dates */}
-              <div>
-                <label className="flex items-center justify-between text-slate-700 font-bold mb-1.5">
-                  <span>Upcoming Cohort Training Dates (2026 Calendar)</span>
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    {editForm.customCohorts.length} Scheduled
+              {/* Upcoming Cohort Training Dates Hub (Mobile-Optimized & Multi-Mode) */}
+              <div className="bg-slate-50/90 p-3.5 sm:p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-slate-800 font-bold text-xs flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#008000]" />
+                      <span>Upcoming Cohort Training Dates (2026 Calendar)</span>
+                    </label>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      Manage cohorts via visual calendar date picker, 1-click 2026 presets, or custom text.
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
+                    {editForm.customCohorts.length} Active
                   </span>
-                </label>
-
-                {/* Cohort Dates Chips */}
-                <div className="space-y-1.5 mb-2.5 max-h-36 overflow-y-auto pr-1">
-                  {editForm.customCohorts.map((dateStr, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg"
-                    >
-                      <span className="font-semibold text-slate-800 text-xs flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-[#008000]" />
-                        {dateStr}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCohortDate(idx)}
-                        className="text-slate-400 hover:text-red-600 p-0.5 rounded cursor-pointer"
-                        title="Remove cohort date"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
                 </div>
 
-                {/* Add new cohort date input */}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newCohortDateInput}
-                    onChange={(e) => setNewCohortDateInput(e.target.value)}
-                    placeholder="e.g. 17 - 28 August 2026"
-                    className="flex-1 h-9 px-3 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-[#008000]"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddCohortDate}
-                    className="px-3.5 h-9 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white font-bold text-xs transition cursor-pointer flex items-center gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Date</span>
-                  </button>
+                {/* Scheduled Cohort Dates Chips List */}
+                {editForm.customCohorts.length === 0 ? (
+                  <div className="p-3 text-center bg-white rounded-lg border border-dashed border-slate-200 text-slate-400 text-xs">
+                    No intake dates scheduled yet. Use the calendar picker or 2026 presets below to add dates.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {editForm.customCohorts.map((dateStr, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs hover:border-slate-300 transition"
+                      >
+                        <span className="font-semibold text-slate-800 text-xs flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#008000] shrink-0" />
+                          {dateStr}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCohortDate(idx)}
+                          className="text-slate-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 transition cursor-pointer"
+                          title="Remove cohort date"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Method 1: Visual Date Range Picker (Mobile Friendly) */}
+                <div className="pt-2 border-t border-slate-200/80 space-y-2.5">
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-600 block">
+                    Option 1: Pick Start &amp; End Date from Calendar
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                    <div className="sm:col-span-5">
+                      <label className="block text-[10px] text-slate-500 font-semibold mb-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={cohortStartDate}
+                        onChange={(e) => setCohortStartDate(e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div className="sm:col-span-5">
+                      <label className="block text-[10px] text-slate-500 font-semibold mb-1">End Date</label>
+                      <input
+                        type="date"
+                        value={cohortEndDate}
+                        min={cohortStartDate || undefined}
+                        onChange={(e) => setCohortEndDate(e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <button
+                        type="button"
+                        onClick={handleAddCohortDateFromPicker}
+                        disabled={!cohortStartDate}
+                        className={`w-full h-9 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer ${
+                          cohortStartDate
+                            ? 'bg-[#008000] hover:bg-[#006600] text-white shadow-xs'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        }`}
+                        title="Add Date from Calendar"
+                      >
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Add</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Method 2: 1-Click 2026 Intake Presets */}
+                  <div className="pt-1.5">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-600 block mb-1.5">
+                      Option 2: 1-Click 2026 Cohort Presets
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {QUICK_2026_COHORTS.map((preset) => {
+                        const isAdded = editForm.customCohorts.includes(preset);
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleAddPresetCohort(preset)}
+                            disabled={isAdded}
+                            className={`px-2 py-1 rounded-md text-[10.5px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+                              isAdded
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 opacity-60 cursor-default'
+                                : 'bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 shadow-2xs'
+                            }`}
+                          >
+                            <Plus className="w-2.5 h-2.5" />
+                            <span>{preset.split(' ')[0]} - {preset.split(' ')[2]} {preset.split(' ')[3]}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Method 3: Custom Text / Modular Entry */}
+                  <div className="pt-1.5">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-600 block mb-1">
+                      Option 3: Custom Date Format or Modular Schedule
+                    </span>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={newCohortDateInput}
+                        onChange={(e) => setNewCohortDateInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCohortDate();
+                          }
+                        }}
+                        placeholder="e.g. Modular: 17 - 28 August 2026"
+                        className="flex-1 h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008000]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCohortDate}
+                        className="h-9 px-4 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1 shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Add Date</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2945,7 +3122,7 @@ export default function MsimamiziAdmin() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Department / Category</label>
                   <select
@@ -2976,7 +3153,7 @@ export default function MsimamiziAdmin() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Tuition Fee ($ USD)</label>
                   <input
@@ -3027,9 +3204,12 @@ export default function MsimamiziAdmin() {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold mb-1">
-                  Upcoming Cohort Dates (Comma separated)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-700 font-bold">
+                    Upcoming Cohort Dates (Comma separated)
+                  </label>
+                  <span className="text-[10px] text-slate-400">Type or 1-click add chips below</span>
+                </div>
                 <input
                   type="text"
                   value={newCourseForm.cohortsText}
@@ -3037,6 +3217,36 @@ export default function MsimamiziAdmin() {
                   placeholder="e.g. 16 - 27 March 2026, 13 - 24 April 2026, 18 - 29 May 2026"
                   className="w-full h-9 px-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#008000]"
                 />
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quick 2026 Add:</span>
+                  {QUICK_2026_COHORTS.map((preset) => {
+                    const currentCohorts = newCourseForm.cohortsText
+                      ? newCourseForm.cohortsText.split(',').map((s) => s.trim()).filter(Boolean)
+                      : [];
+                    const isAdded = currentCohorts.includes(preset);
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          if (!isAdded) {
+                            const updated = currentCohorts.length > 0 ? `${newCourseForm.cohortsText}, ${preset}` : preset;
+                            setNewCourseForm({ ...newCourseForm, cohortsText: updated });
+                          }
+                        }}
+                        disabled={isAdded}
+                        className={`px-2 py-0.5 rounded text-[10px] font-semibold transition cursor-pointer flex items-center gap-0.5 ${
+                          isAdded
+                            ? 'bg-emerald-100 text-emerald-800 opacity-60 cursor-default'
+                            : 'bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200'
+                        }`}
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                        <span>{preset.split(' ')[2]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>

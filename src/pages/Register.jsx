@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { dataService } from "@/lib/dataService";
 import countryListData from "@/data/countriesData.json";
+import CountrySelector from "@/components/CountrySelector";
 import { adminRegistrationService } from "@/services/adminRegistrationService";
 
 const COUNTRY_DIAL_CODES = countryListData;
@@ -521,24 +522,21 @@ export default function Register() {
                   />
                 </div>
 
-                {/* 7. Country * */}
+                {/* 7. Country * (Graphical SVG/PNG Flags, No Windows KE regional indicators) */}
                 <div>
                   <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
                     Country <span className="text-[#d83030]">*</span>
                   </label>
-                  <select
-                    name="country"
-                    required
+                  <CountrySelector
                     value={formData.country}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
-                  >
-                    {COUNTRY_DIAL_CODES.map((c) => (
-                      <option key={c.country} value={c.country}>
-                        {c.flag} {c.country} ({c.code})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(selected) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        country: selected.country,
+                        dialCode: selected.code || prev.dialCode,
+                      }));
+                    }}
+                  />
                 </div>
 
                 {/* 8. Phone Number * (Flag Image + Dial Code Dropdown + Input) */}
