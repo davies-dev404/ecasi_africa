@@ -96,7 +96,7 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
-        {!isMsimamiziDomain && <Analytics />}
+        <Analytics />
         <Routes>
           {/* If accessed via msimamizi.ecasiafrica.org subdomain, root serves the admin portal */}
           {isMsimamiziDomain && (

@@ -72,7 +72,7 @@ if (strpos($token, 'dev-') === 0) {
     exit;
 }
 
-$secretKey = getTurnstileConfig('TURNSTILE_SECRET_KEY') ?: getTurnstileConfig('RECAPTCHA_API_KEY');
+$secretKey = getTurnstileConfig('TURNSTILE_SECRET_KEY');
 $clientIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
 
 if (!empty($secretKey)) {

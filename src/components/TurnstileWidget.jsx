@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { TURNSTILE_SITE_KEY } from '@/services/turnstileService';
+import { TURNSTILE_SITE_KEY, ensureTurnstileLoaded } from '@/services/turnstileService';
 import { ShieldCheck, Check } from 'lucide-react';
 
 /**
  * Cloudflare Turnstile React Component
- * Supports both automatic Cloudflare Turnstile widget and local dev fallback
+ * Uses stable callback refs so parent state updates (e.g. typing in inputs)
+ * never destroy or re-initialize the Turnstile iframe mid-connection.
  */
 export default function TurnstileWidget({
   onVerify,
@@ -16,16 +17,40 @@ export default function TurnstileWidget({
 }) {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
+  const callbacksRef = useRef({ onVerify, onError, onExpire });
   const [isRendered, setIsRendered] = useState(false);
   const [fallbackChecked, setFallbackChecked] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [tokenValue, setTokenValue] = useState('');
+
+  // Keep latest callbacks in ref without triggering widget re-render
+  useEffect(() => {
+    callbacksRef.current = { onVerify, onError, onExpire };
+  }, [onVerify, onError, onExpire]);
 
   useEffect(() => {
+    ensureTurnstileLoaded();
+
     let timerId = null;
     let attempts = 0;
+    let isCancelled = false;
+
+    const cleanupWidget = () => {
+      if (widgetIdRef.current !== null && window.turnstile?.remove) {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+        } catch {
+          // ignore cleanup error
+        }
+        widgetIdRef.current = null;
+      }
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
 
     const tryRender = () => {
-      if (typeof window === 'undefined') return;
+      if (isCancelled || typeof window === 'undefined') return;
 
       if (!TURNSTILE_SITE_KEY) {
         setLoadError(true);
@@ -34,21 +59,38 @@ export default function TurnstileWidget({
 
       if (window.turnstile && containerRef.current) {
         try {
-          if (widgetIdRef.current === null && !containerRef.current.hasChildNodes()) {
+          if (widgetIdRef.current === null) {
+            containerRef.current.innerHTML = '';
             const id = window.turnstile.render(containerRef.current, {
               sitekey: TURNSTILE_SITE_KEY,
               action: action,
               theme: theme,
+              retry: 'auto',
+              'retry-interval': 2000,
               callback: (token) => {
-                if (onVerify) onVerify(token);
+                if (isCancelled) return;
+                setTokenValue(token);
+                setLoadError(false);
+                if (callbacksRef.current.onVerify) {
+                  callbacksRef.current.onVerify(token);
+                }
               },
-              'error-callback': (err) => {
-                console.warn('[Cloudflare Turnstile Error]', err);
+              'error-callback': (errCode) => {
+                if (isCancelled) return;
+                console.warn('[Cloudflare Turnstile Error Code]:', errCode);
+                cleanupWidget();
+                setIsRendered(false);
                 setLoadError(true);
-                if (onError) onError(err);
+                if (callbacksRef.current.onError) {
+                  callbacksRef.current.onError(errCode);
+                }
               },
               'expired-callback': () => {
-                if (onExpire) onExpire();
+                if (isCancelled) return;
+                setTokenValue('');
+                if (callbacksRef.current.onExpire) {
+                  callbacksRef.current.onExpire();
+                }
               },
             });
             widgetIdRef.current = id;
@@ -56,14 +98,15 @@ export default function TurnstileWidget({
             if (timerId) clearInterval(timerId);
           }
         } catch (err) {
-          console.warn('[Turnstile Render Exception]', err);
+          console.warn('[Turnstile Render Exception]:', err);
+          setIsRendered(false);
           setLoadError(true);
         }
       } else {
         attempts++;
         if (attempts > 30) {
           if (timerId) clearInterval(timerId);
-          if (!isRendered) {
+          if (widgetIdRef.current === null) {
             setLoadError(true);
           }
         }
@@ -74,31 +117,33 @@ export default function TurnstileWidget({
     timerId = setInterval(tryRender, 300);
 
     return () => {
+      isCancelled = true;
       if (timerId) clearInterval(timerId);
-      if (widgetIdRef.current !== null && window.turnstile?.remove) {
-        try {
-          window.turnstile.remove(widgetIdRef.current);
-          widgetIdRef.current = null;
-        } catch {
-          // ignore
-        }
-      }
+      cleanupWidget();
     };
-  }, [action, theme, onVerify, onError, onExpire]);
+  }, [action, theme]);
 
   const handleManualFallback = () => {
+    const devToken = `dev-turnstile-token-${Date.now()}`;
     setFallbackChecked(true);
-    if (onVerify) {
-      onVerify(`dev-turnstile-token-${Date.now()}`);
+    setTokenValue(devToken);
+    if (callbacksRef.current.onVerify) {
+      callbacksRef.current.onVerify(devToken);
     }
   };
 
   return (
     <div className={`space-y-1.5 ${className}`}>
-      {/* Cloudflare Turnstile Container */}
-      <div ref={containerRef} className="min-h-[65px] flex items-center justify-start" />
+      {/* Canonical Cloudflare Turnstile hidden form field */}
+      <input type="hidden" name="cf-turnstile-response" value={tokenValue} />
 
-      {/* Graceful Fallback if Cloudflare Turnstile is blocked or in local development */}
+      {/* Cloudflare Turnstile Container */}
+      <div
+        ref={containerRef}
+        className={loadError && !isRendered ? 'hidden' : 'min-h-[65px] flex items-center justify-start'}
+      />
+
+      {/* Graceful Fallback if Cloudflare Turnstile is blocked or hostname is not yet whitelisted */}
       {loadError && !isRendered && (
         <div
           onClick={handleManualFallback}
@@ -124,7 +169,7 @@ export default function TurnstileWidget({
               {fallbackChecked ? <Check className="w-4 h-4 stroke-[3]" /> : null}
             </div>
             <span className="text-[13px] font-medium text-[#222]">
-              {fallbackChecked ? 'Human Verified' : 'Verify you are human'}
+              {fallbackChecked ? 'Success!' : 'Verify you are human'}
             </span>
           </div>
 
@@ -138,4 +183,3 @@ export default function TurnstileWidget({
     </div>
   );
 }
-

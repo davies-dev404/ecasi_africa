@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, CheckCircle2, Check, Printer, Mail } from "lucide-react";
+import { ArrowLeft, RotateCcw, CheckCircle2, Printer, Mail } from "lucide-react";
 import SEO from "@/components/SEO";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -9,7 +9,7 @@ import countryListData from "@/data/countriesData.json";
 import CountrySelector from "@/components/CountrySelector";
 import { adminRegistrationService } from "@/services/adminRegistrationService";
 import TurnstileWidget from "@/components/TurnstileWidget";
-import { verifyTurnstile, TURNSTILE_SITE_KEY } from "@/services/turnstileService";
+import { verifyTurnstile } from "@/services/turnstileService";
 
 const COUNTRY_DIAL_CODES = countryListData;
 
@@ -143,6 +143,22 @@ export default function Register() {
       return;
     }
     setRobotError(false);
+
+    if (turnstileToken) {
+      setRobotLoading(true);
+      try {
+        const verification = await verifyTurnstile(turnstileToken, 'register');
+        if (verification && verification.success === false) {
+          setRobotError(true);
+          setRobotLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('[Turnstile Registration Check]:', err);
+      }
+      setRobotLoading(false);
+    }
+
     const generatedRef = `ECAS-${scheduleId}-${Math.floor(1000 + Math.random() * 9000)}`;
     const submissionRecord = {
       ...formData,
@@ -855,9 +871,10 @@ export default function Register() {
 
                     <button
                       type="submit"
-                      className="inline-flex items-center justify-center bg-[#008000] hover:bg-[#006600] text-white text-[12px] font-semibold px-3.5 py-1.5 rounded-[3px] transition-colors cursor-pointer"
+                      disabled={robotLoading}
+                      className="inline-flex items-center justify-center bg-[#008000] hover:bg-[#006600] disabled:opacity-60 text-white text-[12px] font-semibold px-3.5 py-1.5 rounded-[3px] transition-colors cursor-pointer"
                     >
-                      Complete Registration
+                      {robotLoading ? "Verifying..." : "Complete Registration"}
                     </button>
 
                     <button

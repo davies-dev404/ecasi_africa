@@ -5,8 +5,7 @@
 
 export const TURNSTILE_SITE_KEY =
   import.meta.env.VITE_TURNSTILE_SITE_KEY ||
-  import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
-  '';
+  '0x4AAAAAAF_txNruny6wo5Fu';
 
 /**
  * Ensures the Cloudflare Turnstile script is loaded in the DOM

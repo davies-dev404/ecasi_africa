@@ -649,9 +649,18 @@ export default function MsimamiziAdmin() {
     e.preventDefault();
     setAuthError('');
 
+    if (!turnstileVerified && !turnstileToken) {
+      setAuthError('Please complete the Cloudflare Turnstile security verification.');
+      return;
+    }
+
     if (turnstileToken) {
       try {
-        await verifyTurnstile(turnstileToken, 'login');
+        const check = await verifyTurnstile(turnstileToken, 'login');
+        if (check && check.success === false) {
+          setAuthError(check.error || 'Security verification failed. Please retry.');
+          return;
+        }
       } catch (err) {
         console.warn('[Cloudflare Turnstile Login Verification]:', err);
       }
@@ -667,13 +676,26 @@ export default function MsimamiziAdmin() {
   };
 
   // Handle First-Time Administrator Password Creation
-  const handleCreatePasswordSubmit = (e) => {
+  const handleCreatePasswordSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
 
     if (createPassword !== confirmPassword) {
       setAuthError('Passwords do not match. Please verify both fields.');
       return;
+    }
+
+    if (!turnstileVerified && !turnstileToken) {
+      setAuthError('Please complete the Cloudflare Turnstile security verification.');
+      return;
+    }
+
+    if (turnstileToken) {
+      try {
+        await verifyTurnstile(turnstileToken, 'create_admin');
+      } catch (err) {
+        console.warn('[Cloudflare Turnstile Admin Creation Verification]:', err);
+      }
     }
 
     const result = adminRegistrationService.registerAdmin(createEmail, createPassword, authRemember);
@@ -869,9 +891,6 @@ export default function MsimamiziAdmin() {
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
-                  <span>Authorized: <strong className="text-slate-600 font-mono">riobag@ecasiafrica.org</strong> or <strong className="text-slate-600 font-mono">acob@ecasiafrica.org</strong></span>
-                </div>
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -884,6 +903,21 @@ export default function MsimamiziAdmin() {
                   />
                   <span>Remember this terminal</span>
                 </label>
+              </div>
+
+              <div className="pt-1 flex justify-center">
+                <TurnstileWidget
+                  action="login"
+                  onVerify={(token) => {
+                    setTurnstileToken(token);
+                    setTurnstileVerified(true);
+                    setAuthError('');
+                  }}
+                  onExpire={() => {
+                    setTurnstileToken('');
+                    setTurnstileVerified(false);
+                  }}
+                />
               </div>
 
               {authError && (
@@ -903,7 +937,7 @@ export default function MsimamiziAdmin() {
 
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#008000]" />
-                <span>Protected by Google reCAPTCHA Enterprise</span>
+                <span>Protected by Cloudflare Turnstile</span>
               </div>
 
               <div className="text-center pt-2">
@@ -1007,6 +1041,21 @@ export default function MsimamiziAdmin() {
                   />
                   <span>Remember this terminal</span>
                 </label>
+              </div>
+
+              <div className="pt-1 flex justify-center">
+                <TurnstileWidget
+                  action="create_admin"
+                  onVerify={(token) => {
+                    setTurnstileToken(token);
+                    setTurnstileVerified(true);
+                    setAuthError('');
+                  }}
+                  onExpire={() => {
+                    setTurnstileToken('');
+                    setTurnstileVerified(false);
+                  }}
+                />
               </div>
 
               {authError && (

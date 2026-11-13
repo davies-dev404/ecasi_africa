@@ -1,3 +1,4 @@
+/* global process */
 /**
  * Vercel Serverless Function: Verify Cloudflare Turnstile Token
  *
@@ -46,7 +47,6 @@ export default async function handler(req, res) {
 
     const secretKey =
       process.env.TURNSTILE_SECRET_KEY ||
-      process.env.RECAPTCHA_API_KEY ||
       '';
 
     const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress;
