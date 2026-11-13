@@ -12,7 +12,26 @@ export default defineConfig({
     host: "::",
     port: 5173,
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: "mock-recaptcha-api",
+      configureServer(server) {
+        server.middlewares.use("/api/verify-recaptcha", (req, res) => {
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              success: true,
+              score: 0.95,
+              valid: true,
+              environment: "local-dev",
+              message: "Local development reCAPTCHA assessment simulated successfully"
+            })
+          );
+        });
+      }
+    }
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

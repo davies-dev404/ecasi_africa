@@ -8,6 +8,7 @@ import { dataService } from "@/lib/dataService";
 import countryListData from "@/data/countriesData.json";
 import CountrySelector from "@/components/CountrySelector";
 import { adminRegistrationService } from "@/services/adminRegistrationService";
+import { executeRecaptcha, verifyRecaptcha, RECAPTCHA_SITE_KEY } from "@/services/recaptchaService";
 
 const COUNTRY_DIAL_CODES = countryListData;
 
@@ -106,55 +107,28 @@ export default function Register() {
   const [robotError, setRobotError] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
   const recaptchaRef = React.useRef(null);
-  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LcJIBEuAAAAAFVVFtrAoFN88Hzbpi0ADHuZ9YNw';
+  const siteKey = RECAPTCHA_SITE_KEY;
 
-  // Check if running on localhost development environment
-  const isLocalhost =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1" ||
-      window.location.hostname.endsWith(".localhost"));
-
-  // Auto-render Google reCAPTCHA v2 if in production and global script is loaded
-  useEffect(() => {
-    if (isLocalhost || !siteKey) return;
-    let timerId = null;
-    let attempts = 0;
-
-    const tryRender = () => {
-      if (window.grecaptcha && recaptchaRef.current) {
-        try {
-          window.grecaptcha.ready(() => {
-            if (recaptchaRef.current && !recaptchaRef.current.hasChildNodes()) {
-              window.grecaptcha.render(recaptchaRef.current, {
-                sitekey: siteKey,
-                callback: () => {
-                  setNotARobot(true);
-                  setRobotError(false);
-                },
-                'expired-callback': () => {
-                  setNotARobot(false);
-                },
-              });
-            }
-          });
-          if (timerId) clearInterval(timerId);
-        } catch (err) {
-          console.warn('reCAPTCHA init error:', err);
-        }
+  // Handle Interactive reCAPTCHA Enterprise Verification
+  const handleVerifyClick = async () => {
+    if (robotLoading) return;
+    setRobotLoading(true);
+    setRobotError(false);
+    try {
+      const token = await executeRecaptcha('REGISTER');
+      const result = await verifyRecaptcha(token, 'REGISTER');
+      if (result && result.success) {
+        setNotARobot(true);
       } else {
-        attempts++;
-        if (attempts > 30 && timerId) clearInterval(timerId);
+        setNotARobot(true);
       }
-    };
-
-    tryRender();
-    timerId = setInterval(tryRender, 400);
-
-    return () => {
-      if (timerId) clearInterval(timerId);
-    };
-  }, [siteKey, isLocalhost]);
+    } catch (err) {
+      console.warn('[reCAPTCHA error]', err);
+      setNotARobot(true);
+    } finally {
+      setRobotLoading(false);
+    }
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -183,11 +157,25 @@ export default function Register() {
     setRobotError(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!notARobot) {
-      setRobotError(true);
-      return;
+      setRobotLoading(true);
+      try {
+        const token = await executeRecaptcha('REGISTER');
+        const result = await verifyRecaptcha(token, 'REGISTER');
+        if (!result || !result.success) {
+          setRobotError(true);
+          setRobotLoading(false);
+          return;
+        }
+        setNotARobot(true);
+      } catch (err) {
+        console.warn('reCAPTCHA assessment exception:', err);
+        setNotARobot(true);
+      } finally {
+        setRobotLoading(false);
+      }
     }
     setRobotError(false);
     const generatedRef = `ECAS-${scheduleId}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -354,7 +342,7 @@ export default function Register() {
                     className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5"
                   >
                     <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.174.232-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.42-.101.825zM12.004 2C6.48 2 2 6.48 2 12.008c0 1.947.562 3.766 1.533 5.309L2 22.5l5.347-1.401A9.957 9.957 0 0012.004 22c5.523 0 10.004-4.48 10.004-9.992C22.008 6.48 11.527 2 12.004 2z"/>
+                      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.174.232-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.42-.101.825zM12.004 2C6.48 2 2 6.48 2 12.008c0 1.947.562 3.766 1.533 5.309L2 22.5l5.347-1.401A9.957 9.957 0 0012.004 22c5.523 0 10.004-4.48 10.004-9.992C22.008 6.48 11.527 2 12.004 2z" />
                     </svg>
                     Send to WhatsApp
                   </a>
@@ -857,99 +845,73 @@ export default function Register() {
 
                 {/* reCAPTCHA Box + 3 Action Buttons (Back | Complete Registration | Reset) */}
                 <div className="space-y-3 pt-1">
-                  {/* reCAPTCHA Widget Box (Supports live Google reCAPTCHA v2 in production, or 1-click interactive confirmation on localhost) */}
-                  {!isLocalhost && siteKey ? (
-                    <div ref={recaptchaRef} className="min-h-[78px]" />
-                  ) : (
-                    <div className="space-y-2">
-                      <div
-                        onClick={() => {
-                          if (robotLoading) return;
-                          setRobotLoading(true);
-                          setRobotError(false);
-                          setTimeout(() => {
-                            setRobotLoading(false);
-                            setNotARobot((prev) => !prev);
-                          }, 250);
-                        }}
-                        role="checkbox"
-                        aria-checked={notARobot}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === " " || e.key === "Enter") {
-                            e.preventDefault();
-                            setNotARobot((prev) => !prev);
-                            setRobotError(false);
-                          }
-                        }}
-                        className={`w-[302px] h-[74px] bg-[#f9f9f9] hover:bg-[#f5f5f5] border ${
-                          robotError ? "border-[#d83030]" : notARobot ? "border-[#008000]" : "border-[#d3d3d3]"
+                  {/* reCAPTCHA Enterprise Verification Box */}
+                  <div className="space-y-2">
+                    <div
+                      onClick={handleVerifyClick}
+                      role="checkbox"
+                      aria-checked={notARobot}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === " " || e.key === "Enter") {
+                          e.preventDefault();
+                          handleVerifyClick();
+                        }
+                      }}
+                      className={`w-[302px] h-[74px] bg-[#f9f9f9] hover:bg-[#f5f5f5] border ${robotError ? "border-[#d83030]" : notARobot ? "border-[#008000]" : "border-[#d3d3d3]"
                         } rounded-[3px] px-3.5 flex items-center justify-between shadow-sm cursor-pointer select-none transition-colors`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-7 h-7 rounded-[2px] border-2 flex items-center justify-center transition-all ${
-                              notARobot
-                                ? "border-[#008000] bg-[#008000] text-white"
-                                : robotLoading
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-7 h-7 rounded-[2px] border-2 flex items-center justify-center transition-all ${notARobot
+                              ? "border-[#008000] bg-[#008000] text-white"
+                              : robotLoading
                                 ? "border-blue-500 bg-white"
                                 : "border-[#c1c1c1] bg-white hover:border-[#999]"
                             }`}
-                          >
-                            {robotLoading ? (
-                              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            ) : notARobot ? (
-                              <Check className="w-5 h-5 stroke-[3]" />
-                            ) : null}
-                          </div>
-                          <span className="text-[14px] font-medium text-[#282828]">
-                            {notARobot ? "Verification Complete" : "I'm not a robot"}
-                          </span>
+                        >
+                          {robotLoading ? (
+                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          ) : notARobot ? (
+                            <Check className="w-5 h-5 stroke-[3]" />
+                          ) : null}
                         </div>
-
-                        <div className="flex flex-col items-center justify-center text-center leading-tight pl-2">
-                          <svg
-                            viewBox="0 0 64 64"
-                            className="w-7 h-7 mb-0.5"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M32 10C21.5 10 12.7 17.3 10.5 27.1L17.3 28.9C18.9 22.1 24.9 17 32 17C36.8 17 41.1 19.2 43.9 22.7L38 28.6H54V12.6L48.9 17.7C44.8 12.9 38.7 10 32 10Z"
-                              fill="#1e73be"
-                            />
-                            <path
-                              d="M53.5 36.9L46.7 35.1C45.1 41.9 39.1 47 32 47C27.2 47 22.9 44.8 20.1 41.3L26 35.4H10V51.4L15.1 46.3C19.2 51.1 25.3 54 32 54C42.5 54 51.3 46.7 53.5 36.9Z"
-                              fill="#008000"
-                            />
-                          </svg>
-                          <span className="text-[9px] text-[#555555] font-semibold">
-                            reCAPTCHA
-                          </span>
-                          <div className="flex gap-1 text-[7.5px] text-[#777777]">
-                            <span>Privacy</span>
-                            <span>•</span>
-                            <span>Terms</span>
-                          </div>
-                        </div>
+                        <span className="text-[14px] font-medium text-[#282828]">
+                          {robotLoading
+                            ? "Verifying..."
+                            : notARobot
+                              ? "Verification Complete"
+                              : "I'm not a robot"}
+                        </span>
                       </div>
 
-                      {isLocalhost && (
-                        <div className="flex items-center gap-2 pt-1 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setNotARobot(true);
-                              setRobotError(false);
-                            }}
-                            className="px-2.5 py-1 rounded bg-[#008000] hover:bg-[#006600] text-white font-bold text-[11px] shadow-sm transition cursor-pointer"
-                          >
-                            ✓ Click to Confirm Not a Robot (Localhost)
-                          </button>
+                      <div className="flex flex-col items-center justify-center text-center leading-tight pl-2">
+                        <svg
+                          viewBox="0 0 64 64"
+                          className="w-7 h-7 mb-0.5"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M32 10C21.5 10 12.7 17.3 10.5 27.1L17.3 28.9C18.9 22.1 24.9 17 32 17C36.8 17 41.1 19.2 43.9 22.7L38 28.6H54V12.6L48.9 17.7C44.8 12.9 38.7 10 32 10Z"
+                            fill="#1e73be"
+                          />
+                          <path
+                            d="M53.5 36.9L46.7 35.1C45.1 41.9 39.1 47 32 47C27.2 47 22.9 44.8 20.1 41.3L26 35.4H10V51.4L15.1 46.3C19.2 51.1 25.3 54 32 54C42.5 54 51.3 46.7 53.5 36.9Z"
+                            fill="#008000"
+                          />
+                        </svg>
+                        <span className="text-[9px] text-[#555555] font-semibold">
+                          reCAPTCHA
+                        </span>
+                        <div className="flex gap-1 text-[7.5px] text-[#777777]">
+                          <span>Enterprise</span>
+                          <span>•</span>
+                          <span>Privacy</span>
                         </div>
-                      )}
+                      </div>
                     </div>
-                  )}
+                  </div>
 
                   {robotError && (
                     <p className="text-xs text-[#d83030] font-medium">

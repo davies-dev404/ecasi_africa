@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
+import { executeRecaptcha, verifyRecaptcha } from '@/services/recaptchaService';
 
 export default function MsimamiziAdmin() {
 
@@ -480,12 +481,12 @@ export default function MsimamiziAdmin() {
     const cohorts = Array.isArray(course.customCohorts) && course.customCohorts.length > 0
       ? course.customCohorts
       : [
-          '16 - 27 March 2026',
-          '13 - 24 April 2026',
-          '18 - 29 May 2026',
-          '15 - 26 June 2026',
-          '13 - 24 July 2026'
-        ];
+        '16 - 27 March 2026',
+        '13 - 24 April 2026',
+        '18 - 29 May 2026',
+        '15 - 26 June 2026',
+        '13 - 24 July 2026'
+      ];
 
     setEditingCourse(course);
     setEditForm({
@@ -641,9 +642,20 @@ export default function MsimamiziAdmin() {
   };
 
   // Handle Login
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
+
+    try {
+      // Execute reCAPTCHA Enterprise with action 'LOGIN'
+      const token = await executeRecaptcha('LOGIN');
+      if (token) {
+        await verifyRecaptcha(token, 'LOGIN');
+      }
+    } catch (recaptchaErr) {
+      console.warn('[reCAPTCHA Enterprise Assessment]:', recaptchaErr);
+    }
+
     const result = adminRegistrationService.login(authEmail, authPassword, authRemember);
     if (result.success) {
       setCurrentUser(result.user);
@@ -797,11 +809,10 @@ export default function MsimamiziAdmin() {
                 setAuthMode('login');
                 setAuthError('');
               }}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                authMode === 'login'
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${authMode === 'login'
                   ? 'bg-white text-[#032e42] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
-              }`}
+                }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Sign In</span>
@@ -812,11 +823,10 @@ export default function MsimamiziAdmin() {
                 setAuthMode('create');
                 setAuthError('');
               }}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                authMode === 'create'
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${authMode === 'create'
                   ? 'bg-white text-[#008000] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
-              }`}
+                }`}
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Create First Password</span>
@@ -889,6 +899,11 @@ export default function MsimamiziAdmin() {
                 <ShieldCheck className="w-4 h-4" />
                 <span>Sign In to Msimamizi Portal</span>
               </button>
+
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#008000]" />
+                <span>Protected by Google reCAPTCHA Enterprise</span>
+              </div>
 
               <div className="text-center pt-2">
                 <button
@@ -1045,15 +1060,13 @@ export default function MsimamiziAdmin() {
       {/* ─────────────────────────────────────────────────────────────
           LEFT VERTICAL SIDEBAR (COLLAPSIBLE / MINIMIZABLE)
       ───────────────────────────────────────────────────────────── */}
-      <aside className={`w-full ${
-        isSidebarCollapsed ? 'md:w-20' : 'md:w-64 lg:w-72'
-      } bg-[#032e42] text-white flex-shrink-0 flex flex-col justify-between border-r border-[#022433] md:sticky md:top-0 md:h-screen md:overflow-y-auto z-40 shadow-xl transition-all duration-300 ease-in-out`}>
+      <aside className={`w-full ${isSidebarCollapsed ? 'md:w-20' : 'md:w-64 lg:w-72'
+        } bg-[#032e42] text-white flex-shrink-0 flex flex-col justify-between border-r border-[#022433] md:sticky md:top-0 md:h-screen md:overflow-y-auto z-40 shadow-xl transition-all duration-300 ease-in-out`}>
         {/* Top Branding & Navigation */}
         <div className="flex flex-col">
           {/* Header Brand */}
-          <div className={`border-b border-white/10 flex items-center transition-all ${
-            isSidebarCollapsed ? 'p-3 flex-row md:flex-col gap-2 justify-between md:justify-center' : 'p-5 justify-between'
-          }`}>
+          <div className={`border-b border-white/10 flex items-center transition-all ${isSidebarCollapsed ? 'p-3 flex-row md:flex-col gap-2 justify-between md:justify-center' : 'p-5 justify-between'
+            }`}>
             <div className={`flex items-center gap-3 ${isSidebarCollapsed ? 'md:flex-col md:gap-1' : ''}`}>
               <div
                 className="w-10 h-10 rounded-xl bg-white p-1.5 shadow flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition"
@@ -1123,13 +1136,11 @@ export default function MsimamiziAdmin() {
                     setIsMobileMenuOpen(false);
                   }}
                   title={isSidebarCollapsed ? "Overview Dashboard" : undefined}
-                  className={`w-full flex items-center ${
-                    isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
-                  } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${
-                    activeTab === 'dashboard'
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
+                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'dashboard'
                       ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
                     <Compass className={`w-5 h-5 shrink-0 ${activeTab === 'dashboard' ? 'text-white' : 'text-[#00c853]'}`} />
@@ -1145,22 +1156,19 @@ export default function MsimamiziAdmin() {
                     setIsMobileMenuOpen(false);
                   }}
                   title={isSidebarCollapsed ? `Course Registrations (${registrations.length})` : undefined}
-                  className={`w-full flex items-center ${
-                    isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
-                  } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${
-                    activeTab === 'registrations'
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
+                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'registrations'
                       ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
                     <Users className={`w-5 h-5 shrink-0 ${activeTab === 'registrations' ? 'text-white' : 'text-[#00c853]'}`} />
                     {!isSidebarCollapsed && <span>Registrations</span>}
                   </div>
                   {!isSidebarCollapsed ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-                      activeTab === 'registrations' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'registrations' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
+                      }`}>
                       {registrations.length}
                     </span>
                   ) : (
@@ -1179,22 +1187,19 @@ export default function MsimamiziAdmin() {
                     setIsMobileMenuOpen(false);
                   }}
                   title={isSidebarCollapsed ? `Courses & Fees (${courses.length})` : undefined}
-                  className={`w-full flex items-center ${
-                    isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
-                  } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${
-                    activeTab === 'courses'
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
+                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'courses'
                       ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
                     <GraduationCap className={`w-5 h-5 shrink-0 ${activeTab === 'courses' ? 'text-white' : 'text-[#00c853]'}`} />
                     {!isSidebarCollapsed && <span>Courses &amp; Fees</span>}
                   </div>
                   {!isSidebarCollapsed ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-                      activeTab === 'courses' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'courses' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
+                      }`}>
                       {courses.length}
                     </span>
                   ) : (
@@ -1221,9 +1226,8 @@ export default function MsimamiziAdmin() {
                     setIsMobileMenuOpen(false);
                   }}
                   title="New Registration (+)"
-                  className={`${
-                    isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2.5 justify-center gap-2'
-                  } flex items-center rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold border border-white/15 shadow-sm transition cursor-pointer`}
+                  className={`${isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2.5 justify-center gap-2'
+                    } flex items-center rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold border border-white/15 shadow-sm transition cursor-pointer`}
                 >
                   <Plus className="w-4 h-4 text-[#00c853]" />
                   {!isSidebarCollapsed && <span>+ New Registration</span>}
@@ -1236,9 +1240,8 @@ export default function MsimamiziAdmin() {
                     setIsMobileMenuOpen(false);
                   }}
                   title="Upload New Course"
-                  className={`${
-                    isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2.5 justify-center gap-2'
-                  } flex items-center rounded-xl bg-white/5 hover:bg-white/10 text-white/90 text-xs font-semibold border border-white/10 transition cursor-pointer`}
+                  className={`${isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2.5 justify-center gap-2'
+                    } flex items-center rounded-xl bg-white/5 hover:bg-white/10 text-white/90 text-xs font-semibold border border-white/10 transition cursor-pointer`}
                 >
                   <Plus className="w-4 h-4 text-amber-400" />
                   {!isSidebarCollapsed && <span>+ Upload New Course</span>}
@@ -1248,9 +1251,8 @@ export default function MsimamiziAdmin() {
                   type="button"
                   onClick={() => adminRegistrationService.downloadCSV()}
                   title="Export Registrations to CSV"
-                  className={`${
-                    isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2 justify-center gap-2'
-                  } flex items-center rounded-xl bg-transparent hover:bg-white/5 text-white/70 hover:text-white text-xs font-medium transition cursor-pointer`}
+                  className={`${isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2 justify-center gap-2'
+                    } flex items-center rounded-xl bg-transparent hover:bg-white/5 text-white/70 hover:text-white text-xs font-medium transition cursor-pointer`}
                 >
                   <Download className="w-4 h-4 text-slate-400" />
                   {!isSidebarCollapsed && <span>Export Registrations (CSV)</span>}
@@ -1261,9 +1263,8 @@ export default function MsimamiziAdmin() {
         </div>
 
         {/* Bottom Sidebar Footer */}
-        <div className={`border-t border-white/10 bg-[#022433] ${
-          isSidebarCollapsed ? 'p-2 space-y-2 flex flex-col items-center' : 'p-4 space-y-3'
-        } ${isMobileMenuOpen ? 'block' : 'hidden md:block'}`}>
+        <div className={`border-t border-white/10 bg-[#022433] ${isSidebarCollapsed ? 'p-2 space-y-2 flex flex-col items-center' : 'p-4 space-y-3'
+          } ${isMobileMenuOpen ? 'block' : 'hidden md:block'}`}>
           {!isSidebarCollapsed ? (
             <a
               href={publicSiteUrl}
@@ -1306,9 +1307,8 @@ export default function MsimamiziAdmin() {
               type="button"
               onClick={handleLogout}
               title="Logout from Msimamizi"
-              className={`p-2 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer ${
-                isSidebarCollapsed ? 'w-10 h-10 flex items-center justify-center' : ''
-              }`}
+              className={`p-2 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer ${isSidebarCollapsed ? 'w-10 h-10 flex items-center justify-center' : ''
+                }`}
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -1391,1007 +1391,1002 @@ export default function MsimamiziAdmin() {
 
         {/* Content Body */}
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 flex-1 max-w-[1600px] w-full mx-auto">
-        {/* ════════════════════════════════════════════════════════════
+          {/* ════════════════════════════════════════════════════════════
             TAB 1: OVERVIEW DASHBOARD
         ════════════════════════════════════════════════════════════ */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            {/* KPI Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Total Registrations
-                  </p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#032e42] mt-1">
-                    {kpis.totalRegistrations}
-                  </p>
-                  <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 mt-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Live across all venues</span>
-                  </span>
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              {/* KPI Cards Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Total Registrations
+                    </p>
+                    <p className="text-2xl sm:text-3xl font-extrabold text-[#032e42] mt-1">
+                      {kpis.totalRegistrations}
+                    </p>
+                    <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 mt-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Live across all venues</span>
+                    </span>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-[#032e42]/10 text-[#032e42] flex items-center justify-center shrink-0">
+                    <Users className="w-6 h-6" />
+                  </div>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-[#032e42]/10 text-[#032e42] flex items-center justify-center shrink-0">
-                  <Users className="w-6 h-6" />
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Pending Review
+                    </p>
+                    <p className="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">
+                      {kpis.pendingCount}
+                    </p>
+                    <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
+                      <Clock className="w-3 h-3 text-amber-500" />
+                      <span>Requires proforma invoice</span>
+                    </span>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Confirmed Enrolments
+                    </p>
+                    <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700 mt-1">
+                      {kpis.confirmedCount}
+                    </p>
+                    <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <span>LPO or payment received</span>
+                    </span>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Total Enrolment Value
+                    </p>
+                    <p className="text-2xl sm:text-3xl font-extrabold text-[#032e42] mt-1">
+                      ${kpis.totalRevenueUSD.toLocaleString()}
+                    </p>
+                    <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 mt-1">
+                      <DollarSign className="w-3 h-3" />
+                      <span>{kpis.totalDelegates} Total delegates booked</span>
+                    </span>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-[#008000]/10 text-[#008000] flex items-center justify-center shrink-0">
+                    <DollarSign className="w-6 h-6" />
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Pending Review
-                  </p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">
-                    {kpis.pendingCount}
-                  </p>
-                  <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
-                    <Clock className="w-3 h-3 text-amber-500" />
-                    <span>Requires proforma invoice</span>
-                  </span>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                  <Clock className="w-6 h-6" />
-                </div>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Confirmed Enrolments
-                  </p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700 mt-1">
-                    {kpis.confirmedCount}
-                  </p>
-                  <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                    <span>LPO or payment received</span>
-                  </span>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Total Enrolment Value
-                  </p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#032e42] mt-1">
-                    ${kpis.totalRevenueUSD.toLocaleString()}
-                  </p>
-                  <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 mt-1">
-                    <DollarSign className="w-3 h-3" />
-                    <span>{kpis.totalDelegates} Total delegates booked</span>
-                  </span>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-[#008000]/10 text-[#008000] flex items-center justify-center shrink-0">
-                  <DollarSign className="w-6 h-6" />
-                </div>
-              </div>
-            </div>
-
-            {/* Destination Breakdown & Quick Summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Venue Distribution */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#008000]" />
-                    <span>Enrolments by Venue</span>
-                  </h3>
-                  <span className="text-xs font-bold text-slate-400">2026 Cohorts</span>
-                </div>
-
-                <div className="space-y-3">
-                  {Object.entries(kpis.venueBreakdown).length === 0 ? (
-                    <div className="py-8 text-center text-slate-400">
-                      <MapPin className="w-6 h-6 mx-auto mb-1.5 opacity-40 text-slate-400" />
-                      <p className="text-xs font-semibold text-slate-600">No venue registrations yet.</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Enrolments will populate breakdown by destination automatically.</p>
-                    </div>
-                  ) : (
-                    Object.entries(kpis.venueBreakdown).map(([venueName, count]) => {
-                      const percentage = Math.round((count / (kpis.totalRegistrations || 1)) * 100);
-                      return (
-                        <div key={venueName} className="space-y-1">
-                          <div className="flex items-center justify-between text-xs font-semibold">
-                            <span className="text-slate-700">{venueName}</span>
-                            <span className="text-slate-900 font-bold">{count} ({percentage}%)</span>
-                          </div>
-                          <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-[#008000] transition-all duration-500"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* Recent Enrolment Feed */}
-              <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                <div>
+              {/* Destination Breakdown & Quick Summary */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Venue Distribution */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#032e42]" />
-                      <span>Recent Registrations Stream</span>
+                      <MapPin className="w-4 h-4 text-[#008000]" />
+                      <span>Enrolments by Venue</span>
                     </h3>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('registrations')}
-                      className="text-xs font-bold text-[#008000] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>View All</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                    <span className="text-xs font-bold text-slate-400">2026 Cohorts</span>
                   </div>
 
-                  <div className="divide-y divide-slate-100">
-                    {registrations.length === 0 ? (
+                  <div className="space-y-3">
+                    {Object.entries(kpis.venueBreakdown).length === 0 ? (
                       <div className="py-8 text-center text-slate-400">
-                        <Users className="w-6 h-6 mx-auto mb-1.5 opacity-40 text-slate-400" />
-                        <p className="text-xs font-semibold text-slate-600">No client registrations received yet.</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Submissions from ecasiafrica.org/register stream directly here.</p>
+                        <MapPin className="w-6 h-6 mx-auto mb-1.5 opacity-40 text-slate-400" />
+                        <p className="text-xs font-semibold text-slate-600">No venue registrations yet.</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Enrolments will populate breakdown by destination automatically.</p>
                       </div>
                     ) : (
-                      registrations.slice(0, 4).map((reg) => (
-                        <div
-                          key={reg.id}
-                          onClick={() => setSelectedReg(reg)}
-                          className="py-3 flex items-center justify-between gap-3 hover:bg-slate-50 px-2 rounded-lg transition cursor-pointer"
-                        >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-slate-800 truncate">
-                                {reg.title} {reg.firstName} {reg.lastName}
-                              </span>
-                              <span className="text-xs text-slate-500 font-medium truncate hidden sm:inline">
-                                • {reg.organisation}
-                              </span>
+                      Object.entries(kpis.venueBreakdown).map(([venueName, count]) => {
+                        const percentage = Math.round((count / (kpis.totalRegistrations || 1)) * 100);
+                        return (
+                          <div key={venueName} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs font-semibold">
+                              <span className="text-slate-700">{venueName}</span>
+                              <span className="text-slate-900 font-bold">{count} ({percentage}%)</span>
                             </div>
-                            <p className="text-xs text-slate-500 truncate mt-0.5">
-                              {reg.eventTitle}
-                            </p>
+                            <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-[#008000] transition-all duration-500"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
                           </div>
-                          <div className="text-right shrink-0">
-                            <span
-                              className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
-                                reg.status === 'Confirmed'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : reg.status === 'Approved'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
-                            >
-                              {reg.status}
-                            </span>
-                            <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                              {reg.venue.split(',')[0]}
-                            </p>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span>Showing top recent submissions</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsNewModalOpen(true)}
-                    className="font-bold text-[#032e42] hover:text-[#008000] inline-flex items-center gap-1"
-                  >
-                    <span>+ Add Manual Entry</span>
-                  </button>
+                {/* Recent Enrolment Feed */}
+                <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-[#032e42]" />
+                        <span>Recent Registrations Stream</span>
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('registrations')}
+                        className="text-xs font-bold text-[#008000] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>View All</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="divide-y divide-slate-100">
+                      {registrations.length === 0 ? (
+                        <div className="py-8 text-center text-slate-400">
+                          <Users className="w-6 h-6 mx-auto mb-1.5 opacity-40 text-slate-400" />
+                          <p className="text-xs font-semibold text-slate-600">No client registrations received yet.</p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">Submissions from ecasiafrica.org/register stream directly here.</p>
+                        </div>
+                      ) : (
+                        registrations.slice(0, 4).map((reg) => (
+                          <div
+                            key={reg.id}
+                            onClick={() => setSelectedReg(reg)}
+                            className="py-3 flex items-center justify-between gap-3 hover:bg-slate-50 px-2 rounded-lg transition cursor-pointer"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-slate-800 truncate">
+                                  {reg.title} {reg.firstName} {reg.lastName}
+                                </span>
+                                <span className="text-xs text-slate-500 font-medium truncate hidden sm:inline">
+                                  • {reg.organisation}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 truncate mt-0.5">
+                                {reg.eventTitle}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${reg.status === 'Confirmed'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : reg.status === 'Approved'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`}
+                              >
+                                {reg.status}
+                              </span>
+                              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                {reg.venue.split(',')[0]}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span>Showing top recent submissions</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsNewModalOpen(true)}
+                      className="font-bold text-[#032e42] hover:text-[#008000] inline-flex items-center gap-1"
+                    >
+                      <span>+ Add Manual Entry</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ════════════════════════════════════════════════════════════
+          {/* ════════════════════════════════════════════════════════════
             TAB 2: REGISTRATIONS MANAGER TABLE
         ════════════════════════════════════════════════════════════ */}
-        {activeTab === 'registrations' && (
-          <div className="space-y-4">
-            {/* Filter Bar */}
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                {/* Search Bar */}
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by delegate name, organization, course title, or reference..."
-                    className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/10 transition"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Filter Dropdowns */}
-                <div className="flex items-center gap-2 overflow-x-auto">
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#008000]"
-                  >
-                    <option value="All">All Statuses</option>
-                    <option value="Pending">Pending Review</option>
-                    <option value="Approved">Approved / Invoiced</option>
-                    <option value="Confirmed">Confirmed / Paid</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
-
-                  <select
-                    value={filterVenue}
-                    onChange={(e) => setFilterVenue(e.target.value)}
-                    className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#008000]"
-                  >
-                    <option value="All">All Venues</option>
-                    <option value="Nairobi">Nairobi</option>
-                    <option value="Mombasa">Mombasa</option>
-                    <option value="Kigali">Kigali</option>
-                    <option value="Dubai">Dubai</option>
-                    <option value="Kuala Lumpur">Kuala Lumpur</option>
-                    <option value="Online">Online / Virtual</option>
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setFilterStatus('All');
-                      setFilterVenue('All');
-                      setFilterPayment('All');
-                    }}
-                    title="Reset filters"
-                    className="h-10 px-3 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition text-xs font-semibold"
-                  >
-                    Reset
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Registrations Data Table */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              {/* Mobile Horizontal Scroll Indicator Banner */}
-              <div className="md:hidden bg-slate-50 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between text-[11px] text-slate-600 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-[#008000]" />
-                  <span>Scroll left &amp; right to view all registration details</span>
-                </span>
-                <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">&larr; swipe &rarr;</span>
-              </div>
-              <div className="overflow-x-auto w-full">
-                <table className="w-full text-left border-collapse text-xs min-w-[1050px]">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-600 uppercase tracking-wider font-extrabold border-b border-slate-200 text-[11px]">
-                      <th className="py-3.5 px-4">Ref &amp; Date</th>
-                      <th className="py-3.5 px-4">Delegate / Participant</th>
-                      <th className="py-3.5 px-4">Organization &amp; Country</th>
-                      <th className="py-3.5 px-4">Course Programme</th>
-                      <th className="py-3.5 px-4">Venue &amp; Mode</th>
-                      <th className="py-3.5 px-4 text-center">Delegates</th>
-                      <th className="py-3.5 px-4">Fee (USD)</th>
-                      <th className="py-3.5 px-4">Status</th>
-                      <th className="py-3.5 px-4 text-right sticky right-0 bg-slate-50/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredRegistrations.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="py-12 text-center text-slate-400">
-                          <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                          <p className="text-sm font-semibold">No course registrations match your search filters.</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredRegistrations.map((r) => (
-                        <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-mono font-bold text-slate-700 whitespace-nowrap">
-                            <div>{r.referenceNo}</div>
-                            <div className="text-[10px] text-slate-400 font-sans font-normal">
-                              {r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : 'N/A'}
-                            </div>
-                          </td>
-
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="font-bold text-slate-900">
-                              {r.title} {r.firstName} {r.lastName}
-                            </div>
-                            <div className="text-[11px] text-slate-500">{r.officialEmail || r.personalEmail}</div>
-                          </td>
-
-                          <td className="py-3.5 px-4">
-                            <div className="font-semibold text-slate-800 line-clamp-1">{r.organisation}</div>
-                            <div className="text-[11px] text-slate-500 font-medium">{r.jobTitle} • {r.country}</div>
-                          </td>
-
-                          <td className="py-3.5 px-4 max-w-xs">
-                            <div className="font-bold text-[#032e42] line-clamp-2 leading-snug">
-                              {r.eventTitle}
-                            </div>
-                            <div className="text-[10px] text-slate-400 font-mono">
-                              Schedule #{r.scheduleId}
-                            </div>
-                          </td>
-
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="font-medium text-slate-800 flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-[#008000]" />
-                              <span>{r.venue}</span>
-                            </div>
-                            <div className="text-[11px] text-slate-500">{r.format}</div>
-                          </td>
-
-                          <td className="py-3.5 px-4 text-center font-bold text-slate-800">
-                            {r.participantsCount || 1}
-                          </td>
-
-                          <td className="py-3.5 px-4 whitespace-nowrap font-bold text-[#032e42]">
-                            ${(r.totalFee || 0).toLocaleString()}
-                          </td>
-
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <select
-                              value={r.status}
-                              onChange={(e) => handleQuickStatusChange(r.id, e.target.value)}
-                              className={`text-[11px] font-bold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none ${
-                                r.status === 'Confirmed'
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                  : r.status === 'Approved'
-                                  ? 'bg-blue-50 text-blue-700 border-blue-300'
-                                  : r.status === 'Completed'
-                                  ? 'bg-purple-50 text-purple-700 border-purple-300'
-                                  : r.status === 'Cancelled'
-                                  ? 'bg-red-50 text-red-700 border-red-300'
-                                  : 'bg-amber-50 text-amber-700 border-amber-300'
-                              }`}
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="Approved">Approved</option>
-                              <option value="Confirmed">Confirmed</option>
-                              <option value="Completed">Completed</option>
-                              <option value="Cancelled">Cancelled</option>
-                            </select>
-                          </td>
-
-                          <td className="py-3.5 px-4 whitespace-nowrap text-right sticky right-0 bg-white/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedReg(r)}
-                                title="View delegate dossier"
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-[#032e42] hover:bg-slate-100 transition cursor-pointer"
-                              >
-                                <FileText className="w-4 h-4" />
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedReg(r);
-                                  setTimeout(() => window.print(), 300);
-                                }}
-                                title="Print admission slip"
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-[#008000] hover:bg-emerald-50 transition cursor-pointer"
-                              >
-                                <Printer className="w-4 h-4" />
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteRegistration(r.id, r.referenceNo)}
-                                title="Delete registration"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+          {activeTab === 'registrations' && (
+            <div className="space-y-4">
+              {/* Filter Bar */}
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  {/* Search Bar */}
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search by delegate name, organization, course title, or reference..."
+                      className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/10 transition"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     )}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
 
-              {/* Table Footer */}
-              <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-                <span>
-                  Showing <strong>{filteredRegistrations.length}</strong> of <strong>{registrations.length}</strong> total registrations
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => adminRegistrationService.downloadCSV()}
-                    className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-semibold text-slate-700 transition flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download CSV</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ════════════════════════════════════════════════════════════
-            TAB 3: WORLD-CLASS COURSE MANAGEMENT, PRICING & COHORT HUB
-        ════════════════════════════════════════════════════════════ */}
-        {activeTab === 'courses' && (
-          <div className="space-y-5">
-            {/* Action & Stats Banner */}
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-black text-[#032e42]">
-                    ECAS Executive Course Catalog
-                  </h2>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
-                    {courses.length} Accredited Courses Total
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">
-                    {departmentsList.length - 1} Academic Departments
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                  Search, filter, update tuition fees, configure promotional discounts, and schedule cohort intake dates for all {courses.length} courses across Kenya (Nairobi, Mombasa, Naivasha), Rwanda (Kigali), UAE (Dubai), Malaysia (Kuala Lumpur), and Online.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full xl:w-auto">
-                <button
-                  type="button"
-                  onClick={exportCoursesCSV}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm cursor-pointer"
-                  title="Export complete 213 courses catalog to CSV"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Export Catalog (CSV)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsNewCourseModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-md transition cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>Upload New Course</span>
-                </button>
-
-                <a
-                  href="/institute-overview"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold transition shadow-sm"
-                  title="Open live public course finder in new tab"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Public Finder</span>
-                </a>
-              </div>
-            </div>
-
-            {/* World-Class Filter System Toolbar */}
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              {/* Row 1: Search Bar & Primary Selectors */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                {/* Instant Search Input */}
-                <div className="relative md:col-span-5">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={courseSearch}
-                    onChange={(e) => setCourseSearch(e.target.value)}
-                    placeholder="Search courses by title, slug, code, or keyword..."
-                    className="w-full h-10 pl-10 pr-9 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15"
-                  />
-                  {courseSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setCourseSearch('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                  {/* Filter Dropdowns */}
+                  <div className="flex items-center gap-2 overflow-x-auto">
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#008000]"
                     >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
+                      <option value="All">All Statuses</option>
+                      <option value="Pending">Pending Review</option>
+                      <option value="Approved">Approved / Invoiced</option>
+                      <option value="Confirmed">Confirmed / Paid</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
 
-                {/* Department Selector */}
-                <div className="md:col-span-4">
-                  <select
-                    value={selectedDepartment}
-                    onChange={(e) => setSelectedDepartment(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#008000] cursor-pointer"
-                  >
-                    {departmentsList.map((dept) => {
-                      const count = dept === 'All Departments' ? courses.length : (categoryCounts[dept] || 0);
-                      return (
-                        <option key={dept} value={dept}>
-                          {dept} ({count})
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
+                    <select
+                      value={filterVenue}
+                      onChange={(e) => setFilterVenue(e.target.value)}
+                      className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#008000]"
+                    >
+                      <option value="All">All Venues</option>
+                      <option value="Nairobi">Nairobi</option>
+                      <option value="Mombasa">Mombasa</option>
+                      <option value="Kigali">Kigali</option>
+                      <option value="Dubai">Dubai</option>
+                      <option value="Kuala Lumpur">Kuala Lumpur</option>
+                      <option value="Online">Online / Virtual</option>
+                    </select>
 
-                {/* Duration Filter */}
-                <div className="md:col-span-3">
-                  <select
-                    value={selectedDuration}
-                    onChange={(e) => setSelectedDuration(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#008000] cursor-pointer"
-                  >
-                    {durationList.map((dur) => (
-                      <option key={dur} value={dur}>
-                        {dur}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Row 2: Secondary Controls, Sorting, View Toggle, and Results Count */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
-                {/* Secondary Filters */}
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Pricing Status */}
-                  <select
-                    value={selectedPricing}
-                    onChange={(e) => setSelectedPricing(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 font-medium focus:outline-none focus:border-[#008000] cursor-pointer"
-                  >
-                    <option value="All">All Pricing Types</option>
-                    <option value="Discounted">Promotional / Discounted Only</option>
-                    <option value="Standard">Standard Tuition Only</option>
-                  </select>
-
-                  {/* Sort By */}
-                  <select
-                    value={courseSortBy}
-                    onChange={(e) => setCourseSortBy(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 font-medium focus:outline-none focus:border-[#008000] cursor-pointer"
-                  >
-                    <option value="title-asc">Sort: Title (A &rarr; Z)</option>
-                    <option value="title-desc">Sort: Title (Z &rarr; A)</option>
-                    <option value="fee-high">Sort: Tuition (High to Low)</option>
-                    <option value="fee-low">Sort: Tuition (Low to High)</option>
-                    <option value="category">Sort: Department</option>
-                  </select>
-
-                  {/* Per Page */}
-                  <select
-                    value={coursesPerPage}
-                    onChange={(e) => setCoursesPerPage(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 font-medium focus:outline-none focus:border-[#008000] cursor-pointer"
-                  >
-                    <option value="15">15 per page</option>
-                    <option value="25">25 per page</option>
-                    <option value="50">50 per page</option>
-                    <option value="100">100 per page</option>
-                    <option value="all">Show All ({filteredAndSortedCourses.length})</option>
-                  </select>
-
-                  {/* Clear Filters Button (Shows when any filter is active) */}
-                  {(courseSearch || selectedDepartment !== 'All Departments' || selectedDuration !== 'All Durations' || selectedPricing !== 'All') && (
                     <button
                       type="button"
                       onClick={() => {
-                        setCourseSearch('');
-                        setSelectedDepartment('All Departments');
-                        setSelectedDuration('All Durations');
-                        setSelectedPricing('All');
+                        setSearchQuery('');
+                        setFilterStatus('All');
+                        setFilterVenue('All');
+                        setFilterPayment('All');
                       }}
-                      className="h-9 px-3 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-xs transition cursor-pointer flex items-center gap-1"
+                      title="Reset filters"
+                      className="h-10 px-3 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition text-xs font-semibold"
                     >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Reset Filters</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* View Mode & Results Count */}
-                <div className="flex items-center justify-between sm:justify-end gap-3">
-                  <span className="text-slate-500 font-medium">
-                    Showing <strong>{totalFilteredCourses > 0 ? (courseCurrentPage - 1) * (coursesPerPage === 'all' ? totalFilteredCourses : Number(coursesPerPage)) + 1 : 0}</strong> - <strong>{coursesPerPage === 'all' ? totalFilteredCourses : Math.min(courseCurrentPage * Number(coursesPerPage), totalFilteredCourses)}</strong> of <strong>{totalFilteredCourses}</strong> courses
-                  </span>
-
-                  {/* View Mode Toggle */}
-                  <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setCourseViewMode('table')}
-                      title="Table View (Data Grid)"
-                      className={`p-1.5 rounded-md transition cursor-pointer ${
-                        courseViewMode === 'table' ? 'bg-white text-[#032e42] shadow-sm font-bold' : 'text-slate-400 hover:text-slate-700'
-                      }`}
-                    >
-                      <LayoutList className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCourseViewMode('grid')}
-                      title="Grid Cards View"
-                      className={`p-1.5 rounded-md transition cursor-pointer ${
-                        courseViewMode === 'grid' ? 'bg-white text-[#032e42] shadow-sm font-bold' : 'text-slate-400 hover:text-slate-700'
-                      }`}
-                    >
-                      <LayoutGrid className="w-4 h-4" />
+                      Reset
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Courses Display: Table View OR Grid View */}
-            {totalFilteredCourses === 0 ? (
-              <div className="bg-white p-12 text-center rounded-2xl border border-slate-200 shadow-sm">
-                <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-2 opacity-80" />
-                <h3 className="font-bold text-slate-800 text-sm">No courses matched your search criteria</h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                  Try adjusting your search terms or reset the department filter to &quot;All Departments&quot;.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCourseSearch('');
-                    setSelectedDepartment('All Departments');
-                    setSelectedDuration('All Durations');
-                    setSelectedPricing('All');
-                  }}
-                  className="mt-4 px-4 py-2 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold transition cursor-pointer"
-                >
-                  Reset All Filters
-                </button>
-              </div>
-            ) : courseViewMode === 'table' ? (
-              /* ── TABLE VIEW ── */
+              {/* Registrations Data Table */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Mobile Horizontal Scroll Indicator Banner */}
                 <div className="md:hidden bg-slate-50 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between text-[11px] text-slate-600 font-medium">
                   <span className="flex items-center gap-1.5">
                     <ArrowRightLeft className="w-3.5 h-3.5 text-[#008000]" />
-                    <span>Scroll horizontally to view all courses, pricing &amp; actions</span>
+                    <span>Scroll left &amp; right to view all registration details</span>
                   </span>
                   <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">&larr; swipe &rarr;</span>
                 </div>
                 <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left border-collapse text-xs min-w-[950px] sm:min-w-[1050px]">
+                  <table className="w-full text-left border-collapse text-xs min-w-[1050px]">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 uppercase tracking-wider font-extrabold border-b border-slate-200 text-[11px]">
-                        <th className="py-3 px-3.5 text-center w-12">#</th>
-                        <th className="py-3 px-4 min-w-[260px]">Course Programme &amp; Slug</th>
-                        <th className="py-3 px-4 min-w-[200px]">Academic Department</th>
-                        <th className="py-3 px-3.5 whitespace-nowrap">Duration</th>
-                        <th className="py-3 px-3.5 whitespace-nowrap">Standard Fee</th>
-                        <th className="py-3 px-3.5 whitespace-nowrap">Promotion</th>
-                        <th className="py-3 px-4 min-w-[180px]">Upcoming Cohorts</th>
-                        <th className="py-3 px-4 text-right whitespace-nowrap sticky right-0 bg-slate-50/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">Actions</th>
+                        <th className="py-3.5 px-4">Ref &amp; Date</th>
+                        <th className="py-3.5 px-4">Delegate / Participant</th>
+                        <th className="py-3.5 px-4">Organization &amp; Country</th>
+                        <th className="py-3.5 px-4">Course Programme</th>
+                        <th className="py-3.5 px-4">Venue &amp; Mode</th>
+                        <th className="py-3.5 px-4 text-center">Delegates</th>
+                        <th className="py-3.5 px-4">Fee (USD)</th>
+                        <th className="py-3.5 px-4">Status</th>
+                        <th className="py-3.5 px-4 text-right sticky right-0 bg-slate-50/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {paginatedCourses.map((c, idx) => {
-                        const rowNumber = coursesPerPage === 'all' ? idx + 1 : (courseCurrentPage - 1) * Number(coursesPerPage) + idx + 1;
-                        const feeNum = Number(String(c.fee || 1200).replace(/[^0-9]/g, '')) || 1200;
-                        const feeKes = c.feeKes || (feeNum * 130);
-                        const hasDiscount = Boolean(c.discountPercent && c.discountPercent > 0);
-                        const discountPrice = c.discountPrice || Math.round(feeNum * (1 - (c.discountPercent || 0) / 100));
-
-                        const displayCohorts = Array.isArray(c.customCohorts) && c.customCohorts.length > 0
-                          ? c.customCohorts
-                          : ['16 - 27 March 2026', '13 - 24 April 2026', '18 - 29 May 2026'];
-
-                        return (
-                          <tr key={c.slug} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-3 px-3.5 text-center text-slate-400 font-mono text-[11px]">
-                              {rowNumber}
+                      {filteredRegistrations.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} className="py-12 text-center text-slate-400">
+                            <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                            <p className="text-sm font-semibold">No course registrations match your search filters.</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredRegistrations.map((r) => (
+                          <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-700 whitespace-nowrap">
+                              <div>{r.referenceNo}</div>
+                              <div className="text-[10px] text-slate-400 font-sans font-normal">
+                                {r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : 'N/A'}
+                              </div>
                             </td>
 
-                            <td className="py-3 px-4">
-                              <a
-                                href={`/executive-training/${c.slug}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="font-bold text-[#032e42] hover:text-[#008000] transition line-clamp-2 leading-snug"
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="font-bold text-slate-900">
+                                {r.title} {r.firstName} {r.lastName}
+                              </div>
+                              <div className="text-[11px] text-slate-500">{r.officialEmail || r.personalEmail}</div>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <div className="font-semibold text-slate-800 line-clamp-1">{r.organisation}</div>
+                              <div className="text-[11px] text-slate-500 font-medium">{r.jobTitle} • {r.country}</div>
+                            </td>
+
+                            <td className="py-3.5 px-4 max-w-xs">
+                              <div className="font-bold text-[#032e42] line-clamp-2 leading-snug">
+                                {r.eventTitle}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                Schedule #{r.scheduleId}
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="font-medium text-slate-800 flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-[#008000]" />
+                                <span>{r.venue}</span>
+                              </div>
+                              <div className="text-[11px] text-slate-500">{r.format}</div>
+                            </td>
+
+                            <td className="py-3.5 px-4 text-center font-bold text-slate-800">
+                              {r.participantsCount || 1}
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap font-bold text-[#032e42]">
+                              ${(r.totalFee || 0).toLocaleString()}
+                            </td>
+
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <select
+                                value={r.status}
+                                onChange={(e) => handleQuickStatusChange(r.id, e.target.value)}
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none ${r.status === 'Confirmed'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                    : r.status === 'Approved'
+                                      ? 'bg-blue-50 text-blue-700 border-blue-300'
+                                      : r.status === 'Completed'
+                                        ? 'bg-purple-50 text-purple-700 border-purple-300'
+                                        : r.status === 'Cancelled'
+                                          ? 'bg-red-50 text-red-700 border-red-300'
+                                          : 'bg-amber-50 text-amber-700 border-amber-300'
+                                  }`}
                               >
-                                {c.title}
-                              </a>
-                              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                /{c.slug}
-                              </div>
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Confirmed">Confirmed</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                              </select>
                             </td>
 
-                            <td className="py-3 px-4">
-                              <span className="inline-block text-[10.5px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 leading-snug">
-                                {c.category || 'Executive Training'}
-                              </span>
-                            </td>
-
-                            <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-600">
-                              {c.duration || '5 Days'}
-                            </td>
-
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              <div className={`font-black text-sm ${hasDiscount ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                                ${feeNum.toLocaleString()}
-                              </div>
-                              <div className="text-[10px] text-slate-400">
-                                KES {feeKes.toLocaleString()}
-                              </div>
-                            </td>
-
-                            <td className="py-3 px-3.5 whitespace-nowrap">
-                              {hasDiscount ? (
-                                <div>
-                                  <span className="font-black text-emerald-700 text-sm block">
-                                    ${discountPrice.toLocaleString()}
-                                  </span>
-                                  <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded">
-                                    {c.discountPercent}% OFF
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-[11px] text-slate-400 font-normal">
-                                  Standard
-                                </span>
-                              )}
-                            </td>
-
-                            <td className="py-3 px-4">
-                              <div className="flex flex-wrap gap-1">
-                                {displayCohorts.slice(0, 2).map((d, dIdx) => (
-                                  <span
-                                    key={dIdx}
-                                    className="text-[10px] font-medium bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded whitespace-nowrap"
-                                  >
-                                    {d}
-                                  </span>
-                                ))}
-                                {displayCohorts.length > 2 && (
-                                  <span className="text-[10px] font-medium text-slate-400 px-1 py-0.5">
-                                    +{displayCohorts.length - 2} more
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            <td className="py-3 px-4 whitespace-nowrap text-right sticky right-0 bg-white/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">
+                            <td className="py-3.5 px-4 whitespace-nowrap text-right sticky right-0 bg-white/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">
                               <div className="inline-flex items-center gap-1.5">
                                 <button
                                   type="button"
-                                  onClick={() => openEditCourse(c)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white text-[11px] font-bold transition shadow-sm cursor-pointer"
-                                  title="Edit Pricing, Discounts & Cohort Dates"
+                                  onClick={() => setSelectedReg(r)}
+                                  title="View delegate dossier"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-[#032e42] hover:bg-slate-100 transition cursor-pointer"
                                 >
-                                  <Edit className="w-3.5 h-3.5" />
-                                  <span>Edit</span>
+                                  <FileText className="w-4 h-4" />
                                 </button>
-
-                                <a
-                                  href={`/executive-training/${c.slug}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-[#008000] hover:bg-emerald-50 transition cursor-pointer"
-                                  title="View Public Page"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
 
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteCourse(c.slug, c.title)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                                  title="Delete Course"
+                                  onClick={() => {
+                                    setSelectedReg(r);
+                                    setTimeout(() => window.print(), 300);
+                                  }}
+                                  title="Print admission slip"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-[#008000] hover:bg-emerald-50 transition cursor-pointer"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Printer className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteRegistration(r.id, r.referenceNo)}
+                                  title="Delete registration"
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </td>
                           </tr>
-                        );
-                      })}
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            ) : (
-              /* ── GRID CARDS VIEW ── */
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {paginatedCourses.map((c) => {
-                  const feeNum = Number(String(c.fee || 1200).replace(/[^0-9]/g, '')) || 1200;
-                  const feeKes = c.feeKes || (feeNum * 130);
-                  const hasDiscount = Boolean(c.discountPercent && c.discountPercent > 0);
-                  const discountPrice = c.discountPrice || Math.round(feeNum * (1 - (c.discountPercent || 0) / 100));
 
-                  const displayCohorts = Array.isArray(c.customCohorts) && c.customCohorts.length > 0
-                    ? c.customCohorts
-                    : ['16 - 27 March 2026', '13 - 24 April 2026', '18 - 29 May 2026'];
-
-                  return (
-                    <div
-                      key={c.slug}
-                      className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:border-[#008000]/60 transition flex flex-col justify-between"
+                {/* Table Footer */}
+                <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+                  <span>
+                    Showing <strong>{filteredRegistrations.length}</strong> of <strong>{registrations.length}</strong> total registrations
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => adminRegistrationService.downloadCSV()}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-semibold text-slate-700 transition flex items-center gap-1.5 cursor-pointer"
                     >
-                      <div>
-                        {/* Category & Duration Tag */}
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 line-clamp-1">
-                            {c.category || 'Executive Training'}
-                          </span>
-                          <span className="text-[11px] font-semibold text-slate-500 shrink-0">
-                            {c.duration || '5 Days'}
-                          </span>
-                        </div>
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download CSV</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
-                        {/* Course Title */}
-                        <h4 className="font-bold text-sm text-[#032e42] leading-snug line-clamp-2 mb-2.5">
-                          {c.title}
-                        </h4>
+          {/* ════════════════════════════════════════════════════════════
+            TAB 3: WORLD-CLASS COURSE MANAGEMENT, PRICING & COHORT HUB
+        ════════════════════════════════════════════════════════════ */}
+          {activeTab === 'courses' && (
+            <div className="space-y-5">
+              {/* Action & Stats Banner */}
+              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg sm:text-xl font-black text-[#032e42]">
+                      ECAS Executive Course Catalog
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
+                      {courses.length} Accredited Courses Total
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">
+                      {departmentsList.length - 1} Academic Departments
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                    Search, filter, update tuition fees, configure promotional discounts, and schedule cohort intake dates for all {courses.length} courses across Kenya (Nairobi, Mombasa, Naivasha), Rwanda (Kigali), UAE (Dubai), Malaysia (Kuala Lumpur), and Online.
+                  </p>
+                </div>
 
-                        {/* Tuition Pricing & Discount Banner */}
-                        <div className="bg-slate-50 rounded-lg p-2.5 mb-3 border border-slate-100 flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                              Tuition Fee
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full xl:w-auto">
+                  <button
+                    type="button"
+                    onClick={exportCoursesCSV}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm cursor-pointer"
+                    title="Export complete 213 courses catalog to CSV"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Export Catalog (CSV)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsNewCourseModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-md transition cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>Upload New Course</span>
+                  </button>
+
+                  <a
+                    href="/institute-overview"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold transition shadow-sm"
+                    title="Open live public course finder in new tab"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Public Finder</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* World-Class Filter System Toolbar */}
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                {/* Row 1: Search Bar & Primary Selectors */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                  {/* Instant Search Input */}
+                  <div className="relative md:col-span-5">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={courseSearch}
+                      onChange={(e) => setCourseSearch(e.target.value)}
+                      placeholder="Search courses by title, slug, code, or keyword..."
+                      className="w-full h-10 pl-10 pr-9 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15"
+                    />
+                    {courseSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setCourseSearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Department Selector */}
+                  <div className="md:col-span-4">
+                    <select
+                      value={selectedDepartment}
+                      onChange={(e) => setSelectedDepartment(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#008000] cursor-pointer"
+                    >
+                      {departmentsList.map((dept) => {
+                        const count = dept === 'All Departments' ? courses.length : (categoryCounts[dept] || 0);
+                        return (
+                          <option key={dept} value={dept}>
+                            {dept} ({count})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {/* Duration Filter */}
+                  <div className="md:col-span-3">
+                    <select
+                      value={selectedDuration}
+                      onChange={(e) => setSelectedDuration(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#008000] cursor-pointer"
+                    >
+                      {durationList.map((dur) => (
+                        <option key={dur} value={dur}>
+                          {dur}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row 2: Secondary Controls, Sorting, View Toggle, and Results Count */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
+                  {/* Secondary Filters */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Pricing Status */}
+                    <select
+                      value={selectedPricing}
+                      onChange={(e) => setSelectedPricing(e.target.value)}
+                      className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 font-medium focus:outline-none focus:border-[#008000] cursor-pointer"
+                    >
+                      <option value="All">All Pricing Types</option>
+                      <option value="Discounted">Promotional / Discounted Only</option>
+                      <option value="Standard">Standard Tuition Only</option>
+                    </select>
+
+                    {/* Sort By */}
+                    <select
+                      value={courseSortBy}
+                      onChange={(e) => setCourseSortBy(e.target.value)}
+                      className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 font-medium focus:outline-none focus:border-[#008000] cursor-pointer"
+                    >
+                      <option value="title-asc">Sort: Title (A &rarr; Z)</option>
+                      <option value="title-desc">Sort: Title (Z &rarr; A)</option>
+                      <option value="fee-high">Sort: Tuition (High to Low)</option>
+                      <option value="fee-low">Sort: Tuition (Low to High)</option>
+                      <option value="category">Sort: Department</option>
+                    </select>
+
+                    {/* Per Page */}
+                    <select
+                      value={coursesPerPage}
+                      onChange={(e) => setCoursesPerPage(e.target.value)}
+                      className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 font-medium focus:outline-none focus:border-[#008000] cursor-pointer"
+                    >
+                      <option value="15">15 per page</option>
+                      <option value="25">25 per page</option>
+                      <option value="50">50 per page</option>
+                      <option value="100">100 per page</option>
+                      <option value="all">Show All ({filteredAndSortedCourses.length})</option>
+                    </select>
+
+                    {/* Clear Filters Button (Shows when any filter is active) */}
+                    {(courseSearch || selectedDepartment !== 'All Departments' || selectedDuration !== 'All Durations' || selectedPricing !== 'All') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCourseSearch('');
+                          setSelectedDepartment('All Departments');
+                          setSelectedDuration('All Durations');
+                          setSelectedPricing('All');
+                        }}
+                        className="h-9 px-3 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-xs transition cursor-pointer flex items-center gap-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Reset Filters</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* View Mode & Results Count */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3">
+                    <span className="text-slate-500 font-medium">
+                      Showing <strong>{totalFilteredCourses > 0 ? (courseCurrentPage - 1) * (coursesPerPage === 'all' ? totalFilteredCourses : Number(coursesPerPage)) + 1 : 0}</strong> - <strong>{coursesPerPage === 'all' ? totalFilteredCourses : Math.min(courseCurrentPage * Number(coursesPerPage), totalFilteredCourses)}</strong> of <strong>{totalFilteredCourses}</strong> courses
+                    </span>
+
+                    {/* View Mode Toggle */}
+                    <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setCourseViewMode('table')}
+                        title="Table View (Data Grid)"
+                        className={`p-1.5 rounded-md transition cursor-pointer ${courseViewMode === 'table' ? 'bg-white text-[#032e42] shadow-sm font-bold' : 'text-slate-400 hover:text-slate-700'
+                          }`}
+                      >
+                        <LayoutList className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCourseViewMode('grid')}
+                        title="Grid Cards View"
+                        className={`p-1.5 rounded-md transition cursor-pointer ${courseViewMode === 'grid' ? 'bg-white text-[#032e42] shadow-sm font-bold' : 'text-slate-400 hover:text-slate-700'
+                          }`}
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Courses Display: Table View OR Grid View */}
+              {totalFilteredCourses === 0 ? (
+                <div className="bg-white p-12 text-center rounded-2xl border border-slate-200 shadow-sm">
+                  <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-2 opacity-80" />
+                  <h3 className="font-bold text-slate-800 text-sm">No courses matched your search criteria</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                    Try adjusting your search terms or reset the department filter to &quot;All Departments&quot;.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCourseSearch('');
+                      setSelectedDepartment('All Departments');
+                      setSelectedDuration('All Durations');
+                      setSelectedPricing('All');
+                    }}
+                    className="mt-4 px-4 py-2 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold transition cursor-pointer"
+                  >
+                    Reset All Filters
+                  </button>
+                </div>
+              ) : courseViewMode === 'table' ? (
+                /* ── TABLE VIEW ── */
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  {/* Mobile Horizontal Scroll Indicator Banner */}
+                  <div className="md:hidden bg-slate-50 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between text-[11px] text-slate-600 font-medium">
+                    <span className="flex items-center gap-1.5">
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-[#008000]" />
+                      <span>Scroll horizontally to view all courses, pricing &amp; actions</span>
+                    </span>
+                    <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">&larr; swipe &rarr;</span>
+                  </div>
+                  <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left border-collapse text-xs min-w-[950px] sm:min-w-[1050px]">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 uppercase tracking-wider font-extrabold border-b border-slate-200 text-[11px]">
+                          <th className="py-3 px-3.5 text-center w-12">#</th>
+                          <th className="py-3 px-4 min-w-[260px]">Course Programme &amp; Slug</th>
+                          <th className="py-3 px-4 min-w-[200px]">Academic Department</th>
+                          <th className="py-3 px-3.5 whitespace-nowrap">Duration</th>
+                          <th className="py-3 px-3.5 whitespace-nowrap">Standard Fee</th>
+                          <th className="py-3 px-3.5 whitespace-nowrap">Promotion</th>
+                          <th className="py-3 px-4 min-w-[180px]">Upcoming Cohorts</th>
+                          <th className="py-3 px-4 text-right whitespace-nowrap sticky right-0 bg-slate-50/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {paginatedCourses.map((c, idx) => {
+                          const rowNumber = coursesPerPage === 'all' ? idx + 1 : (courseCurrentPage - 1) * Number(coursesPerPage) + idx + 1;
+                          const feeNum = Number(String(c.fee || 1200).replace(/[^0-9]/g, '')) || 1200;
+                          const feeKes = c.feeKes || (feeNum * 130);
+                          const hasDiscount = Boolean(c.discountPercent && c.discountPercent > 0);
+                          const discountPrice = c.discountPrice || Math.round(feeNum * (1 - (c.discountPercent || 0) / 100));
+
+                          const displayCohorts = Array.isArray(c.customCohorts) && c.customCohorts.length > 0
+                            ? c.customCohorts
+                            : ['16 - 27 March 2026', '13 - 24 April 2026', '18 - 29 May 2026'];
+
+                          return (
+                            <tr key={c.slug} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="py-3 px-3.5 text-center text-slate-400 font-mono text-[11px]">
+                                {rowNumber}
+                              </td>
+
+                              <td className="py-3 px-4">
+                                <a
+                                  href={`/executive-training/${c.slug}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="font-bold text-[#032e42] hover:text-[#008000] transition line-clamp-2 leading-snug"
+                                >
+                                  {c.title}
+                                </a>
+                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                  /{c.slug}
+                                </div>
+                              </td>
+
+                              <td className="py-3 px-4">
+                                <span className="inline-block text-[10.5px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 leading-snug">
+                                  {c.category || 'Executive Training'}
+                                </span>
+                              </td>
+
+                              <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-600">
+                                {c.duration || '5 Days'}
+                              </td>
+
+                              <td className="py-3 px-3.5 whitespace-nowrap">
+                                <div className={`font-black text-sm ${hasDiscount ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                  ${feeNum.toLocaleString()}
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  KES {feeKes.toLocaleString()}
+                                </div>
+                              </td>
+
+                              <td className="py-3 px-3.5 whitespace-nowrap">
+                                {hasDiscount ? (
+                                  <div>
+                                    <span className="font-black text-emerald-700 text-sm block">
+                                      ${discountPrice.toLocaleString()}
+                                    </span>
+                                    <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded">
+                                      {c.discountPercent}% OFF
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 font-normal">
+                                    Standard
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="py-3 px-4">
+                                <div className="flex flex-wrap gap-1">
+                                  {displayCohorts.slice(0, 2).map((d, dIdx) => (
+                                    <span
+                                      key={dIdx}
+                                      className="text-[10px] font-medium bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded whitespace-nowrap"
+                                    >
+                                      {d}
+                                    </span>
+                                  ))}
+                                  {displayCohorts.length > 2 && (
+                                    <span className="text-[10px] font-medium text-slate-400 px-1 py-0.5">
+                                      +{displayCohorts.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              <td className="py-3 px-4 whitespace-nowrap text-right sticky right-0 bg-white/95 backdrop-blur-xs shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)] z-10">
+                                <div className="inline-flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditCourse(c)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white text-[11px] font-bold transition shadow-sm cursor-pointer"
+                                    title="Edit Pricing, Discounts & Cohort Dates"
+                                  >
+                                    <Edit className="w-3.5 h-3.5" />
+                                    <span>Edit</span>
+                                  </button>
+
+                                  <a
+                                    href={`/executive-training/${c.slug}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-[#008000] hover:bg-emerald-50 transition cursor-pointer"
+                                    title="View Public Page"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCourse(c.slug, c.title)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                    title="Delete Course"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                /* ── GRID CARDS VIEW ── */
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {paginatedCourses.map((c) => {
+                    const feeNum = Number(String(c.fee || 1200).replace(/[^0-9]/g, '')) || 1200;
+                    const feeKes = c.feeKes || (feeNum * 130);
+                    const hasDiscount = Boolean(c.discountPercent && c.discountPercent > 0);
+                    const discountPrice = c.discountPrice || Math.round(feeNum * (1 - (c.discountPercent || 0) / 100));
+
+                    const displayCohorts = Array.isArray(c.customCohorts) && c.customCohorts.length > 0
+                      ? c.customCohorts
+                      : ['16 - 27 March 2026', '13 - 24 April 2026', '18 - 29 May 2026'];
+
+                    return (
+                      <div
+                        key={c.slug}
+                        className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:border-[#008000]/60 transition flex flex-col justify-between"
+                      >
+                        <div>
+                          {/* Category & Duration Tag */}
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 line-clamp-1">
+                              {c.category || 'Executive Training'}
                             </span>
-                            <div className="flex items-baseline gap-1.5">
-                              <span className={`font-black text-sm ${hasDiscount ? 'line-through text-slate-400' : 'text-[#032e42]'}`}>
-                                ${feeNum.toLocaleString()}
+                            <span className="text-[11px] font-semibold text-slate-500 shrink-0">
+                              {c.duration || '5 Days'}
+                            </span>
+                          </div>
+
+                          {/* Course Title */}
+                          <h4 className="font-bold text-sm text-[#032e42] leading-snug line-clamp-2 mb-2.5">
+                            {c.title}
+                          </h4>
+
+                          {/* Tuition Pricing & Discount Banner */}
+                          <div className="bg-slate-50 rounded-lg p-2.5 mb-3 border border-slate-100 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                                Tuition Fee
                               </span>
-                              {hasDiscount && (
-                                <span className="font-black text-emerald-700 text-sm">
-                                  ${discountPrice.toLocaleString()}
+                              <div className="flex items-baseline gap-1.5">
+                                <span className={`font-black text-sm ${hasDiscount ? 'line-through text-slate-400' : 'text-[#032e42]'}`}>
+                                  ${feeNum.toLocaleString()}
+                                </span>
+                                {hasDiscount && (
+                                  <span className="font-black text-emerald-700 text-sm">
+                                    ${discountPrice.toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {hasDiscount ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
+                                {c.discountPercent}% OFF
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 font-medium">
+                                KES {feeKes.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Scheduled Cohort Dates */}
+                          <div className="mb-3">
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                              Scheduled 2026 Cohorts ({displayCohorts.length}):
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {displayCohorts.slice(0, 3).map((d, dIdx) => (
+                                <span
+                                  key={dIdx}
+                                  className="text-[10px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded"
+                                >
+                                  {d}
+                                </span>
+                              ))}
+                              {displayCohorts.length > 3 && (
+                                <span className="text-[10px] font-medium text-slate-400 px-1 py-0.5">
+                                  +{displayCohorts.length - 3} more
                                 </span>
                               )}
                             </div>
                           </div>
-
-                          {hasDiscount ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
-                              {c.discountPercent}% OFF
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-slate-400 font-medium">
-                              KES {feeKes.toLocaleString()}
-                            </span>
-                          )}
                         </div>
 
-                        {/* Scheduled Cohort Dates */}
-                        <div className="mb-3">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                            Scheduled 2026 Cohorts ({displayCohorts.length}):
-                          </span>
-                          <div className="flex flex-wrap gap-1">
-                            {displayCohorts.slice(0, 3).map((d, dIdx) => (
-                              <span
-                                key={dIdx}
-                                className="text-[10px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded"
-                              >
-                                {d}
-                              </span>
-                            ))}
-                            {displayCohorts.length > 3 && (
-                              <span className="text-[10px] font-medium text-slate-400 px-1 py-0.5">
-                                +{displayCohorts.length - 3} more
-                              </span>
-                            )}
+                        {/* Card Action Buttons */}
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditCourse(c)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold transition shadow-sm cursor-pointer"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Edit Pricing &amp; Dates</span>
+                          </button>
+
+                          <div className="flex items-center gap-1">
+                            <a
+                              href={`/executive-training/${c.slug}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-[#008000] hover:bg-emerald-50 transition"
+                              title="Preview Public Page"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCourse(c.slug, c.title)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                              title="Delete Course"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </div>
                       </div>
-
-                      {/* Card Action Buttons */}
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditCourse(c)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold transition shadow-sm cursor-pointer"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                          <span>Edit Pricing &amp; Dates</span>
-                        </button>
-
-                        <div className="flex items-center gap-1">
-                          <a
-                            href={`/executive-training/${c.slug}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-[#008000] hover:bg-emerald-50 transition"
-                            title="Preview Public Page"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCourse(c.slug, c.title)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                            title="Delete Course"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Pagination Controls */}
-            {totalCoursePages > 1 && (
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                <span className="text-slate-500">
-                  Page <strong>{courseCurrentPage}</strong> of <strong>{totalCoursePages}</strong> ({totalFilteredCourses} courses total)
-                </span>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    disabled={courseCurrentPage === 1}
-                    onClick={() => setCourseCurrentPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition cursor-pointer flex items-center gap-1"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                    <span>Prev</span>
-                  </button>
-
-                  {Array.from({ length: totalCoursePages }, (_, idx) => idx + 1)
-                    .filter((page) => page === 1 || page === totalCoursePages || Math.abs(page - courseCurrentPage) <= 2)
-                    .map((page, idx, arr) => {
-                      const prevPage = arr[idx - 1];
-                      return (
-                        <React.Fragment key={page}>
-                          {prevPage && page - prevPage > 1 && (
-                            <span className="px-1 text-slate-400">...</span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setCourseCurrentPage(page)}
-                            className={`w-8 h-8 rounded-lg font-bold transition cursor-pointer ${
-                              courseCurrentPage === page
-                                ? 'bg-[#032e42] text-white'
-                                : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        </React.Fragment>
-                      );
-                    })}
-
-                  <button
-                    type="button"
-                    disabled={courseCurrentPage === totalCoursePages}
-                    onClick={() => setCourseCurrentPage((p) => Math.min(totalCoursePages, p + 1))}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition cursor-pointer flex items-center gap-1"
-                  >
-                    <span>Next</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                    );
+                  })}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+              )}
+
+              {/* Pagination Controls */}
+              {totalCoursePages > 1 && (
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <span className="text-slate-500">
+                    Page <strong>{courseCurrentPage}</strong> of <strong>{totalCoursePages}</strong> ({totalFilteredCourses} courses total)
+                  </span>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={courseCurrentPage === 1}
+                      onClick={() => setCourseCurrentPage((p) => Math.max(1, p - 1))}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition cursor-pointer flex items-center gap-1"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Prev</span>
+                    </button>
+
+                    {Array.from({ length: totalCoursePages }, (_, idx) => idx + 1)
+                      .filter((page) => page === 1 || page === totalCoursePages || Math.abs(page - courseCurrentPage) <= 2)
+                      .map((page, idx, arr) => {
+                        const prevPage = arr[idx - 1];
+                        return (
+                          <React.Fragment key={page}>
+                            {prevPage && page - prevPage > 1 && (
+                              <span className="px-1 text-slate-400">...</span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setCourseCurrentPage(page)}
+                              className={`w-8 h-8 rounded-lg font-bold transition cursor-pointer ${courseCurrentPage === page
+                                  ? 'bg-[#032e42] text-white'
+                                  : 'border border-slate-200 text-slate-700 hover:bg-slate-50'
+                                }`}
+                            >
+                              {page}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
+
+                    <button
+                      type="button"
+                      disabled={courseCurrentPage === totalCoursePages}
+                      onClick={() => setCourseCurrentPage((p) => Math.min(totalCoursePages, p + 1))}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </main>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -2436,13 +2431,12 @@ export default function MsimamiziAdmin() {
                 <div>
                   <span className="text-slate-500 font-semibold">Enrolment Status:</span>
                   <span
-                    className={`ml-2 px-2.5 py-0.5 rounded-full font-bold ${
-                      selectedReg.status === 'Confirmed'
+                    className={`ml-2 px-2.5 py-0.5 rounded-full font-bold ${selectedReg.status === 'Confirmed'
                         ? 'bg-emerald-100 text-emerald-800'
                         : selectedReg.status === 'Approved'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
                   >
                     {selectedReg.status}
                   </span>
@@ -2988,11 +2982,10 @@ export default function MsimamiziAdmin() {
                         type="button"
                         onClick={handleAddCohortDateFromPicker}
                         disabled={!cohortStartDate}
-                        className={`w-full h-9 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer ${
-                          cohortStartDate
+                        className={`w-full h-9 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer ${cohortStartDate
                             ? 'bg-[#008000] hover:bg-[#006600] text-white shadow-xs'
                             : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                        }`}
+                          }`}
                         title="Add Date from Calendar"
                       >
                         <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -3015,11 +3008,10 @@ export default function MsimamiziAdmin() {
                             type="button"
                             onClick={() => handleAddPresetCohort(preset)}
                             disabled={isAdded}
-                            className={`px-2 py-1 rounded-md text-[10.5px] font-semibold transition cursor-pointer flex items-center gap-1 ${
-                              isAdded
+                            className={`px-2 py-1 rounded-md text-[10.5px] font-semibold transition cursor-pointer flex items-center gap-1 ${isAdded
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 opacity-60 cursor-default'
                                 : 'bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 shadow-2xs'
-                            }`}
+                              }`}
                           >
                             <Plus className="w-2.5 h-2.5" />
                             <span>{preset.split(' ')[0]} - {preset.split(' ')[2]} {preset.split(' ')[3]}</span>
@@ -3235,11 +3227,10 @@ export default function MsimamiziAdmin() {
                           }
                         }}
                         disabled={isAdded}
-                        className={`px-2 py-0.5 rounded text-[10px] font-semibold transition cursor-pointer flex items-center gap-0.5 ${
-                          isAdded
+                        className={`px-2 py-0.5 rounded text-[10px] font-semibold transition cursor-pointer flex items-center gap-0.5 ${isAdded
                             ? 'bg-emerald-100 text-emerald-800 opacity-60 cursor-default'
                             : 'bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200'
-                        }`}
+                          }`}
                       >
                         <Plus className="w-2.5 h-2.5" />
                         <span>{preset.split(' ')[2]}</span>
