@@ -3,9 +3,7 @@
  * ECAS Institute - reCAPTCHA Enterprise Assessment Verification
  * Production endpoint for ecasiafrica.org (cPanel / Apache / PHP)
  *
- * Endpoint: /api/verify-recaptcha.php (or /api/verify-recaptcha)
- * Project ID: ecasi-africa-1793856513648
- * Default Site Key: 6LcqKB4uAAAAAGnasdLM3F3A0RdKA0FeJHMjt52J
+ * All credentials are read strictly from environment variables or .env file
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -24,6 +22,35 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+/**
+ * Helper to retrieve environment variable or read from .env file
+ */
+function getEnvConfig($key) {
+    $val = getenv($key);
+    if ($val !== false && $val !== '') return $val;
+    if (isset($_ENV[$key]) && $_ENV[$key] !== '') return $_ENV[$key];
+    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return $_SERVER[$key];
+
+    // Read from .env file if present
+    $envPaths = [__DIR__ . '/../../.env', __DIR__ . '/../.env', __DIR__ . '/.env'];
+    foreach ($envPaths as $path) {
+        if (file_exists($path)) {
+            $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line) || $line[0] === '#') continue;
+                if (strpos($line, '=') !== false) {
+                    list($name, $value) = explode('=', $line, 2);
+                    if (trim($name) === $key) {
+                        return trim($value, " \t\n\r\0\x0B\"'");
+                    }
+                }
+            }
+        }
+    }
+    return '';
+}
+
 // Read raw JSON input
 $rawInput = file_get_contents('php://input');
 $data = json_decode($rawInput, true);
@@ -36,8 +63,8 @@ if (!$data || empty($data['token'])) {
 
 $token = $data['token'];
 $action = $data['action'] ?? 'SUBMIT';
-$siteKey = $data['siteKey'] ?? getenv('RECAPTCHA_SITE_KEY') ?: '6LcqKB4uAAAAAGnasdLM3F3A0RdKA0FeJHMjt52J';
-$projectID = $data['projectID'] ?? getenv('RECAPTCHA_PROJECT_ID') ?: 'ecasi-africa-1793856513648';
+$siteKey = $data['siteKey'] ?? getEnvConfig('VITE_RECAPTCHA_SITE_KEY') ?: getEnvConfig('RECAPTCHA_SITE_KEY');
+$projectID = $data['projectID'] ?? getEnvConfig('RECAPTCHA_PROJECT_ID');
 
 // Handle dev/simulated tokens
 if (strpos($token, 'dev-') === 0) {
@@ -52,11 +79,11 @@ if (strpos($token, 'dev-') === 0) {
 }
 
 // Google Cloud API Key
-$apiKey = getenv('RECAPTCHA_API_KEY') ?: getenv('GCP_API_KEY') ?: 'AIzaSyAsPSVV7Cj365I-I9d1Xk2aL_ABr_4YTEc';
+$apiKey = getEnvConfig('RECAPTCHA_API_KEY') ?: getEnvConfig('GCP_API_KEY');
 
-// If an API key is available, evaluate with Google Cloud Assessment API
-if (!empty($apiKey)) {
-    $url = "https://recaptchaenterprise.googleapis.com/v1/projects/{$projectID}/assessments?key={$apiKey}";
+// If an API key and project ID are available, evaluate with Google Cloud Assessment API
+if (!empty($apiKey) && !empty($projectID)) {
+    $url = "https://recaptchaenterprise.googleapis.com/v1/projects/" . urlencode($projectID) . "/assessments?key=" . urlencode($apiKey);
 
     $payload = json_encode([
         'event' => [
@@ -107,7 +134,7 @@ if (!empty($apiKey)) {
     }
 }
 
-// Default fallback pass-through when API key is not configured in cPanel
+// Default fallback pass-through when API key is not configured
 echo json_encode([
     'success' => true,
     'valid' => true,
@@ -115,4 +142,3 @@ echo json_encode([
     'action' => $action,
     'message' => 'Token received successfully.'
 ]);
-

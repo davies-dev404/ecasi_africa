@@ -3,8 +3,7 @@
  *
  * Endpoint: /api/verify-recaptcha
  * Method: POST
- * Project ID: ecasi-africa-1793856513648
- * Default Site Key: 6LcqKB4uAAAAAGnasdLM3F3A0RdKA0FeJHMjt52J
+ * All credentials are strictly read from process.env / Project Settings
  */
 
 export default async function handler(req, res) {
@@ -30,8 +29,8 @@ export default async function handler(req, res) {
     const {
       token,
       action = 'SUBMIT',
-      siteKey = process.env.VITE_RECAPTCHA_SITE_KEY || '6LcqKB4uAAAAAGnasdLM3F3A0RdKA0FeJHMjt52J',
-      projectID = process.env.RECAPTCHA_PROJECT_ID || 'ecasi-africa-1793856513648',
+      siteKey = process.env.VITE_RECAPTCHA_SITE_KEY || '',
+      projectID = process.env.RECAPTCHA_PROJECT_ID || '',
     } = req.body || {};
 
     if (!token) {
@@ -53,11 +52,13 @@ export default async function handler(req, res) {
       process.env.RECAPTCHA_API_KEY ||
       process.env.GCP_API_KEY ||
       process.env.GOOGLE_API_KEY ||
-      'AIzaSyAsPSVV7Cj365I-I9d1Xk2aL_ABr_4YTEc';
+      '';
 
-    // If an API key is configured in Vercel environment variables, perform live assessment
-    if (apiKey) {
-      const assessmentUrl = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectID}/assessments?key=${apiKey}`;
+    // If an API key and project ID are configured in the environment, perform live assessment
+    if (apiKey && projectID) {
+      const assessmentUrl = `https://recaptchaenterprise.googleapis.com/v1/projects/${encodeURIComponent(
+        projectID
+      )}/assessments?key=${encodeURIComponent(apiKey)}`;
 
       const googleResponse = await fetch(assessmentUrl, {
         method: 'POST',
@@ -97,11 +98,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // Check action match
-      if (tokenProps.action && action && tokenProps.action !== action) {
-        console.warn(`[reCAPTCHA Action Mismatch]: expected ${action}, got ${tokenProps.action}`);
-      }
-
       const score = riskAnalysis.score ?? 0.9;
       const isHuman = score >= 0.4;
 
@@ -114,15 +110,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // If no API key is configured yet in Vercel settings, validate that token is present
-    // and allow development pass-through so forms aren't blocked before API key is set
+    // Fallback if environment variables are not yet configured in Vercel
     return res.status(200).json({
       success: true,
       valid: true,
       score: 0.95,
       action,
       devMode: true,
-      message: 'Token received. For strict risk scoring, set RECAPTCHA_API_KEY in Vercel Project Settings.',
+      message: 'Token received. For strict risk scoring, set RECAPTCHA_API_KEY in environment variables.',
     });
   } catch (err) {
     console.error('[reCAPTCHA Serverless Error]', err);
@@ -135,4 +130,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
