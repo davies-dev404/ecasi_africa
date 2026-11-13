@@ -15,20 +15,21 @@ export default defineConfig({
   plugins: [
     react(),
     {
-      name: "mock-recaptcha-api",
+      name: "mock-turnstile-api",
       configureServer(server) {
-        server.middlewares.use("/api/verify-recaptcha", (req, res) => {
+        const handleMock = (req, res) => {
           res.setHeader("Content-Type", "application/json");
           res.end(
             JSON.stringify({
               success: true,
-              score: 0.95,
               valid: true,
               environment: "local-dev",
-              message: "Local development reCAPTCHA assessment simulated successfully"
+              message: "Local development Turnstile verification simulated successfully"
             })
           );
-        });
+        };
+        server.middlewares.use("/api/verify-turnstile", handleMock);
+        server.middlewares.use("/api/verify-recaptcha", handleMock);
       }
     }
   ],

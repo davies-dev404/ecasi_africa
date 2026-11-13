@@ -38,7 +38,8 @@ import {
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
-import { executeRecaptcha, verifyRecaptcha } from '@/services/recaptchaService';
+import TurnstileWidget from '@/components/TurnstileWidget';
+import { verifyTurnstile } from '@/services/turnstileService';
 
 export default function MsimamiziAdmin() {
 
@@ -53,6 +54,8 @@ export default function MsimamiziAdmin() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authRemember, setAuthRemember] = useState(true);
   const [authError, setAuthError] = useState('');
+  const [turnstileVerified, setTurnstileVerified] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   // Dynamic resolution of public website link (handles subdomains vs main domain vs localhost)
   const publicSiteUrl = useMemo(() => {
@@ -646,14 +649,12 @@ export default function MsimamiziAdmin() {
     e.preventDefault();
     setAuthError('');
 
-    try {
-      // Execute reCAPTCHA Enterprise with action 'LOGIN'
-      const token = await executeRecaptcha('LOGIN');
-      if (token) {
-        await verifyRecaptcha(token, 'LOGIN');
+    if (turnstileToken) {
+      try {
+        await verifyTurnstile(turnstileToken, 'login');
+      } catch (err) {
+        console.warn('[Cloudflare Turnstile Login Verification]:', err);
       }
-    } catch (recaptchaErr) {
-      console.warn('[reCAPTCHA Enterprise Assessment]:', recaptchaErr);
     }
 
     const result = adminRegistrationService.login(authEmail, authPassword, authRemember);
@@ -869,7 +870,7 @@ export default function MsimamiziAdmin() {
                   />
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
-                  <span>Testing login: <strong className="text-slate-600 font-mono">admin@ecasiafrica.org</strong> (PIN: <strong className="text-slate-600 font-mono">msimamizi2026</strong>)</span>
+                  <span>Authorized: <strong className="text-slate-600 font-mono">riobag@ecasiafrica.org</strong> or <strong className="text-slate-600 font-mono">acob@ecasiafrica.org</strong></span>
                 </div>
               </div>
 

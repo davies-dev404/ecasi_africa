@@ -8,7 +8,8 @@ import { dataService } from "@/lib/dataService";
 import countryListData from "@/data/countriesData.json";
 import CountrySelector from "@/components/CountrySelector";
 import { adminRegistrationService } from "@/services/adminRegistrationService";
-import { executeRecaptcha, verifyRecaptcha, RECAPTCHA_SITE_KEY } from "@/services/recaptchaService";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { verifyTurnstile, TURNSTILE_SITE_KEY } from "@/services/turnstileService";
 
 const COUNTRY_DIAL_CODES = countryListData;
 
@@ -106,29 +107,7 @@ export default function Register() {
   const [robotLoading, setRobotLoading] = useState(false);
   const [robotError, setRobotError] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
-  const recaptchaRef = React.useRef(null);
-  const siteKey = RECAPTCHA_SITE_KEY;
-
-  // Handle Interactive reCAPTCHA Enterprise Verification
-  const handleVerifyClick = async () => {
-    if (robotLoading) return;
-    setRobotLoading(true);
-    setRobotError(false);
-    try {
-      const token = await executeRecaptcha('REGISTER');
-      const result = await verifyRecaptcha(token, 'REGISTER');
-      if (result && result.success) {
-        setNotARobot(true);
-      } else {
-        setNotARobot(true);
-      }
-    } catch (err) {
-      console.warn('[reCAPTCHA error]', err);
-      setNotARobot(true);
-    } finally {
-      setRobotLoading(false);
-    }
-  };
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -160,22 +139,8 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!notARobot) {
-      setRobotLoading(true);
-      try {
-        const token = await executeRecaptcha('REGISTER');
-        const result = await verifyRecaptcha(token, 'REGISTER');
-        if (!result || !result.success) {
-          setRobotError(true);
-          setRobotLoading(false);
-          return;
-        }
-        setNotARobot(true);
-      } catch (err) {
-        console.warn('reCAPTCHA assessment exception:', err);
-        setNotARobot(true);
-      } finally {
-        setRobotLoading(false);
-      }
+      setRobotError(true);
+      return;
     }
     setRobotError(false);
     const generatedRef = `ECAS-${scheduleId}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -843,74 +808,26 @@ export default function Register() {
                 {/* Divider after Summary */}
                 <hr className="border-t border-gray-300 my-6" />
 
-                {/* reCAPTCHA Box + 3 Action Buttons (Back | Complete Registration | Reset) */}
+                {/* Cloudflare Turnstile Box + 3 Action Buttons (Back | Complete Registration | Reset) */}
                 <div className="space-y-3 pt-1">
-                  {/* reCAPTCHA Enterprise Verification Box */}
+                  {/* Cloudflare Turnstile Verification Widget */}
                   <div className="space-y-2">
-                    <div
-                      onClick={handleVerifyClick}
-                      role="checkbox"
-                      aria-checked={notARobot}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === " " || e.key === "Enter") {
-                          e.preventDefault();
-                          handleVerifyClick();
-                        }
+                    <TurnstileWidget
+                      action="register"
+                      onVerify={(token) => {
+                        setTurnstileToken(token);
+                        setNotARobot(true);
+                        setRobotError(false);
                       }}
-                      className={`w-[302px] h-[74px] bg-[#f9f9f9] hover:bg-[#f5f5f5] border ${robotError ? "border-[#d83030]" : notARobot ? "border-[#008000]" : "border-[#d3d3d3]"
-                        } rounded-[3px] px-3.5 flex items-center justify-between shadow-sm cursor-pointer select-none transition-colors`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-7 h-7 rounded-[2px] border-2 flex items-center justify-center transition-all ${notARobot
-                              ? "border-[#008000] bg-[#008000] text-white"
-                              : robotLoading
-                                ? "border-blue-500 bg-white"
-                                : "border-[#c1c1c1] bg-white hover:border-[#999]"
-                            }`}
-                        >
-                          {robotLoading ? (
-                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                          ) : notARobot ? (
-                            <Check className="w-5 h-5 stroke-[3]" />
-                          ) : null}
-                        </div>
-                        <span className="text-[14px] font-medium text-[#282828]">
-                          {robotLoading
-                            ? "Verifying..."
-                            : notARobot
-                              ? "Verification Complete"
-                              : "I'm not a robot"}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col items-center justify-center text-center leading-tight pl-2">
-                        <svg
-                          viewBox="0 0 64 64"
-                          className="w-7 h-7 mb-0.5"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M32 10C21.5 10 12.7 17.3 10.5 27.1L17.3 28.9C18.9 22.1 24.9 17 32 17C36.8 17 41.1 19.2 43.9 22.7L38 28.6H54V12.6L48.9 17.7C44.8 12.9 38.7 10 32 10Z"
-                            fill="#1e73be"
-                          />
-                          <path
-                            d="M53.5 36.9L46.7 35.1C45.1 41.9 39.1 47 32 47C27.2 47 22.9 44.8 20.1 41.3L26 35.4H10V51.4L15.1 46.3C19.2 51.1 25.3 54 32 54C42.5 54 51.3 46.7 53.5 36.9Z"
-                            fill="#008000"
-                          />
-                        </svg>
-                        <span className="text-[9px] text-[#555555] font-semibold">
-                          reCAPTCHA
-                        </span>
-                        <div className="flex gap-1 text-[7.5px] text-[#777777]">
-                          <span>Enterprise</span>
-                          <span>•</span>
-                          <span>Privacy</span>
-                        </div>
-                      </div>
-                    </div>
+                      onExpire={() => {
+                        setTurnstileToken('');
+                        setNotARobot(false);
+                      }}
+                      onError={() => {
+                        setNotARobot(true);
+                        setRobotError(false);
+                      }}
+                    />
                   </div>
 
                   {robotError && (

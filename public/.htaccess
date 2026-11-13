@@ -16,6 +16,7 @@ Options -MultiViews
   RewriteRule ^programmes/?$ /index.html [L]
 
   # Route API endpoints cleanly
+  RewriteRule ^api/verify-turnstile/?$ /api/verify-turnstile.php [L]
   RewriteRule ^api/verify-recaptcha/?$ /api/verify-recaptcha.php [L]
 
   RewriteCond %{REQUEST_FILENAME} !-f

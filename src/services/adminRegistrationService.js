@@ -224,6 +224,17 @@ class AdminRegistrationService {
     };
   }
 
+  // Designated Authorized Administrator Emails for Msimamizi Portal
+  isAuthorizedAdminEmail(email) {
+    const clean = (email || '').trim().toLowerCase();
+    const authorized = [
+      'riobag@ecasiafrica.org',
+      'acob@ecasiafrica.org',
+      'jacob@ecasiafrica.org',
+    ];
+    return authorized.includes(clean);
+  }
+
   // Retrieve dynamic administrator accounts from persistent storage
   getAdminAccounts() {
     if (typeof window === 'undefined') return [];
@@ -237,24 +248,24 @@ class AdminRegistrationService {
       console.warn('Failed to parse admin accounts:', e);
     }
 
-    // Default pre-initialized test accounts for rapid testing
+    // Default pre-initialized authorized accounts for Riobag & Jacob
     const defaultAccounts = [
       {
-        email: 'admin@ecasiafrica.org',
-        password: 'msimamizi2026',
-        role: 'Super Administrator',
-        createdAt: '2026-01-01T00:00:00.000Z',
-      },
-      {
-        email: 'msimamizi@ecasiafrica.org',
-        password: 'msimamizi2026',
-        role: 'Registrar',
-        createdAt: '2026-01-01T00:00:00.000Z',
-      },
-      {
-        email: 'director@ecasiafrica.org',
+        email: 'riobag@ecasiafrica.org',
         password: 'msimamizi2026',
         role: 'Executive Director',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        email: 'acob@ecasiafrica.org',
+        password: 'msimamizi2026',
+        role: 'Administrator',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        email: 'jacob@ecasiafrica.org',
+        password: 'msimamizi2026',
+        role: 'Administrator',
         createdAt: '2026-01-01T00:00:00.000Z',
       },
     ];
@@ -266,7 +277,7 @@ class AdminRegistrationService {
     return defaultAccounts;
   }
 
-  // Create first password / register new administrator using @ecasiafrica.org email
+  // Create first password / register new administrator using authorized email
   registerAdmin(email, password, remember = true) {
     if (typeof window === 'undefined') return { success: false, message: 'Browser storage unavailable' };
 
@@ -277,11 +288,11 @@ class AdminRegistrationService {
       return { success: false, message: 'Please enter your administrator email.' };
     }
 
-    // Institutional Email Validation: Must end with @ecasiafrica.org or @ecasi.org
-    if (!cleanEmail.endsWith('@ecasiafrica.org') && !cleanEmail.endsWith('@ecasi.org')) {
+    // Strictly authorize designated portal administrators
+    if (!this.isAuthorizedAdminEmail(cleanEmail)) {
       return {
         success: false,
-        message: 'Unauthorized domain. You must use an official institutional email ending with @ecasiafrica.org',
+        message: 'Unauthorized email. Msimamizi portal access is restricted to riobag@ecasiafrica.org and acob@ecasiafrica.org.',
       };
     }
 
@@ -336,14 +347,14 @@ class AdminRegistrationService {
 
   // Retrieve current authenticated admin profile
   getCurrentUser() {
-    if (typeof window === 'undefined') return { email: 'admin@ecasiafrica.org', role: 'Administrator' };
+    if (typeof window === 'undefined') return { email: 'riobag@ecasiafrica.org', role: 'Administrator' };
     try {
       const stored = sessionStorage.getItem(ADMIN_CURRENT_USER_KEY) || localStorage.getItem(ADMIN_CURRENT_USER_KEY);
       if (stored) return JSON.parse(stored);
     } catch {
       // ignore
     }
-    return { email: 'admin@ecasiafrica.org', role: 'Administrator' };
+    return { email: 'riobag@ecasiafrica.org', role: 'Administrator' };
   }
 
   login(usernameOrEmail, password, remember = false) {
@@ -354,35 +365,32 @@ class AdminRegistrationService {
       return { success: false, message: 'Please enter both email and password.' };
     }
 
+    // Access restricted strictly to riobag@ecasiafrica.org and acob@ecasiafrica.org
+    if (!this.isAuthorizedAdminEmail(inputUser)) {
+      return {
+        success: false,
+        message: 'Access restricted. Only authorized administrators (riobag@ecasiafrica.org / acob@ecasiafrica.org) may sign in to Msimamizi.',
+      };
+    }
+
     const accounts = this.getAdminAccounts();
 
-    // 1. Check dynamically registered / custom administrator accounts
+    // 1. Check registered / custom administrator accounts
     const matched = accounts.find((a) => a.email.toLowerCase() === inputUser);
     if (matched && matched.password === inputPass) {
       this._setAuthSession(matched.email, matched.role || 'Administrator', remember);
       return { success: true, user: { email: matched.email, role: matched.role } };
     }
 
-    // 2. Fallback testing logins (allows rapid testing with existing credentials)
-    const testUsers = [
-      'admin@ecasiafrica.org',
-      'msimamizi@ecasiafrica.org',
-      'director@ecasiafrica.org',
-      'admin@ecasi.org',
-      'msimamizi@ecasi.org',
-      'admin',
-    ];
-    const testPasswords = ['msimamizi2026', '2026', 'ecasi2026!', 'admin123'];
-
-    if (testUsers.includes(inputUser) && testPasswords.includes(inputPass)) {
-      const activeEmail = inputUser.includes('@') ? inputUser : `${inputUser}@ecasiafrica.org`;
-      this._setAuthSession(activeEmail, 'Administrator', remember);
-      return { success: true, user: { email: activeEmail, role: 'Administrator' } };
+    // 2. Default initial password verification (msimamizi2026)
+    if (inputPass === 'msimamizi2026' || inputPass === '2026' || inputPass === 'ecasi2026!') {
+      this._setAuthSession(inputUser, 'Administrator', remember);
+      return { success: true, user: { email: inputUser, role: 'Administrator' } };
     }
 
     return {
       success: false,
-      message: 'Invalid administrative email or password. First time logging in? Click "Create First Password" below.',
+      message: 'Invalid administrative password. First time logging in? Click "Create your password" below.',
     };
   }
 
