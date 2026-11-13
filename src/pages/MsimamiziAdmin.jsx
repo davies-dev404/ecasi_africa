@@ -935,24 +935,6 @@ export default function MsimamiziAdmin() {
                 <span>Sign In to Msimamizi Portal</span>
               </button>
 
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#008000]" />
-                <span>Protected by Cloudflare Turnstile</span>
-              </div>
-
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('create');
-                    setAuthError('');
-                  }}
-                  className="text-xs font-semibold text-[#008000] hover:underline cursor-pointer"
-                >
-                  First time logging in? Click here to create your password
-                </button>
-              </div>
-
               <div className="pt-2 text-center border-t border-slate-100">
                 <a
                   href={publicSiteUrl}
@@ -1072,19 +1054,6 @@ export default function MsimamiziAdmin() {
                 <Plus className="w-4 h-4" />
                 <span>Create Password &amp; Enter Portal</span>
               </button>
-
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login');
-                    setAuthError('');
-                  }}
-                  className="text-xs font-semibold text-slate-600 hover:text-[#032e42] hover:underline cursor-pointer"
-                >
-                  Already have an account? Sign In here
-                </button>
-              </div>
 
               <div className="pt-2 text-center border-t border-slate-100">
                 <a
