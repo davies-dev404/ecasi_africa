@@ -58,6 +58,28 @@ const syncCoursesToServer = (cachedCourses) => {
   }).catch(() => {});
 };
 
+// Automatically hydrate course overrides (images, pricing, new courses) from central server on public & admin sites
+if (typeof window !== 'undefined') {
+  const host = window.location.hostname;
+  if (host !== 'localhost' && host !== '127.0.0.1') {
+    const endpoint = host.endsWith('ecasiafrica.org')
+      ? '/api/msimamizi-sync.php?scope=public'
+      : 'https://ecasiafrica.org/api/msimamizi-sync.php?scope=public';
+    fetch(endpoint, { method: 'GET', cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        const remoteCourses = json?.data?.courses;
+        if (remoteCourses && typeof remoteCourses === 'object' && Object.keys(remoteCourses).length > 0) {
+          const localCached = getLocalStorageData(KEYS.COURSES) || {};
+          const merged = { ...localCached, ...remoteCourses };
+          localStorage.setItem(KEYS.COURSES, JSON.stringify(merged));
+          window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
+        }
+      })
+      .catch(() => {});
+  }
+}
+
 export const dataService = {
   KEYS,
 
@@ -94,7 +116,24 @@ export const dataService = {
   },
   getCourses() {
     const cached = getLocalStorageData(KEYS.COURSES);
-    return cached ? { ...defaultCourses, ...cached } : defaultCourses;
+    if (!cached || typeof cached !== 'object') return defaultCourses;
+    const merged = { ...defaultCourses };
+    Object.entries(cached).forEach(([slug, override]) => {
+      if (!override || typeof override !== 'object') return;
+      if (override._deleted) {
+        delete merged[slug];
+        return;
+      }
+      const base = merged[slug] || {};
+      const cleanOverride = {};
+      Object.entries(override).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+          cleanOverride[k] = v;
+        }
+      });
+      merged[slug] = { ...base, ...cleanOverride, slug };
+    });
+    return merged;
   },
   getCoursesList() {
     const courses = this.getCourses();
@@ -189,7 +228,24 @@ export const dataService = {
     }
   },
 
-  updateCoursePricing(slug, { fee, feeUsd, feeKes, discountPercent, discountPrice, customCohorts }) {
+  updateCoursePricing(
+    slug,
+    {
+      title,
+      category,
+      duration,
+      image,
+      summary,
+      content,
+      location,
+      fee,
+      feeUsd,
+      feeKes,
+      discountPercent,
+      discountPrice,
+      customCohorts
+    }
+  ) {
     if (!slug) return false;
     try {
       const cleanSlug = String(slug).trim().toLowerCase();
@@ -197,6 +253,13 @@ export const dataService = {
       const base = defaultCourses[cleanSlug] || {};
 
       const updates = {};
+      if (title !== undefined && String(title).trim() !== '') updates.title = String(title).trim();
+      if (category !== undefined && String(category).trim() !== '') updates.category = String(category).trim();
+      if (duration !== undefined && String(duration).trim() !== '') updates.duration = String(duration).trim();
+      if (image !== undefined && String(image).trim() !== '') updates.image = String(image).trim();
+      if (summary !== undefined && String(summary).trim() !== '') updates.summary = String(summary).trim();
+      if (content !== undefined) updates.content = content;
+      if (location !== undefined && String(location).trim() !== '') updates.location = String(location).trim();
       if (fee !== undefined) updates.fee = fee;
       if (feeUsd !== undefined) updates.feeUsd = feeUsd;
       if (feeKes !== undefined) updates.feeKes = feeKes;

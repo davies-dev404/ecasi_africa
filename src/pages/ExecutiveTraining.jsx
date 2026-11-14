@@ -1419,6 +1419,17 @@ const devimpactCourseStyles = `
 export default function ExecutiveTraining() {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [coursesVersion, setCoursesVersion] = useState(0);
+
+  useEffect(() => {
+    const handleCoursesUpdated = () => setCoursesVersion((v) => v + 1);
+    window.addEventListener('ecasi_courses_updated', handleCoursesUpdated);
+    window.addEventListener('storage', handleCoursesUpdated);
+    return () => {
+      window.removeEventListener('ecasi_courses_updated', handleCoursesUpdated);
+      window.removeEventListener('storage', handleCoursesUpdated);
+    };
+  }, []);
 
   // Safely normalize courses map or array into an array of course objects
   const allCourses = useMemo(() => {
@@ -1431,7 +1442,7 @@ export default function ExecutiveTraining() {
           ...(val || {}),
         }));
     return list.filter((c) => !c.isCategoryPage);
-  }, []);
+  }, [coursesVersion]);
 
   // Safely resolve single course or category page by slug
   const courseInfo = useMemo(() => {
@@ -1445,7 +1456,7 @@ export default function ExecutiveTraining() {
       return raw.find((c) => c?.slug === slug) || null;
     }
     return raw[slug] ? { slug, ...raw[slug] } : null;
-  }, [slug]);
+  }, [slug, coursesVersion]);
 
   // Determine whether we are viewing a Category / Course Finder page OR a Single Course Detail page
   const isCategoryOrCatalogView =

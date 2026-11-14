@@ -6,7 +6,7 @@ const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
 const ADMIN_TOKEN_KEY = 'ecasi_msimamizi_token';
 const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
 const ADMIN_CURRENT_USER_KEY = 'ecasi_msimamizi_user';
-const COURSES_KEY = 'ecasi_courses_v2026_v2';
+const COURSES_KEY = 'ecasi_courses_v2026_v3';
 
 // Non-reversible local digest so plaintext passwords are never stored in browser storage
 function computeCredentialDigest(email, password) {

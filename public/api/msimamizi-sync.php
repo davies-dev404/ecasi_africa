@@ -218,7 +218,23 @@ function sanitizeCoursesMap(array $courses): array {
                 if ($s !== '') $cohorts[] = $s;
             }
         }
-        $cleanMap[$cleanSlug] = [
+        $rawImage = isset($c['image']) && is_string($c['image']) ? trim($c['image']) : '';
+        $cleanImage = '';
+        if ($rawImage !== '') {
+            if (strpos($rawImage, 'data:image/') === 0 && strlen($rawImage) <= 350000) {
+                $cleanImage = $rawImage;
+            } else {
+                $cleanImage = sanitizeText($rawImage, 1000);
+            }
+        }
+        $contentModules = [];
+        if (isset($c['content']) && is_array($c['content'])) {
+            foreach (array_slice($c['content'], 0, 20) as $modStr) {
+                $m = sanitizeText($modStr, 300);
+                if ($m !== '') $contentModules[] = $m;
+            }
+        }
+        $entry = [
             'slug' => $cleanSlug,
             'title' => sanitizeText($c['title'] ?? '', 300),
             'category' => sanitizeText($c['category'] ?? '', 160),
@@ -231,6 +247,19 @@ function sanitizeCoursesMap(array $courses): array {
             'customCohorts' => $cohorts,
             'updatedAt' => gmdate('c'),
         ];
+        if ($cleanImage !== '') {
+            $entry['image'] = $cleanImage;
+        }
+        if (!empty($c['summary'])) {
+            $entry['summary'] = sanitizeText($c['summary'], 1200);
+        }
+        if (!empty($c['location'])) {
+            $entry['location'] = sanitizeText($c['location'], 300);
+        }
+        if (!empty($contentModules)) {
+            $entry['content'] = $contentModules;
+        }
+        $cleanMap[$cleanSlug] = $entry;
     }
     return $cleanMap;
 }
@@ -281,7 +310,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // ─── POST REQUESTS ────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = file_get_contents('php://input');
-    if ($rawInput === false || strlen($rawInput) > 524288) { // 512 KB limit
+    if ($rawInput === false || strlen($rawInput) > 4194304) { // 4 MB limit
         http_response_code(413);
         echo json_encode(['success' => false, 'error' => 'Payload too large or unreadable.']);
         exit;
