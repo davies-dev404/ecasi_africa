@@ -692,7 +692,11 @@ export default function MsimamiziAdmin() {
 
     if (turnstileToken) {
       try {
-        await verifyTurnstile(turnstileToken, 'create_admin');
+        const check = await verifyTurnstile(turnstileToken, 'create_admin');
+        if (check && check.success === false) {
+          setAuthError(check.error || 'Security verification failed. Please retry.');
+          return;
+        }
       } catch (err) {
         console.warn('[Cloudflare Turnstile Admin Creation Verification]:', err);
       }

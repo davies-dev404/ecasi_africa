@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { TURNSTILE_SITE_KEY, ensureTurnstileLoaded } from '@/services/turnstileService';
+import { TURNSTILE_SITE_KEY, ensureTurnstileLoaded, verifyTurnstile } from '@/services/turnstileService';
 import { ShieldCheck, Check } from 'lucide-react';
 
 /**
@@ -67,10 +67,21 @@ export default function TurnstileWidget({
               theme: theme,
               retry: 'auto',
               'retry-interval': 2000,
-              callback: (token) => {
+              callback: async (token) => {
                 if (isCancelled) return;
                 setTokenValue(token);
                 setLoadError(false);
+                // Immediately validate the issued token via backend siteverify
+                // Result is cached by token so form submission does not double-spend it
+                const check = await verifyTurnstile(token, action);
+                if (isCancelled) return;
+                if (check && check.success === false) {
+                  setTokenValue('');
+                  if (callbacksRef.current.onError) {
+                    callbacksRef.current.onError(check.error || 'siteverify-failed');
+                  }
+                  return;
+                }
                 if (callbacksRef.current.onVerify) {
                   callbacksRef.current.onVerify(token);
                 }

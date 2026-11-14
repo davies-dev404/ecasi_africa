@@ -1,13 +1,30 @@
 <?php
 /**
- * ECAS Institute - Cloudflare Turnstile Verification Endpoint
- * Production endpoint for ecasiafrica.org (cPanel / Apache / PHP)
+ * ECAS Institute - Cloudflare Turnstile Server-Side Verification Endpoint
+ * Production endpoint for ecasiafrica.org & msimamizi.ecasiafrica.org (cPanel / PHP)
  *
  * Canonical endpoint: https://challenges.cloudflare.com/turnstile/v0/siteverify
  */
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+
+$allowedOrigins = [
+    'https://ecasiafrica.org',
+    'https://www.ecasiafrica.org',
+    'https://msimamizi.ecasiafrica.org',
+    'https://msimamiziecasi.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:8080',
+];
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Vary: Origin');
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
+
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
@@ -22,108 +39,152 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-function getTurnstileConfig($key) {
-    $val = getenv($key);
-    if ($val !== false && $val !== '') return $val;
-    if (isset($_ENV[$key]) && $_ENV[$key] !== '') return $_ENV[$key];
-    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return $_SERVER[$key];
+function getTurnstileSecretKey(): string {
+    $keysToCheck = ['TURNSTILE_SECRET_KEY'];
+    foreach ($keysToCheck as $key) {
+        $val = getenv($key);
+        if ($val !== false && $val !== '') return $val;
+        if (!empty($_ENV[$key])) return (string)$_ENV[$key];
+        if (!empty($_SERVER[$key])) return (string)$_SERVER[$key];
+    }
 
-    // Read from .env file if present
-    $envPaths = [__DIR__ . '/../../.env', __DIR__ . '/../.env', __DIR__ . '/.env'];
+    $homeDir = getenv('HOME') ?: '/home/ecasorke';
+    $envPaths = [
+        $homeDir . '/.msimamizi_store/.env',
+        $homeDir . '/.env',
+        __DIR__ . '/../../.env',
+        __DIR__ . '/../.env',
+        __DIR__ . '/.env',
+    ];
     foreach ($envPaths as $path) {
         if (file_exists($path)) {
-            $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (empty($line) || $line[0] === '#') continue;
-                if (strpos($line, '=') !== false) {
-                    list($name, $value) = explode('=', $line, 2);
-                    if (trim($name) === $key) {
-                        return trim($value, " \t\n\r\0\x0B\"'");
+            $lines = @file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            if (is_array($lines)) {
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line) || $line[0] === '#') continue;
+                    if (strpos($line, '=') !== false) {
+                        list($name, $value) = explode('=', $line, 2);
+                        if (trim($name) === 'TURNSTILE_SECRET_KEY') {
+                            $parsed = trim($value, " \t\n\r\0\x0B\"'");
+                            if ($parsed !== '') return $parsed;
+                        }
                     }
                 }
             }
         }
     }
-    return '';
+
+    // Production fallback for widget 0x4AAAAAAF_txNruny6wo5Fu when .env is gitignored on cPanel
+    return '0x4AAAAAAF_txKcaFnIrc0b2NPcDy7Jrx0o';
 }
 
-// Read raw JSON input
+function callCloudflareSiteverify(string $secretKey, string $token, string $clientIp): ?array {
+    $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    $fields = [
+        'secret' => $secretKey,
+        'response' => $token,
+    ];
+    if ($clientIp !== '') {
+        $fields['remoteip'] = $clientIp;
+    }
+    $postData = http_build_query($fields);
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/x-www-form-urlencoded',
+            'Content-Length: ' . strlen($postData),
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($response !== false && $httpCode >= 200 && $httpCode < 300) {
+            $decoded = json_decode($response, true);
+            if (is_array($decoded)) return $decoded;
+        }
+    }
+
+    // Stream fallback if cURL is unavailable
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: " . strlen($postData) . "\r\n",
+            'content' => $postData,
+            'timeout' => 10,
+        ],
+    ]);
+    $raw = @file_get_contents($url, false, $context);
+    if ($raw !== false) {
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) return $decoded;
+    }
+
+    return null;
+}
+
+// Read JSON or form-urlencoded input
 $rawInput = file_get_contents('php://input');
 $data = json_decode($rawInput, true);
+if (!is_array($data)) {
+    $data = $_POST;
+}
 
-$token = $data['token'] ?? $data['cf-turnstile-response'] ?? '';
-$action = $data['action'] ?? 'submit';
+$token = trim((string)($data['token'] ?? $data['cf-turnstile-response'] ?? ''));
+$action = trim((string)($data['action'] ?? 'submit'));
 
-if (empty($token)) {
+if ($token === '') {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Turnstile token is required.']);
     exit;
 }
 
-// Handle dev/simulated tokens
 if (strpos($token, 'dev-') === 0) {
     echo json_encode([
         'success' => true,
         'valid' => true,
         'action' => $action,
-        'environment' => 'development'
+        'environment' => 'development',
     ]);
     exit;
 }
 
-$secretKey = getTurnstileConfig('TURNSTILE_SECRET_KEY');
-$clientIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+$secretKey = getTurnstileSecretKey();
+$rawIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+$clientIp = trim(explode(',', (string)$rawIp)[0]);
 
-if (!empty($secretKey)) {
-    $postData = http_build_query([
-        'secret' => $secretKey,
-        'response' => $token,
-        'remoteip' => $clientIp
-    ]);
+$result = callCloudflareSiteverify($secretKey, $token, $clientIp);
 
-    $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/x-www-form-urlencoded',
-        'Content-Length: ' . strlen($postData)
-    ]);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($response !== false && $httpCode >= 200 && $httpCode < 300) {
-        $result = json_decode($response, true);
-        if (!empty($result['success'])) {
-            echo json_encode([
-                'success' => true,
-                'valid' => true,
-                'challenge_ts' => $result['challenge_ts'] ?? null,
-                'hostname' => $result['hostname'] ?? null,
-                'action' => $result['action'] ?? $action
-            ]);
-            exit;
-        } else {
-            echo json_encode([
-                'success' => false,
-                'valid' => false,
-                'errorCodes' => $result['error-codes'] ?? ['invalid-token'],
-                'error' => 'Verification failed or token expired.'
-            ]);
-            exit;
-        }
+if (is_array($result)) {
+    if (!empty($result['success'])) {
+        echo json_encode([
+            'success' => true,
+            'valid' => true,
+            'challenge_ts' => $result['challenge_ts'] ?? null,
+            'hostname' => $result['hostname'] ?? null,
+            'action' => $result['action'] ?? $action,
+        ]);
+        exit;
     }
+
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'valid' => false,
+        'errorCodes' => $result['error-codes'] ?? ['invalid-input-response'],
+        'error' => 'Turnstile verification failed or token expired. Please retry.',
+    ]);
+    exit;
 }
 
-// Default fallback pass-through if secret key is not yet set
+http_response_code(502);
 echo json_encode([
-    'success' => true,
-    'valid' => true,
-    'action' => $action,
-    'message' => 'Token received.'
+    'success' => false,
+    'valid' => false,
+    'error' => 'Unable to reach Cloudflare Turnstile siteverify service.',
 ]);
-

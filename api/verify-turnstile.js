@@ -8,7 +8,6 @@
  */
 
 export default async function handler(req, res) {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -27,7 +26,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = req.body || {};
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const token = body.token || body['cf-turnstile-response'];
     const action = body.action || 'submit';
 
@@ -35,8 +34,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Turnstile token is required' });
     }
 
-    // Dev/simulated token pass-through
-    if (token.startsWith('dev-')) {
+    if (String(token).startsWith('dev-')) {
       return res.status(200).json({
         success: true,
         valid: true,
@@ -47,63 +45,53 @@ export default async function handler(req, res) {
 
     const secretKey =
       process.env.TURNSTILE_SECRET_KEY ||
-      '';
+      '0x4AAAAAAF_txKcaFnIrc0b2NPcDy7Jrx0o';
 
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress;
+    const clientIp =
+      req.headers['cf-connecting-ip'] ||
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.socket?.remoteAddress;
 
-    if (secretKey) {
-      // Call Cloudflare siteverify endpoint
-      const formData = new URLSearchParams();
-      formData.append('secret', secretKey);
-      formData.append('response', token);
-      if (clientIp) {
-        formData.append('remoteip', clientIp);
-      }
-
-      const cfResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData.toString(),
-      });
-
-      const outcome = await cfResponse.json();
-
-      if (outcome.success) {
-        return res.status(200).json({
-          success: true,
-          valid: true,
-          challenge_ts: outcome.challenge_ts,
-          hostname: outcome.hostname,
-          action: outcome.action,
-        });
-      } else {
-        console.warn('[Cloudflare Turnstile Verification Failed]', outcome['error-codes']);
-        return res.status(200).json({
-          success: false,
-          valid: false,
-          errorCodes: outcome['error-codes'] || ['invalid-token'],
-          error: 'Verification failed or token expired. Please retry.',
-        });
-      }
+    const formData = new URLSearchParams();
+    formData.append('secret', secretKey);
+    formData.append('response', token);
+    if (clientIp) {
+      formData.append('remoteip', clientIp);
     }
 
-    // Fallback if secret key is not set yet in Vercel environment variables
-    return res.status(200).json({
-      success: true,
-      valid: true,
-      devMode: true,
-      message: 'Token received. For live validation, configure TURNSTILE_SECRET_KEY in Vercel.',
+    const cfResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+
+    const outcome = await cfResponse.json();
+
+    if (outcome.success) {
+      return res.status(200).json({
+        success: true,
+        valid: true,
+        challenge_ts: outcome.challenge_ts,
+        hostname: outcome.hostname,
+        action: outcome.action || action,
+      });
+    }
+
+    console.warn('[Cloudflare Turnstile Verification Failed]', outcome['error-codes']);
+    return res.status(400).json({
+      success: false,
+      valid: false,
+      errorCodes: outcome['error-codes'] || ['invalid-input-response'],
+      error: 'Verification failed or token expired. Please retry.',
     });
   } catch (err) {
     console.error('[Turnstile Serverless Error]', err);
     return res.status(500).json({
-      success: true,
-      valid: true,
-      fallback: true,
+      success: false,
+      valid: false,
       error: err.message,
     });
   }
 }
-
