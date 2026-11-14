@@ -1,4 +1,4 @@
-Options -MultiViews
+Options -MultiViews -Indexes
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
@@ -7,6 +7,9 @@ Options -MultiViews
   # Enforce HTTPS redirection for all traffic
   RewriteCond %{HTTPS} off
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Block direct web access to any hidden files or internal data directories
+  RewriteRule (^|/)\. - [F,L]
 
   RewriteRule ^index\.html$ - [L]
 

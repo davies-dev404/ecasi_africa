@@ -3,29 +3,59 @@
 
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
+const ADMIN_TOKEN_KEY = 'ecasi_msimamizi_token';
 const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
 const ADMIN_CURRENT_USER_KEY = 'ecasi_msimamizi_user';
 const COURSES_KEY = 'ecasi_courses_v2026_v2';
 
-function getSyncUrl() {
+// Non-reversible local digest so plaintext passwords are never stored in browser storage
+function computeCredentialDigest(email, password) {
+  const input = `ecasi_msimamizi_v2:${String(email).trim().toLowerCase()}:${String(password).trim()}`;
+  let h1 = 0xdeadbeef ^ input.length;
+  let h2 = 0x41c6ce57 ^ input.length;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return `digest_${(h2 >>> 0).toString(16).padStart(8, '0')}${(h1 >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+export function getStoredAdminToken() {
+  if (typeof window === 'undefined') return '';
+  return sessionStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+}
+
+export function getSyncUrl() {
   if (typeof window === 'undefined') return '/api/msimamizi-sync.php';
   const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') {
+  // Both ecasiafrica.org and msimamizi.ecasiafrica.org share the /public_html Document Root
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('ecasiafrica.org')) {
     return '/api/msimamizi-sync.php';
   }
   return 'https://ecasiafrica.org/api/msimamizi-sync.php';
 }
 
 async function pushToServer(payload) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return null;
   try {
-    await fetch(getSyncUrl(), {
+    const token = getStoredAdminToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['X-Admin-Token'] = token;
+    }
+    const res = await fetch(getSyncUrl(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
     });
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
     // Offline or local dev fallback: localStorage already updated
+    return null;
   }
 }
 
@@ -53,7 +83,19 @@ class AdminRegistrationService {
     if (host === 'localhost' || host === '127.0.0.1') return;
 
     try {
-      const res = await fetch(getSyncUrl(), { method: 'GET', cache: 'no-store' });
+      const isAuth = this.isAuthenticated();
+      const token = getStoredAdminToken();
+      const scope = isAuth && token ? 'admin' : 'public';
+      const headers = {};
+      if (token) {
+        headers['X-Admin-Token'] = token;
+      }
+
+      const res = await fetch(`${getSyncUrl()}?scope=${scope}`, {
+        method: 'GET',
+        headers,
+        cache: 'no-store',
+      });
       if (!res.ok) return;
       const json = await res.json();
       if (!json?.success || !json?.data) return;
@@ -77,13 +119,18 @@ class AdminRegistrationService {
       if (courses && typeof courses === 'object' && Object.keys(courses).length > 0) {
         const localCoursesRaw = localStorage.getItem(COURSES_KEY);
         const localCourses = localCoursesRaw ? JSON.parse(localCoursesRaw) : {};
-        const mergedCourses = { ...courses, ...localCourses };
+        const mergedCourses = { ...localCourses, ...courses };
         localStorage.setItem(COURSES_KEY, JSON.stringify(mergedCourses));
         window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
       }
 
       if (Array.isArray(accounts) && accounts.length > 0) {
-        localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
+        const localAccounts = this.getAdminAccounts();
+        const mergedAccounts = localAccounts.map((loc) => {
+          const remote = accounts.find((a) => (a.email || '').toLowerCase() === loc.email.toLowerCase());
+          return remote ? { ...loc, role: remote.role || loc.role, updatedAt: remote.updatedAt } : loc;
+        });
+        localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(mergedAccounts));
       }
     } catch {
       // Ignore network sync errors
@@ -306,36 +353,45 @@ class AdminRegistrationService {
     return authorized.includes(clean);
   }
 
-  // Retrieve dynamic administrator accounts from persistent storage
+  // Retrieve dynamic administrator accounts from persistent storage (digests only, never plaintext)
   getAdminAccounts() {
     if (typeof window === 'undefined') return [];
     try {
       const data = localStorage.getItem(ADMIN_ACCOUNTS_KEY);
       if (data) {
         const parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Sanitize any legacy plaintext field if present
+          return parsed.map((a) => {
+            const copy = { ...a };
+            if (copy.password && !copy.credentialDigest) {
+              copy.credentialDigest = computeCredentialDigest(copy.email, copy.password);
+            }
+            delete copy.password;
+            return copy;
+          });
+        }
       }
     } catch (e) {
       console.warn('Failed to parse admin accounts:', e);
     }
 
-    // Default pre-initialized authorized accounts for Riobag & Jacob
     const defaultAccounts = [
       {
         email: 'riobag@ecasiafrica.org',
-        password: 'msimamizi2026',
+        credentialDigest: computeCredentialDigest('riobag@ecasiafrica.org', 'msimamizi2026'),
         role: 'Executive Director',
         createdAt: '2026-01-01T00:00:00.000Z',
       },
       {
         email: 'acob@ecasiafrica.org',
-        password: 'msimamizi2026',
+        credentialDigest: computeCredentialDigest('acob@ecasiafrica.org', 'msimamizi2026'),
         role: 'Administrator',
         createdAt: '2026-01-01T00:00:00.000Z',
       },
       {
         email: 'jacob@ecasiafrica.org',
-        password: 'msimamizi2026',
+        credentialDigest: computeCredentialDigest('jacob@ecasiafrica.org', 'msimamizi2026'),
         role: 'Administrator',
         createdAt: '2026-01-01T00:00:00.000Z',
       },
@@ -359,7 +415,6 @@ class AdminRegistrationService {
       return { success: false, message: 'Please enter your administrator email.' };
     }
 
-    // Strictly authorize designated portal administrators
     if (!this.isAuthorizedAdminEmail(cleanEmail)) {
       return {
         success: false,
@@ -380,24 +435,28 @@ class AdminRegistrationService {
 
       const userRecord = {
         email: cleanEmail,
-        password: cleanPass,
+        credentialDigest: computeCredentialDigest(cleanEmail, cleanPass),
         role: 'Administrator',
         updatedAt: new Date().toISOString(),
       };
 
       if (existingIdx >= 0) {
-        // Update password for existing administrator
         accounts[existingIdx] = { ...accounts[existingIdx], ...userRecord };
       } else {
-        // Register new administrator account
         userRecord.createdAt = new Date().toISOString();
         accounts.push(userRecord);
       }
 
       localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
-      pushToServer({ action: 'set_accounts', accounts });
 
-      // Authenticate session immediately
+      // Sync with hardened server endpoint (which stores bcrypt hash & issues session token)
+      pushToServer({ action: 'register_admin', email: cleanEmail, password: cleanPass }).then((res) => {
+        if (res?.token) {
+          this._storeToken(res.token, remember);
+          this.syncFromServer();
+        }
+      });
+
       this._setAuthSession(cleanEmail, userRecord.role, remember);
 
       return {
@@ -437,7 +496,6 @@ class AdminRegistrationService {
       return { success: false, message: 'Please enter both email and password.' };
     }
 
-    // Access restricted strictly to riobag@ecasiafrica.org and acob@ecasiafrica.org
     if (!this.isAuthorizedAdminEmail(inputUser)) {
       return {
         success: false,
@@ -446,24 +504,41 @@ class AdminRegistrationService {
     }
 
     const accounts = this.getAdminAccounts();
+    const candidateDigest = computeCredentialDigest(inputUser, inputPass);
 
-    // 1. Check registered / custom administrator accounts
+    // 1. Check registered / custom administrator accounts via non-reversible digest
     const matched = accounts.find((a) => a.email.toLowerCase() === inputUser);
-    if (matched && matched.password === inputPass) {
-      this._setAuthSession(matched.email, matched.role || 'Administrator', remember);
-      return { success: true, user: { email: matched.email, role: matched.role } };
-    }
+    const isMatchedDigest = matched && matched.credentialDigest === candidateDigest;
+    const isBootstrapPass = inputPass === 'msimamizi2026' || inputPass === '2026' || inputPass === 'ecasi2026!';
 
-    // 2. Default initial password verification (msimamizi2026)
-    if (inputPass === 'msimamizi2026' || inputPass === '2026' || inputPass === 'ecasi2026!') {
-      this._setAuthSession(inputUser, 'Administrator', remember);
-      return { success: true, user: { email: inputUser, role: 'Administrator' } };
+    if (isMatchedDigest || isBootstrapPass) {
+      const role = matched?.role || 'Administrator';
+      this._setAuthSession(inputUser, role, remember);
+
+      // Obtain server-side session token in background and sync protected records
+      pushToServer({ action: 'login', email: inputUser, password: inputPass }).then((res) => {
+        if (res?.token) {
+          this._storeToken(res.token, remember);
+          this.syncFromServer();
+        }
+      });
+
+      return { success: true, user: { email: inputUser, role } };
     }
 
     return {
       success: false,
       message: 'Invalid administrative password. First time logging in? Click "Create your password" below.',
     };
+  }
+
+  _storeToken(token, remember) {
+    if (!token || typeof window === 'undefined') return;
+    if (remember) {
+      localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    } else {
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
+    }
   }
 
   _setAuthSession(email, role, remember) {
@@ -481,6 +556,8 @@ class AdminRegistrationService {
     if (typeof window === 'undefined') return;
     sessionStorage.removeItem(ADMIN_AUTH_KEY);
     localStorage.removeItem(ADMIN_AUTH_KEY);
+    sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
     sessionStorage.removeItem(ADMIN_CURRENT_USER_KEY);
     localStorage.removeItem(ADMIN_CURRENT_USER_KEY);
   }

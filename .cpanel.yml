@@ -3,26 +3,11 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/ecasorke/public_html
 
-    # Clean old build assets to avoid accumulation of old hashed files
+    # 1. Clean old build assets & legacy physical folders that interfere with SPA routes
     - /bin/rm -rf $DEPLOYPATH/assets
+    - /bin/rm -rf $DEPLOYPATH/contact $DEPLOYPATH/gallery $DEPLOYPATH/msimamizi $DEPLOYPATH/msimamizi.ecasiafrica.org $DEPLOYPATH/contact.html $DEPLOYPATH/gallery.html $DEPLOYPATH/contact.php $DEPLOYPATH/gallery.php
 
-    # Clean legacy physical folders/files that interfere with SPA routes
-    - /bin/rm -rf $DEPLOYPATH/contact $DEPLOYPATH/gallery $DEPLOYPATH/contact.html $DEPLOYPATH/gallery.html $DEPLOYPATH/contact.php $DEPLOYPATH/gallery.php
-
-    # Copy the production build files to main public_html (ecasiafrica.org)
+    # 2. Deploy production build to shared Document Root (/home/ecasorke/public_html)
+    #    Serves both https://ecasiafrica.org and https://msimamizi.ecasiafrica.org
     - /bin/cp -R dist/* $DEPLOYPATH/
-
-    # Copy .htaccess for React Router SPA routing & HTTPS enforcement (dotfiles aren't matched by dist/*)
     - /bin/cp dist/.htaccess $DEPLOYPATH/ 2>/dev/null || /bin/cp public/.htaccess $DEPLOYPATH/
-
-    # Deploy to subdomain Document Root (/home/ecasorke/msimamizi.ecasiafrica.org)
-    - /bin/mkdir -p /home/ecasorke/msimamizi.ecasiafrica.org
-    - /bin/rm -rf /home/ecasorke/msimamizi.ecasiafrica.org/assets
-    - /bin/cp -R dist/* /home/ecasorke/msimamizi.ecasiafrica.org/
-    - /bin/cp dist/.htaccess /home/ecasorke/msimamizi.ecasiafrica.org/ 2>/dev/null || /bin/cp public/.htaccess /home/ecasorke/msimamizi.ecasiafrica.org/
-
-    # Deploy to /home/ecasorke/public_html/msimamizi (in case cPanel subdomain Document Root is public_html/msimamizi)
-    - /bin/mkdir -p $DEPLOYPATH/msimamizi
-    - /bin/rm -rf $DEPLOYPATH/msimamizi/assets
-    - /bin/cp -R dist/* $DEPLOYPATH/msimamizi/
-    - /bin/cp dist/.htaccess $DEPLOYPATH/msimamizi/ 2>/dev/null || /bin/cp public/.htaccess $DEPLOYPATH/msimamizi/

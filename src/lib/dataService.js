@@ -40,9 +40,20 @@ const syncCoursesToServer = (cachedCourses) => {
   if (typeof window === 'undefined') return;
   const host = window.location.hostname;
   if (host === 'localhost' || host === '127.0.0.1') return;
-  fetch('https://ecasiafrica.org/api/msimamizi-sync.php', {
+  const endpoint = host.endsWith('ecasiafrica.org')
+    ? '/api/msimamizi-sync.php'
+    : 'https://ecasiafrica.org/api/msimamizi-sync.php';
+  const token =
+    sessionStorage.getItem('ecasi_msimamizi_token') ||
+    localStorage.getItem('ecasi_msimamizi_token') ||
+    '';
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['X-Admin-Token'] = token;
+  }
+  fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ action: 'set_courses', courses: cachedCourses || {} }),
   }).catch(() => {});
 };
