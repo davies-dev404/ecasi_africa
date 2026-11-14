@@ -75,8 +75,7 @@ function getTurnstileSecretKey(): string {
         }
     }
 
-    // Production fallback for widget 0x4AAAAAAF_txNruny6wo5Fu when .env is gitignored on cPanel
-    return '0x4AAAAAAF_txKcaFnIrc0b2NPcDy7Jrx0o';
+    return '';
 }
 
 function callCloudflareSiteverify(string $secretKey, string $token, string $clientIp): ?array {
@@ -155,6 +154,12 @@ if (strpos($token, 'dev-') === 0) {
 }
 
 $secretKey = getTurnstileSecretKey();
+if ($secretKey === '') {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'TURNSTILE_SECRET_KEY is not configured in .env.']);
+    exit;
+}
+
 $rawIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
 $clientIp = trim(explode(',', (string)$rawIp)[0]);
 

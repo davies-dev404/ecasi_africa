@@ -8,11 +8,8 @@ const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
-  const turnstileSecret =
-    env.TURNSTILE_SECRET_KEY ||
-    process.env.TURNSTILE_SECRET_KEY ||
-    "0x4AAAAAAF_txKcaFnIrc0b2NPcDy7Jrx0o";
+  const env = loadEnv(mode, __dirname, "");
+  const turnstileSecret = env.TURNSTILE_SECRET_KEY || "";
 
   return {
     server: {
@@ -61,6 +58,17 @@ export default defineConfig(({ mode }) => {
                       valid: true,
                       action,
                       environment: "development-fallback",
+                    })
+                  );
+                  return;
+                }
+
+                if (!turnstileSecret) {
+                  res.statusCode = 500;
+                  res.end(
+                    JSON.stringify({
+                      success: false,
+                      error: "TURNSTILE_SECRET_KEY is not configured in .env",
                     })
                   );
                   return;

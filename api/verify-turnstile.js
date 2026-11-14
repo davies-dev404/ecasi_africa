@@ -43,9 +43,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const secretKey =
-      process.env.TURNSTILE_SECRET_KEY ||
-      '0x4AAAAAAF_txKcaFnIrc0b2NPcDy7Jrx0o';
+    const secretKey = process.env.TURNSTILE_SECRET_KEY || '';
+    if (!secretKey) {
+      return res.status(500).json({
+        success: false,
+        valid: false,
+        error: 'TURNSTILE_SECRET_KEY is not configured in environment variables.',
+      });
+    }
 
     const clientIp =
       req.headers['cf-connecting-ip'] ||
