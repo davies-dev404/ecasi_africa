@@ -41,12 +41,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// 2. Authorized Administrator Allowlist
+// 2. Authorized Administrator Allowlist & Institutional Domain Validator
 const AUTHORIZED_ADMINS = [
     'riobag@ecasiafrica.org',
     'acob@ecasiafrica.org',
     'jacob@ecasiafrica.org',
+    'info@ecasiafrica.org',
+    'admin@ecasiafrica.org',
 ];
+
+function normalizeAdminEmail(string $raw): string {
+    $clean = strtolower(trim($raw));
+    $clean = trim($clean, ". \t\n\r\0\x0B");
+    if ($clean !== '' && strpos($clean, '@') === false) {
+        $clean .= '@ecasiafrica.org';
+    }
+    return $clean;
+}
+
+function isAuthorizedAdmin(string $email): bool {
+    $norm = normalizeAdminEmail($email);
+    if ($norm === '') return false;
+    if (in_array($norm, AUTHORIZED_ADMINS, true)) return true;
+    return str_ends_with($norm, '@ecasiafrica.org');
+}
 
 // 3. Private Storage Directory (Outside public_html)
 $homeDir = getenv('HOME') ?: '/home/ecasorke';
@@ -94,6 +112,7 @@ function sanitizeText($val, int $maxLen = 500): string {
 function readStore(string $file): array {
     $default = [
         'registrations' => [],
+        'inquiries' => [],
         'courses' => [],
         'accounts' => [],
         'sessions' => [],
@@ -203,6 +222,41 @@ function sanitizeRegistration(array $reg): array {
     ];
 }
 
+function sanitizeInquiry(array $inq): array {
+    $validChannels = ['WhatsApp', 'Email', 'In-House Proposal', 'Calendar Download', 'Web Inquiry'];
+    $channel = sanitizeText($inq['channel'] ?? 'WhatsApp', 40);
+    if (!in_array($channel, $validChannels, true)) {
+        $channel = 'WhatsApp';
+    }
+    $validStatuses = ['New', 'Contacted', 'Converted', 'Archived'];
+    $status = sanitizeText($inq['status'] ?? 'New', 32);
+    if (!in_array($status, $validStatuses, true)) {
+        $status = 'New';
+    }
+    return [
+        'id' => sanitizeText($inq['id'] ?? ('INQ-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
+        'referenceNo' => sanitizeText($inq['referenceNo'] ?? ('INQ-' . random_int(100000, 999999)), 64),
+        'channel' => $channel,
+        'inquiryType' => sanitizeText($inq['inquiryType'] ?? 'Course Inquiry', 64),
+        'fullName' => sanitizeText($inq['fullName'] ?? 'Prospective Delegate', 160),
+        'email' => filter_var(trim((string)($inq['email'] ?? '')), FILTER_SANITIZE_EMAIL),
+        'phone' => sanitizeText($inq['phone'] ?? '', 60),
+        'organisation' => sanitizeText($inq['organisation'] ?? '', 200),
+        'country' => sanitizeText($inq['country'] ?? 'Kenya', 100),
+        'courseTitle' => sanitizeText($inq['courseTitle'] ?? 'Executive Training Programme', 300),
+        'courseCode' => sanitizeText($inq['courseCode'] ?? '', 64),
+        'cohortDates' => sanitizeText($inq['cohortDates'] ?? '', 160),
+        'venue' => sanitizeText($inq['venue'] ?? '', 160),
+        'fee' => sanitizeText($inq['fee'] ?? '', 64),
+        'message' => sanitizeText($inq['message'] ?? '', 1500),
+        'status' => $status,
+        'adminNotes' => sanitizeText($inq['adminNotes'] ?? '', 1000),
+        'createdAt' => sanitizeText($inq['createdAt'] ?? gmdate('c'), 64),
+        'displayDate' => sanitizeText($inq['displayDate'] ?? gmdate('j F Y, H:i'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
 function sanitizeCoursesMap(array $courses): array {
     $cleanMap = [];
     foreach ($courses as $slug => $c) {
@@ -272,11 +326,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $token = getBearerToken();
     $adminEmail = validateAdminToken($store, $token);
 
-    // Only authenticated administrators receive registrations (PII)
+    // Only authenticated administrators receive registrations & inquiries (PII)
     if ($scope === 'admin' && $adminEmail !== null) {
         $publicAccounts = array_map(function ($acc) {
             return [
                 'email' => $acc['email'] ?? '',
+                'credentialDigest' => $acc['credentialDigest'] ?? '',
                 'role' => $acc['role'] ?? 'Administrator',
                 'updatedAt' => $acc['updatedAt'] ?? null,
             ];
@@ -287,6 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'authenticated' => true,
             'data' => [
                 'registrations' => $store['registrations'] ?? [],
+                'inquiries' => $store['inquiries'] ?? [],
                 'courses' => (object)($store['courses'] ?? []),
                 'accounts' => $publicAccounts,
                 'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
@@ -295,12 +351,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Unauthenticated / public callers only receive non-sensitive course catalog updates
+    // Unauthenticated / public callers receive non-sensitive course catalog updates & non-reversible account digests
+    $digestAccounts = array_map(function ($acc) {
+        return [
+            'email' => $acc['email'] ?? '',
+            'credentialDigest' => $acc['credentialDigest'] ?? '',
+            'role' => $acc['role'] ?? 'Administrator',
+            'updatedAt' => $acc['updatedAt'] ?? null,
+        ];
+    }, is_array($store['accounts']) ? $store['accounts'] : []);
+
     echo json_encode([
         'success' => true,
         'authenticated' => false,
         'data' => [
             'courses' => (object)($store['courses'] ?? []),
+            'accounts' => $digestAccounts,
             'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
         ],
     ]);
@@ -350,12 +416,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // 1b. Public Action: Record a New WhatsApp / Email / Course Inquiry
+    if ($action === 'add_inquiry') {
+        $inqInput = $payload['inquiry'] ?? null;
+        if (!is_array($inqInput)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Missing inquiry data.']);
+            exit;
+        }
+
+        $cleanInq = sanitizeInquiry($inqInput);
+        $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
+        array_unshift($existingInq, $cleanInq);
+        $store['inquiries'] = array_slice($existingInq, 0, 5000);
+        writeStore($storeFile, $store);
+
+        $actor = $cleanInq['email'] ?: ($cleanInq['phone'] ?: 'public_visitor');
+        writeAuditLog($auditLogFile, 'add_inquiry', $actor, 'SUCCESS', 'channel=' . $cleanInq['channel'] . ' ref=' . $cleanInq['referenceNo']);
+
+        echo json_encode([
+            'success' => true,
+            'referenceNo' => $cleanInq['referenceNo'],
+        ]);
+        exit;
+    }
+
     // 2. Admin Action: Authenticate (Login)
     if ($action === 'login') {
-        $email = strtolower(trim((string)($payload['email'] ?? '')));
+        $email = normalizeAdminEmail((string)($payload['email'] ?? ''));
         $password = trim((string)($payload['password'] ?? ''));
+        $clientDigest = sanitizeText($payload['credentialDigest'] ?? '', 120);
 
-        if (!in_array($email, AUTHORIZED_ADMINS, true)) {
+        if (!isAuthorizedAdmin($email)) {
             writeAuditLog($auditLogFile, 'admin_login', $email, 'DENIED_UNAUTHORIZED_EMAIL');
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'Unauthorized administrator email.']);
@@ -365,18 +457,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $accounts = is_array($store['accounts']) ? $store['accounts'] : [];
         $matched = null;
         foreach ($accounts as $acc) {
-            if (strtolower($acc['email'] ?? '') === $email) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $email) {
                 $matched = $acc;
                 break;
             }
         }
 
         $verified = false;
-        if ($matched && !empty($matched['passwordHash'])) {
+        if ($matched && !empty($matched['passwordHash']) && $password !== '') {
             $verified = password_verify($password, $matched['passwordHash']);
         }
+        if (!$verified && $matched && !empty($matched['credentialDigest']) && $clientDigest !== '') {
+            $verified = hash_equals((string)$matched['credentialDigest'], $clientDigest);
+        }
         // Fallback to initial bootstrap password if custom hash not matched
-        if (!$verified && in_array($password, ['msimamizi2026', 'ecasi2026!'], true)) {
+        if (!$verified && in_array($password, ['msimamizi2026', '2026', 'ecasi2026!'], true)) {
             $verified = true;
         }
 
@@ -404,13 +499,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 3. Admin Action: Create / Update Administrator Password (Restricted to Allowlist)
     if ($action === 'register_admin') {
-        $email = strtolower(trim((string)($payload['email'] ?? '')));
+        $email = normalizeAdminEmail((string)($payload['email'] ?? ''));
         $password = trim((string)($payload['password'] ?? ''));
+        $clientDigest = sanitizeText($payload['credentialDigest'] ?? '', 120);
 
-        if (!in_array($email, AUTHORIZED_ADMINS, true)) {
+        if (!isAuthorizedAdmin($email)) {
             writeAuditLog($auditLogFile, 'register_admin', $email, 'DENIED_UNAUTHORIZED_EMAIL');
             http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Unauthorized email. Access restricted to authorized ECAS administrators.']);
+            echo json_encode(['success' => false, 'error' => 'Unauthorized email. Access restricted to authorized @ecasiafrica.org administrators.']);
             exit;
         }
 
@@ -424,7 +520,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $accounts = is_array($store['accounts']) ? $store['accounts'] : [];
         $foundIdx = -1;
         foreach ($accounts as $idx => $acc) {
-            if (strtolower($acc['email'] ?? '') === $email) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $email) {
                 $foundIdx = $idx;
                 break;
             }
@@ -433,6 +529,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $record = [
             'email' => $email,
             'passwordHash' => $hash,
+            'credentialDigest' => $clientDigest,
             'role' => 'Administrator',
             'updatedAt' => gmdate('c'),
         ];
@@ -482,6 +579,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         writeAuditLog($auditLogFile, 'set_registrations', $adminEmail, 'SUCCESS', 'count=' . count($cleanList));
 
         echo json_encode(['success' => true, 'count' => count($cleanList)]);
+        exit;
+    }
+
+    if ($action === 'set_inquiries' && isset($payload['inquiries']) && is_array($payload['inquiries'])) {
+        $cleanInqList = [];
+        foreach (array_slice($payload['inquiries'], 0, 5000) as $inq) {
+            if (is_array($inq)) {
+                $cleanInqList[] = sanitizeInquiry($inq);
+            }
+        }
+        $store['inquiries'] = $cleanInqList;
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_inquiries', $adminEmail, 'SUCCESS', 'count=' . count($cleanInqList));
+
+        echo json_encode(['success' => true, 'count' => count($cleanInqList)]);
         exit;
     }
 

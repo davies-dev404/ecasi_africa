@@ -37,11 +37,13 @@ import {
   ArrowRightLeft,
   Image as ImageIcon,
   Upload,
+  MessageSquare,
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
 import TurnstileWidget from '@/components/TurnstileWidget';
 import { verifyTurnstile } from '@/services/turnstileService';
+import { printRegistrationVoucher } from '@/utils/printRegistrationVoucher';
 
 export default function MsimamiziAdmin() {
 
@@ -93,20 +95,20 @@ export default function MsimamiziAdmin() {
     }
   };
 
-  // Active Tab: 'dashboard' | 'registrations' | 'courses' (Persisted across refreshes & URL synced)
+  // Active Tab: 'dashboard' | 'registrations' | 'inquiries' | 'courses' (Persisted across refreshes & URL synced)
   const getInitialTab = () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const urlTab = urlParams.get('tab');
-      if (urlTab && ['dashboard', 'registrations', 'courses'].includes(urlTab)) {
+      if (urlTab && ['dashboard', 'registrations', 'inquiries', 'courses'].includes(urlTab)) {
         return urlTab;
       }
       const hashTab = window.location.hash.replace('#', '');
-      if (hashTab && ['dashboard', 'registrations', 'courses'].includes(hashTab)) {
+      if (hashTab && ['dashboard', 'registrations', 'inquiries', 'courses'].includes(hashTab)) {
         return hashTab;
       }
       const savedTab = localStorage.getItem('msimamizi_active_tab');
-      if (savedTab && ['dashboard', 'registrations', 'courses'].includes(savedTab)) {
+      if (savedTab && ['dashboard', 'registrations', 'inquiries', 'courses'].includes(savedTab)) {
         return savedTab;
       }
     } catch {
@@ -131,6 +133,10 @@ export default function MsimamiziAdmin() {
 
   // Registrations state (Persisted in sessionStorage across refreshes)
   const [registrations, setRegistrations] = useState([]);
+  const [inquiries, setInquiries] = useState(() => adminRegistrationService.getInquiries());
+  const [inquirySearch, setInquirySearch] = useState('');
+  const [inquiryChannelFilter, setInquiryChannelFilter] = useState('All');
+  const [inquiryStatusFilter, setInquiryStatusFilter] = useState('All');
   const [searchQuery, setSearchQueryState] = useState(() => {
     try { return sessionStorage.getItem('msimamizi_reg_search') || ''; } catch { return ''; }
   });
@@ -488,10 +494,12 @@ export default function MsimamiziAdmin() {
     setIsAuthenticated(adminRegistrationService.isAuthenticated());
   }, []);
 
-  // Load registrations & listen for real-time updates
+  // Load registrations, inquiries & listen for real-time updates
   const loadData = () => {
     const list = adminRegistrationService.getRegistrations();
+    const inqList = adminRegistrationService.getInquiries();
     setRegistrations(list);
+    setInquiries(inqList);
     setKpis(adminRegistrationService.getKPIs());
   };
 
@@ -499,7 +507,11 @@ export default function MsimamiziAdmin() {
     loadData();
     const handleUpdate = () => loadData();
     window.addEventListener('ecasi_registration_updated', handleUpdate);
-    return () => window.removeEventListener('ecasi_registration_updated', handleUpdate);
+    window.addEventListener('ecasi_inquiry_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('ecasi_registration_updated', handleUpdate);
+      window.removeEventListener('ecasi_inquiry_updated', handleUpdate);
+    };
   }, []);
 
   // Listen for dynamic course changes
@@ -756,10 +768,11 @@ export default function MsimamiziAdmin() {
       }
     }
 
-    const result = adminRegistrationService.login(authEmail, authPassword, authRemember);
+    const result = await adminRegistrationService.login(authEmail, authPassword, authRemember);
     if (result.success) {
       setCurrentUser(result.user);
       setIsAuthenticated(true);
+      loadData();
     } else {
       setAuthError(result.message || 'Invalid administrative credentials');
     }
@@ -836,6 +849,52 @@ export default function MsimamiziAdmin() {
       return true;
     });
   }, [registrations, searchQuery, filterStatus, filterVenue, filterPayment]);
+
+  // Filtered Inquiries (WhatsApp, Email, Calendar, In-House)
+  const filteredInquiries = useMemo(() => {
+    return inquiries.filter((inq) => {
+      if (inquirySearch.trim()) {
+        const q = inquirySearch.toLowerCase();
+        const sender = (inq.senderName || '').toLowerCase();
+        const org = (inq.organisation || '').toLowerCase();
+        const course = (inq.courseTitle || '').toLowerCase();
+        const email = (inq.senderEmail || '').toLowerCase();
+        const phone = (inq.senderPhone || '').toLowerCase();
+        const ref = (inq.referenceNo || '').toLowerCase();
+        if (
+          !sender.includes(q) &&
+          !org.includes(q) &&
+          !course.includes(q) &&
+          !email.includes(q) &&
+          !phone.includes(q) &&
+          !ref.includes(q)
+        ) {
+          return false;
+        }
+      }
+      if (inquiryChannelFilter !== 'All' && (inq.channel || '').toLowerCase() !== inquiryChannelFilter.toLowerCase()) {
+        return false;
+      }
+      if (inquiryStatusFilter !== 'All' && (inq.status || 'New') !== inquiryStatusFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [inquiries, inquirySearch, inquiryChannelFilter, inquiryStatusFilter]);
+
+  const handleUpdateInquiryStatus = (id, status) => {
+    adminRegistrationService.updateInquiry(id, { status });
+    loadData();
+    setToastMessage(`Inquiry status updated to ${status}.`);
+  };
+
+  const handleDeleteInquiry = (id, refNo) => {
+    if (window.confirm(`Are you sure you want to delete inquiry ${refNo}?`)) {
+      adminRegistrationService.deleteInquiry(id);
+      loadData();
+      setToastMessage(`Inquiry ${refNo} deleted.`);
+    }
+  };
 
   // Update status quickly
   const handleQuickStatusChange = (id, newStatus) => {
@@ -1299,6 +1358,37 @@ export default function MsimamiziAdmin() {
                 <button
                   type="button"
                   onClick={() => {
+                    setActiveTab('inquiries');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  title={isSidebarCollapsed ? `WhatsApp & Email Inquiries (${inquiries.length})` : undefined}
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
+                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'inquiries'
+                      ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
+                      : 'text-white/70 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                  <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                    <MessageSquare className={`w-5 h-5 shrink-0 ${activeTab === 'inquiries' ? 'text-white' : 'text-[#00c853]'}`} />
+                    {!isSidebarCollapsed && <span>Inquiries &amp; Leads</span>}
+                  </div>
+                  {!isSidebarCollapsed ? (
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'inquiries' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
+                      }`}>
+                      {inquiries.length}
+                    </span>
+                  ) : (
+                    inquiries.length > 0 && (
+                      <span className="absolute top-1.5 right-1.5 min-w-[18px] h-4.5 px-1 bg-[#008000] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#032e42] shadow-sm">
+                        {inquiries.length}
+                      </span>
+                    )
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
                     setActiveTab('courses');
                     setIsMobileMenuOpen(false);
                   }}
@@ -1469,6 +1559,7 @@ export default function MsimamiziAdmin() {
                 <h1 className="text-base sm:text-lg font-black text-slate-900 capitalize tracking-tight">
                   {activeTab === 'dashboard' && 'Executive Overview'}
                   {activeTab === 'registrations' && 'Course Registrations'}
+                  {activeTab === 'inquiries' && 'WhatsApp & Email Inquiries'}
                   {activeTab === 'courses' && 'Course Catalog & Pricing Management'}
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
@@ -1584,6 +1675,46 @@ export default function MsimamiziAdmin() {
                   <div className="w-12 h-12 rounded-xl bg-[#008000]/10 text-[#008000] flex items-center justify-center shrink-0">
                     <DollarSign className="w-6 h-6" />
                   </div>
+                </div>
+              </div>
+
+              {/* WhatsApp & Email Inquiries Live Summary Banner */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#008000] flex items-center justify-center shrink-0 border border-emerald-200">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-extrabold text-slate-900 text-sm">
+                        WhatsApp &amp; Email Course Inquiries
+                      </h3>
+                      {(kpis.newInquiriesCount || 0) > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase">
+                          {kpis.newInquiriesCount} New Unread
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Every course inquiry, in-house request, or brochure/calendar request sent via WhatsApp or Email is logged here automatically.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">
+                    WhatsApp: {kpis.whatsappInquiriesCount || 0}
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-800">
+                    Email: {kpis.emailInquiriesCount || 0}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('inquiries')}
+                    className="px-4 py-2 rounded-xl bg-[#032e42] hover:bg-[#05435e] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-[#00c853]" />
+                    <span>Open Inquiries Log ({inquiries.length})</span>
+                  </button>
                 </div>
               </div>
 
@@ -2568,6 +2699,238 @@ export default function MsimamiziAdmin() {
               )}
             </div>
           )}
+
+          {/* ───────────────────────────────────────────────────────────
+              TAB 4: WHATSAPP & EMAIL INQUIRIES LOG
+          ─────────────────────────────────────────────────────────── */}
+          {activeTab === 'inquiries' && (
+            <div className="space-y-6">
+              {/* Filter & Export Bar */}
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={inquirySearch}
+                      onChange={(e) => setInquirySearch(e.target.value)}
+                      placeholder="Search by sender name, organization, email, phone, course title, or reference..."
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-[#008000]"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <select
+                      value={inquiryChannelFilter}
+                      onChange={(e) => setInquiryChannelFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:border-[#008000]"
+                    >
+                      <option value="All">All Channels ({inquiries.length})</option>
+                      <option value="WhatsApp">WhatsApp</option>
+                      <option value="Email">Email</option>
+                      <option value="Calendar Download">Calendar Download</option>
+                    </select>
+
+                    <select
+                      value={inquiryStatusFilter}
+                      onChange={(e) => setInquiryStatusFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:border-[#008000]"
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="New">New</option>
+                      <option value="Contacted">Contacted</option>
+                      <option value="Converted">Converted</option>
+                      <option value="Archived">Archived</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => adminRegistrationService.downloadInquiriesCSV()}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#008000]" />
+                      <span>Export Inquiries CSV</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inquiries Table */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th className="py-3.5 px-4">Ref &amp; Date</th>
+                        <th className="py-3.5 px-4">Channel &amp; Type</th>
+                        <th className="py-3.5 px-4">Sender &amp; Contact</th>
+                        <th className="py-3.5 px-4">Course &amp; Cohort Details</th>
+                        <th className="py-3.5 px-4">Status</th>
+                        <th className="py-3.5 px-4 text-right">Follow-Up Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 text-xs">
+                      {filteredInquiries.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                            <p className="font-semibold text-slate-600">No inquiries recorded yet</p>
+                            <p className="text-[11px] text-slate-400 mt-1">
+                              When visitors send an inquiry via WhatsApp or Email on ecasiafrica.org, it will appear here automatically.
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredInquiries.map((inq) => {
+                          const isWhatsApp = (inq.channel || '').toLowerCase().includes('whatsapp');
+                          const isEmail = (inq.channel || '').toLowerCase().includes('email');
+                          const cleanPhone = (inq.senderPhone || '').replace(/[^0-9]/g, '');
+                          const replyWhatsAppUrl = cleanPhone
+                            ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                                `Hello ${inq.senderName || 'Delegate'}, thank you for your inquiry regarding "${inq.courseTitle}" (${inq.referenceNo}) at ECAS Institute.`
+                              )}`
+                            : null;
+                          const replyEmailUrl = inq.senderEmail
+                            ? `mailto:${inq.senderEmail}?subject=${encodeURIComponent(
+                                `Re: ECAS Institute Course Inquiry - ${inq.courseTitle} (${inq.referenceNo})`
+                              )}&body=${encodeURIComponent(
+                                `Dear ${inq.senderName || 'Delegate'},\n\nThank you for contacting the Environmental Capacities and Sustainability Institute (ECAS) regarding "${inq.courseTitle}".\n\nBest regards,\nTraining Admissions Team\nECAS Institute`
+                              )}`
+                            : null;
+
+                          return (
+                            <tr key={inq.id} className="hover:bg-slate-50/80 transition">
+                              <td className="py-3.5 px-4 align-top">
+                                <span className="font-mono font-bold text-[#032e42] block">
+                                  {inq.referenceNo}
+                                </span>
+                                <span className="text-[11px] text-slate-400 block mt-0.5">
+                                  {inq.createdAt ? new Date(inq.createdAt).toLocaleString() : 'Just now'}
+                                </span>
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                                    isWhatsApp
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                      : isEmail
+                                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                      : 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  }`}
+                                >
+                                  {inq.channel || 'WhatsApp'}
+                                </span>
+                                <span className="text-[11px] text-slate-500 font-semibold block mt-1">
+                                  {inq.inquiryType || 'Course Inquiry'}
+                                </span>
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="font-bold text-slate-900">
+                                  {inq.senderName || 'Website Visitor'}
+                                </div>
+                                {inq.organisation && (
+                                  <div className="text-[11px] text-slate-600 font-medium">
+                                    {inq.organisation}
+                                  </div>
+                                )}
+                                {inq.senderEmail && (
+                                  <div className="text-[11px] text-blue-700 font-mono mt-0.5">
+                                    {inq.senderEmail}
+                                  </div>
+                                )}
+                                {inq.senderPhone && (
+                                  <div className="text-[11px] text-emerald-700 font-mono mt-0.5">
+                                    {inq.senderPhone}
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top max-w-xs">
+                                <div className="font-bold text-slate-800 line-clamp-2">
+                                  {inq.courseTitle || 'General Programme Inquiry'}
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">
+                                  {[inq.cohortDates, inq.venue, inq.format].filter(Boolean).join(' • ')}
+                                </div>
+                                {inq.participantsCount > 1 && (
+                                  <span className="inline-block mt-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
+                                    {inq.participantsCount} Participants
+                                  </span>
+                                )}
+                                {inq.message && (
+                                  <p className="text-[11px] text-slate-500 italic mt-1 line-clamp-2 bg-slate-50 p-1.5 rounded border border-slate-100">
+                                    "{inq.message}"
+                                  </p>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top">
+                                <select
+                                  value={inq.status || 'New'}
+                                  onChange={(e) => handleUpdateInquiryStatus(inq.id, e.target.value)}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border focus:outline-none cursor-pointer ${
+                                    (inq.status || 'New') === 'New'
+                                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                      : inq.status === 'Contacted'
+                                      ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                      : inq.status === 'Converted'
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                                  }`}
+                                >
+                                  <option value="New">New</option>
+                                  <option value="Contacted">Contacted</option>
+                                  <option value="Converted">Converted</option>
+                                  <option value="Archived">Archived</option>
+                                </select>
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top text-right">
+                                <div className="inline-flex items-center gap-1.5">
+                                  {replyWhatsAppUrl && (
+                                    <a
+                                      href={replyWhatsAppUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={() => handleUpdateInquiryStatus(inq.id, 'Contacted')}
+                                      className="px-2.5 py-1.5 rounded-lg bg-[#25D366]/15 hover:bg-[#25D366]/25 text-emerald-800 font-bold text-[11px] transition"
+                                      title="Reply to Delegate on WhatsApp"
+                                    >
+                                      WhatsApp
+                                    </a>
+                                  )}
+                                  {replyEmailUrl && (
+                                    <a
+                                      href={replyEmailUrl}
+                                      onClick={() => handleUpdateInquiryStatus(inq.id, 'Contacted')}
+                                      className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] transition"
+                                      title="Reply to Delegate via Email"
+                                    >
+                                      Email
+                                    </a>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteInquiry(inq.id, inq.referenceNo)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                    title="Delete Inquiry"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -2590,9 +2953,9 @@ export default function MsimamiziAdmin() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => printRegistrationVoucher(selectedReg)}
                   className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
-                  title="Print Slip"
+                  title="Print Official Registration Voucher"
                 >
                   <Printer className="w-4 h-4" />
                 </button>
@@ -2771,11 +3134,11 @@ export default function MsimamiziAdmin() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => printRegistrationVoucher(selectedReg)}
                   className="px-4 py-2 rounded-xl bg-[#008000] hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  Print Admission Dossier
+                  Print Official Voucher
                 </button>
                 <button
                   type="button"

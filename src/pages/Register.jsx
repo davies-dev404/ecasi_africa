@@ -10,6 +10,7 @@ import CountrySelector from "@/components/CountrySelector";
 import { adminRegistrationService } from "@/services/adminRegistrationService";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { verifyTurnstile } from "@/services/turnstileService";
+import { printRegistrationVoucher } from "@/utils/printRegistrationVoucher";
 
 const COUNTRY_DIAL_CODES = countryListData;
 
@@ -208,10 +209,12 @@ export default function Register() {
         title={`Registration - ${eventTitle} | ECAS Institute`}
         description={`Online registration form for ${eventTitle} (Schedule #${scheduleId}) at ECAS Institute.`}
       />
-      <Header />
+      <div className="print:hidden">
+        <Header />
+      </div>
 
       {/* Top Breadcrumb Strip in ECAS Brand Colors */}
-      <div className="bg-[#032e42] text-white text-xs sm:text-[13px] py-2.5 border-b border-white/15">
+      <div className="bg-[#032e42] text-white text-xs sm:text-[13px] py-2.5 border-b border-white/15 print:hidden">
         <div className="max-w-[1140px] mx-auto px-4 sm:px-6 flex flex-wrap items-center gap-2">
           <Link to="/" className="text-white/85 hover:text-[#4ade80] transition-colors">
             Home
@@ -314,7 +317,7 @@ export default function Register() {
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 print:hidden">
                 <div className="flex flex-wrap items-center gap-3">
                   <a
                     href={`https://wa.me/254728925306?text=${encodeURIComponent(
@@ -322,6 +325,24 @@ export default function Register() {
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => {
+                      adminRegistrationService.addInquiry({
+                        channel: "WhatsApp",
+                        inquiryType: "Registration Follow-Up (WhatsApp)",
+                        referenceNo: `${submittedData.referenceNo}-WA`,
+                        fullName: `${submittedData.title || ""} ${submittedData.firstName || ""} ${submittedData.lastName || ""}`.trim(),
+                        email: submittedData.officialEmail || submittedData.personalEmail || "",
+                        phone: `${submittedData.dialCode || ""} ${submittedData.phoneNumber || ""}`.trim(),
+                        organisation: submittedData.organisation || "",
+                        country: submittedData.country || "Kenya",
+                        courseTitle: submittedData.eventTitle || "",
+                        courseCode: submittedData.scheduleId || "",
+                        cohortDates: submittedData.durationText || "",
+                        venue: `${submittedData.venue || ""} (${submittedData.format || ""})`,
+                        fee: `$${(submittedData.totalFee || 1200).toLocaleString()} USD`,
+                        message: `Registered delegate clicked "Send to WhatsApp" for Registration Ref ${submittedData.referenceNo} (${submittedData.participantsCount || 1} participant(s)).`,
+                      });
+                    }}
                     className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5"
                   >
                     <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -334,8 +355,26 @@ export default function Register() {
                     href={`mailto:info@ecasiafrica.org?subject=${encodeURIComponent(
                       `New Course Registration Ref: ${submittedData.referenceNo} - ${submittedData.eventTitle}`
                     )}&body=${encodeURIComponent(
-                      `Registration Reference: ${submittedData.referenceNo}\nCourse: ${submittedData.eventTitle}\nParticipant: ${submittedData.title} ${submittedData.firstName} ${submittedData.middleName || ''} ${submittedData.lastName}\nJob Title: ${submittedData.jobTitle || 'N/A'}\nOrganisation: ${submittedData.organisation} (${submittedData.country})\nPhone: ${submittedData.phone}\nPersonal Email: ${submittedData.personalEmail}\nOfficial Email: ${submittedData.officialEmail || 'N/A'}\nInvoice To: ${submittedData.invoiceTo}\nNumber of Participants: ${submittedData.participantsCount}\nTotal Fee: ${submittedData.totalFee}\nAccommodation: ${submittedData.accommodation}\nAirport Transfer: ${submittedData.airportTransfer}\nSafari Tour: ${submittedData.safariTour}\n\nPlease issue proforma invoice and letter of invitation.`
+                      `Registration Reference: ${submittedData.referenceNo}\nCourse: ${submittedData.eventTitle}\nParticipant: ${submittedData.title} ${submittedData.firstName} ${submittedData.middleName || ''} ${submittedData.lastName}\nJob Title: ${submittedData.jobTitle || 'N/A'}\nOrganisation: ${submittedData.organisation} (${submittedData.country})\nPhone: ${submittedData.dialCode || ''} ${submittedData.phoneNumber || ''}\nPersonal Email: ${submittedData.personalEmail}\nOfficial Email: ${submittedData.officialEmail || 'N/A'}\nInvoice To: ${submittedData.invoiceTo}\nNumber of Participants: ${submittedData.participantsCount}\nTotal Fee: $${submittedData.totalFee}\nAccommodation: ${submittedData.needAccommodation || 'No'}\nAirport Transfer: ${submittedData.needAirportTransfer || 'No'}\nSafari Tour: ${submittedData.needSafariTour || 'No'}\n\nPlease issue proforma invoice and letter of invitation.`
                     )}`}
+                    onClick={() => {
+                      adminRegistrationService.addInquiry({
+                        channel: "Email",
+                        inquiryType: "Registration Follow-Up (Email)",
+                        referenceNo: `${submittedData.referenceNo}-EM`,
+                        fullName: `${submittedData.title || ""} ${submittedData.firstName || ""} ${submittedData.lastName || ""}`.trim(),
+                        email: submittedData.officialEmail || submittedData.personalEmail || "",
+                        phone: `${submittedData.dialCode || ""} ${submittedData.phoneNumber || ""}`.trim(),
+                        organisation: submittedData.organisation || "",
+                        country: submittedData.country || "Kenya",
+                        courseTitle: submittedData.eventTitle || "",
+                        courseCode: submittedData.scheduleId || "",
+                        cohortDates: submittedData.durationText || "",
+                        venue: `${submittedData.venue || ""} (${submittedData.format || ""})`,
+                        fee: `$${(submittedData.totalFee || 1200).toLocaleString()} USD`,
+                        message: `Registered delegate clicked "Send via Email" for Registration Ref ${submittedData.referenceNo} (${submittedData.participantsCount || 1} participant(s)).`,
+                      });
+                    }}
                     className="inline-flex items-center gap-1.5 bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5"
                   >
                     <Mail className="w-4 h-4 text-white" />
@@ -344,11 +383,11 @@ export default function Register() {
 
                   <button
                     type="button"
-                    onClick={() => window.print()}
+                    onClick={() => printRegistrationVoucher(submittedData)}
                     className="inline-flex items-center gap-1.5 bg-[#032e42] hover:bg-[#1e73be] text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer"
                   >
                     <Printer className="w-4 h-4" />
-                    Print Summary
+                    Print Registration Voucher
                   </button>
 
                   <button
@@ -898,7 +937,9 @@ export default function Register() {
         </div>
       </main>
 
-      <Footer />
+      <div className="print:hidden">
+        <Footer />
+      </div>
     </div>
   );
 }

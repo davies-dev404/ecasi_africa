@@ -12,6 +12,7 @@ import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { dataService } from '@/lib/dataService';
+import { adminRegistrationService } from '@/services/adminRegistrationService';
 
 /* ── Visually verified course featured images ── */
 const courseFeaturedImages = {
@@ -1510,6 +1511,12 @@ export default function ExecutiveTraining() {
     cohortFormat: '',
     cohortFee: '',
   });
+  const [inquiryContact, setInquiryContact] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    organisation: '',
+  });
 
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -1679,6 +1686,22 @@ export default function ExecutiveTraining() {
     const fee = modalConfig.cohortFee;
     const code = modalConfig.courseCode;
 
+    // Record inquiry in Msimamizi Admin Portal
+    adminRegistrationService.addInquiry({
+      channel: channel === 'whatsapp' ? 'WhatsApp' : 'Email',
+      inquiryType: isCustomInHouse ? 'In-House Training Proposal' : 'Course Inquiry',
+      fullName: inquiryContact.fullName.trim() || 'Website Visitor (Direct Inquiry)',
+      email: inquiryContact.email.trim(),
+      phone: inquiryContact.phone.trim(),
+      organisation: inquiryContact.organisation.trim(),
+      courseTitle,
+      courseCode: code,
+      cohortDates: dates,
+      venue: `${venue || 'Nairobi / Online'}${modalConfig.cohortFormat ? ` (${modalConfig.cohortFormat})` : ''}`,
+      fee,
+      message: `${isCustomInHouse ? 'Tailored In-House Training Proposal' : 'Course Admission & Proforma Inquiry'} initiated via ${channel === 'whatsapp' ? 'WhatsApp' : 'Email'} for "${courseTitle}" (${dates || '2026 Intake'}).`,
+    });
+
     closeModal();
 
     if (channel === 'whatsapp') {
@@ -1689,12 +1712,13 @@ export default function ExecutiveTraining() {
         dates,
         venue,
         fee,
+        contact: inquiryContact,
       });
 
       const waUrl = `https://wa.me/254728925306?text=${encodeURIComponent(msg)}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
-      setToastMessage(`Opening WhatsApp to inquire about "${courseTitle}"...`);
-    } else if (channel === 'email') {
+      setToastMessage(`Inquiry recorded & opening WhatsApp for "${courseTitle}"...`);
+    } else if (channel === 'email' || channel === 'mailto') {
       const subject = isCustomInHouse
         ? `Official Inquiry: Tailored In-House Training — ${courseTitle}`
         : `Executive Training Inquiry & Proforma Invoice Request — ${courseTitle}`;
@@ -1707,12 +1731,18 @@ export default function ExecutiveTraining() {
         cohortVenue: venue,
         cohortFormat: modalConfig.cohortFormat,
         cohortFee: fee,
+        contact: inquiryContact,
       });
 
-      // Direct Gmail compose web link:
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=info@ecasiafrica.org&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-      window.open(gmailUrl, '_blank', 'noopener,noreferrer');
-      setToastMessage(`Opening Gmail with corporate inquiry template...`);
+      if (channel === 'mailto') {
+        window.location.href = `mailto:info@ecasiafrica.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+        setToastMessage(`Inquiry recorded & opening email client...`);
+      } else {
+        // Direct Gmail compose web link:
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=info@ecasiafrica.org&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+        window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+        setToastMessage(`Inquiry recorded & opening Gmail with corporate inquiry template...`);
+      }
     }
 
     setTimeout(() => {
@@ -1722,10 +1752,24 @@ export default function ExecutiveTraining() {
 
   const handleModalSubmit = (e) => {
     e.preventDefault();
-    closeModal();
     if (modalConfig.type === 'calendar') {
+      adminRegistrationService.addInquiry({
+        channel: 'Calendar Download',
+        inquiryType: '2026 Training Calendar Download',
+        fullName: inquiryContact.fullName.trim() || 'Website Visitor',
+        email: inquiryContact.email.trim(),
+        phone: inquiryContact.phone.trim(),
+        organisation: inquiryContact.organisation.trim(),
+        courseTitle: modalConfig.courseTitle || '2026 ECAS Institute Training Calendar',
+        cohortDates: '2026 Full Academic Year',
+        venue: 'All Training Hubs & Online',
+        message: 'Downloaded the 2026 ECAS Institute Executive Training Calendar PDF.',
+      });
+      closeModal();
       setToastMessage(`Thank you! Your 2026 ECAS Institute Training Calendar is downloading now.`);
       window.open('/courses/ECASI-BROCHURE.pdf', '_blank', 'noopener,noreferrer');
+    } else {
+      closeModal();
     }
     setTimeout(() => {
       setToastMessage(null);
@@ -2282,7 +2326,7 @@ export default function ExecutiveTraining() {
         </main>
 
         {/* Interactive Popup Modal & Toast */}
-        {renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handleInquiryAction, toastMessage)}
+        {renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handleInquiryAction, toastMessage, inquiryContact, setInquiryContact)}
         <Footer />
       </div>
     );
@@ -2960,7 +3004,7 @@ export default function ExecutiveTraining() {
       </main>
 
       {/* Interactive Popup Modal & Toast */}
-      {renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handleInquiryAction, toastMessage)}
+      {renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handleInquiryAction, toastMessage, inquiryContact, setInquiryContact)}
       <Footer />
     </div>
   );
@@ -2975,8 +3019,13 @@ function buildCorporateEmailTemplate({
   cohortVenue = '',
   cohortFormat = '',
   cohortFee = '',
+  contact = {},
 }) {
   const isCustomInHouse = type === 'inhouse';
+  const orgStr = contact?.organisation || '[Enter Ministry / Organization / Company Name]';
+  const nameStr = contact?.fullName || '[Enter Participant Full Name]';
+  const emailStr = contact?.email || '[Enter Corporate Email Address]';
+  const phoneStr = contact?.phone || '[Enter Mobile / WhatsApp Number]';
 
   if (isCustomInHouse) {
     return [
@@ -2999,11 +3048,10 @@ function buildCorporateEmailTemplate({
       '══════════════════════════════════════════════════════════',
       'INSTITUTIONAL & CONTACT DETAILS',
       '══════════════════════════════════════════════════════════',
-      '• Sponsoring Organization:  [Enter Ministry / Organization / Company Name]',
-      '• Department / Division:    [Enter Department or Unit]',
-      '• Contact Person & Title:   [Enter Full Name and Official Designation]',
-      '• Official Work Email:      [Enter Corporate / Institutional Email]',
-      '• Telephone / WhatsApp:     [Enter Direct Phone Number]',
+      `• Sponsoring Organization:  ${orgStr}`,
+      `• Contact Person & Title:   ${nameStr}`,
+      `• Official Work Email:      ${emailStr}`,
+      `• Telephone / WhatsApp:     ${phoneStr}`,
       '• Estimated Participant Count: [e.g. 5 to 25 Delegates]',
       '',
       '══════════════════════════════════════════════════════════',
@@ -3019,10 +3067,9 @@ function buildCorporateEmailTemplate({
       '',
       'Yours faithfully,',
       '',
-      '[Your Full Name]',
-      '[Your Job Title]',
-      '[Your Organization / Ministry / Company]',
-      '[Your Direct Telephone Number]'
+      nameStr,
+      orgStr,
+      phoneStr
     ].filter(Boolean).join('\n');
   }
 
@@ -3047,11 +3094,10 @@ function buildCorporateEmailTemplate({
     '══════════════════════════════════════════════════════════',
     'DELEGATE & SPONSOR INFORMATION',
     '══════════════════════════════════════════════════════════',
-    '• Sponsoring Organization:  [Enter Ministry / Corporate / NGO / Self]',
-    '• Nominated Delegate Name:  [Enter Participant Full Name]',
-    '• Designation / Job Title:  [Enter Current Professional Title]',
-    '• Official Work Email:      [Enter Corporate Email Address]',
-    '• Contact Telephone:        [Enter Mobile / WhatsApp Number]',
+    `• Sponsoring Organization:  ${orgStr}`,
+    `• Nominated Delegate Name:  ${nameStr}`,
+    `• Official Work Email:      ${emailStr}`,
+    `• Contact Telephone:        ${phoneStr}`,
     '• Number of Participants:   [e.g. 1 Delegate / Group Booking]',
     '',
     '══════════════════════════════════════════════════════════',
@@ -3067,10 +3113,9 @@ function buildCorporateEmailTemplate({
     '',
     'Yours faithfully,',
     '',
-    '[Your Full Name]',
-    '[Your Job Title]',
-    '[Your Organization / Ministry / Company]',
-    '[Your Telephone Number]'
+    nameStr,
+    orgStr,
+    phoneStr
   ].filter(Boolean).join('\n');
 }
 
@@ -3081,8 +3126,16 @@ function buildCorporateWhatsAppMessage({
   dates = '',
   venue = '',
   fee = '',
+  contact = {},
 }) {
   const isCustomInHouse = type === 'inhouse';
+  const contactLines = [
+    contact?.fullName ? `• *Name:* ${contact.fullName}` : null,
+    contact?.organisation ? `• *Organization:* ${contact.organisation}` : null,
+    contact?.email ? `• *Email:* ${contact.email}` : null,
+    contact?.phone ? `• *Phone:* ${contact.phone}` : null,
+  ].filter(Boolean);
+
   if (isCustomInHouse) {
     return [
       '*ECAS INSTITUTE — IN-HOUSE TRAINING INQUIRY*',
@@ -3094,6 +3147,7 @@ function buildCorporateWhatsAppMessage({
       code ? `• *Course Code:* ${code}` : null,
       dates ? `• *Preferred Timeline:* ${dates}` : null,
       venue ? `• *Preferred Venue:* ${venue}` : null,
+      ...contactLines,
       '',
       'Kindly share your customized technical syllabus, trainer profiles, and proforma quotation for institutional review.',
       '',
@@ -3112,6 +3166,7 @@ function buildCorporateWhatsAppMessage({
     dates ? `• *Intake Dates:* ${dates}` : null,
     venue ? `• *Venue:* ${venue}` : null,
     fee ? `• *Tuition Fee:* ${fee}` : null,
+    ...contactLines,
     '',
     'Kindly share the complete course curriculum, official proforma invoice, and registration instructions.',
     '',
@@ -3121,7 +3176,15 @@ function buildCorporateWhatsAppMessage({
 
 
 /* ── Shared Modal & Toast Renderer (Devimpact #pum-35380 & .enquiry-overlay style) ── */
-function renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handleInquiryAction, toastMessage) {
+function renderModalsAndToast(
+  modalConfig,
+  closeModal,
+  handleModalSubmit,
+  handleInquiryAction,
+  toastMessage,
+  inquiryContact = { fullName: '', email: '', phone: '', organisation: '' },
+  setInquiryContact = () => {}
+) {
   return (
     <>
       {modalConfig.isOpen && (
@@ -3174,6 +3237,50 @@ function renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handle
                 </div>
               )}
 
+              {/* Delegate Contact Details (Recorded in Msimamizi Portal) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Your Full Name</label>
+                  <input
+                    type="text"
+                    value={inquiryContact.fullName}
+                    onChange={(e) => setInquiryContact({ ...inquiryContact, fullName: e.target.value })}
+                    placeholder="e.g. Dr. Jane Mwangi"
+                    className="w-full h-9 px-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-[#008000]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Official Email</label>
+                  <input
+                    type="email"
+                    value={inquiryContact.email}
+                    onChange={(e) => setInquiryContact({ ...inquiryContact, email: e.target.value })}
+                    placeholder="name@organization.org"
+                    className="w-full h-9 px-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-[#008000]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Phone / WhatsApp</label>
+                  <input
+                    type="text"
+                    value={inquiryContact.phone}
+                    onChange={(e) => setInquiryContact({ ...inquiryContact, phone: e.target.value })}
+                    placeholder="+254 7..."
+                    className="w-full h-9 px-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-[#008000]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Organization / Ministry</label>
+                  <input
+                    type="text"
+                    value={inquiryContact.organisation}
+                    onChange={(e) => setInquiryContact({ ...inquiryContact, organisation: e.target.value })}
+                    placeholder="Organization Name"
+                    className="w-full h-9 px-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-[#008000]"
+                  />
+                </div>
+              </div>
+
               {modalConfig.type === 'calendar' ? (
                 <form onSubmit={handleModalSubmit}>
                   <p className="text-sm text-slate-600 mb-4 leading-relaxed">
@@ -3184,11 +3291,11 @@ function renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handle
                   </button>
                 </form>
               ) : (
-                <div className="py-2">
+                <div className="py-1">
                   <p className="text-sm font-semibold text-[#032e42] mb-1">
                     How would you like to inquire about this course?
                   </p>
-                  <p className="text-xs text-slate-600 mb-5 leading-relaxed">
+                  <p className="text-xs text-slate-600 mb-4 leading-relaxed">
                     Choose <strong>WhatsApp</strong> for immediate chat with our admissions team or <strong>Email</strong> to receive the full syllabus, quotation, and official proforma invoice.
                   </p>
 
@@ -3197,10 +3304,10 @@ function renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handle
                     <button
                       type="button"
                       onClick={() => handleInquiryAction('whatsapp')}
-                      className="group flex flex-col items-center justify-center p-5 rounded-xl border-2 border-[#25D366] bg-green-50/50 hover:bg-[#25D366] text-[#032e42] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer text-center"
+                      className="group flex flex-col items-center justify-center p-4 rounded-xl border-2 border-[#25D366] bg-green-50/50 hover:bg-[#25D366] text-[#032e42] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer text-center"
                     >
-                      <div className="w-12 h-12 rounded-full bg-[#25D366] text-white group-hover:bg-white group-hover:text-[#25D366] flex items-center justify-center mb-2.5 transition-colors shadow-sm">
-                        <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                      <div className="w-11 h-11 rounded-full bg-[#25D366] text-white group-hover:bg-white group-hover:text-[#25D366] flex items-center justify-center mb-2 transition-colors shadow-sm">
+                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                           <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.174.232-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.42-.101.825zM12.004 2C6.48 2 2 6.48 2 12.008c0 1.947.562 3.766 1.533 5.309L2 22.5l5.347-1.401A9.957 9.957 0 0012.004 22c5.523 0 10.004-4.48 10.004-9.992C22.008 6.48 11.527 2 12.004 2z"/>
                         </svg>
                       </div>
@@ -3215,37 +3322,23 @@ function renderModalsAndToast(modalConfig, closeModal, handleModalSubmit, handle
                         onClick={() => handleInquiryAction('email')}
                         className="group flex flex-col items-center justify-center p-4 rounded-xl border-2 border-[#008000] bg-emerald-50/50 hover:bg-[#008000] text-[#032e42] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer text-center h-full"
                       >
-                        <div className="w-12 h-12 rounded-full bg-[#008000] text-white group-hover:bg-white group-hover:text-[#008000] flex items-center justify-center mb-2 transition-colors shadow-sm">
-                          <Mail className="w-6 h-6 stroke-[2.2]" />
+                        <div className="w-11 h-11 rounded-full bg-[#008000] text-white group-hover:bg-white group-hover:text-[#008000] flex items-center justify-center mb-2 transition-colors shadow-sm">
+                          <Mail className="w-5 h-5 stroke-[2.2]" />
                         </div>
                         <span className="font-bold text-base leading-snug">Inquire via Gmail</span>
                         <span className="text-[11px] opacity-80 mt-0.5">Opens Gmail compose</span>
                       </button>
-                      <a
-                        href={`mailto:info@ecasiafrica.org?subject=${encodeURIComponent(
-                          modalConfig.type === 'inhouse'
-                            ? `Official Inquiry: Tailored In-House Training — ${modalConfig.courseTitle || 'Executive Training'}`
-                            : `Executive Training Inquiry & Proforma Invoice Request — ${modalConfig.courseTitle || 'Executive Training'}`
-                        )}&body=${encodeURIComponent(
-                          buildCorporateEmailTemplate({
-                            type: modalConfig.type,
-                            courseTitle: modalConfig.courseTitle || 'Executive Training Programme',
-                            courseCode: modalConfig.courseCode,
-                            cohortDates: modalConfig.cohortDates,
-                            cohortVenue: modalConfig.cohortVenue,
-                            cohortFormat: modalConfig.cohortFormat,
-                            cohortFee: modalConfig.cohortFee,
-                          })
-                        )}`}
-                        onClick={closeModal}
-                        className="text-center text-[11px] text-slate-500 hover:text-[#008000] hover:underline py-0.5"
+                      <button
+                        type="button"
+                        onClick={() => handleInquiryAction('mailto')}
+                        className="text-center text-[11px] text-slate-500 hover:text-[#008000] hover:underline py-0.5 cursor-pointer"
                       >
                         or open default Mail app
-                      </a>
+                      </button>
                     </div>
                   </div>
 
-                  <div className="mt-5 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
                     <span>Admissions Email: <strong>info@ecasiafrica.org</strong></span>
                     <span>Direct Call/WhatsApp: <strong>+254 728 925 306</strong></span>
                   </div>

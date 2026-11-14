@@ -2,15 +2,28 @@
 // Real-time persistent data service for Course Registrations, Corporate Quotes & Portal Analytics
 
 const STORAGE_KEY = 'ecasi_course_registrations_live';
+const INQUIRIES_KEY = 'ecasi_course_inquiries_live';
 const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
 const ADMIN_TOKEN_KEY = 'ecasi_msimamizi_token';
 const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
 const ADMIN_CURRENT_USER_KEY = 'ecasi_msimamizi_user';
 const COURSES_KEY = 'ecasi_courses_v2026_v3';
 
+export function normalizeAdminEmail(raw) {
+  let clean = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^[.\s]+|[.\s]+$/g, '');
+  if (clean && !clean.includes('@')) {
+    clean = `${clean}@ecasiafrica.org`;
+  }
+  return clean;
+}
+
 // Non-reversible local digest so plaintext passwords are never stored in browser storage
 function computeCredentialDigest(email, password) {
-  const input = `ecasi_msimamizi_v2:${String(email).trim().toLowerCase()}:${String(password).trim()}`;
+  const normEmail = normalizeAdminEmail(email);
+  const input = `ecasi_msimamizi_v2:${normEmail}:${String(password).trim()}`;
   let h1 = 0xdeadbeef ^ input.length;
   let h2 = 0x41c6ce57 ^ input.length;
   for (let i = 0; i < input.length; i++) {
@@ -71,6 +84,10 @@ class AdminRegistrationService {
       if (!stored) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
       }
+      const storedInq = localStorage.getItem(INQUIRIES_KEY);
+      if (!storedInq) {
+        localStorage.setItem(INQUIRIES_KEY, JSON.stringify([]));
+      }
       this.syncFromServer();
     } catch (e) {
       console.warn('LocalStorage error initializing admin registrations:', e);
@@ -100,7 +117,7 @@ class AdminRegistrationService {
       const json = await res.json();
       if (!json?.success || !json?.data) return;
 
-      const { registrations, courses, accounts } = json.data;
+      const { registrations, inquiries, courses, accounts } = json.data;
 
       if (Array.isArray(registrations) && registrations.length > 0) {
         const localRegs = this.getRegistrations();
@@ -116,6 +133,20 @@ class AdminRegistrationService {
         window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       }
 
+      if (Array.isArray(inquiries) && inquiries.length > 0) {
+        const localInq = this.getInquiries();
+        const mergedInqMap = new Map();
+        [...inquiries, ...localInq].forEach((inq) => {
+          const key = inq.id || inq.referenceNo;
+          if (key && !mergedInqMap.has(key)) {
+            mergedInqMap.set(key, inq);
+          }
+        });
+        const mergedInq = Array.from(mergedInqMap.values());
+        localStorage.setItem(INQUIRIES_KEY, JSON.stringify(mergedInq));
+        window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+      }
+
       if (courses && typeof courses === 'object' && Object.keys(courses).length > 0) {
         const localCoursesRaw = localStorage.getItem(COURSES_KEY);
         const localCourses = localCoursesRaw ? JSON.parse(localCoursesRaw) : {};
@@ -126,11 +157,23 @@ class AdminRegistrationService {
 
       if (Array.isArray(accounts) && accounts.length > 0) {
         const localAccounts = this.getAdminAccounts();
-        const mergedAccounts = localAccounts.map((loc) => {
-          const remote = accounts.find((a) => (a.email || '').toLowerCase() === loc.email.toLowerCase());
-          return remote ? { ...loc, role: remote.role || loc.role, updatedAt: remote.updatedAt } : loc;
+        const accountMap = new Map();
+        localAccounts.forEach((loc) => {
+          const em = normalizeAdminEmail(loc.email);
+          if (em) accountMap.set(em, { ...loc, email: em });
         });
-        localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(mergedAccounts));
+        accounts.forEach((rem) => {
+          const em = normalizeAdminEmail(rem.email);
+          if (!em) return;
+          const existing = accountMap.get(em) || { email: em, role: 'Administrator' };
+          accountMap.set(em, {
+            ...existing,
+            role: rem.role || existing.role || 'Administrator',
+            credentialDigest: rem.credentialDigest || existing.credentialDigest,
+            updatedAt: rem.updatedAt || existing.updatedAt,
+          });
+        });
+        localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(Array.from(accountMap.values())));
       }
     } catch {
       // Ignore network sync errors
@@ -310,9 +353,154 @@ class AdminRegistrationService {
     document.body.removeChild(link);
   }
 
+  // ─── Inquiries & Leads (WhatsApp / Email / In-House / Calendar) ───────────
+  getInquiries() {
+    if (typeof window === 'undefined') return [];
+    try {
+      const data = localStorage.getItem(INQUIRIES_KEY);
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Failed to get inquiries:', e);
+      return [];
+    }
+  }
+
+  addInquiry(inqData) {
+    if (typeof window === 'undefined') return null;
+    try {
+      const existing = this.getInquiries();
+      const newId = `INQ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newRef = inqData.referenceNo || `INQ-${Math.floor(100000 + Math.random() * 900000)}`;
+      const nowIso = new Date().toISOString();
+      const displayDate = new Date().toLocaleString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      const newInquiry = {
+        id: newId,
+        referenceNo: newRef,
+        channel: inqData.channel || 'WhatsApp',
+        inquiryType: inqData.inquiryType || 'Course Inquiry',
+        fullName: inqData.fullName || 'Prospective Delegate',
+        email: inqData.email || '',
+        phone: inqData.phone || '',
+        organisation: inqData.organisation || '',
+        country: inqData.country || 'Kenya',
+        courseTitle: inqData.courseTitle || 'Executive Training Programme',
+        courseCode: inqData.courseCode || '',
+        cohortDates: inqData.cohortDates || 'Flexible 2026 Intake',
+        venue: inqData.venue || 'Nairobi / Online',
+        fee: inqData.fee || '',
+        message: inqData.message || '',
+        status: inqData.status || 'New',
+        adminNotes: inqData.adminNotes || '',
+        createdAt: nowIso,
+        displayDate,
+        ...inqData,
+      };
+
+      const updated = [newInquiry, ...existing];
+      localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
+      pushToServer({ action: 'add_inquiry', inquiry: newInquiry });
+      window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated', { detail: newInquiry }));
+      return newInquiry;
+    } catch (e) {
+      console.error('Failed to record inquiry:', e);
+      return null;
+    }
+  }
+
+  updateInquiry(id, updates) {
+    if (typeof window === 'undefined') return false;
+    try {
+      const existing = this.getInquiries();
+      const updated = existing.map((inq) =>
+        inq.id === id ? { ...inq, ...updates, updatedAt: new Date().toISOString() } : inq
+      );
+      localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
+      pushToServer({ action: 'set_inquiries', inquiries: updated });
+      window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+      return true;
+    } catch (e) {
+      console.error('Failed to update inquiry:', e);
+      return false;
+    }
+  }
+
+  deleteInquiry(id) {
+    if (typeof window === 'undefined') return false;
+    try {
+      const existing = this.getInquiries();
+      const updated = existing.filter((inq) => inq.id !== id);
+      localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
+      pushToServer({ action: 'set_inquiries', inquiries: updated });
+      window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+      return true;
+    } catch (e) {
+      console.error('Failed to delete inquiry:', e);
+      return false;
+    }
+  }
+
+  downloadInquiriesCSV() {
+    const records = this.getInquiries();
+    if (!records || records.length === 0) {
+      alert('No inquiries available to export.');
+      return;
+    }
+    const headers = [
+      'Reference No',
+      'Date',
+      'Channel',
+      'Type',
+      'Status',
+      'Full Name',
+      'Email',
+      'Phone / WhatsApp',
+      'Organization',
+      'Country',
+      'Course Title',
+      'Cohort Dates',
+      'Venue',
+      'Message / Notes',
+    ];
+    const rows = records.map((i) => [
+      i.referenceNo || '',
+      `"${i.displayDate || ''}"`,
+      `"${i.channel || 'WhatsApp'}"`,
+      `"${i.inquiryType || ''}"`,
+      `"${i.status || 'New'}"`,
+      `"${(i.fullName || '').replace(/"/g, '""')}"`,
+      `"${i.email || ''}"`,
+      `"${i.phone || ''}"`,
+      `"${(i.organisation || '').replace(/"/g, '""')}"`,
+      `"${i.country || ''}"`,
+      `"${(i.courseTitle || '').replace(/"/g, '""')}"`,
+      `"${(i.cohortDates || '').replace(/"/g, '""')}"`,
+      `"${(i.venue || '').replace(/"/g, '""')}"`,
+      `"${(i.message || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `ECAS_Portal_Inquiries_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   // Dashboard Aggregates & KPIs
   getKPIs() {
     const list = this.getRegistrations();
+    const inquiries = this.getInquiries();
     const totalRegistrations = list.length;
     const pendingCount = list.filter((r) => r.status === 'Pending').length;
     const confirmedCount = list.filter((r) => r.status === 'Confirmed').length;
@@ -322,6 +510,11 @@ class AdminRegistrationService {
     const paidRevenueUSD = list
       .filter((r) => r.paymentStatus === 'Paid')
       .reduce((acc, cur) => acc + (Number(cur.totalFee) || 0), 0);
+
+    const totalInquiries = inquiries.length;
+    const newInquiriesCount = inquiries.filter((i) => (i.status || 'New') === 'New').length;
+    const whatsappInquiriesCount = inquiries.filter((i) => i.channel === 'WhatsApp').length;
+    const emailInquiriesCount = inquiries.filter((i) => i.channel === 'Email').length;
 
     // Venue breakdown
     const venueMap = {};
@@ -338,19 +531,26 @@ class AdminRegistrationService {
       totalDelegates,
       totalRevenueUSD,
       paidRevenueUSD,
+      totalInquiries,
+      newInquiriesCount,
+      whatsappInquiriesCount,
+      emailInquiriesCount,
       venueBreakdown: venueMap,
     };
   }
 
   // Designated Authorized Administrator Emails for Msimamizi Portal
   isAuthorizedAdminEmail(email) {
-    const clean = (email || '').trim().toLowerCase();
+    const clean = normalizeAdminEmail(email);
+    if (!clean) return false;
     const authorized = [
       'riobag@ecasiafrica.org',
       'acob@ecasiafrica.org',
       'jacob@ecasiafrica.org',
+      'info@ecasiafrica.org',
+      'admin@ecasiafrica.org',
     ];
-    return authorized.includes(clean);
+    return authorized.includes(clean) || clean.endsWith('@ecasiafrica.org');
   }
 
   // Retrieve dynamic administrator accounts from persistent storage (digests only, never plaintext)
@@ -408,7 +608,7 @@ class AdminRegistrationService {
   registerAdmin(email, password, remember = true) {
     if (typeof window === 'undefined') return { success: false, message: 'Browser storage unavailable' };
 
-    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanEmail = normalizeAdminEmail(email);
     const cleanPass = (password || '').trim();
 
     if (!cleanEmail) {
@@ -418,7 +618,7 @@ class AdminRegistrationService {
     if (!this.isAuthorizedAdminEmail(cleanEmail)) {
       return {
         success: false,
-        message: 'Unauthorized email. Msimamizi portal access is restricted to riobag@ecasiafrica.org and acob@ecasiafrica.org.',
+        message: 'Unauthorized email. Msimamizi portal access requires an official @ecasiafrica.org email address.',
       };
     }
 
@@ -431,11 +631,12 @@ class AdminRegistrationService {
 
     try {
       const accounts = this.getAdminAccounts();
-      const existingIdx = accounts.findIndex((a) => a.email.toLowerCase() === cleanEmail);
+      const existingIdx = accounts.findIndex((a) => normalizeAdminEmail(a.email) === cleanEmail);
+      const digest = computeCredentialDigest(cleanEmail, cleanPass);
 
       const userRecord = {
         email: cleanEmail,
-        credentialDigest: computeCredentialDigest(cleanEmail, cleanPass),
+        credentialDigest: digest,
         role: 'Administrator',
         updatedAt: new Date().toISOString(),
       };
@@ -449,8 +650,13 @@ class AdminRegistrationService {
 
       localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
 
-      // Sync with hardened server endpoint (which stores bcrypt hash & issues session token)
-      pushToServer({ action: 'register_admin', email: cleanEmail, password: cleanPass }).then((res) => {
+      // Sync with hardened server endpoint (which stores bcrypt hash & credentialDigest & issues session token)
+      pushToServer({
+        action: 'register_admin',
+        email: cleanEmail,
+        password: cleanPass,
+        credentialDigest: digest,
+      }).then((res) => {
         if (res?.token) {
           this._storeToken(res.token, remember);
           this.syncFromServer();
@@ -488,8 +694,8 @@ class AdminRegistrationService {
     return { email: 'riobag@ecasiafrica.org', role: 'Administrator' };
   }
 
-  login(usernameOrEmail, password, remember = false) {
-    const inputUser = (usernameOrEmail || '').trim().toLowerCase();
+  async login(usernameOrEmail, password, remember = false) {
+    const inputUser = normalizeAdminEmail(usernameOrEmail);
     const inputPass = (password || '').trim();
 
     if (!inputUser || !inputPass) {
@@ -499,7 +705,7 @@ class AdminRegistrationService {
     if (!this.isAuthorizedAdminEmail(inputUser)) {
       return {
         success: false,
-        message: 'Access restricted. Only authorized administrators (riobag@ecasiafrica.org / acob@ecasiafrica.org) may sign in to Msimamizi.',
+        message: 'Access restricted. Please sign in with your official @ecasiafrica.org administrator email.',
       };
     }
 
@@ -507,7 +713,7 @@ class AdminRegistrationService {
     const candidateDigest = computeCredentialDigest(inputUser, inputPass);
 
     // 1. Check registered / custom administrator accounts via non-reversible digest
-    const matched = accounts.find((a) => a.email.toLowerCase() === inputUser);
+    const matched = accounts.find((a) => normalizeAdminEmail(a.email) === inputUser);
     const isMatchedDigest = matched && matched.credentialDigest === candidateDigest;
     const isBootstrapPass = inputPass === 'msimamizi2026' || inputPass === '2026' || inputPass === 'ecasi2026!';
 
@@ -516,7 +722,12 @@ class AdminRegistrationService {
       this._setAuthSession(inputUser, role, remember);
 
       // Obtain server-side session token in background and sync protected records
-      pushToServer({ action: 'login', email: inputUser, password: inputPass }).then((res) => {
+      pushToServer({
+        action: 'login',
+        email: inputUser,
+        password: inputPass,
+        credentialDigest: candidateDigest,
+      }).then((res) => {
         if (res?.token) {
           this._storeToken(res.token, remember);
           this.syncFromServer();
@@ -526,9 +737,47 @@ class AdminRegistrationService {
       return { success: true, user: { email: inputUser, role } };
     }
 
+    // 2. Verify against central server (for accounts created on another browser, device, or domain)
+    const serverRes = await pushToServer({
+      action: 'login',
+      email: inputUser,
+      password: inputPass,
+      credentialDigest: candidateDigest,
+    });
+
+    if (serverRes && serverRes.success) {
+      const role = serverRes.user?.role || matched?.role || 'Administrator';
+      // Persist digest locally for fast subsequent logins
+      const updatedAccounts = [...accounts];
+      const idx = updatedAccounts.findIndex((a) => normalizeAdminEmail(a.email) === inputUser);
+      const record = {
+        email: inputUser,
+        credentialDigest: candidateDigest,
+        role,
+        updatedAt: new Date().toISOString(),
+      };
+      if (idx >= 0) {
+        updatedAccounts[idx] = { ...updatedAccounts[idx], ...record };
+      } else {
+        updatedAccounts.push(record);
+      }
+      try {
+        localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(updatedAccounts));
+      } catch {
+        // ignore
+      }
+
+      if (serverRes.token) {
+        this._storeToken(serverRes.token, remember);
+      }
+      this._setAuthSession(inputUser, role, remember);
+      this.syncFromServer();
+      return { success: true, user: { email: inputUser, role } };
+    }
+
     return {
       success: false,
-      message: 'Invalid administrative password. First time logging in? Click "Create your password" below.',
+      message: 'Invalid administrative password. First time logging in? Click "Create First Password" above to set or reset your password.',
     };
   }
 

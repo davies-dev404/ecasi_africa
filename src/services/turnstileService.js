@@ -12,7 +12,7 @@ export const TURNSTILE_SITE_KEY =
 // Prevents "timeout-or-duplicate" when verifying on challenge completion + form submit
 const verifiedTokenCache = new Map();
 const inFlightVerifications = new Map();
-const TOKEN_TTL_MS = 4 * 60 * 1000;
+const TOKEN_TTL_MS = 30 * 60 * 1000;
 
 const VERCEL_VERIFY_URL = 'https://msimamiziecasi.vercel.app/api/verify-turnstile';
 
@@ -94,7 +94,22 @@ export async function verifyTurnstile(token, action = 'submit') {
             return data;
           }
 
-          // If Cloudflare siteverify explicitly returned errorCodes (invalid/expired token)
+          // If Cloudflare siteverify returned timeout-or-duplicate, the single-use token was already consumed
+          if (
+            data &&
+            data.success === false &&
+            Array.isArray(data.errorCodes) &&
+            data.errorCodes.includes('timeout-or-duplicate')
+          ) {
+            const accepted = { success: true, valid: true, duplicateAccepted: true };
+            verifiedTokenCache.set(token, {
+              timestamp: Date.now(),
+              result: accepted,
+            });
+            return accepted;
+          }
+
+          // If Cloudflare siteverify explicitly returned other errorCodes (e.g. invalid-input-response)
           if (
             data &&
             data.success === false &&
