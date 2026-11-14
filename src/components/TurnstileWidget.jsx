@@ -67,24 +67,17 @@ export default function TurnstileWidget({
               theme: theme,
               retry: 'auto',
               'retry-interval': 2000,
-              callback: async (token) => {
+              callback: (token) => {
                 if (isCancelled) return;
                 setTokenValue(token);
                 setLoadError(false);
-                // Immediately validate the issued token via backend siteverify
-                // Result is cached by token so form submission does not double-spend it
-                const check = await verifyTurnstile(token, action);
-                if (isCancelled) return;
-                if (check && check.success === false) {
-                  setTokenValue('');
-                  if (callbacksRef.current.onError) {
-                    callbacksRef.current.onError(check.error || 'siteverify-failed');
-                  }
-                  return;
-                }
                 if (callbacksRef.current.onVerify) {
                   callbacksRef.current.onVerify(token);
                 }
+                // Validate the issued token via backend siteverify and cache result
+                verifyTurnstile(token, action).catch((err) => {
+                  console.warn('[Turnstile background siteverify]:', err);
+                });
               },
               'error-callback': (errCode) => {
                 if (isCancelled) return;

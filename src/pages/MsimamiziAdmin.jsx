@@ -649,14 +649,17 @@ export default function MsimamiziAdmin() {
     e.preventDefault();
     setAuthError('');
 
-    if (!turnstileVerified && !turnstileToken) {
+    const domToken = e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')?.value || '';
+    const effectiveToken = turnstileToken || domToken;
+
+    if (!turnstileVerified && !effectiveToken) {
       setAuthError('Please complete the Cloudflare Turnstile security verification.');
       return;
     }
 
-    if (turnstileToken) {
+    if (effectiveToken) {
       try {
-        const check = await verifyTurnstile(turnstileToken, 'login');
+        const check = await verifyTurnstile(effectiveToken, 'login');
         if (check && check.success === false) {
           setAuthError(check.error || 'Security verification failed. Please retry.');
           return;
@@ -685,14 +688,17 @@ export default function MsimamiziAdmin() {
       return;
     }
 
-    if (!turnstileVerified && !turnstileToken) {
+    const domToken = e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')?.value || '';
+    const effectiveToken = turnstileToken || domToken;
+
+    if (!turnstileVerified && !effectiveToken) {
       setAuthError('Please complete the Cloudflare Turnstile security verification.');
       return;
     }
 
-    if (turnstileToken) {
+    if (effectiveToken) {
       try {
-        const check = await verifyTurnstile(turnstileToken, 'create_admin');
+        const check = await verifyTurnstile(effectiveToken, 'create_admin');
         if (check && check.success === false) {
           setAuthError(check.error || 'Security verification failed. Please retry.');
           return;

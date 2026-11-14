@@ -138,16 +138,18 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!notARobot) {
+    const domToken = e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')?.value || '';
+    const effectiveToken = turnstileToken || domToken;
+    if (!notARobot && !effectiveToken) {
       setRobotError(true);
       return;
     }
     setRobotError(false);
 
-    if (turnstileToken) {
+    if (effectiveToken) {
       setRobotLoading(true);
       try {
-        const verification = await verifyTurnstile(turnstileToken, 'register');
+        const verification = await verifyTurnstile(effectiveToken, 'register');
         if (verification && verification.success === false) {
           setRobotError(true);
           setRobotLoading(false);

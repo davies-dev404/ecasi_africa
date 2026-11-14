@@ -15,9 +15,9 @@ import { dataService } from '@/lib/dataService';
 
 /* ── Visually verified course featured images ── */
 const courseFeaturedImages = {
-  'energy': '/images/courses/20241003_133952069-1-1024x683.jpg',
-  'climate-smart-forestry': '/images/courses/biodiversity.png',
-  'energy-transition-and-mobility': '/images/courses/energy-transition.png',
+  'energy': '/images/beyond/nairobi_green_city.jpg',
+  'climate-smart-forestry': '/images/programmes/tana_river.png',
+  'energy-transition-and-mobility': '/images/research/evidence_based_research.jpg',
   'agricultural-carbon-credit-markets': '/images/programmes/agriculture_crops.png',
   'agriculture-and-food-systems': '/images/programmes/agriculture_farm.png',
   'an-introduction-to-climate-change-and-human-rights': '/images/Gallery/G0BhQmUXcAAI77B.jpg',
@@ -30,14 +30,14 @@ const courseFeaturedImages = {
   'certified-expert-in-biodiversity-finance': '/images/programmes/ocean_sustainable.png',
   'certified-expert-in-environmental-accounting': '/images/Gallery/1715195548735.jpg',
   'certified-expert-in-sustainable-finance': '/images/Gallery/1714399115076.jpg',
-  'climate-biodiversity-certificate-program': '/images/Gallery/ji.jpg',
+  'climate-biodiversity-certificate-program': '/images/programmes/ocean_sustainable.png',
   'climate-and-health-certificate-course': '/images/Gallery/air_quality_handshake.jpg',
   'climate-change-and-water': '/images/programmes/tana_river.png',
   'human-resources-professional-courses': '/images/courses/target_participants.jpg',
   'green-skills-development': '/images/courses/85079752_1227263344135855_2280708113273192448_n.jpg',
-  'climate-resilient-infrastructure': '/images/research/consultancy.jpg',
+  'climate-resilient-infrastructure': '/images/beyond/nairobi_expressway.jpg',
   'environment-climate-change-courses': '/images/Gallery/jkhjn.jpg',
-  'regional-workshop': '/images/Gallery/1717137013154.jpg',
+  'regional-workshop': '/images/programmes/agriculture_farmers.png',
   'training-on-carbon-markets': '/images/Gallery/1715195547353.jpg',
   'climate-responsive-budgeting-and-strategic-fiscal-management': '/images/Gallery/1732710492385.jpg',
   'strategic-climate-finance-budgeting-tracking-and-performance-reporting': '/images/Gallery/1715195551211.jpg',
@@ -1724,8 +1724,8 @@ export default function ExecutiveTraining() {
   // Resolve image for any course item
   const getCourseImage = (item) => {
     if (!item) return '/images/Gallery/training_workshop_session.jpg';
-    if (item.slug && courseFeaturedImages[item.slug]) return courseFeaturedImages[item.slug];
     if (item.image) return item.image;
+    if (item.slug && courseFeaturedImages[item.slug]) return courseFeaturedImages[item.slug];
     return '/images/Gallery/training_workshop_session.jpg';
   };
 
@@ -2186,6 +2186,11 @@ export default function ExecutiveTraining() {
                               {course.title}
                             </Link>
                           </h3>
+                          {course.summary && (
+                            <p className="text-xs text-slate-600 mt-1 mb-2 line-clamp-2 leading-relaxed">
+                              {course.summary}
+                            </p>
+                          )}
                           <div className="custom-course-meta">
                             {course.category && (
                               <span className="cat-badge">{course.category}</span>

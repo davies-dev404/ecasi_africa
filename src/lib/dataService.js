@@ -22,8 +22,8 @@ const KEYS = {
   POLICY_BRIEFS: 'ecasi_policy_briefs',
   EVENTS: 'ecasi_events',
   NEWS: 'ecasi_news',
-  COURSES: 'ecasi_courses_v2026_v2',
-  COURSES_LINKS: 'ecasi_courses_links_v2026_v2'
+  COURSES: 'ecasi_courses_v2026_v3',
+  COURSES_LINKS: 'ecasi_courses_links_v2026_v3'
 };
 
 const getLocalStorageData = (key) => {
