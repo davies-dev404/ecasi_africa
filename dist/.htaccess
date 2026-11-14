@@ -14,10 +14,14 @@ Options -MultiViews
   RewriteRule ^contact/?$ /index.html [L]
   RewriteRule ^gallery/?$ /index.html [L]
   RewriteRule ^programmes/?$ /index.html [L]
+  RewriteRule ^msimamizi/?$ /index.html [L]
+  RewriteRule ^admin/?$ /index.html [L]
+  RewriteRule ^portal/?$ /index.html [L]
 
   # Route API endpoints cleanly
   RewriteRule ^api/verify-turnstile/?$ /api/verify-turnstile.php [L]
   RewriteRule ^api/verify-recaptcha/?$ /api/verify-recaptcha.php [L]
+  RewriteRule ^api/msimamizi-sync/?$ /api/msimamizi-sync.php [L]
 
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

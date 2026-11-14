@@ -36,6 +36,17 @@ const getLocalStorageData = (key) => {
   }
 };
 
+const syncCoursesToServer = (cachedCourses) => {
+  if (typeof window === 'undefined') return;
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return;
+  fetch('https://ecasiafrica.org/api/msimamizi-sync.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'set_courses', courses: cachedCourses || {} }),
+  }).catch(() => {});
+};
+
 export const dataService = {
   KEYS,
 
@@ -156,6 +167,7 @@ export const dataService = {
       };
 
       localStorage.setItem(KEYS.COURSES, JSON.stringify(cached));
+      syncCoursesToServer(cached);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('ecasi_courses_updated', { detail: { slug: cleanSlug } }));
       }
@@ -190,6 +202,7 @@ export const dataService = {
       };
 
       localStorage.setItem(KEYS.COURSES, JSON.stringify(cached));
+      syncCoursesToServer(cached);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('ecasi_courses_updated', { detail: { slug: cleanSlug } }));
       }
@@ -207,6 +220,7 @@ export const dataService = {
       const cached = getLocalStorageData(KEYS.COURSES) || {};
       delete cached[cleanSlug];
       localStorage.setItem(KEYS.COURSES, JSON.stringify(cached));
+      syncCoursesToServer(cached);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('ecasi_courses_updated', { detail: { slug: cleanSlug } }));
       }

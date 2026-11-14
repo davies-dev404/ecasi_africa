@@ -5,6 +5,29 @@ const STORAGE_KEY = 'ecasi_course_registrations_live';
 const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
 const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
 const ADMIN_CURRENT_USER_KEY = 'ecasi_msimamizi_user';
+const COURSES_KEY = 'ecasi_courses_v2026_v2';
+
+function getSyncUrl() {
+  if (typeof window === 'undefined') return '/api/msimamizi-sync.php';
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return '/api/msimamizi-sync.php';
+  }
+  return 'https://ecasiafrica.org/api/msimamizi-sync.php';
+}
+
+async function pushToServer(payload) {
+  if (typeof window === 'undefined') return;
+  try {
+    await fetch(getSyncUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Offline or local dev fallback: localStorage already updated
+  }
+}
 
 class AdminRegistrationService {
   constructor() {
@@ -18,8 +41,52 @@ class AdminRegistrationService {
       if (!stored) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
       }
+      this.syncFromServer();
     } catch (e) {
       console.warn('LocalStorage error initializing admin registrations:', e);
+    }
+  }
+
+  async syncFromServer() {
+    if (typeof window === 'undefined') return;
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return;
+
+    try {
+      const res = await fetch(getSyncUrl(), { method: 'GET', cache: 'no-store' });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (!json?.success || !json?.data) return;
+
+      const { registrations, courses, accounts } = json.data;
+
+      if (Array.isArray(registrations) && registrations.length > 0) {
+        const localRegs = this.getRegistrations();
+        const mergedMap = new Map();
+        [...registrations, ...localRegs].forEach((r) => {
+          const key = r.id || r.referenceNo;
+          if (key && !mergedMap.has(key)) {
+            mergedMap.set(key, r);
+          }
+        });
+        const merged = Array.from(mergedMap.values());
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
+      }
+
+      if (courses && typeof courses === 'object' && Object.keys(courses).length > 0) {
+        const localCoursesRaw = localStorage.getItem(COURSES_KEY);
+        const localCourses = localCoursesRaw ? JSON.parse(localCoursesRaw) : {};
+        const mergedCourses = { ...courses, ...localCourses };
+        localStorage.setItem(COURSES_KEY, JSON.stringify(mergedCourses));
+        window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
+      }
+
+      if (Array.isArray(accounts) && accounts.length > 0) {
+        localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
+      }
+    } catch {
+      // Ignore network sync errors
     }
   }
 
@@ -57,6 +124,7 @@ class AdminRegistrationService {
 
       const updated = [newRecord, ...existing];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      pushToServer({ action: 'add_registration', registration: newRecord });
 
       // Notify any listening admin tabs/components
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated', { detail: newRecord }));
@@ -74,6 +142,7 @@ class AdminRegistrationService {
       const existing = this.getRegistrations();
       const updated = existing.map((r) => (r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      pushToServer({ action: 'set_registrations', registrations: updated });
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       return true;
     } catch (e) {
@@ -89,6 +158,7 @@ class AdminRegistrationService {
       const existing = this.getRegistrations();
       const updated = existing.filter((r) => r.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      pushToServer({ action: 'set_registrations', registrations: updated });
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       return true;
     } catch (e) {
@@ -102,6 +172,7 @@ class AdminRegistrationService {
     if (typeof window === 'undefined') return false;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      pushToServer({ action: 'set_registrations', registrations: [] });
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       return true;
     } catch (e) {
@@ -324,6 +395,7 @@ class AdminRegistrationService {
       }
 
       localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
+      pushToServer({ action: 'set_accounts', accounts });
 
       // Authenticate session immediately
       this._setAuthSession(cleanEmail, userRecord.role, remember);
