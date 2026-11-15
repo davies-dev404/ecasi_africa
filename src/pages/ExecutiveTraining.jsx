@@ -1434,7 +1434,7 @@ export default function ExecutiveTraining() {
 
   // Safely normalize courses map or array into an array of course objects
   const allCourses = useMemo(() => {
-    const raw = dataService.getCourses();
+    const raw = dataService.getCourses(coursesVersion);
     if (!raw) return [];
     const list = Array.isArray(raw)
       ? raw
@@ -1449,9 +1449,9 @@ export default function ExecutiveTraining() {
   const courseInfo = useMemo(() => {
     if (!slug) return null;
     if (typeof dataService.getCourseBySlug === 'function') {
-      return dataService.getCourseBySlug(slug);
+      return dataService.getCourseBySlug(slug, coursesVersion);
     }
-    const raw = dataService.getCourses();
+    const raw = dataService.getCourses(coursesVersion);
     if (!raw) return null;
     if (Array.isArray(raw)) {
       return raw.find((c) => c?.slug === slug) || null;
@@ -1623,7 +1623,7 @@ export default function ExecutiveTraining() {
       }
       return true;
     });
-  }, [allCourses, selectedCategory, searchQuery, selectedDurations, selectedVenues, selectedFormats]);
+  }, [allCourses, selectedCategory, searchQuery, selectedDurations]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCourses.length / COURSES_PER_PAGE));
   const paginatedCourses = useMemo(() => {

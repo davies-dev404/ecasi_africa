@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-function getTurnstileSecretKey(): string {
+$getTurnstileSecretKey = static function (): string {
     $keysToCheck = ['TURNSTILE_SECRET_KEY'];
     foreach ($keysToCheck as $key) {
         $val = getenv($key);
@@ -76,9 +76,9 @@ function getTurnstileSecretKey(): string {
     }
 
     return '';
-}
+};
 
-function callCloudflareSiteverify(string $secretKey, string $token, string $clientIp): ?array {
+$callCloudflareSiteverify = static function (string $secretKey, string $token, string $clientIp): ?array {
     $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
     $fields = [
         'secret' => $secretKey,
@@ -125,7 +125,7 @@ function callCloudflareSiteverify(string $secretKey, string $token, string $clie
     }
 
     return null;
-}
+};
 
 // Read JSON or form-urlencoded input
 $rawInput = file_get_contents('php://input');
@@ -153,7 +153,7 @@ if (strpos($token, 'dev-') === 0) {
     exit;
 }
 
-$secretKey = getTurnstileSecretKey();
+$secretKey = $getTurnstileSecretKey();
 if ($secretKey === '') {
     // Relay verification to the configured Vercel siteverify service when local .env is not present on cPanel
     $relayUrl = 'https://msimamiziecasi.vercel.app/api/verify-turnstile';
@@ -199,7 +199,7 @@ if ($secretKey === '') {
 $rawIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
 $clientIp = trim(explode(',', (string)$rawIp)[0]);
 
-$result = callCloudflareSiteverify($secretKey, $token, $clientIp);
+$result = $callCloudflareSiteverify($secretKey, $token, $clientIp);
 
 if (is_array($result)) {
     if (!empty($result['success'])) {

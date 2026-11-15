@@ -2864,7 +2864,7 @@ export default function MsimamiziAdmin() {
                                 )}
                                 {inq.message && (
                                   <p className="text-[11px] text-slate-500 italic mt-1 line-clamp-2 bg-slate-50 p-1.5 rounded border border-slate-100">
-                                    "{inq.message}"
+                                    &ldquo;{inq.message}&rdquo;
                                   </p>
                                 )}
                               </td>
