@@ -855,11 +855,11 @@ export default function MsimamiziAdmin() {
     return inquiries.filter((inq) => {
       if (inquirySearch.trim()) {
         const q = inquirySearch.toLowerCase();
-        const sender = (inq.senderName || '').toLowerCase();
+        const sender = (inq.fullName || inq.senderName || '').toLowerCase();
         const org = (inq.organisation || '').toLowerCase();
         const course = (inq.courseTitle || '').toLowerCase();
-        const email = (inq.senderEmail || '').toLowerCase();
-        const phone = (inq.senderPhone || '').toLowerCase();
+        const email = (inq.email || inq.senderEmail || '').toLowerCase();
+        const phone = (inq.phone || inq.senderPhone || '').toLowerCase();
         const ref = (inq.referenceNo || '').toLowerCase();
         if (
           !sender.includes(q) &&
@@ -2784,17 +2784,20 @@ export default function MsimamiziAdmin() {
                         filteredInquiries.map((inq) => {
                           const isWhatsApp = (inq.channel || '').toLowerCase().includes('whatsapp');
                           const isEmail = (inq.channel || '').toLowerCase().includes('email');
-                          const cleanPhone = (inq.senderPhone || '').replace(/[^0-9]/g, '');
+                          const senderName = inq.fullName || inq.senderName || 'Prospective Delegate';
+                          const senderEmail = inq.email || inq.senderEmail || '';
+                          const senderPhone = inq.phone || inq.senderPhone || '';
+                          const cleanPhone = senderPhone.replace(/[^0-9]/g, '');
                           const replyWhatsAppUrl = cleanPhone
                             ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                                `Hello ${inq.senderName || 'Delegate'}, thank you for your inquiry regarding "${inq.courseTitle}" (${inq.referenceNo}) at ECAS Institute.`
+                                `Hello ${senderName}, thank you for your inquiry regarding "${inq.courseTitle}" (${inq.referenceNo}) at ECAS Institute.`
                               )}`
                             : null;
-                          const replyEmailUrl = inq.senderEmail
-                            ? `mailto:${inq.senderEmail}?subject=${encodeURIComponent(
+                          const replyEmailUrl = senderEmail
+                            ? `mailto:${senderEmail}?subject=${encodeURIComponent(
                                 `Re: ECAS Institute Course Inquiry - ${inq.courseTitle} (${inq.referenceNo})`
                               )}&body=${encodeURIComponent(
-                                `Dear ${inq.senderName || 'Delegate'},\n\nThank you for contacting the Environmental Capacities and Sustainability Institute (ECAS) regarding "${inq.courseTitle}".\n\nBest regards,\nTraining Admissions Team\nECAS Institute`
+                                `Dear ${senderName},\n\nThank you for contacting the Environmental Capacities and Sustainability Institute (ECAS) regarding "${inq.courseTitle}".\n\nBest regards,\nTraining Admissions Team\nECAS Institute`
                               )}`
                             : null;
 
@@ -2805,7 +2808,7 @@ export default function MsimamiziAdmin() {
                                   {inq.referenceNo}
                                 </span>
                                 <span className="text-[11px] text-slate-400 block mt-0.5">
-                                  {inq.createdAt ? new Date(inq.createdAt).toLocaleString() : 'Just now'}
+                                  {inq.displayDate || (inq.createdAt ? new Date(inq.createdAt).toLocaleString() : 'Just now')}
                                 </span>
                               </td>
 
@@ -2828,21 +2831,21 @@ export default function MsimamiziAdmin() {
 
                               <td className="py-3.5 px-4 align-top">
                                 <div className="font-bold text-slate-900">
-                                  {inq.senderName || 'Website Visitor'}
+                                  {senderName}
                                 </div>
                                 {inq.organisation && (
                                   <div className="text-[11px] text-slate-600 font-medium">
                                     {inq.organisation}
                                   </div>
                                 )}
-                                {inq.senderEmail && (
+                                {senderEmail && (
                                   <div className="text-[11px] text-blue-700 font-mono mt-0.5">
-                                    {inq.senderEmail}
+                                    {senderEmail}
                                   </div>
                                 )}
-                                {inq.senderPhone && (
+                                {senderPhone && (
                                   <div className="text-[11px] text-emerald-700 font-mono mt-0.5">
-                                    {inq.senderPhone}
+                                    {senderPhone}
                                   </div>
                                 )}
                               </td>

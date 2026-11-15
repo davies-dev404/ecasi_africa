@@ -7,7 +7,8 @@ deployment:
     - /bin/rm -rf $DEPLOYPATH/assets
     - /bin/rm -rf $DEPLOYPATH/contact $DEPLOYPATH/gallery $DEPLOYPATH/msimamizi $DEPLOYPATH/msimamizi.ecasiafrica.org $DEPLOYPATH/contact.html $DEPLOYPATH/gallery.html $DEPLOYPATH/contact.php $DEPLOYPATH/gallery.php
 
-    # 2. Deploy production build to shared Document Root (/home/ecasorke/public_html)
+    # 2. Deploy production build & public assets to shared Document Root (/home/ecasorke/public_html)
     #    Serves both https://ecasiafrica.org and https://msimamizi.ecasiafrica.org
+    - /bin/cp -R public/* $DEPLOYPATH/
     - /bin/cp -R dist/* $DEPLOYPATH/
-    - /bin/cp dist/.htaccess $DEPLOYPATH/ 2>/dev/null || /bin/cp public/.htaccess $DEPLOYPATH/
+    - /bin/cp public/.htaccess $DEPLOYPATH/
