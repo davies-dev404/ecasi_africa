@@ -154,6 +154,7 @@ function validateAdminToken(array &$store, string $token): ?string {
             continue;
         }
         if (hash_equals($tokHash, hash('sha256', $token))) {
+            $store['sessions'][$tokHash]['expiresAt'] = $now + 1200; // Sliding 20-minute idle timeout
             return $session['email'] ?? null;
         }
     }
@@ -176,7 +177,7 @@ function issueAdminToken(array &$store, string $email): string {
     $store['sessions'][$tokHash] = [
         'email' => $email,
         'issuedAt' => $now,
-        'expiresAt' => $now + (86400 * 7), // 7 days
+        'expiresAt' => $now + 1200, // 20 minutes max idle expiry
         'ip' => getClientIp(),
     ];
     return $rawToken;
@@ -473,6 +474,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     // Only authenticated administrators receive registrations & inquiries (PII)
     if ($scope === 'admin' && $adminEmail !== null) {
+        writeStore($storeFile, $store); // Persist sliding 20-minute session activity window
         $publicAccounts = array_map(function ($acc) {
             return [
                 'email' => $acc['email'] ?? '',

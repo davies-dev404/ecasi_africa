@@ -60,10 +60,12 @@ export default function MsimamiziAdmin() {
   const [createEmail, setCreateEmail] = useState('');
   const [createPassword, setCreatePassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [authRemember, setAuthRemember] = useState(true);
   const [authError, setAuthError] = useState('');
   const [turnstileVerified, setTurnstileVerified] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
+  const [idleRemainingSec, setIdleRemainingSec] = useState(() =>
+    Math.ceil(adminRegistrationService.getRemainingIdleMs() / 1000)
+  );
 
   // Dynamic resolution of public website link (handles subdomains vs main domain vs localhost)
   const publicSiteUrl = useMemo(() => {
@@ -771,10 +773,11 @@ export default function MsimamiziAdmin() {
       }
     }
 
-    const result = await adminRegistrationService.login(authEmail, authPassword, authRemember);
+    const result = await adminRegistrationService.login(authEmail, authPassword);
     if (result.success) {
       setCurrentUser(result.user);
       setIsAuthenticated(true);
+      setIdleRemainingSec(1200);
       loadData();
     } else {
       setAuthError(result.message || 'Invalid administrative credentials');
@@ -811,21 +814,77 @@ export default function MsimamiziAdmin() {
       }
     }
 
-    const result = adminRegistrationService.registerAdmin(createEmail, createPassword, authRemember);
+    const result = adminRegistrationService.registerAdmin(createEmail, createPassword);
     if (result.success) {
       setCurrentUser(result.user);
       setIsAuthenticated(true);
+      setIdleRemainingSec(1200);
       showToast('Administrator credentials created successfully! Welcome to Msimamizi.');
     } else {
       setAuthError(result.message);
     }
   };
 
-  // Handle Logout
-  const handleLogout = () => {
+  // Handle Logout & Idle Expiry
+  const handleLogout = (expiredByIdle = false) => {
     adminRegistrationService.logout();
     setIsAuthenticated(false);
+    setAuthPassword('');
+    setTurnstileVerified(false);
+    setTurnstileToken('');
+    if (expiredByIdle) {
+      setAuthError('For your security, your Msimamizi session was locked after 20 minutes of inactivity. Please sign in again.');
+    }
   };
+
+  // Strict 20-minute idle auto-logout monitor (checks expiration BEFORE renewing activity)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    adminRegistrationService.touchSessionActivity();
+    let lastTouchAt = Date.now();
+
+    const enforceOrTouchActivity = () => {
+      if (adminRegistrationService.isSessionIdleExpired()) {
+        handleLogout(true);
+        return;
+      }
+      const now = Date.now();
+      if (now - lastTouchAt >= 4000) {
+        adminRegistrationService.touchSessionActivity();
+        lastTouchAt = now;
+        setIdleRemainingSec(Math.ceil(adminRegistrationService.getRemainingIdleMs() / 1000));
+      }
+    };
+
+    const handleVisibilityOrFocus = () => {
+      if (adminRegistrationService.isSessionIdleExpired()) {
+        handleLogout(true);
+        return;
+      }
+      setIdleRemainingSec(Math.ceil(adminRegistrationService.getRemainingIdleMs() / 1000));
+    };
+
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach((ev) => window.addEventListener(ev, enforceOrTouchActivity, { passive: true }));
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    const intervalId = window.setInterval(() => {
+      if (adminRegistrationService.isSessionIdleExpired()) {
+        handleLogout(true);
+        return;
+      }
+      setIdleRemainingSec(Math.ceil(adminRegistrationService.getRemainingIdleMs() / 1000));
+    }, 5000);
+
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, enforceOrTouchActivity));
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.clearInterval(intervalId);
+    };
+  }, [isAuthenticated]);
 
   // Filtered registrations
   const filteredRegistrations = useMemo(() => {
@@ -1167,16 +1226,9 @@ export default function MsimamiziAdmin() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-600">
-                  <input
-                    type="checkbox"
-                    checked={authRemember}
-                    onChange={(e) => setAuthRemember(e.target.checked)}
-                    className="rounded text-[#008000] focus:ring-[#008000]"
-                  />
-                  <span>Remember this terminal</span>
-                </label>
+              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2">
+                <Lock className="w-3.5 h-3.5 text-[#008000] shrink-0" />
+                <span>Security: Password required on each new visit &amp; auto-locks after 20 min idle.</span>
               </div>
 
               <div className="pt-1 flex justify-center">
@@ -1292,16 +1344,9 @@ export default function MsimamiziAdmin() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-600">
-                  <input
-                    type="checkbox"
-                    checked={authRemember}
-                    onChange={(e) => setAuthRemember(e.target.checked)}
-                    className="rounded text-[#008000] focus:ring-[#008000]"
-                  />
-                  <span>Remember this terminal</span>
-                </label>
+              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2">
+                <Lock className="w-3.5 h-3.5 text-[#008000] shrink-0" />
+                <span>Session requires fresh sign-in per visit &amp; auto-locks after 20 min idle.</span>
               </div>
 
               <div className="pt-1 flex justify-center">
@@ -1670,7 +1715,7 @@ export default function MsimamiziAdmin() {
 
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => handleLogout(false)}
               title="Logout from Msimamizi"
               className={`p-2 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer ${isSidebarCollapsed ? 'w-10 h-10 flex items-center justify-center' : ''
                 }`}
@@ -1733,6 +1778,20 @@ export default function MsimamiziAdmin() {
           </div>
 
           <div className="flex items-center gap-3">
+            <span
+              className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                idleRemainingSec <= 120
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-slate-100 text-slate-600 border-slate-200'
+              }`}
+              title="Session automatically signs out after 20 minutes of inactivity"
+            >
+              <Clock className="w-3 h-3" />
+              <span>
+                Idle Lock: {Math.floor(idleRemainingSec / 60)}m {String(idleRemainingSec % 60).padStart(2, '0')}s
+              </span>
+            </span>
+
             <button
               type="button"
               onClick={() => {

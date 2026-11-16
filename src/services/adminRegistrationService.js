@@ -9,7 +9,10 @@ const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
 const ADMIN_TOKEN_KEY = 'ecasi_msimamizi_token';
 const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
 const ADMIN_CURRENT_USER_KEY = 'ecasi_msimamizi_user';
+const ADMIN_LAST_ACTIVITY_KEY = 'ecasi_msimamizi_last_activity';
 const COURSES_KEY = 'ecasi_courses_v2026_v3';
+
+export const ADMIN_SESSION_IDLE_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes max idle session
 
 export function normalizeAdminEmail(raw) {
   let clean = String(raw || '')
@@ -40,7 +43,42 @@ function computeCredentialDigest(email, password) {
 
 export function getStoredAdminToken() {
   if (typeof window === 'undefined') return '';
-  return sessionStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+  return sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
+}
+
+function clearLegacyPersistentAuth() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(ADMIN_AUTH_KEY);
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    localStorage.removeItem(ADMIN_CURRENT_USER_KEY);
+    localStorage.removeItem(ADMIN_LAST_ACTIVITY_KEY);
+  } catch {
+    // ignore storage errors
+  }
+}
+
+// Enforce fresh password login whenever the user clicks/navigates to the portal URL (including same-tab URL entry)
+if (typeof window !== 'undefined') {
+  clearLegacyPersistentAuth();
+  try {
+    const navEntries = window.performance?.getEntriesByType?.('navigation');
+    const navType = Array.isArray(navEntries) && navEntries.length > 0 ? navEntries[0].type : '';
+    const isAdminHostOrRoute =
+      window.location.hostname.startsWith('msimamizi.') ||
+      window.location.hostname.includes('msimamizi') ||
+      window.location.pathname.startsWith('/msimamizi') ||
+      window.location.pathname.startsWith('/admin') ||
+      window.location.pathname.startsWith('/portal');
+    if (isAdminHostOrRoute && (navType === 'navigate' || navType === 'back_forward')) {
+      sessionStorage.removeItem(ADMIN_AUTH_KEY);
+      sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+      sessionStorage.removeItem(ADMIN_CURRENT_USER_KEY);
+      sessionStorage.removeItem(ADMIN_LAST_ACTIVITY_KEY);
+    }
+  } catch {
+    // ignore performance API fallback issues
+  }
 }
 
 export function getSyncUrl() {
@@ -805,7 +843,7 @@ class AdminRegistrationService {
   }
 
   // Create first password / register new administrator using authorized email
-  registerAdmin(email, password, remember = true) {
+  registerAdmin(email, password) {
     if (typeof window === 'undefined') return { success: false, message: 'Browser storage unavailable' };
 
     const cleanEmail = normalizeAdminEmail(email);
@@ -858,12 +896,12 @@ class AdminRegistrationService {
         credentialDigest: digest,
       }).then((res) => {
         if (res?.token) {
-          this._storeToken(res.token, remember);
+          this._storeToken(res.token);
           this.syncFromServer();
         }
       });
 
-      this._setAuthSession(cleanEmail, userRecord.role, remember);
+      this._setAuthSession(cleanEmail, userRecord.role);
 
       return {
         success: true,
@@ -876,17 +914,48 @@ class AdminRegistrationService {
     }
   }
 
-  // Admin authentication check
+  // Touch current active session timestamp
+  touchSessionActivity() {
+    if (typeof window === 'undefined') return;
+    if (sessionStorage.getItem(ADMIN_AUTH_KEY) !== 'true') return;
+    try {
+      sessionStorage.setItem(ADMIN_LAST_ACTIVITY_KEY, String(Date.now()));
+    } catch {
+      // ignore
+    }
+  }
+
+  getRemainingIdleMs() {
+    if (typeof window === 'undefined') return 0;
+    const rawLast = Number(sessionStorage.getItem(ADMIN_LAST_ACTIVITY_KEY) || 0);
+    if (!rawLast) return ADMIN_SESSION_IDLE_TIMEOUT_MS;
+    return Math.max(0, ADMIN_SESSION_IDLE_TIMEOUT_MS - (Date.now() - rawLast));
+  }
+
+  isSessionIdleExpired() {
+    if (typeof window === 'undefined') return true;
+    const rawLast = Number(sessionStorage.getItem(ADMIN_LAST_ACTIVITY_KEY) || 0);
+    if (!rawLast) return false;
+    return Date.now() - rawLast >= ADMIN_SESSION_IDLE_TIMEOUT_MS;
+  }
+
+  // Admin authentication check (strict per-tab session + max 20-minute idle expiry; never auto-logs in via localStorage)
   isAuthenticated() {
     if (typeof window === 'undefined') return false;
-    return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true' || localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+    clearLegacyPersistentAuth();
+    if (sessionStorage.getItem(ADMIN_AUTH_KEY) !== 'true') return false;
+    if (this.isSessionIdleExpired()) {
+      this.logout();
+      return false;
+    }
+    return true;
   }
 
   // Retrieve current authenticated admin profile
   getCurrentUser() {
     if (typeof window === 'undefined') return { email: 'riobag@ecasiafrica.org', role: 'Administrator' };
     try {
-      const stored = sessionStorage.getItem(ADMIN_CURRENT_USER_KEY) || localStorage.getItem(ADMIN_CURRENT_USER_KEY);
+      const stored = sessionStorage.getItem(ADMIN_CURRENT_USER_KEY);
       if (stored) return JSON.parse(stored);
     } catch {
       // ignore
@@ -894,7 +963,7 @@ class AdminRegistrationService {
     return { email: 'riobag@ecasiafrica.org', role: 'Administrator' };
   }
 
-  async login(usernameOrEmail, password, remember = false) {
+  async login(usernameOrEmail, password) {
     const inputUser = normalizeAdminEmail(usernameOrEmail);
     const inputPass = (password || '').trim();
 
@@ -919,7 +988,7 @@ class AdminRegistrationService {
 
     if (isMatchedDigest || isBootstrapPass) {
       const role = matched?.role || 'Administrator';
-      this._setAuthSession(inputUser, role, remember);
+      this._setAuthSession(inputUser, role);
 
       // Obtain server-side session token in background and sync protected records
       pushToServer({
@@ -929,7 +998,7 @@ class AdminRegistrationService {
         credentialDigest: candidateDigest,
       }).then((res) => {
         if (res?.token) {
-          this._storeToken(res.token, remember);
+          this._storeToken(res.token);
           this.syncFromServer();
         }
       });
@@ -968,9 +1037,9 @@ class AdminRegistrationService {
       }
 
       if (serverRes.token) {
-        this._storeToken(serverRes.token, remember);
+        this._storeToken(serverRes.token);
       }
-      this._setAuthSession(inputUser, role, remember);
+      this._setAuthSession(inputUser, role);
       this.syncFromServer();
       return { success: true, user: { email: inputUser, role } };
     }
@@ -981,34 +1050,28 @@ class AdminRegistrationService {
     };
   }
 
-  _storeToken(token, remember) {
+  _storeToken(token) {
     if (!token || typeof window === 'undefined') return;
-    if (remember) {
-      localStorage.setItem(ADMIN_TOKEN_KEY, token);
-    } else {
-      sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
-    }
+    clearLegacyPersistentAuth();
+    sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
   }
 
-  _setAuthSession(email, role, remember) {
+  _setAuthSession(email, role) {
+    if (typeof window === 'undefined') return;
+    clearLegacyPersistentAuth();
     const userPayload = JSON.stringify({ email, role });
-    if (remember) {
-      localStorage.setItem(ADMIN_AUTH_KEY, 'true');
-      localStorage.setItem(ADMIN_CURRENT_USER_KEY, userPayload);
-    } else {
-      sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
-      sessionStorage.setItem(ADMIN_CURRENT_USER_KEY, userPayload);
-    }
+    sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+    sessionStorage.setItem(ADMIN_CURRENT_USER_KEY, userPayload);
+    sessionStorage.setItem(ADMIN_LAST_ACTIVITY_KEY, String(Date.now()));
   }
 
   logout() {
     if (typeof window === 'undefined') return;
     sessionStorage.removeItem(ADMIN_AUTH_KEY);
-    localStorage.removeItem(ADMIN_AUTH_KEY);
     sessionStorage.removeItem(ADMIN_TOKEN_KEY);
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
     sessionStorage.removeItem(ADMIN_CURRENT_USER_KEY);
-    localStorage.removeItem(ADMIN_CURRENT_USER_KEY);
+    sessionStorage.removeItem(ADMIN_LAST_ACTIVITY_KEY);
+    clearLegacyPersistentAuth();
   }
 }
 

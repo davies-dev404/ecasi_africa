@@ -48,10 +48,7 @@ const getSyncEndpoint = () => {
 const postAdminSync = (payload) => {
   const endpoint = getSyncEndpoint();
   if (!endpoint) return Promise.resolve(null);
-  const token =
-    sessionStorage.getItem('ecasi_msimamizi_token') ||
-    localStorage.getItem('ecasi_msimamizi_token') ||
-    '';
+  const token = sessionStorage.getItem('ecasi_msimamizi_token') || '';
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
     headers['X-Admin-Token'] = token;
