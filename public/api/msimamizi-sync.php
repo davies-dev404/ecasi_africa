@@ -137,6 +137,7 @@ function writeStore(string $file, array $data): void {
 }
 
 const ADMIN_IDLE_TIMEOUT_SECONDS = 600; // Silent 10-minute idle timeout
+const ADMIN_HEARTBEAT_TTL_SECONDS = 90; // Prune un-heartbeated crashed/closed sessions cleanly
 
 function getBearerToken(): string {
     $header = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
@@ -154,7 +155,27 @@ function pruneExpiredSessions(array &$store, int $now): void {
     foreach ($store['sessions'] as $tokHash => $session) {
         $expiresAt = (int)($session['expiresAt'] ?? 0);
         $closingAt = isset($session['closingAt']) ? (int)$session['closingAt'] : 0;
-        if ($expiresAt < $now || ($closingAt > 0 && ($now - $closingAt) >= 2)) {
+        $lastHeartbeatAt = isset($session['lastHeartbeatAt']) ? (int)$session['lastHeartbeatAt'] : 0;
+        if (
+            $expiresAt < $now ||
+            ($closingAt > 0 && ($now - $closingAt) >= 2) ||
+            $lastHeartbeatAt <= 0 ||
+            ($now - $lastHeartbeatAt) > ADMIN_HEARTBEAT_TTL_SECONDS
+        ) {
+            unset($store['sessions'][$tokHash]);
+        }
+    }
+}
+
+function reclaimSameBrowserDeadSession(array &$store, string $email, string $browserProfileId, int $now): void {
+    pruneExpiredSessions($store, $now);
+    $normTarget = normalizeAdminEmail($email);
+    if ($normTarget === '' || $browserProfileId === '') return;
+    foreach ($store['sessions'] as $tokHash => $session) {
+        if (
+            normalizeAdminEmail($session['email'] ?? '') === $normTarget &&
+            ($session['browserProfileId'] ?? '') === $browserProfileId
+        ) {
             unset($store['sessions'][$tokHash]);
         }
     }
@@ -179,6 +200,7 @@ function validateAdminToken(array &$store, string $token, bool $extendIdle = tru
     foreach ($store['sessions'] as $tokHash => $session) {
         if (hash_equals($tokHash, hash('sha256', $token))) {
             unset($store['sessions'][$tokHash]['closingAt']);
+            $store['sessions'][$tokHash]['lastHeartbeatAt'] = $now;
             if ($extendIdle) {
                 $store['sessions'][$tokHash]['expiresAt'] = $now + ADMIN_IDLE_TIMEOUT_SECONDS;
             }
@@ -188,7 +210,7 @@ function validateAdminToken(array &$store, string $token, bool $extendIdle = tru
     return null;
 }
 
-function issueAdminToken(array &$store, string $email): string {
+function issueAdminToken(array &$store, string $email, string $browserProfileId = ''): string {
     $rawToken = bin2hex(random_bytes(32));
     $tokHash = hash('sha256', $rawToken);
     $now = time();
@@ -196,7 +218,9 @@ function issueAdminToken(array &$store, string $email): string {
     $store['sessions'][$tokHash] = [
         'email' => $email,
         'issuedAt' => $now,
+        'lastHeartbeatAt' => $now,
         'expiresAt' => $now + ADMIN_IDLE_TIMEOUT_SECONDS,
+        'browserProfileId' => sanitizeText($browserProfileId, 80),
         'ip' => getClientIp(),
     ];
     return $rawToken;
@@ -701,7 +725,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        $browserProfileId = sanitizeText($payload['browserProfileId'] ?? '', 80);
+        reclaimSameBrowserDeadSession($store, $email, $browserProfileId, time());
+
         if (hasActiveSessionForEmail($store, $email, time())) {
+            writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'admin_login', $email, 'DENIED_DUPLICATE_SESSION');
             http_response_code(409);
             echo json_encode([
@@ -712,7 +740,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $token = issueAdminToken($store, $email);
+        $token = issueAdminToken($store, $email, $browserProfileId);
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'admin_login', $email, 'SUCCESS');
 
@@ -746,7 +774,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        $browserProfileId = sanitizeText($payload['browserProfileId'] ?? '', 80);
+        reclaimSameBrowserDeadSession($store, $email, $browserProfileId, time());
+
         if (hasActiveSessionForEmail($store, $email, time())) {
+            writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'register_admin', $email, 'DENIED_DUPLICATE_SESSION');
             http_response_code(409);
             echo json_encode([
@@ -783,7 +815,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $store['accounts'] = $accounts;
-        $token = issueAdminToken($store, $email);
+        $token = issueAdminToken($store, $email, $browserProfileId);
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'register_admin', $email, 'SUCCESS');
 
@@ -823,7 +855,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if ($action === 'verify_session') {
+    if ($action === 'verify_session' || $action === 'heartbeat') {
         $token = getBearerToken();
         $adminEmail = validateAdminToken($store, $token, false);
         writeStore($storeFile, $store);

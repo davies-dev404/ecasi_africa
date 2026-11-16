@@ -932,7 +932,7 @@ export default function MsimamiziAdmin() {
         return;
       }
       const now = Date.now();
-      if (now - lastVerifyAt >= 30000) {
+      if (now - lastVerifyAt >= 15000) {
         lastVerifyAt = now;
         adminRegistrationService.verifyServerSession();
       }

@@ -11,6 +11,7 @@ const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
 const ADMIN_CURRENT_USER_KEY = 'ecasi_msimamizi_user';
 const ADMIN_LAST_ACTIVITY_KEY = 'ecasi_msimamizi_last_activity';
 const ADMIN_TAB_ID_KEY = 'ecasi_msimamizi_tab_id';
+const ADMIN_BROWSER_PROFILE_KEY = 'ecasi_msimamizi_browser_id';
 const ADMIN_ACTIVE_SESSIONS_KEY = 'ecasi_msimamizi_active_sessions';
 const COURSES_KEY = 'ecasi_courses_v2026_v3';
 
@@ -59,6 +60,20 @@ function getOrCreateTabSessionId() {
     return tabId;
   } catch {
     return `tab_${Date.now().toString(36)}`;
+  }
+}
+
+function getOrCreateBrowserProfileId() {
+  if (typeof window === 'undefined') return 'bp_ssr';
+  try {
+    let bpId = localStorage.getItem(ADMIN_BROWSER_PROFILE_KEY);
+    if (!bpId) {
+      bpId = `bp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem(ADMIN_BROWSER_PROFILE_KEY, bpId);
+    }
+    return bpId;
+  } catch {
+    return `bp_mem_${Date.now().toString(36)}`;
   }
 }
 
@@ -124,14 +139,22 @@ function sendKeepaliveLifecycle(action, explicitToken = '') {
   if (host === 'localhost' || host === '127.0.0.1') return;
   const token = explicitToken || getStoredAdminToken();
   if (!token) return;
+  const payloadStr = JSON.stringify({ action, token });
   try {
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      const queued = navigator.sendBeacon(
+        getSyncUrl(),
+        new Blob([payloadStr], { type: 'text/plain;charset=UTF-8' })
+      );
+      if (queued) return;
+    }
     fetch(getSyncUrl(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Admin-Token': token,
       },
-      body: JSON.stringify({ action, token }),
+      body: payloadStr,
       keepalive: true,
     }).catch(() => {});
   } catch {
@@ -337,12 +360,20 @@ class AdminRegistrationService {
   async _isAccountLockedInBrowser(email) {
     const normEmail = normalizeAdminEmail(email);
     if (!normEmail) return false;
-    const liveTabOpen = await this._hasLiveTabViaBroadcast(normEmail);
-    if (liveTabOpen) return true;
+    if (this._channel) {
+      const liveTabOpen = await this._hasLiveTabViaBroadcast(normEmail);
+      if (liveTabOpen) return true;
+      // BroadcastChannel verified zero live open tabs in this browser -> purge any orphaned lock
+      const locks = readLocalActiveSessions();
+      if (locks[normEmail]) {
+        delete locks[normEmail];
+        writeLocalActiveSessions(locks);
+      }
+      return false;
+    }
     const locks = readLocalActiveSessions();
     const lock = locks[normEmail];
-    if (!lock) return false;
-    if (lock.tabId === this._tabId) return false;
+    if (!lock || lock.tabId === this._tabId) return false;
     return (lock.expiresAt || 0) > Date.now() && (!lock.closingAt || Date.now() - lock.closingAt < 2000);
   }
 
@@ -1135,6 +1166,7 @@ class AdminRegistrationService {
         email: cleanEmail,
         password: cleanPass,
         credentialDigest: digest,
+        browserProfileId: getOrCreateBrowserProfileId(),
       });
 
       if (!serverRes.unreachable) {
@@ -1216,7 +1248,7 @@ class AdminRegistrationService {
     }
     const token = getStoredAdminToken();
     if (!token) return false;
-    const res = await pushToServerWithStatus({ action: 'verify_session' });
+    const res = await pushToServerWithStatus({ action: 'heartbeat' });
     if (!res.unreachable && res.status === 401) {
       this.logout();
       window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
@@ -1297,6 +1329,7 @@ class AdminRegistrationService {
       email: inputUser,
       password: inputPass,
       credentialDigest: candidateDigest,
+      browserProfileId: getOrCreateBrowserProfileId(),
     });
 
     if (!serverRes.unreachable) {
