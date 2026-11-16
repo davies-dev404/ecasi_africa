@@ -408,32 +408,6 @@ export default function MsimamiziAdmin() {
     document.body.removeChild(link);
   };
 
-  // Verified ECAS Website Course Image Presets for 1-Click Selection
-  const PRESET_COURSE_IMAGES = [
-    { label: 'Climate & Nature', path: '/images/programmes/climate_society.jpg' },
-    { label: 'Carbon & Forestry', path: '/images/courses/carbon-accounting-and-redd.png' },
-    { label: 'Renewable Energy', path: '/images/programmes/energy_transitions.png' },
-    { label: 'Agriculture & Food', path: '/images/programmes/natural_resources.jpg' },
-    { label: 'Water & WASH', path: '/images/research/water_landscape.png' },
-    { label: 'Circular Economy', path: '/images/programmes/circular_economy.png' },
-    { label: 'Green Growth & ESG', path: '/images/programmes/green_growth.png' },
-    { label: 'Finance & Banking', path: '/images/courses/financial-management.jpg' },
-    { label: 'Audit & IPSAS', path: '/images/courses/financial-reporting-ipsas.jpg' },
-    { label: 'Procurement & Supply', path: '/images/courses/public-procurement.jpg' },
-    { label: 'Project Management', path: '/images/courses/project-management.jpg' },
-    { label: 'MEAL & Evaluation', path: '/images/courses/monitoring-and-evaluation.jpg' },
-    { label: 'GIS & Remote Sensing', path: '/images/courses/gis-and-remote-sensing.jpg' },
-    { label: 'Data Science & AI', path: '/images/courses/data-science-and-analytics.jpg' },
-    { label: 'Cybersecurity & IT', path: '/images/courses/cybersecurity-and-digital-governance.jpg' },
-    { label: 'Public Health', path: '/images/courses/health-systems-strengthening.jpg' },
-    { label: 'Humanitarian & Peace', path: '/images/courses/humanitarian-and-disaster-risk.jpg' },
-    { label: 'Gender & Inclusion', path: '/images/beyond/gender.png' },
-    { label: 'Policy & Governance', path: '/images/programmes/policy_lab.png' },
-    { label: 'Executive Boardroom', path: '/images/Gallery/executive_roundtable.jpg' },
-    { label: 'Training Workshop', path: '/images/Gallery/training_workshop_session.jpg' },
-    { label: 'Leadership Cohort', path: '/images/Gallery/leadership_cohort_group_photo.jpg' },
-  ];
-
   // Compress uploaded local image file via HTML5 Canvas so it fits in localStorage & server sync
   const handleImageFileUpload = (file, onResult) => {
     if (!file) return;
@@ -446,8 +420,8 @@ export default function MsimamiziAdmin() {
       const img = new window.Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const maxW = 900;
-        const maxH = 600;
+        const maxW = 840;
+        const maxH = 560;
         let width = img.width;
         let height = img.height;
         if (width > maxW || height > maxH) {
@@ -459,9 +433,9 @@ export default function MsimamiziAdmin() {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.78);
         onResult(compressedDataUrl);
-        showToast('Course image uploaded and optimized! Click Save to publish.');
+        showToast('Course image uploaded from your computer! Click Save to publish.');
       };
       img.onerror = () => {
         alert('Could not read the selected image file.');
@@ -473,8 +447,6 @@ export default function MsimamiziAdmin() {
 
   // Course Editing Modal State
   const [editingCourse, setEditingCourse] = useState(null);
-  const [showEditImagePresets, setShowEditImagePresets] = useState(false);
-  const [showNewImagePresets, setShowNewImagePresets] = useState(false);
   const [editForm, setEditForm] = useState({
     title: '',
     image: '/images/Gallery/training_workshop_session.jpg',
@@ -590,7 +562,7 @@ export default function MsimamiziAdmin() {
   };
 
   // Open Edit Course Modal with current image, details, pricing & cohorts
-  const openEditCourse = (course, openPresets = false) => {
+  const openEditCourse = (course) => {
     const feeRaw = Number(String(course.fee || 1200).replace(/[^0-9]/g, '')) || 1200;
     const feeKesRaw = course.feeKes || (feeRaw * 130);
     const discPct = Number(course.discountPercent) || (course.discountPrice ? Math.round((1 - course.discountPrice / feeRaw) * 100) : 0);
@@ -607,7 +579,6 @@ export default function MsimamiziAdmin() {
       ];
 
     setEditingCourse(course);
-    setShowEditImagePresets(Boolean(openPresets));
     setEditForm({
       title: course.title || '',
       image: course.image || '/images/Gallery/training_workshop_session.jpg',
@@ -2584,9 +2555,9 @@ export default function MsimamiziAdmin() {
                               <td className="py-2.5 px-3.5">
                                 <button
                                   type="button"
-                                  onClick={() => openEditCourse(c, true)}
+                                  onClick={() => openEditCourse(c)}
                                   className="group relative w-24 h-14 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 block shadow-2xs hover:border-[#008000] transition cursor-pointer"
-                                  title="Click to change or upload course image"
+                                  title="Click to upload course image from computer"
                                 >
                                   <img
                                     src={courseImg}
@@ -2677,9 +2648,9 @@ export default function MsimamiziAdmin() {
                                 <div className="inline-flex items-center gap-1.5">
                                   <button
                                     type="button"
-                                    onClick={() => openEditCourse(c, true)}
+                                    onClick={() => openEditCourse(c)}
                                     className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition cursor-pointer"
-                                    title="Change Course Image"
+                                    title="Upload Course Image from Computer"
                                   >
                                     <ImageIcon className="w-3.5 h-3.5 text-[#008000]" />
                                     <span>Image</span>
@@ -2687,7 +2658,7 @@ export default function MsimamiziAdmin() {
 
                                   <button
                                     type="button"
-                                    onClick={() => openEditCourse(c, false)}
+                                    onClick={() => openEditCourse(c)}
                                     className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white text-[11px] font-bold transition shadow-sm cursor-pointer"
                                     title="Edit Image, Pricing, Discounts & Cohort Dates"
                                   >
@@ -2757,16 +2728,13 @@ export default function MsimamiziAdmin() {
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
                             <button
                               type="button"
-                              onClick={() => openEditCourse(c, true)}
+                              onClick={() => openEditCourse(c)}
                               className="absolute top-2.5 right-2.5 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-[#008000] text-white text-[11px] font-bold shadow-md backdrop-blur-xs transition cursor-pointer"
-                              title="Change or upload course image"
+                              title="Upload course image from computer"
                             >
                               <ImageIcon className="w-3.5 h-3.5 text-emerald-300" />
                               <span>Change Image</span>
                             </button>
-                            <span className="absolute bottom-2 left-3 right-3 text-[10px] font-mono text-white/85 truncate">
-                              {courseImg.startsWith('data:image/') ? 'Custom Uploaded Image' : courseImg}
-                            </span>
                           </div>
 
                           <div className="p-4 pb-0">
@@ -4292,28 +4260,19 @@ export default function MsimamiziAdmin() {
 
             {/* Modal Form */}
             <form onSubmit={handleSaveCourseEdit} className="p-4 sm:p-6 space-y-4 max-h-[78vh] overflow-y-auto text-xs">
-              {/* Course Featured Image Editor (Live Preview + File Upload + URL + Preset Gallery) */}
+              {/* Course Featured Image Editor (Upload ONLY from Local Computer / Device) */}
               <div className="bg-slate-50/90 p-3.5 sm:p-4 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <label className="text-slate-800 font-bold text-xs flex items-center gap-1.5">
-                      <ImageIcon className="w-4 h-4 text-[#008000]" />
-                      <span>Course Featured Image (Shown on ecasiafrica.org)</span>
-                    </label>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      Upload a photo from your computer, paste an image URL/path, or select from the ECAS gallery below.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowEditImagePresets((v) => !v)}
-                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition cursor-pointer shrink-0"
-                  >
-                    {showEditImagePresets ? 'Hide Image Gallery' : 'Browse ECAS Gallery'}
-                  </button>
+                <div>
+                  <label className="text-slate-800 font-bold text-xs flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#008000]" />
+                    <span>Course Featured Image (Shown on ecasiafrica.org)</span>
+                  </label>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Upload an image directly from your computer or local device storage (JPG, PNG, WEBP).
+                  </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3.5 items-start">
+                <div className="flex flex-col sm:flex-row gap-3.5 items-center">
                   {/* Live Image Preview */}
                   <div className="w-full sm:w-48 h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-200 shrink-0 relative shadow-xs">
                     <img
@@ -4330,82 +4289,28 @@ export default function MsimamiziAdmin() {
                     </span>
                   </div>
 
-                  {/* Upload & URL Controls */}
-                  <div className="flex-1 w-full space-y-2.5">
-                    <div>
-                      <label className="block text-[10.5px] font-bold text-slate-600 mb-1">
-                        Option 1: Upload New Image from Device
-                      </label>
-                      <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white font-bold text-xs transition cursor-pointer shadow-xs">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Image File (JPG / PNG / WEBP)</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleImageFileUpload(file, (dataUrl) => {
-                                setEditForm((prev) => ({ ...prev, image: dataUrl }));
-                              });
-                            }
-                          }}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10.5px] font-bold text-slate-600 mb-1">
-                        Option 2: Image URL or Website Path
-                      </label>
+                  {/* Upload from Computer Control */}
+                  <div className="flex-1 w-full">
+                    <label className="flex flex-col items-center justify-center gap-1.5 px-4 py-5 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#008000] bg-white text-slate-700 hover:text-[#008000] font-bold text-xs transition cursor-pointer shadow-2xs text-center">
+                      <Upload className="w-5 h-5 text-[#008000]" />
+                      <span>Choose Image from Computer / Local Storage</span>
+                      <span className="text-[10px] font-medium text-slate-400">Supports JPG, PNG, WEBP — automatically optimized</span>
                       <input
-                        type="text"
-                        value={editForm.image}
-                        onChange={(e) => setEditForm({ ...editForm, image: e.target.value })}
-                        placeholder="/images/courses/financial-management.jpg or https://..."
-                        className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:border-[#008000]"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleImageFileUpload(file, (dataUrl) => {
+                              setEditForm((prev) => ({ ...prev, image: dataUrl }));
+                            });
+                          }
+                        }}
+                        className="hidden"
                       />
-                    </div>
+                    </label>
                   </div>
                 </div>
-
-                {/* Preset ECAS Image Gallery Picker */}
-                {showEditImagePresets && (
-                  <div className="pt-2.5 border-t border-slate-200/80">
-                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-600 block mb-2">
-                      Option 3: 1-Click Verified ECAS Course Images ({PRESET_COURSE_IMAGES.length} Photos)
-                    </span>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1">
-                      {PRESET_COURSE_IMAGES.map((item) => {
-                        const isSelected = editForm.image === item.path;
-                        return (
-                          <button
-                            key={item.path}
-                            type="button"
-                            onClick={() => setEditForm({ ...editForm, image: item.path })}
-                            className={`group rounded-lg overflow-hidden border text-left transition cursor-pointer bg-white ${isSelected
-                                ? 'border-[#008000] ring-2 ring-[#008000]/30'
-                                : 'border-slate-200 hover:border-emerald-400'
-                              }`}
-                          >
-                            <div className="h-14 w-full overflow-hidden bg-slate-100">
-                              <img
-                                src={item.path}
-                                alt={item.label}
-                                loading="lazy"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            </div>
-                            <div className="p-1 text-[9.5px] font-bold text-slate-700 truncate">
-                              {item.label}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Course Title, Department & Duration */}
@@ -4754,28 +4659,19 @@ export default function MsimamiziAdmin() {
                 />
               </div>
 
-              {/* Course Featured Image Section for New Course */}
+              {/* Course Featured Image Section for New Course (Local Upload Only) */}
               <div className="bg-slate-50/90 p-3.5 sm:p-4 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <label className="text-slate-800 font-bold text-xs flex items-center gap-1.5">
-                      <ImageIcon className="w-4 h-4 text-[#008000]" />
-                      <span>Course Featured Image</span>
-                    </label>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      Upload an image from your device, enter an image URL/path, or pick from the ECAS gallery.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowNewImagePresets((v) => !v)}
-                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition cursor-pointer shrink-0"
-                  >
-                    {showNewImagePresets ? 'Hide Image Gallery' : 'Browse ECAS Gallery'}
-                  </button>
+                <div>
+                  <label className="text-slate-800 font-bold text-xs flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#008000]" />
+                    <span>Course Featured Image</span>
+                  </label>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Upload a course image directly from your computer or local device storage.
+                  </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3.5 items-start">
+                <div className="flex flex-col sm:flex-row gap-3.5 items-center">
                   <div className="w-full sm:w-44 h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-200 shrink-0 relative shadow-xs">
                     <img
                       src={newCourseForm.image || '/images/Gallery/training_workshop_session.jpg'}
@@ -4791,80 +4687,27 @@ export default function MsimamiziAdmin() {
                     </span>
                   </div>
 
-                  <div className="flex-1 w-full space-y-2">
-                    <div>
-                      <label className="block text-[10.5px] font-bold text-slate-600 mb-1">
-                        Option 1: Upload Course Image File
-                      </label>
-                      <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white font-bold text-xs transition cursor-pointer shadow-xs">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Image from Computer</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleImageFileUpload(file, (dataUrl) => {
-                                setNewCourseForm((prev) => ({ ...prev, image: dataUrl }));
-                              });
-                            }
-                          }}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10.5px] font-bold text-slate-600 mb-1">
-                        Option 2: Image URL or Website Path
-                      </label>
+                  <div className="flex-1 w-full">
+                    <label className="flex flex-col items-center justify-center gap-1.5 px-4 py-4 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#008000] bg-white text-slate-700 hover:text-[#008000] font-bold text-xs transition cursor-pointer shadow-2xs text-center">
+                      <Upload className="w-5 h-5 text-[#008000]" />
+                      <span>Upload Image from Computer / Local Storage</span>
+                      <span className="text-[10px] font-medium text-slate-400">JPG, PNG or WEBP — stored and synced automatically</span>
                       <input
-                        type="text"
-                        value={newCourseForm.image}
-                        onChange={(e) => setNewCourseForm({ ...newCourseForm, image: e.target.value })}
-                        placeholder="/images/courses/financial-management.jpg or https://..."
-                        className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:border-[#008000]"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleImageFileUpload(file, (dataUrl) => {
+                              setNewCourseForm((prev) => ({ ...prev, image: dataUrl }));
+                            });
+                          }
+                        }}
+                        className="hidden"
                       />
-                    </div>
+                    </label>
                   </div>
                 </div>
-
-                {showNewImagePresets && (
-                  <div className="pt-2.5 border-t border-slate-200/80">
-                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-600 block mb-2">
-                      Option 3: Select from Verified ECAS Course Images
-                    </span>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-44 overflow-y-auto p-1">
-                      {PRESET_COURSE_IMAGES.map((item) => {
-                        const isSelected = newCourseForm.image === item.path;
-                        return (
-                          <button
-                            key={item.path}
-                            type="button"
-                            onClick={() => setNewCourseForm({ ...newCourseForm, image: item.path })}
-                            className={`group rounded-lg overflow-hidden border text-left transition cursor-pointer bg-white ${isSelected
-                                ? 'border-[#008000] ring-2 ring-[#008000]/30'
-                                : 'border-slate-200 hover:border-emerald-400'
-                              }`}
-                          >
-                            <div className="h-14 w-full overflow-hidden bg-slate-100">
-                              <img
-                                src={item.path}
-                                alt={item.label}
-                                loading="lazy"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            </div>
-                            <div className="p-1 text-[9.5px] font-bold text-slate-700 truncate">
-                              {item.label}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

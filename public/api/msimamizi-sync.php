@@ -420,7 +420,7 @@ function sanitizeCoursesMap(array $courses): array {
         $rawImage = isset($c['image']) && is_string($c['image']) ? trim($c['image']) : '';
         $cleanImage = '';
         if ($rawImage !== '') {
-            if (strpos($rawImage, 'data:image/') === 0 && strlen($rawImage) <= 350000) {
+            if (strpos($rawImage, 'data:image/') === 0 && strlen($rawImage) <= 700000) {
                 $cleanImage = $rawImage;
             } else {
                 $cleanImage = sanitizeText($rawImage, 1000);

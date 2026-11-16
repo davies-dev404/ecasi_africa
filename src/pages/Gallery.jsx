@@ -15,38 +15,28 @@ const galleryCategories = [
   { id: 'community', label: 'Community Engagement' }
 ];
 
-const GalleryImage = ({ image, categoryLabel }) => {
+const GalleryImage = ({ image }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+
+  if (imgError) return null;
 
   return (
     <div className="group relative overflow-hidden rounded-2xl shadow-sm bg-white border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       <div className="aspect-[4/3] overflow-hidden relative bg-gray-100">
-        {!imageLoaded && !imgError && (
-           <Skeleton className="absolute inset-0 w-full h-full" />
+        {!imageLoaded && (
+          <Skeleton className="absolute inset-0 w-full h-full" />
         )}
-        {imgError ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-ecasi-section text-ecasi-navy/50 text-sm p-4 text-center">
-            <span>{image.title}</span>
-          </div>
-        ) : (
-          <img 
-            src={image.src} 
-            alt={image.title} 
-            className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => { setImgError(true); setImageLoaded(true); }}
-          />
-        )}
-        {!imgError && (
-          <div className="absolute inset-0 bg-gradient-to-t from-ecasi-navy/90 via-ecasi-navy/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-            <span className="text-ecasi-green text-xs font-bold uppercase tracking-wider mb-2">
-              {categoryLabel}
-            </span>
-            <h3 className="text-white font-bold text-xl mb-1">{image.title}</h3>
-            <p className="text-white/80 text-sm leading-relaxed">{image.description}</p>
-          </div>
-        )}
+        <img
+          src={image.src}
+          alt="ECAS Institute photo"
+          className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => {
+            setImgError(true);
+            setImageLoaded(true);
+          }}
+        />
       </div>
     </div>
   );
@@ -100,10 +90,7 @@ const Gallery = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredImages.map((image, index) => (
                   <ScrollAnimation key={index} delay={index * 80}>
-                    <GalleryImage 
-                      image={image} 
-                      categoryLabel={galleryCategories.find(c => c.id === image.category)?.label}
-                    />
+                    <GalleryImage image={image} />
                   </ScrollAnimation>
                 ))}
               </div>
