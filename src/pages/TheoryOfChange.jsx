@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 import { Network, Database, Award, BookOpen, Coins, Users, Sparkles, Target, Compass, Globe, Map } from 'lucide-react';
 
 const leavers = [
@@ -145,23 +145,16 @@ const TheoryOfChange = () => {
       <Header />
 
       {/* Page Banner */}
-      <section className="bg-primary pt-24 pb-8 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
-        <div className="healthcare-container relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-3 drop-shadow-md">
-              Theory of Change
-            </h1>
-            <p className="text-white/90 text-lg max-w-2xl mx-auto text-center font-medium">
-              Our roadmap for co-creating a sustainable, greener, and safer future.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Theory of Change"
+        subtitle="Our roadmap for co-creating a sustainable, greener, and safer future."
+        image="/images/research/evidence_based_research.jpg"
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'About Us', path: '/about' },
+          { label: 'Theory of Change' },
+        ]}
+      />
 
       {/* Introduction */}
       <section className="py-12 md:py-16">
@@ -401,10 +394,10 @@ const TheoryOfChange = () => {
             viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
+            <h2 className="!text-white text-3xl md:text-4xl font-serif font-bold mb-4">
               Our Networks
             </h2>
-            <p className="text-white/80 text-lg">
+            <p className="text-white/90 text-lg text-center">
               To achieve true scalable success, our networks and coalitions operate under three core principles.
             </p>
           </motion.div>
@@ -422,7 +415,7 @@ const TheoryOfChange = () => {
                 variants={itemVariants}
                 className="bg-white/10 backdrop-blur-md border border-white/20 rounded-[2rem] p-8 text-center hover:bg-white/20 hover:-translate-y-2 transition-all duration-300 shadow-xl"
               >
-                <h3 className="text-2xl font-serif font-bold mb-4 drop-shadow-sm">
+                <h3 className="!text-white text-2xl font-serif font-bold mb-4 drop-shadow-sm">
                   {network.title}
                 </h3>
                 <p className="text-white/90 text-sm md:text-base leading-relaxed">

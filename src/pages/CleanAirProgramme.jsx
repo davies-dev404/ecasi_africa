@@ -1,9 +1,8 @@
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Wind, FlaskConical, BookOpen, Users, Shield } from 'lucide-react';
+import PageHeroBanner from '@/components/PageHeroBanner';
+import { Wind } from 'lucide-react';
 import { specialtiesData } from '@/data/specialtiesData';
 
 const CleanAirProgramme = () => {
@@ -13,18 +12,18 @@ const CleanAirProgramme = () => {
     <div className="min-h-screen bg-white flex flex-col">
       <SEO title="Air Quality Programme - ECASI AFRICA" description={data.shortDescription} />
       <Header />
-      
+
       {/* Hero Section */}
-      <section className="bg-ecasi-green pt-24 pb-8 text-white text-center relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
-          <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/15 backdrop-blur-sm mb-4">
-            <Wind size={28} className="text-white" />
-          </motion.div>
-          <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-2xl md:text-3xl font-bold uppercase tracking-wide">
-            {data.title}
-          </motion.h1>
-        </div>
-      </section>
+      <PageHeroBanner
+        title={data.title}
+        image="/images/Gallery/breathe_cities_presentation.jpg"
+        icon={Wind}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Programmes', path: '/programmes' },
+          { label: data.title },
+        ]}
+      />
 
       {/* Main Content */}
       <main className="flex-grow py-12 md:py-16 bg-gradient-to-b from-gray-50/50 to-white">

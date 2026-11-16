@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 const Contact = () => {
   return (
@@ -15,36 +15,14 @@ const Contact = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-24 pb-8 text-white text-center relative overflow-hidden">
-        {/* Subtle decorative pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 left-1/4 w-32 h-32 border border-white rounded-full" />
-          <div className="absolute bottom-2 right-1/3 w-24 h-24 border border-white rounded-full" />
-        </div>
-
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl md:text-3xl font-bold uppercase tracking-wide"
-            style={{ fontFamily: "'Fira Sans', sans-serif" }}
-          >
-            Contact Us
-          </motion.h1>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex items-center justify-center gap-2 mt-2 text-xs md:text-sm text-white/80 font-medium"
-            style={{ fontFamily: "'Roboto', sans-serif" }}
-          >
-            <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white font-semibold">Contact Us</span>
-          </motion.div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Contact Us"
+        image="/images/team/image copy.png"
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Contact Us' },
+        ]}
+      />
 
       {/* ── Main Content ── */}
       <main className="max-w-5xl mx-auto px-6 py-16">
@@ -164,13 +142,13 @@ const Contact = () => {
                 <Phone className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <a href="tel:+254728925306" className="text-white font-semibold text-sm hover:underline whitespace-nowrap">
-                  +254 728 925 306
+                <a href="tel:+254708060223" className="text-white font-semibold text-sm hover:underline whitespace-nowrap">
+                  +254 708 060 223 (0708 060 223)
                 </a>
-                <a href="tel:+254736356738" className="text-white font-semibold text-sm hover:underline whitespace-nowrap">
-                  +254 736 356 738
+                <a href="https://wa.me/254708060223" target="_blank" rel="noopener noreferrer" className="text-white/95 font-medium text-xs hover:underline whitespace-nowrap mt-0.5">
+                  WhatsApp: +254 708 060 223
                 </a>
-                <p className="text-white/70 text-xs">Call Us Now</p>
+                <p className="text-white/70 text-xs mt-0.5">Call or WhatsApp Us Now</p>
               </div>
             </div>
 

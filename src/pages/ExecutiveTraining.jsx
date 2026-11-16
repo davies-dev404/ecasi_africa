@@ -97,7 +97,7 @@ const categorySlugToName = {
 };
 
 const categoryDescriptions = {
-  'All': 'Explore practical, industry-aligned executive training courses in Nairobi, Mombasa, Naivasha, Kigali, Arusha, Dubai, Kuala Lumpur (Malaysia), and Online. Build technical capacity across Climate Finance, Carbon Markets, ESG, AI, Data Analytics, Project Management, and Public Sector Governance.',
+  'All': 'Explore practical, industry-aligned executive training courses in Nairobi, Mombasa, Diani, Zanzibar, Naivasha, Kigali, Arusha, Dubai, Kuala Lumpur (Malaysia), and Online. Build technical capacity across Climate Finance, Carbon Markets, ESG, AI, Data Analytics, Project Management, and Public Sector Governance.',
   'Climate Finance & Public Financial Management': 'Best Climate Finance, Green Bonds, Climate-Responsive Budgeting, and Public Financial Management courses for executives, policymakers, and finance professionals.',
   'Climate Change & Sustainability': 'Comprehensive Climate Change Adaptation, Mitigation, Policy, Nature-Based Solutions, and Resilience courses designed for environmental leaders and government ministries.',
   'Carbon Markets & ESG': 'Hands-on Carbon Accounting, Article 6, Emissions Trading Systems (ETS), Voluntary Carbon Markets (VCM), and ESG Reporting courses for project developers and sustainability teams.',
@@ -109,7 +109,7 @@ const categoryDescriptions = {
 };
 
 const DELIVERY_FORMATS = ['Classroom (In-Person)', 'Online (Virtual)', 'In-House / Custom'];
-const TRAINING_VENUES = ['Nairobi, Kenya', 'Mombasa, Kenya', 'Naivasha, Kenya', 'Arusha, Tanzania', 'Kigali, Rwanda', 'Dubai, UAE', 'Kuala Lumpur, Malaysia', 'Online / Virtual'];
+const TRAINING_VENUES = ['Nairobi, Kenya', 'Mombasa, Kenya', 'Diani, Kenya', 'Zanzibar, Tanzania', 'Naivasha, Kenya', 'Arusha, Tanzania', 'Kigali, Rwanda', 'Dubai, UAE', 'Kuala Lumpur, Malaysia', 'Online / Virtual'];
 const TRAINING_DURATIONS = ['5 Days', '10 Days (2 Weeks)', '3 Weeks'];
 
 /* ── Helper to clean and format raw WP/HTML course content into Devimpact style ── */
@@ -166,7 +166,7 @@ function generateCourseSchedules(courseTitle = '', duration = '5 Days') {
       scheduleNo: '400828',
       dates: '08 - 12 Jun 2026',
       duration: cleanDuration,
-      venue: hash % 2 === 0 ? 'Mombasa, Kenya' : 'Naivasha, Kenya',
+      venue: hash % 2 === 0 ? 'Mombasa, Kenya' : 'Diani, Kenya',
       format: 'Classroom',
       feeUsd: '$1,200',
       feeKes: 'KES 105,000',
@@ -176,7 +176,7 @@ function generateCourseSchedules(courseTitle = '', duration = '5 Days') {
       scheduleNo: '400829',
       dates: '13 - 17 Jul 2026',
       duration: cleanDuration,
-      venue: 'Kigali, Rwanda',
+      venue: hash % 2 === 0 ? 'Zanzibar, Tanzania' : 'Kigali, Rwanda',
       format: 'Classroom',
       feeUsd: '$1,650',
       feeKes: 'KES 145,000',
@@ -186,20 +186,20 @@ function generateCourseSchedules(courseTitle = '', duration = '5 Days') {
       scheduleNo: '400830',
       dates: '17 - 21 Aug 2026',
       duration: cleanDuration,
-      venue: 'Nairobi, Kenya',
+      venue: 'Diani, Kenya',
       format: 'Classroom',
-      feeUsd: '$1,000',
-      feeKes: 'KES 95,000',
+      feeUsd: '$1,250',
+      feeKes: 'KES 110,000',
     },
     {
       id: 'cls-5',
       scheduleNo: '400831',
       dates: '14 - 18 Sep 2026',
       duration: cleanDuration,
-      venue: hash % 3 === 0 ? 'Dubai, UAE' : 'Arusha, Tanzania',
+      venue: 'Dubai, UAE',
       format: 'Classroom',
-      feeUsd: hash % 3 === 0 ? '$2,450' : '$1,550',
-      feeKes: hash % 3 === 0 ? 'KES 220,000' : 'KES 135,000',
+      feeUsd: '$2,450',
+      feeKes: 'KES 220,000',
     },
     {
       id: 'cls-6',
@@ -1715,7 +1715,7 @@ export default function ExecutiveTraining() {
         contact: inquiryContact,
       });
 
-      const waUrl = `https://wa.me/254728925306?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/254708060223?text=${encodeURIComponent(msg)}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
       setToastMessage(`Inquiry recorded & opening WhatsApp for "${courseTitle}"...`);
     } else if (channel === 'email' || channel === 'mailto') {
@@ -2256,7 +2256,9 @@ export default function ExecutiveTraining() {
                             </span>
                             <span>
                               <MapPin className="w-3.5 h-3.5 text-[#032e42]" />
-                              Nairobi / Mombasa / Kigali / Dubai / Kuala Lumpur / Online
+                              {selectedVenues.length > 0
+                                ? selectedVenues.join(' • ')
+                                : (course.location || 'Nairobi / Mombasa / Diani / Zanzibar / Dubai / Online')}
                             </span>
                           </div>
                         </div>
@@ -2269,7 +2271,7 @@ export default function ExecutiveTraining() {
                             View Course
                           </Link>
                           <Link
-                            to={`/register?schedule=400827&course=${encodeURIComponent(course.slug)}&title=${encodeURIComponent(course.title)}&venue=${encodeURIComponent(course.location || 'Nairobi, Kenya')}&fee=1200`}
+                            to={`/register?schedule=400827&course=${encodeURIComponent(course.slug)}&title=${encodeURIComponent(course.title)}&venue=${encodeURIComponent(selectedVenues[0] || course.location || 'Nairobi, Kenya')}&fee=1200`}
                             className="reg-btn"
                           >
                             Register
@@ -2996,7 +2998,7 @@ export default function ExecutiveTraining() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-[#008000]" />
-                <span>+254 728 925 306 | Nairobi, Kenya</span>
+                <a href="tel:+254708060223" className="hover:text-[#032e42] font-medium">+254 708 060 223 | Nairobi, Kenya</a>
               </div>
             </div>
           </div>
@@ -3340,7 +3342,7 @@ function renderModalsAndToast(
 
                   <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
                     <span>Admissions Email: <strong>info@ecasiafrica.org</strong></span>
-                    <span>Direct Call/WhatsApp: <strong>+254 728 925 306</strong></span>
+                    <span>Direct Call/WhatsApp: <strong>+254 708 060 223 (0708 060 223)</strong></span>
                   </div>
                 </div>
               )}

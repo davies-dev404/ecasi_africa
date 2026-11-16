@@ -220,7 +220,7 @@ Founded in 2011 and accredited by the National Industrial Training Authority (NI
 
 ## Delivery Formats & Global Training Destinations
 
-- **Classroom (In-Person)**: Delivered in executive venues across Nairobi (Kenya), Mombasa (Kenya), Naivasha (Kenya), Arusha (Tanzania), Dar es Salaam (Tanzania), Kigali (Rwanda), Dubai (UAE), and Kuala Lumpur (Malaysia).
+- **Classroom (In-Person)**: Delivered in executive venues across Nairobi (Kenya), Mombasa (Kenya), Diani (Kenya), Naivasha (Kenya), Zanzibar (Tanzania), Arusha (Tanzania), Dar es Salaam (Tanzania), Kigali (Rwanda), Dubai (UAE), and Kuala Lumpur (Malaysia).
 - **Virtual (Online Cohorts)**: Interactive, live instructor-led executive cohorts.
 - **Tailored In-House Corporate Training**: Customized on-site programmes designed specifically for ministries, state corporations, NGOs, financial institutions, and multinational teams.
 

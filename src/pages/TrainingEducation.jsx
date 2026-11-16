@@ -1,16 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   GraduationCap, BookOpen, Megaphone, FileText, Users, Handshake,
-  Download, Award, Users2, Brain, Leaf, Thermometer, ShieldAlert,
-  Flame, Briefcase, Database, Landmark, Tractor, Trees, MessageSquare,
-  ChevronDown, Quote, CheckCircle2, MapPin
+  Download, Award, Users2, Leaf, Thermometer, ShieldAlert,
+  Flame, Briefcase, Database, Landmark, Tractor, Trees, MessageSquare
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
+import PageHeroBanner from '@/components/PageHeroBanner';
 import {
   Accordion,
   AccordionContent,
@@ -148,19 +147,17 @@ const TrainingEducation = () => {
       />
       <Header />
 
-      {/* Green Banner Section */}
-      <section className="bg-ecasi-green pt-24 pb-6 text-center text-white relative overflow-hidden">
-        <div className="max-w-[1200px] mx-auto px-4 relative z-10">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-wide">
-            Training, Education, and Public Awareness
-          </h1>
-          <div className="text-sm font-medium flex items-center justify-center gap-2 opacity-90">
-            <Link to="/" className="hover:underline text-white">Home</Link>
-            <span>&gt;</span>
-            <span className="text-white/80">Training, Education, and Public Awareness</span>
-          </div>
-        </div>
-      </section>
+      {/* Contextual Photo Hero Banner Section */}
+      <PageHeroBanner
+        title="Training, Education, and Public Awareness"
+        image="/images/courses/85079752_1227263344135855_2280708113273192448_n.jpg"
+        icon={GraduationCap}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Programmes', path: '/programmes' },
+          { label: 'Training, Education, and Public Awareness' },
+        ]}
+      />
 
       {/* Main Content Body */}
       <section className="py-16 bg-white flex-grow">

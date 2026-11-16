@@ -58,7 +58,9 @@ const searchCategories = [
 const searchLocations = [
   "Nairobi - Kenya",
   "Mombasa - Kenya",
+  "Diani - Kenya",
   "Naivasha - Kenya",
+  "Zanzibar - Zanzibar",
   "Arusha - Tanzania",
   "Dar es Salaam - Tanzania",
   "Kigali - Rwanda",
@@ -220,7 +222,7 @@ const flagshipCourses = [
     slug: "climate-responsive-budgeting-and-strategic-fiscal-management",
     category: "Climate Finance & PFM",
     duration: "3 Weeks (15 Days)",
-    location: "Nairobi / Arusha / Mombasa",
+    location: "Nairobi / Mombasa / Diani / Dubai",
     image: "/images/Gallery/1732710492385.jpg",
   },
   {
@@ -228,7 +230,7 @@ const flagshipCourses = [
     slug: "strategic-climate-finance-budgeting-tracking-and-performance-reporting",
     category: "Climate Finance & PFM",
     duration: "3 Weeks (15 Days)",
-    location: "Nairobi / Arusha / Mombasa",
+    location: "Mombasa / Diani / Zanzibar",
     image: "/images/Gallery/1715195551211.jpg",
   },
   {
@@ -236,7 +238,7 @@ const flagshipCourses = [
     slug: "innovations-in-public-financial-management-climate-finance-ai-ethical-leadership",
     category: "Executive Cohort Programme",
     duration: "4 Weeks (20 Days)",
-    location: "Arusha, Tanzania / Nairobi / Kuala Lumpur, Malaysia",
+    location: "Nairobi / Zanzibar / Dubai / Kuala Lumpur",
     image: "/images/courses/mentorship_group.jpg",
   },
   {
@@ -396,8 +398,8 @@ const trainingTestimonials = [
 const milestones = [
   { target: 15, suffix: "+", label: "Years of Experience", icon: Award },
   { target: 30, suffix: "+", label: "Impacted Organizations", icon: FileText },
-  { target: 5, suffix: "K+", label: "Impacted Professionals", icon: Users },
-  { target: 8, suffix: "+", label: "Impacted Countries", icon: Globe },
+  { target: 10000, suffix: "+", label: "Impacted Professionals", icon: Users },
+  { prefix: "More than", target: 15, suffix: "+", label: "Impacted Countries", icon: Globe },
 ];
 
 function AnimatedMilestoneCard({ milestone }) {
@@ -463,10 +465,15 @@ function AnimatedMilestoneCard({ milestone }) {
         className="text-3xl sm:text-4xl font-extrabold text-white mb-1.5 tabular-nums"
         style={{ fontFamily: "'Fira Sans', sans-serif" }}
       >
-        {count}
+        {milestone.prefix && (
+          <span className="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-300 mb-0.5">
+            {milestone.prefix}
+          </span>
+        )}
+        {count.toLocaleString()}
         {milestone.suffix}
       </div>
-      <h3 className="text-white text-sm sm:text-base font-bold tracking-wide">
+      <h3 className="!text-white text-sm sm:text-base font-bold tracking-wide">
         {milestone.label}
       </h3>
     </div>
@@ -569,7 +576,7 @@ const Index = () => {
         "logo": "https://ecasiafrica.org/logo.png",
         "image": "https://ecasiafrica.org/images/courses/executive_training.jpg",
         "description": "Leading Pan-African executive training institution delivering accredited professional short courses, corporate in-house programmes, and certifications across Climate Finance, Public Financial Management, ESG, Carbon Markets, AI, Governance, and Project Management.",
-        "telephone": "+254-722-000-000",
+        "telephone": "+254-708-060-223",
         "email": "info@ecasiafrica.org",
         "address": {
           "@type": "PostalAddress",
@@ -639,8 +646,8 @@ const Index = () => {
     <>
       <SEO
         title="Executive Training, Professional Short Courses &amp; Capacity Building in Africa | ECAS Institute"
-        description="Empower your leadership and workforce with ECAS Institute’s accredited executive training courses, short courses, and in-house capacity development in Nairobi, Mombasa, Dubai, Kuala Lumpur (Malaysia), and Online across Climate Finance, AI, PFM, ESG, Governance &amp; Project Management."
-        keywords="executive training Nairobi, professional short courses Kenya, capacity building Africa, climate finance courses, public financial management training, ESG certification Africa, carbon markets and trading course, corporate governance training, AI in project management, procurement short courses, NITA accredited training institution, ECAS Institute, ECASI Africa, training in Nairobi Dubai Kuala Lumpur"
+        description="Empower your leadership and workforce with ECAS Institute’s accredited executive training courses, short courses, and in-house capacity development in Nairobi, Diani, Mombasa, Zanzibar, Dubai, Kuala Lumpur (Malaysia), and Online across Climate Finance, AI, PFM, ESG, Governance &amp; Project Management."
+        keywords="executive training Nairobi, training Diani Mombasa Zanzibar Dubai, professional short courses Kenya, capacity building Africa, climate finance courses, public financial management training, ESG certification Africa, carbon markets and trading course, corporate governance training, AI in project management, procurement short courses, NITA accredited training institution, ECAS Institute, ECASI Africa, training in Nairobi Dubai Kuala Lumpur"
         schema={homeSchema}
       />
       <div className="min-h-screen flex flex-col bg-white">
@@ -674,13 +681,13 @@ const Index = () => {
           {/* Centered Hero Content */}
           <div className="relative z-10 max-w-[1380px] w-full mx-auto px-4 sm:px-6 py-16 md:py-24 text-center">
             <h1
-              className="text-white font-extrabold tracking-tight mb-6 leading-[1.18]"
+              className="!text-white font-extrabold tracking-tight mb-6 leading-[1.18]"
               style={{
                 fontFamily: "'Fira Sans', 'Nunito Sans', sans-serif",
                 fontSize: "clamp(28px, 4.5vw, 52px)",
               }}
             >
-              Practical Training Solutions for <br className="hidden sm:inline" />
+              Professional Training Solutions for <br className="hidden sm:inline" />
               Professionals
             </h1>
 
@@ -808,11 +815,40 @@ const Index = () => {
                 Search
               </button>
             </form>
+
+            {/* Row 3: Quick-Jump Training Destinations (Featured: Diani, Mombasa, Zanzibar, Dubai) */}
+            <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-center sm:justify-between gap-2 text-xs">
+              <span className="font-bold text-[#032e42] uppercase tracking-wider inline-flex items-center gap-1.5">
+                <MapPin size={14} className="text-[#008000]" />
+                Training Destinations:
+              </span>
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                {[
+                  { label: "Diani", query: "Diani - Kenya" },
+                  { label: "Mombasa", query: "Mombasa - Kenya" },
+                  { label: "Zanzibar", query: "Zanzibar - Zanzibar" },
+                  { label: "Dubai", query: "Dubai - UAE" },
+                  { label: "Nairobi", query: "Nairobi - Kenya" },
+                  { label: "Naivasha", query: "Naivasha - Kenya" },
+                  { label: "Arusha", query: "Arusha - Tanzania" },
+                  { label: "Kigali", query: "Kigali - Rwanda" },
+                  { label: "Kuala Lumpur", query: "Kuala Lumpur - Malaysia" },
+                ].map((dest) => (
+                  <Link
+                    key={dest.label}
+                    to={`/institute-overview?location=${encodeURIComponent(dest.query)}`}
+                    className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-[#008000] text-[#032e42] hover:text-white font-semibold transition-colors border border-slate-200/80"
+                  >
+                    {dest.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════════
-            3. ABOUT ECAS INSTITUTE (Devimpact Centered Style)
+            3. ABOUT ECAS INSTITUTE ( Centered Style)
         ══════════════════════════════════════════════════════════════════════ */}
         <section className="pt-14 pb-10 px-4 sm:px-6 bg-white">
           <div className="max-w-[1380px] w-full mx-auto text-center">

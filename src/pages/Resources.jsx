@@ -3,8 +3,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 import ScrollAnimation from '@/components/ScrollAnimation';
+import PageHeroBanner from '@/components/PageHeroBanner';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   BookOpen,
   Scale,
@@ -86,30 +86,15 @@ const Resources = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="bg-ecasi-green pt-20 pb-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          {/* Subtle background pattern */}
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
-        
-        <div className="max-w-[1200px] mx-auto px-4 relative z-10 text-center">
-          <ScrollAnimation animation="fade-up">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
-              Resources Hub
-            </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto text-center leading-relaxed">
-              Empowering change through knowledge. Access our comprehensive library of research, policies, reports, and multimedia content.
-            </p>
-          </ScrollAnimation>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Resources Hub"
+        subtitle="Empowering change through knowledge. Access our comprehensive library of research, policies, reports, and multimedia content."
+        image="/images/Gallery/DSC_0090.JPG"
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Resources' },
+        ]}
+      />
 
       {/* Main Content */}
       <section className="py-12 md:py-16 flex-grow">

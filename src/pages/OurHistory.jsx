@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
+import PageHeroBanner from '@/components/PageHeroBanner';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,8 @@ import { CalendarDays, Globe2, Target, BookOpen, Users, CheckCircle2, ArrowRight
 
 const highlights = [
   { icon: CalendarDays, label: "Established", value: "2016", color: "text-blue-500 bg-blue-50" },
-  { icon: Globe2,       label: "Reach",        value: "8+ African Countries", color: "text-green-600 bg-green-50" },
-  { icon: Users,        label: "Trained",       value: "5,000+ Professionals", color: "text-purple-500 bg-purple-50" },
+  { icon: Globe2,       label: "Reach",        value: "15+ Countries", color: "text-green-600 bg-green-50" },
+  { icon: Users,        label: "Trained",       value: "10,000+ Professionals", color: "text-purple-500 bg-purple-50" },
   { icon: Target,       label: "Type",          value: "Pan-African Think-Tank", color: "text-orange-500 bg-orange-50" },
 ];
 
@@ -49,23 +50,16 @@ const OurHistory = () => {
       <Header />
 
       {/* Hero Banner */}
-      <section className="bg-primary pt-24 pb-8 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
-        <div className="healthcare-container relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-3 drop-shadow-md">
-              Welcome to ECAS Institute
-            </h1>
-            <p className="text-white/90 text-lg max-w-2xl mx-auto text-center font-medium">
-              An independent Pan-African policy think-tank bridging research, policy and practice since 2016.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Welcome to ECAS Institute"
+        subtitle="An independent Pan-African policy think-tank bridging research, policy and practice since 2016."
+        image="/images/Gallery/1717137013866.jpg"
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'About Us', path: '/about' },
+          { label: 'Our History' },
+        ]}
+      />
 
       {/* Highlight Stats Cards */}
       <section className="bg-white border-b border-slate-200">

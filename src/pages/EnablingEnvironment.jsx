@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Scale } from 'lucide-react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 
 const EnablingEnvironment = () => {
@@ -15,27 +16,17 @@ const EnablingEnvironment = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <motion.section 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-ecasi-green pt-24 pb-6 text-white text-center"
-      >
-        <div className="max-w-6xl mx-auto px-4">
-          <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">
-            Creation of an Enabling Environment
-          </h1>
-          <div className="flex items-center justify-center gap-2 mt-2 text-xs md:text-sm text-white/80 font-medium">
-            <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white/80">Programmes</span>
-            <span className="text-white/40">/</span>
-            <span className="text-white/80">Climate Change Action</span>
-            <span className="text-white/40">/</span>
-            <span className="text-white font-semibold">Creation of an Enabling Environment</span>
-          </div>
-        </div>
-      </motion.section>
+      <PageHeroBanner
+        title="Creation of an Enabling Environment"
+        image="/images/Gallery/stakeholder_meeting_boardroom.jpg"
+        icon={Scale}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Programmes', path: '/programmes' },
+          { label: 'Climate Change Action', path: '/climate-change-programming' },
+          { label: 'Creation of an Enabling Environment' },
+        ]}
+      />
 
       {/* ── Main Content Area ── */}
       <main className="max-w-[1000px] mx-auto px-6 py-12 font-sans text-[#676767] leading-relaxed">

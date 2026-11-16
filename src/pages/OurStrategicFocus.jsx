@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 import { Target, Users, Leaf, Zap, BookOpen, ShieldCheck, Milestone } from 'lucide-react';
 
 const focusAreas = [
@@ -73,23 +74,16 @@ const OurStrategicFocus = () => {
       <Header />
 
       {/* Page Banner */}
-      <section className="bg-primary pt-24 pb-8 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
-        <div className="healthcare-container relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-3 drop-shadow-md">
-              Our Strategic Focus
-            </h1>
-            <p className="text-white/90 text-lg max-w-2xl mx-auto text-center font-medium">
-              Mapping our pathways to build a resilient, green, and sustainable Africa.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Our Strategic Focus"
+        subtitle="Mapping our pathways to build a resilient, green, and sustainable Africa."
+        image="/images/research/policy_advisory_meeting.jpg"
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'About Us', path: '/about' },
+          { label: 'Our Strategic Focus' },
+        ]}
+      />
 
       {/* Overview Section */}
       <section className="py-12 md:py-16">

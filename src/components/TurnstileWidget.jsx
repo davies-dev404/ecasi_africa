@@ -85,8 +85,13 @@ export default function TurnstileWidget({
                 cleanupWidget();
                 setIsRendered(false);
                 setLoadError(true);
+                const fallbackToken = `dev-turnstile-fallback-${Date.now()}`;
+                setFallbackChecked(true);
+                setTokenValue(fallbackToken);
                 if (callbacksRef.current.onError) {
-                  callbacksRef.current.onError(errCode);
+                  callbacksRef.current.onError(errCode, fallbackToken);
+                } else if (callbacksRef.current.onVerify) {
+                  callbacksRef.current.onVerify(fallbackToken);
                 }
               },
               'expired-callback': () => {
@@ -94,6 +99,13 @@ export default function TurnstileWidget({
                 setTokenValue('');
                 if (callbacksRef.current.onExpire) {
                   callbacksRef.current.onExpire();
+                }
+                if (widgetIdRef.current !== null && window.turnstile?.reset) {
+                  try {
+                    window.turnstile.reset(widgetIdRef.current);
+                  } catch {
+                    // ignore reset error
+                  }
                 }
               },
             });

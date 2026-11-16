@@ -783,7 +783,9 @@ const ExcursionDetail = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone size={13} className="text-[#008000]" />
-                      <span>+254 722 000 000 / Admissions Desk</span>
+                      <a href="tel:+254708060223" className="hover:underline">
+                        +254 708 060 223 / Admissions Desk
+                      </a>
                     </div>
                   </div>
                 </div>

@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { GraduationCap } from 'lucide-react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 const Training = () => {
   return (
@@ -14,30 +14,15 @@ const Training = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-24 pb-6 text-white text-center">
-        <div className="max-w-6xl mx-auto px-4">
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl md:text-3xl font-bold uppercase tracking-wide"
-          >
-            Training
-          </motion.h1>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-2 text-sm text-gray-200"
-          >
-            <Link to="/" className="hover:text-white transition-colors">
-              Home
-            </Link>
-            <span className="mx-2">/</span>
-            <span>Training</span>
-          </motion.div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Training"
+        image="/images/courses/executive_training.jpg"
+        icon={GraduationCap}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Training' },
+        ]}
+      />
 
       {/* ── Main Content ── */}
       <main className="flex-grow py-16">

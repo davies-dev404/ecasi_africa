@@ -10,7 +10,7 @@ const SEO = ({ title, description, keywords, image, url, type = "website", schem
     : defaultTitle;
 
   const defaultDescription =
-    "ECAS Institute is a premier Pan-African executive training institution delivering 200+ accredited short courses, professional certifications, and corporate capacity building across Climate Finance, Public Financial Management, ESG, Carbon Markets, AI & Technology, Governance, and Project Management in Nairobi, Mombasa, Dubai, Kuala Lumpur (Malaysia), and Online.";
+    "ECAS Institute is a premier Pan-African executive training institution delivering 200+ accredited short courses, professional certifications, and corporate capacity building across Climate Finance, Public Financial Management, ESG, Carbon Markets, AI & Technology, Governance, and Project Management in Nairobi, Diani, Mombasa, Zanzibar, Dubai, Kuala Lumpur (Malaysia), and Online.";
 
   const defaultImage = "https://ecasiafrica.org/images/courses/executive_training.jpg";
   const defaultKeywords =

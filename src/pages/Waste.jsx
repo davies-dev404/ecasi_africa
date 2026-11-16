@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Recycle } from 'lucide-react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 const Waste = () => {
   return (
@@ -14,30 +15,16 @@ const Waste = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-24 pb-6 text-white text-center">
-        <div className="max-w-6xl mx-auto px-4">
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl md:text-3xl font-bold uppercase tracking-wide"
-          >
-            Waste & Circular Economy
-          </motion.h1>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex items-center justify-center gap-2 mt-2 text-xs md:text-sm text-white/80 font-medium"
-          >
-            <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white/80">Programmes</span>
-            <span className="text-white/40">/</span>
-            <span className="text-white font-semibold">Waste & Circular Economy</span>
-          </motion.div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Waste & Circular Economy"
+        image="/images/Gallery/1732710492385.jpg"
+        icon={Recycle}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Programmes', path: '/programmes' },
+          { label: 'Waste & Circular Economy' },
+        ]}
+      />
 
       {/* ── Main Content Area ── */}
       <main className="max-w-4xl mx-auto px-6 py-12 font-sans text-[#676767] leading-relaxed">

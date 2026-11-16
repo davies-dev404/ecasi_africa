@@ -333,7 +333,7 @@ export function printRegistrationVoucher(reg) {
           <p class="brand-sub">Environmental Capacities &amp; Sustainability Institute</p>
           <h1 class="brand-title">ECAS INSTITUTE AFRICA</h1>
           <p class="brand-contact">
-            P.O. Box 37193-00100, Nairobi, Kenya &bull; Tel/WhatsApp: +254 728 925 306 / +254 796 356 738<br />
+            P.O. Box 37193-00100, Nairobi, Kenya &bull; Tel/WhatsApp: +254 708 060 223 (0708 060 223)<br />
             Email: info@ecasiafrica.org &bull; Website: www.ecasiafrica.org
           </p>
         </div>

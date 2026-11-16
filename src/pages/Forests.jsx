@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { TreePine } from 'lucide-react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 const Forests = () => {
   return (
@@ -14,30 +15,16 @@ const Forests = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-24 pb-6 text-white text-center">
-        <div className="max-w-6xl mx-auto px-4">
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl md:text-3xl font-bold uppercase tracking-wide"
-          >
-            Forests, Biodiversity and Ecosystems
-          </motion.h1>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex items-center justify-center gap-2 mt-2 text-xs md:text-sm text-white/80 font-medium"
-          >
-            <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white/80">Programmes</span>
-            <span className="text-white/40">/</span>
-            <span className="text-white font-semibold">Forests, Biodiversity and Ecosystems</span>
-          </motion.div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Forests, Biodiversity and Ecosystems"
+        image="/images/courses/biodiversity.png"
+        icon={TreePine}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Programmes', path: '/programmes' },
+          { label: 'Forests, Biodiversity and Ecosystems' },
+        ]}
+      />
 
       {/* ── Main Content Area ── */}
       <main className="max-w-4xl mx-auto px-6 py-12 font-sans text-[#676767] leading-relaxed">

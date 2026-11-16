@@ -8,6 +8,7 @@ import {
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 import researchData from '@/data/researchData.json';
 
@@ -32,6 +33,33 @@ const itemVariants = {
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
+};
+
+const slugHeroImages = {
+  'overview': '/images/research/evidence_based_research.jpg',
+  'consulting': '/images/research/consultancy.jpg',
+  'baseline-study': '/images/research/field_research.jpg',
+  'assessments': '/images/research/1710846398420-1-1-1024x683.jpg',
+  'policy-reviews-and-assessments': '/images/research/policy_advisory_meeting.jpg',
+  'policy-analysis': '/images/research/policy_meeting.jpg',
+  'environmental-and-social-impact-assessment': '/images/Gallery/hi.jpg',
+  'strategic-environmental-assessments-sea-2': '/images/research/6Dec23-UNEA-6-Briefing-website-aspect-ratio-2000-1200-1024x614-1.jpg',
+  'environmental-and-social-management-plans-esmp': '/images/programmes/tana_river.png',
+  'rapporteur-and-reporting-services': '/images/Gallery/DSC_0085.JPG',
+  'environmental-audits': '/images/Gallery/1715195548735.jpg',
+  'energy-audits': '/images/courses/energy-transition.png',
+  'scoping-studies': '/images/research/1713864387984-1024x768.jpg',
+  'climate-finance': '/images/courses/IMGM1984-1024x683.jpg',
+  'climate-adaptation': '/images/Gallery/kyvkv.jpg',
+  'climate-change-mitigation': '/images/Gallery/jkhjn.jpg',
+  'climate-and-technology': '/images/research/tech.png',
+  'energy-transition': '/images/courses/20241003_133952069-1-1024x683.jpg',
+  'agriculture-and-food-systems-2': '/images/programmes/agriculture_farm.png',
+  'natural-resources': '/images/programmes/water-river-aerial.png',
+  'transport-and-e-mobility': '/images/beyond/nairobi_expressway.jpg',
+  'waste-and-circular-economy-2': '/images/Gallery/1732710492385.jpg',
+  'just-transition': '/images/Gallery/1714399115076.jpg',
+  'environmental-law-and-governance': '/images/Gallery/regulation_training_group.jpg',
 };
 
 /* ── Icon mapping for known research slugs ── */
@@ -123,6 +151,7 @@ const ResearchConsultancy = () => {
   const pageInfo = researchData[slug];
   const title = formatTitle(slug);
   const IconComponent = slugIcons[slug] || BookOpen;
+  const heroImage = slugHeroImages[slug] || '/images/research/evidence_based_research.jpg';
   const isConsultancy = consultancySlugs.includes(slug);
   const sidebarItems = isConsultancy ? relatedPages.consultancy : relatedPages.research;
   const sectionLabel = isConsultancy ? 'Consultancy' : 'Research Areas';
@@ -135,48 +164,18 @@ const ResearchConsultancy = () => {
       />
       <Header />
 
-      {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-24 pb-8 text-white text-center relative overflow-hidden">
-        {/* Subtle decorative pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 left-1/4 w-32 h-32 border border-white rounded-full" />
-          <div className="absolute bottom-2 right-1/3 w-24 h-24 border border-white rounded-full" />
-        </div>
-
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
-          {/* Icon badge */}
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/15 backdrop-blur-sm mb-4"
-          >
-            <IconComponent size={28} className="text-white" />
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl md:text-3xl font-bold uppercase tracking-wide"
-          >
-            {title}
-          </motion.h1>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex items-center justify-center gap-2 mt-3 text-xs md:text-sm text-white/80 font-medium"
-          >
-            <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
-            <span className="text-white/40">/</span>
-            <Link to="/research/overview" className="text-white/80 hover:text-white transition-colors">Research & Consultancy</Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white font-semibold">{title}</span>
-          </motion.div>
-        </div>
-      </section>
+      {/* ── Contextual Section Photo Hero & Breadcrumb Banner ── */}
+      <PageHeroBanner
+        title={title}
+        image={heroImage}
+        fallbackImage="/images/Gallery/stakeholder_meeting_boardroom.jpg"
+        icon={IconComponent}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Research & Consultancy', path: '/research/overview' },
+          { label: title },
+        ]}
+      />
 
       {/* ── Main Content with Sidebar ── */}
       <main className="flex-grow py-12 md:py-16 bg-gradient-to-b from-gray-50/50 to-white">

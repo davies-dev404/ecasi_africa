@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Building2 } from 'lucide-react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 const InstitutionalCapacityBuilding = () => {
   return (
@@ -13,22 +14,17 @@ const InstitutionalCapacityBuilding = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-24 pb-6 text-white text-center">
-        <div className="max-w-6xl mx-auto px-4">
-          <h1 className="text-xl md:text-2xl font-bold uppercase tracking-wide leading-snug">
-            Institutional capacity-building and Reskilling
-          </h1>
-          <div className="flex items-center justify-center gap-2 mt-3 text-xs md:text-sm text-white/80 font-medium">
-            <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white/80">Programmes</span>
-            <span className="text-white/40">/</span>
-            <span className="text-white/80">Climate Change Action</span>
-            <span className="text-white/40">/</span>
-            <span className="text-white font-semibold">Institutional capacity-building and Reskilling</span>
-          </div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Institutional capacity-building and Reskilling"
+        image="/images/Gallery/training_workshop_session.jpg"
+        icon={Building2}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Programmes', path: '/programmes' },
+          { label: 'Climate Change Action', path: '/climate-change-programming' },
+          { label: 'Institutional capacity-building and Reskilling' },
+        ]}
+      />
 
       {/* ── Main Content Area ── */}
       <main className="max-w-[800px] mx-auto px-6 py-12 font-sans text-[#676767] leading-relaxed">

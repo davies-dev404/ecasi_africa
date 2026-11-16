@@ -261,9 +261,28 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(140);
   const navRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Keep top spacer synchronized with actual header height across mobile/tablet/desktop orientations
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const updateHeight = () => {
+      const h = el.getBoundingClientRect().height;
+      if (h > 0) setHeaderHeight(Math.round(h));
+    };
+    updateHeight();
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(updateHeight);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   const coursesLinks = dataService.getCoursesLinks() || [];
 
@@ -338,36 +357,54 @@ const Header = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const isActive = (path) => location.pathname === path;
 
   const toggleDropdown = (key) => {
+    setMobileMenuOpen(false);
     setActiveDropdown((prev) => (prev === key ? null : key));
   };
 
-  /* ── Helper to Render the Devimpact Horizontal 5-Box Mega Bar (Screenshot 1 Style in ECAS Colors) ── */
-  const renderHorizontalBoxDropdown = (cards) => (
+  /* ── Helper to Render the Horizontal 5-Box Mega Bar (Responsive & Scrollable on All Devices) ── */
+  const renderHorizontalBoxDropdown = (cards, label = "") => (
     <div
-      className="fixed left-0 right-0 w-full bg-white/98 backdrop-blur-md border-t border-b border-gray-200 z-50 animate-fade-in"
+      className="fixed left-0 right-0 w-full bg-white/98 backdrop-blur-md border-t border-b border-gray-200 z-50 animate-fade-in overflow-y-auto"
       style={{
-        top: scrolled ? "70px" : "140px",
-        boxShadow: "0 18px 40px rgba(3, 46, 66, 0.14)",
+        top: `${headerHeight}px`,
+        maxHeight: `calc(100vh - ${Math.min(headerHeight, 220)}px)`,
+        boxShadow: "0 18px 40px rgba(3, 46, 66, 0.16)",
       }}
       onMouseLeave={() => setActiveDropdown(null)}
     >
-      <div className="max-w-[1380px] mx-auto px-4 lg:px-10 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="max-w-[1380px] mx-auto px-4 lg:px-10 py-5 lg:py-6">
+        <div className="flex lg:hidden items-center justify-between pb-3 mb-3 border-b border-gray-200">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-[#032e42]">
+            {label} Navigation
+          </span>
+          <button
+            type="button"
+            onClick={() => setActiveDropdown(null)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-xs font-bold text-[#032e42]"
+          >
+            <X size={14} /> Close
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
           {cards.map((card, idx) => (
             <div
               key={idx}
-              className="group bg-white rounded-[6px] border border-gray-200/90 hover:border-[#008000] p-4 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5"
+              className="group bg-white rounded-[6px] border border-gray-200/90 hover:border-[#008000] p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5"
               style={{
                 boxShadow: "0 2px 10px rgba(0, 0, 0, 0.06)",
               }}
             >
-              {/* Main Horizontal Card Box matching Screenshot 1 */}
+              {/* Main Horizontal Card Box */}
               <Link
                 to={card.path}
                 onClick={() => setActiveDropdown(null)}
@@ -388,22 +425,22 @@ const Header = () => {
                     } transition-transform duration-300 group-hover:scale-105`}
                   />
                 </div>
-                <span className="text-[#032e42] group-hover:text-[#008000] font-bold text-[15px] leading-snug transition-colors">
+                <span className="text-[#032e42] group-hover:text-[#008000] font-bold text-[14.5px] sm:text-[15px] leading-snug transition-colors">
                   {card.title}
                 </span>
               </Link>
 
-              {/* Compact Sub-links (optional quick access) */}
-              {card.subLinks && card.subLinks.length > 1 && (
-                <div className="mt-3 pt-2.5 border-t border-gray-100 flex flex-wrap gap-x-3 gap-y-1">
+              {/* Compact Sub-links (Always accessible on mobile & desktop) */}
+              {card.subLinks && card.subLinks.length > 0 && (
+                <div className="mt-3 pt-2.5 border-t border-gray-100 flex flex-wrap gap-x-3 gap-y-1.5">
                   {card.subLinks.map((sub, sIdx) => (
                     <Link
                       key={sIdx}
                       to={sub.path}
                       onClick={() => setActiveDropdown(null)}
-                      className="text-[11.5px] font-medium text-slate-600 hover:text-[#008000] inline-flex items-center gap-0.5 transition-colors"
+                      className="text-[12px] font-medium text-slate-600 hover:text-[#008000] inline-flex items-center gap-0.5 transition-colors"
                     >
-                      <ChevronRight size={11} className="text-[#008000]" />
+                      <ChevronRight size={11} className="text-[#008000] shrink-0" />
                       {sub.label}
                     </Link>
                   ))}
@@ -418,7 +455,7 @@ const Header = () => {
 
   return (
     <>
-      <div className="h-[140px] w-full shrink-0" aria-hidden="true"></div>
+      <div style={{ height: `${headerHeight}px` }} className="w-full shrink-0" aria-hidden="true"></div>
       <header ref={navRef} className={`ecasi-sticky-nav ${scrolled ? "scrolled" : ""}`}>
         {/* ── Top Bar ── */}
         <div
@@ -434,13 +471,13 @@ const Header = () => {
             }}
           ></div>
           <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center text-white text-[11px] sm:text-xs md:text-sm font-semibold w-full max-w-[1476px] mx-auto justify-between">
-            <div className="bg-ecasi-blue sm:bg-transparent py-2 px-4 sm:py-2.5 lg:pl-16 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-white flex-grow sm:flex-grow-0">
+            <div className="bg-ecasi-blue sm:bg-transparent py-1.5 px-3 sm:py-2.5 lg:pl-16 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-white flex-grow sm:flex-grow-0">
               <a
-                href="tel:+254728925306"
+                href="tel:+254708060223"
                 className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Phone size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />
-                <span className="tracking-wide">+254 728 925 306</span>
+                <span className="tracking-wide">+254 708 060 223</span>
               </a>
               <a
                 href="mailto:info@ecasiafrica.org"
@@ -450,7 +487,7 @@ const Header = () => {
                 <span className="tracking-wide">info@ecasiafrica.org</span>
               </a>
             </div>
-            <div className="bg-ecasi-green sm:bg-transparent py-2 px-4 sm:py-2.5 lg:pr-16 flex items-center justify-center sm:justify-end whitespace-nowrap sm:ml-auto flex-grow sm:flex-grow-0">
+            <div className="bg-ecasi-green sm:bg-transparent py-1.5 px-3 sm:py-2.5 lg:pr-16 flex items-center justify-center sm:justify-end whitespace-nowrap sm:ml-auto flex-grow sm:flex-grow-0">
               <Clock size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />
               <span className="tracking-wide">Mon – Fri: 8:00am – 7:00pm</span>
             </div>
@@ -459,10 +496,10 @@ const Header = () => {
 
         {/* ── Main Navigation (No Home Button — Logo Clicks to Home) ── */}
         <nav className="bg-white border-b border-gray-100 relative">
-          <div className="max-w-[1476px] mx-auto px-4 lg:px-12">
+          <div className="max-w-[1476px] mx-auto px-3 sm:px-4 lg:px-12">
             <div
               className={`flex items-center justify-between transition-all duration-300 ${
-                scrolled ? "h-[70px]" : "h-[96px]"
+                scrolled ? "h-[60px] lg:h-[70px]" : "h-[68px] lg:h-[96px]"
               }`}
             >
               {/* Logo (Clicks to Home `/`) */}
@@ -475,19 +512,12 @@ const Header = () => {
                   src="/logo.png"
                   alt="ECAS Institute Logo - Home"
                   className={`w-auto object-contain mix-blend-multiply transition-all duration-300 ${
-                    scrolled ? "h-12" : "h-20"
+                    scrolled ? "h-10 lg:h-12" : "h-12 sm:h-14 lg:h-20"
                   }`}
                 />
               </Link>
 
-              {/* Desktop Navigation Items:
-                  1. EXECUTIVE TRAINING (First, with Course Finder & Categories Mega-Menu)
-                  2. PROGRAMMES (Horizontal Boxes)
-                  3. RESEARCH (Horizontal Boxes)
-                  4. CONSULTANCY (Horizontal Boxes)
-                  5. ABOUT US (Second Last! Horizontal Boxes including Contact Us)
-                  6. RESOURCES (Last! Horizontal Boxes)
-              */}
+              {/* Desktop Navigation Items */}
               <div className="hidden lg:flex items-center h-full">
                 {/* 1. EXECUTIVE TRAINING (Primary Focus) */}
                 <div
@@ -512,110 +542,9 @@ const Header = () => {
                       }`}
                     />
                   </button>
-
-                  {activeDropdown === "training" && (
-                    <div
-                      className="fixed left-0 right-0 w-full bg-white/98 backdrop-blur-md border-t border-b border-gray-200 z-50 animate-fade-in"
-                      style={{
-                        top: scrolled ? "70px" : "140px",
-                        boxShadow: "0 18px 40px rgba(3, 46, 66, 0.16)",
-                      }}
-                      onMouseLeave={() => setActiveDropdown(null)}
-                    >
-                      <div className="max-w-[1380px] mx-auto px-6 py-6">
-                        {/* Top Bar inside Training Mega-Menu */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 mb-5 border-b border-gray-200">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-[#008000] text-white flex items-center justify-center">
-                              <GraduationCap size={22} />
-                            </div>
-                            <div>
-                              <h3 className="text-base font-extrabold text-[#032e42] leading-tight">
-                                Executive Training &amp; Professional Capacity Development
-                              </h3>
-                              <p className="text-xs text-slate-500">
-                                Explore 200+ practical courses across 8 thematic faculties in Nairobi, Mombasa, Kigali, Dubai, Kuala Lumpur (Malaysia) &amp; Online
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Link
-                              to="/institute-overview"
-                              onClick={() => setActiveDropdown(null)}
-                              className="px-4 py-2 rounded-md bg-[#008000] hover:bg-[#1e73be] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors"
-                            >
-                              <BookOpen size={14} />
-                              Open Course Finder (All Courses)
-                            </Link>
-                            <Link
-                              to="/beyond-the-classroom"
-                              onClick={() => setActiveDropdown(null)}
-                              className="px-3.5 py-2 rounded-md bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors border border-slate-300"
-                            >
-                              <Compass size={14} className="text-[#4ade80]" />
-                              Beyond the Classroom
-                            </Link>
-                            <a
-                              href="/courses/ECASI-BROCHURE.pdf"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 rounded-md border border-[#032e42] text-[#032e42] hover:bg-[#032e42] hover:text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors"
-                            >
-                              Download 2026 Training Catalogue
-                              <ArrowUpRight size={14} />
-                            </a>
-                          </div>
-                        </div>
-
-                        {/* 4x2 Grid of Course Categories */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-h-[62vh] overflow-y-auto pr-1">
-                          {coursesLinks.map((catGroup, idx) => (
-                            <div
-                              key={catGroup.id || idx}
-                              className="bg-[#f8fafc] rounded-lg p-4 border border-slate-200/80 hover:border-[#008000] transition-all"
-                            >
-                              <Link
-                                to={catGroup.path}
-                                onClick={() => setActiveDropdown(null)}
-                                className="block font-bold text-[13.5px] text-[#032e42] hover:text-[#008000] pb-2 mb-2.5 border-b border-slate-200 leading-snug"
-                              >
-                                {catGroup.label}
-                              </Link>
-                              <ul className="space-y-1.5">
-                                {(catGroup.children || []).slice(0, 5).map((courseItem, cIdx) => (
-                                  <li key={cIdx}>
-                                    <Link
-                                      to={courseItem.path}
-                                      onClick={() => setActiveDropdown(null)}
-                                      className="text-[12px] text-slate-600 hover:text-[#008000] font-medium flex items-start gap-1.5 leading-snug"
-                                    >
-                                      <ChevronRight
-                                        size={12}
-                                        className="text-[#008000] shrink-0 mt-0.5"
-                                      />
-                                      <span className="line-clamp-1">{courseItem.label}</span>
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                              <div className="mt-3 pt-2 border-t border-slate-100">
-                                <Link
-                                  to={catGroup.path}
-                                  onClick={() => setActiveDropdown(null)}
-                                  className="text-[11.5px] font-bold text-[#008000] hover:text-[#1e73be] inline-flex items-center gap-1"
-                                >
-                                  View all {getCategoryCount(catGroup)} courses »
-                                </Link>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* 2. PROGRAMMES (Horizontal Card Boxes like Screenshot 1) */}
+                {/* 2. PROGRAMMES */}
                 <div
                   className="relative flex items-center h-full"
                   onMouseEnter={() => setActiveDropdown("programmes")}
@@ -638,11 +567,9 @@ const Header = () => {
                       }`}
                     />
                   </button>
-                  {activeDropdown === "programmes" &&
-                    renderHorizontalBoxDropdown(programmesBoxCards)}
                 </div>
 
-                {/* 3. RESEARCH (Horizontal Card Boxes like Screenshot 1) */}
+                {/* 3. RESEARCH */}
                 <div
                   className="relative flex items-center h-full"
                   onMouseEnter={() => setActiveDropdown("research")}
@@ -665,11 +592,9 @@ const Header = () => {
                       }`}
                     />
                   </button>
-                  {activeDropdown === "research" &&
-                    renderHorizontalBoxDropdown(researchBoxCards)}
                 </div>
 
-                {/* 4. CONSULTANCY (Horizontal Card Boxes like Screenshot 1) */}
+                {/* 4. CONSULTANCY */}
                 <div
                   className="relative flex items-center h-full"
                   onMouseEnter={() => setActiveDropdown("consultancy")}
@@ -693,11 +618,9 @@ const Header = () => {
                       }`}
                     />
                   </button>
-                  {activeDropdown === "consultancy" &&
-                    renderHorizontalBoxDropdown(consultancyBoxCards)}
                 </div>
 
-                {/* 5. ABOUT US (Second Last! Opens Screenshot-1 Horizontal Boxes including Contact Us) */}
+                {/* 5. ABOUT US */}
                 <div
                   className="relative flex items-center h-full"
                   onMouseEnter={() => setActiveDropdown("about")}
@@ -709,6 +632,10 @@ const Header = () => {
                       isActive("/our-history") ||
                       isActive("/partners") ||
                       isActive("/governance") ||
+                      isActive("/our-team") ||
+                      isActive("/governing-council") ||
+                      isActive("/our-strategic-focus") ||
+                      isActive("/theory-of-change") ||
                       isActive("/contact")
                         ? "active"
                         : ""
@@ -722,11 +649,9 @@ const Header = () => {
                       }`}
                     />
                   </button>
-                  {activeDropdown === "about" &&
-                    renderHorizontalBoxDropdown(aboutBoxCards)}
                 </div>
 
-                {/* 6. RESOURCES (Last Item! Opens Screenshot-1 Horizontal Boxes) */}
+                {/* 6. RESOURCES */}
                 <div
                   className="relative flex items-center h-full"
                   onMouseEnter={() => setActiveDropdown("resources")}
@@ -748,13 +673,11 @@ const Header = () => {
                       }`}
                     />
                   </button>
-                  {activeDropdown === "resources" &&
-                    renderHorizontalBoxDropdown(resourcesBoxCards)}
                 </div>
               </div>
 
-              {/* Right Actions: Course Finder CTA & Search Icon */}
-              <div className="flex items-center gap-2.5">
+              {/* Right Actions: Course Finder CTA, Search Icon & Labeled Mobile Menu Button */}
+              <div className="flex items-center gap-2">
                 <Link
                   to="/institute-overview"
                   className="hidden xl:inline-flex items-center gap-1.5 bg-[#008000] hover:bg-[#1e73be] text-white font-bold text-xs px-4 py-2.5 rounded-full transition-colors shadow-sm"
@@ -764,6 +687,7 @@ const Header = () => {
                 </Link>
 
                 <button
+                  type="button"
                   onClick={() => setSearchOpen(!searchOpen)}
                   className="ecasi-icon-circle"
                   aria-label="Search Courses"
@@ -771,17 +695,182 @@ const Header = () => {
                   <Search size={15} />
                 </button>
 
-                {/* Mobile menu trigger */}
+                {/* Mobile & Tablet Menu Trigger */}
                 <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="ecasi-icon-circle lg:hidden"
-                  aria-label="Menu"
+                  type="button"
+                  onClick={() => {
+                    setActiveDropdown(null);
+                    setMobileMenuOpen(!mobileMenuOpen);
+                  }}
+                  className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#032e42]/25 bg-slate-50 hover:bg-[#008000] hover:text-white text-[#032e42] text-xs font-bold transition-colors cursor-pointer"
+                  aria-label="Toggle Full Navigation Menu"
                 >
                   {mobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
+                  <span>Menu</span>
                 </button>
               </div>
             </div>
           </div>
+
+          {/* ── Always-Visible Compact Mobile & Tablet Navigation Bar (< 1024px) ──
+              Ensures Executive Training, Programmes, Research, Consultancy, About Us & Resources
+              are ALL visible & clickable in portrait on Google Pixel 7 and small phones! ── */}
+          <div className="lg:hidden border-t border-slate-100 bg-slate-50/90 px-2 py-1.5">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 max-w-[1476px] mx-auto">
+              {[
+                { key: "training", label: "Exec. Training", active: activeDropdown === "training" },
+                { key: "programmes", label: "Programmes", active: activeDropdown === "programmes" },
+                { key: "research", label: "Research", active: activeDropdown === "research" },
+                { key: "consultancy", label: "Consultancy", active: activeDropdown === "consultancy" },
+                { key: "about", label: "About Us", active: activeDropdown === "about" },
+                { key: "resources", label: "Resources", active: activeDropdown === "resources" },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => toggleDropdown(item.key)}
+                  className={`flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[10.5px] sm:text-xs font-extrabold uppercase tracking-tight transition-colors cursor-pointer whitespace-nowrap ${
+                    item.active
+                      ? "bg-[#008000] text-white shadow-xs"
+                      : "bg-white text-[#032e42] border border-slate-200/80 hover:border-[#008000] hover:text-[#008000]"
+                  }`}
+                >
+                  <span className="truncate">{item.label}</span>
+                  <ChevronDown
+                    size={11}
+                    className={`shrink-0 transition-transform ${item.active ? "rotate-180" : ""}`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Unified Mega Dropdowns (Rendered cleanly on Mobile, Tablet & Desktop) ── */}
+          {activeDropdown === "training" && (
+            <div
+              className="fixed left-0 right-0 w-full bg-white/98 backdrop-blur-md border-t border-b border-gray-200 z-50 animate-fade-in overflow-y-auto"
+              style={{
+                top: `${headerHeight}px`,
+                maxHeight: `calc(100vh - ${Math.min(headerHeight, 220)}px)`,
+                boxShadow: "0 18px 40px rgba(3, 46, 66, 0.16)",
+              }}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <div className="max-w-[1380px] mx-auto px-4 sm:px-6 py-5 lg:py-6">
+                <div className="flex lg:hidden items-center justify-between pb-3 mb-3 border-b border-gray-200">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#032e42]">
+                    Executive Training Navigation
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDropdown(null)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-xs font-bold text-[#032e42]"
+                  >
+                    <X size={14} /> Close
+                  </button>
+                </div>
+
+                {/* Top Bar inside Training Mega-Menu */}
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 mb-5 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#008000] text-white flex items-center justify-center shrink-0">
+                      <GraduationCap size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-[#032e42] leading-tight">
+                        Executive Training &amp; Professional Capacity Development
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Explore 200+ practical courses across 8 thematic faculties in Nairobi, Mombasa, Diani, Zanzibar, Kigali, Dubai, Kuala Lumpur (Malaysia) &amp; Online
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <Link
+                      to="/institute-overview"
+                      onClick={() => setActiveDropdown(null)}
+                      className="px-3.5 py-2 rounded-md bg-[#008000] hover:bg-[#1e73be] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors"
+                    >
+                      <BookOpen size={14} />
+                      Open Course Finder (All Courses)
+                    </Link>
+                    <Link
+                      to="/beyond-the-classroom"
+                      onClick={() => setActiveDropdown(null)}
+                      className="px-3.5 py-2 rounded-md bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors border border-slate-300"
+                    >
+                      <Compass size={14} className="text-[#4ade80]" />
+                      Beyond the Classroom
+                    </Link>
+                    <a
+                      href="/courses/ECASI-BROCHURE.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-2 rounded-md border border-[#032e42] text-[#032e42] hover:bg-[#032e42] hover:text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors"
+                    >
+                      Download 2026 Training Catalogue
+                      <ArrowUpRight size={14} />
+                    </a>
+                  </div>
+                </div>
+
+                {/* 4x2 Grid of Course Categories */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pr-1">
+                  {coursesLinks.map((catGroup, idx) => (
+                    <div
+                      key={catGroup.id || idx}
+                      className="bg-[#f8fafc] rounded-lg p-4 border border-slate-200/80 hover:border-[#008000] transition-all"
+                    >
+                      <Link
+                        to={catGroup.path}
+                        onClick={() => setActiveDropdown(null)}
+                        className="block font-bold text-[13.5px] text-[#032e42] hover:text-[#008000] pb-2 mb-2.5 border-b border-slate-200 leading-snug"
+                      >
+                        {catGroup.label}
+                      </Link>
+                      <ul className="space-y-1.5">
+                        {(catGroup.children || []).slice(0, 5).map((courseItem, cIdx) => (
+                          <li key={cIdx}>
+                            <Link
+                              to={courseItem.path}
+                              onClick={() => setActiveDropdown(null)}
+                              className="text-[12px] text-slate-600 hover:text-[#008000] font-medium flex items-start gap-1.5 leading-snug"
+                            >
+                              <ChevronRight
+                                size={12}
+                                className="text-[#008000] shrink-0 mt-0.5"
+                              />
+                              <span className="line-clamp-1">{courseItem.label}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-3 pt-2 border-t border-slate-100">
+                        <Link
+                          to={catGroup.path}
+                          onClick={() => setActiveDropdown(null)}
+                          className="text-[11.5px] font-bold text-[#008000] hover:text-[#1e73be] inline-flex items-center gap-1"
+                        >
+                          View all {getCategoryCount(catGroup)} courses »
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeDropdown === "programmes" &&
+            renderHorizontalBoxDropdown(programmesBoxCards, "Programmes")}
+          {activeDropdown === "research" &&
+            renderHorizontalBoxDropdown(researchBoxCards, "Research")}
+          {activeDropdown === "consultancy" &&
+            renderHorizontalBoxDropdown(consultancyBoxCards, "Consultancy")}
+          {activeDropdown === "about" &&
+            renderHorizontalBoxDropdown(aboutBoxCards, "About Us")}
+          {activeDropdown === "resources" &&
+            renderHorizontalBoxDropdown(resourcesBoxCards, "Resources")}
 
           {/* Search bar slider */}
           {searchOpen && (
@@ -809,13 +898,14 @@ const Header = () => {
             </div>
           )}
 
-          {/* Mobile Dropdown Nav Menu (No Home Button — Logo goes Home) */}
+          {/* Mobile Dropdown Nav Menu (All 6 Sections + Sub-links Visible on Small Screens) */}
           {mobileMenuOpen && (
             <div className="lg:hidden border-t border-gray-100 bg-white absolute top-full left-0 w-full z-50 max-h-[82vh] overflow-y-auto shadow-xl py-4">
               <div className="px-4 space-y-2">
                 {/* 1. Executive Training */}
                 <div>
                   <button
+                    type="button"
                     onClick={() => toggleDropdown("m-training")}
                     className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-slate-50 rounded-lg"
                   >
@@ -857,182 +947,68 @@ const Header = () => {
                   )}
                 </div>
 
-                {/* 2. Programmes */}
-                <div>
-                  <button
-                    onClick={() => toggleDropdown("m-programmes")}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-slate-50 rounded-lg"
-                  >
-                    <span>Programmes</span>
-                    <ChevronDown
-                      size={15}
-                      className={`transition-transform ${
-                        activeDropdown === "m-programmes" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  {activeDropdown === "m-programmes" && (
-                    <div className="p-3 grid grid-cols-1 gap-2 bg-white border border-slate-100 rounded-b-lg">
-                      {programmesBoxCards.map((c, idx) => (
-                        <Link
-                          key={idx}
-                          to={c.path}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 p-2 rounded border border-slate-100 hover:border-[#008000]"
-                        >
-                          <img
-                            src={c.image}
-                            alt={c.title}
-                            className="w-12 h-9 object-cover rounded shrink-0"
-                          />
-                          <span className="text-xs font-bold text-[#032e42]">{c.title}</span>
-                        </Link>
-                      ))}
+                {/* 2–6: Programmes, Research, Consultancy, About Us, Resources with full sub-links */}
+                {[
+                  { key: "m-programmes", label: "Programmes", cards: programmesBoxCards },
+                  { key: "m-research", label: "Research", cards: researchBoxCards },
+                  { key: "m-consultancy", label: "Consultancy", cards: consultancyBoxCards },
+                  { key: "m-about", label: "About Us", cards: aboutBoxCards },
+                  { key: "m-resources", label: "Resources", cards: resourcesBoxCards },
+                ].map((section) => {
+                  const isOpen = activeDropdown === section.key;
+                  return (
+                    <div key={section.key}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveDropdown(isOpen ? null : section.key)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-slate-50 rounded-lg"
+                      >
+                        <span>{section.label}</span>
+                        <ChevronDown
+                          size={15}
+                          className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                      {isOpen && (
+                        <div className="p-3 grid grid-cols-1 gap-2 bg-white border border-slate-100 rounded-b-lg">
+                          {section.cards.map((c, idx) => (
+                            <div key={idx} className="p-2 rounded border border-slate-100">
+                              <Link
+                                to={c.path}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="flex items-center gap-3 hover:text-[#008000]"
+                              >
+                                <img
+                                  src={c.image}
+                                  alt={c.title}
+                                  className={`w-12 h-9 rounded shrink-0 ${
+                                    c.isLogo ? "object-contain p-0.5 bg-white" : "object-cover"
+                                  }`}
+                                />
+                                <span className="text-xs font-bold text-[#032e42]">{c.title}</span>
+                              </Link>
+                              {c.subLinks && c.subLinks.length > 0 && (
+                                <div className="mt-2 pt-1.5 border-t border-slate-100 flex flex-wrap gap-x-3 gap-y-1 pl-1">
+                                  {c.subLinks.map((sub, sIdx) => (
+                                    <Link
+                                      key={sIdx}
+                                      to={sub.path}
+                                      onClick={() => setMobileMenuOpen(false)}
+                                      className="text-[11px] font-medium text-slate-600 hover:text-[#008000] inline-flex items-center gap-0.5"
+                                    >
+                                      <ChevronRight size={10} className="text-[#008000]" />
+                                      {sub.label}
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {/* 3. Research */}
-                <div>
-                  <button
-                    onClick={() => toggleDropdown("m-research")}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-slate-50 rounded-lg"
-                  >
-                    <span>Research</span>
-                    <ChevronDown
-                      size={15}
-                      className={`transition-transform ${
-                        activeDropdown === "m-research" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  {activeDropdown === "m-research" && (
-                    <div className="p-3 grid grid-cols-1 gap-2 bg-white border border-slate-100 rounded-b-lg">
-                      {researchBoxCards.map((c, idx) => (
-                        <Link
-                          key={idx}
-                          to={c.path}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 p-2 rounded border border-slate-100 hover:border-[#008000]"
-                        >
-                          <img
-                            src={c.image}
-                            alt={c.title}
-                            className="w-12 h-9 object-cover rounded shrink-0"
-                          />
-                          <span className="text-xs font-bold text-[#032e42]">{c.title}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 4. Consultancy */}
-                <div>
-                  <button
-                    onClick={() => toggleDropdown("m-consultancy")}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-slate-50 rounded-lg"
-                  >
-                    <span>Consultancy</span>
-                    <ChevronDown
-                      size={15}
-                      className={`transition-transform ${
-                        activeDropdown === "m-consultancy" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  {activeDropdown === "m-consultancy" && (
-                    <div className="p-3 grid grid-cols-1 gap-2 bg-white border border-slate-100 rounded-b-lg">
-                      {consultancyBoxCards.map((c, idx) => (
-                        <Link
-                          key={idx}
-                          to={c.path}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 p-2 rounded border border-slate-100 hover:border-[#008000]"
-                        >
-                          <img
-                            src={c.image}
-                            alt={c.title}
-                            className="w-12 h-9 object-cover rounded shrink-0"
-                          />
-                          <span className="text-xs font-bold text-[#032e42]">{c.title}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 5. About Us (Second Last! Includes Contact Us box) */}
-                <div>
-                  <button
-                    onClick={() => toggleDropdown("m-about")}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-slate-50 rounded-lg"
-                  >
-                    <span>About Us</span>
-                    <ChevronDown
-                      size={15}
-                      className={`transition-transform ${
-                        activeDropdown === "m-about" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  {activeDropdown === "m-about" && (
-                    <div className="p-3 grid grid-cols-1 gap-2 bg-white border border-slate-100 rounded-b-lg">
-                      {aboutBoxCards.map((c, idx) => (
-                        <Link
-                          key={idx}
-                          to={c.path}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 p-2 rounded border border-slate-100 hover:border-[#008000]"
-                        >
-                          <img
-                            src={c.image}
-                            alt={c.title}
-                            className={`w-12 h-9 rounded shrink-0 ${
-                              c.isLogo ? "object-contain p-0.5 bg-white" : "object-cover"
-                            }`}
-                          />
-                          <span className="text-xs font-bold text-[#032e42]">{c.title}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 6. Resources (Last) */}
-                <div>
-                  <button
-                    onClick={() => toggleDropdown("m-resources")}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-slate-50 rounded-lg"
-                  >
-                    <span>Resources</span>
-                    <ChevronDown
-                      size={15}
-                      className={`transition-transform ${
-                        activeDropdown === "m-resources" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  {activeDropdown === "m-resources" && (
-                    <div className="p-3 grid grid-cols-1 gap-2 bg-white border border-slate-100 rounded-b-lg">
-                      {resourcesBoxCards.map((c, idx) => (
-                        <Link
-                          key={idx}
-                          to={c.path}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 p-2 rounded border border-slate-100 hover:border-[#008000]"
-                        >
-                          <img
-                            src={c.image}
-                            alt={c.title}
-                            className="w-12 h-9 object-cover rounded shrink-0"
-                          />
-                          <span className="text-xs font-bold text-[#032e42]">{c.title}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  );
+                })}
               </div>
             </div>
           )}

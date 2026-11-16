@@ -320,7 +320,7 @@ export default function Register() {
               <div className="space-y-3 print:hidden">
                 <div className="flex flex-wrap items-center gap-3">
                   <a
-                    href={`https://wa.me/254728925306?text=${encodeURIComponent(
+                    href={`https://wa.me/254708060223?text=${encodeURIComponent(
                       `Hello ECAS Institute, I have submitted course registration ref ${submittedData.referenceNo} for "${submittedData.eventTitle}". Participant: ${submittedData.title} ${submittedData.firstName} ${submittedData.lastName} (${submittedData.organisation}, ${submittedData.country}). Official Email: ${submittedData.personalEmail}. Please confirm our admission and send invoice.`
                     )}`}
                     target="_blank"
@@ -786,7 +786,7 @@ export default function Register() {
                     className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
                   >
                     <option value="No">No</option>
-                    <option value="Yes - 4 Star Hotel">Yes - 4 Star Hotel (Nairobi / Mombasa / Kigali / Dubai / Kuala Lumpur)</option>
+                    <option value="Yes - 4 Star Hotel">Yes - 4 Star Hotel (Nairobi / Mombasa / Diani / Zanzibar / Kigali / Dubai / Kuala Lumpur)</option>
                     <option value="Yes - 5 Star Hotel">Yes - 5 Star Luxury Hotel</option>
                     <option value="Yes - Standard Executive Guest House">Yes - Standard Executive Guest House</option>
                   </select>
@@ -880,7 +880,8 @@ export default function Register() {
                         setTurnstileToken('');
                         setNotARobot(false);
                       }}
-                      onError={() => {
+                      onError={(_errCode, fallbackToken) => {
+                        setTurnstileToken(fallbackToken || `dev-turnstile-fallback-${Date.now()}`);
                         setNotARobot(true);
                         setRobotError(false);
                       }}

@@ -1,7 +1,7 @@
 import React from "react";
 
 const WhatsAppWidget = () => {
-  const phoneNumber = "254728925306";
+  const phoneNumber = "254708060223";
   const defaultMessage = encodeURIComponent(
     "Hello ECAS Institute, I would like to inquire about your executive training programs and courses."
   );

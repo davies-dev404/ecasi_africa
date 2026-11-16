@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 const ResearchSystematicObservation = () => {
   return (
@@ -13,22 +14,17 @@ const ResearchSystematicObservation = () => {
       <Header />
 
       {/* ── Page Title & Breadcrumb Banner ── */}
-      <section className="bg-ecasi-green pt-24 pb-6 text-white text-center">
-        <div className="max-w-6xl mx-auto px-4">
-          <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">
-            Research and Systematic Observation
-          </h1>
-          <div className="flex items-center justify-center gap-2 mt-2 text-xs md:text-sm text-white/80 font-medium">
-            <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white/80">Programmes</span>
-            <span className="text-white/40">/</span>
-            <span className="text-white/80">Climate Change Action</span>
-            <span className="text-white/40">/</span>
-            <span className="text-white font-semibold">Research and Systematic Observation</span>
-          </div>
-        </div>
-      </section>
+      <PageHeroBanner
+        title="Research and Systematic Observation"
+        image="/images/research/evidence_based_research.jpg"
+        icon={Eye}
+        breadcrumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Programmes', path: '/programmes' },
+          { label: 'Climate Change Action', path: '/climate-change-programming' },
+          { label: 'Research and Systematic Observation' },
+        ]}
+      />
 
       {/* ── Main Content Area ── */}
       <main className="max-w-[800px] mx-auto px-6 py-12 font-sans text-[#676767] leading-relaxed">
