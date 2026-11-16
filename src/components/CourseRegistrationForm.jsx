@@ -142,6 +142,7 @@ export default function CourseRegistrationForm({
   const [robotLoading, setRobotLoading] = useState(false);
   const [robotError, setRobotError] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   const filteredCourseOptions = useMemo(() => {
     const q = courseFilter.trim().toLowerCase();
@@ -235,6 +236,7 @@ export default function CourseRegistrationForm({
     setNotARobot(false);
     setRobotError(false);
     setTurnstileToken("");
+    setTurnstileResetKey((k) => k + 1);
     if (isAdmin) {
       setCourseFilter("");
       setAdminStatus("Pending");
@@ -246,31 +248,29 @@ export default function CourseRegistrationForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!isAdmin) {
-      const domToken =
-        e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')
-          ?.value || "";
-      const effectiveToken = turnstileToken || domToken;
-      if (!notARobot && !effectiveToken) {
-        setRobotError(true);
-        return;
-      }
-      setRobotError(false);
+    const domToken =
+      e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')
+        ?.value || "";
+    const effectiveToken = turnstileToken || domToken;
+    if (!notARobot && !effectiveToken) {
+      setRobotError(true);
+      return;
+    }
+    setRobotError(false);
 
-      if (effectiveToken) {
-        setRobotLoading(true);
-        try {
-          const verification = await verifyTurnstile(effectiveToken, "register");
-          if (verification && verification.success === false) {
-            setRobotError(true);
-            setRobotLoading(false);
-            return;
-          }
-        } catch (err) {
-          console.warn("[Turnstile Registration Check]:", err);
+    if (effectiveToken) {
+      setRobotLoading(true);
+      try {
+        const verification = await verifyTurnstile(effectiveToken, "register");
+        if (verification && verification.success === false) {
+          setRobotError(true);
+          setRobotLoading(false);
+          return;
         }
-        setRobotLoading(false);
+      } catch (err) {
+        console.warn("[Turnstile Registration Check]:", err);
       }
+      setRobotLoading(false);
     }
 
     const activeSlug =
@@ -956,33 +956,32 @@ export default function CourseRegistrationForm({
       {/* Divider after Summary */}
       <hr className="border-t border-gray-300 my-6" />
 
-      {/* Verification (Public) + Action Buttons (Back | Complete Registration | Reset) */}
+      {/* Cloudflare Turnstile Verification + Action Buttons (Back | Complete Registration | Reset) */}
       <div className="space-y-3 pt-1">
-        {!isAdmin && (
-          <div className="space-y-2">
-            <TurnstileWidget
-              action="register"
-              onVerify={(token) => {
-                setTurnstileToken(token);
-                setNotARobot(true);
-                setRobotError(false);
-              }}
-              onExpire={() => {
-                setTurnstileToken("");
-                setNotARobot(false);
-              }}
-              onError={(_errCode, fallbackToken) => {
-                setTurnstileToken(
-                  fallbackToken || `dev-turnstile-fallback-${Date.now()}`
-                );
-                setNotARobot(true);
-                setRobotError(false);
-              }}
-            />
-          </div>
-        )}
+        <div className="space-y-2">
+          <TurnstileWidget
+            key={turnstileResetKey}
+            action="register"
+            onVerify={(token) => {
+              setTurnstileToken(token);
+              setNotARobot(true);
+              setRobotError(false);
+            }}
+            onExpire={() => {
+              setTurnstileToken("");
+              setNotARobot(false);
+            }}
+            onError={(_errCode, fallbackToken) => {
+              setTurnstileToken(
+                fallbackToken || `dev-turnstile-fallback-${Date.now()}`
+              );
+              setNotARobot(true);
+              setRobotError(false);
+            }}
+          />
+        </div>
 
-        {!isAdmin && robotError && (
+        {robotError && (
           <p className="text-xs text-[#d83030] font-medium">
             Please confirm that you are not a robot before completing registration.
           </p>
