@@ -46,6 +46,7 @@ import { dataService } from '@/lib/dataService';
 import TurnstileWidget from '@/components/TurnstileWidget';
 import { verifyTurnstile } from '@/services/turnstileService';
 import { printRegistrationVoucher } from '@/utils/printRegistrationVoucher';
+import CourseRegistrationForm from '@/components/CourseRegistrationForm';
 
 export default function MsimamiziAdmin() {
 
@@ -187,32 +188,11 @@ export default function MsimamiziAdmin() {
     try { sessionStorage.setItem('msimamizi_reg_payment', val); } catch { /* ignore */ }
   };
 
-  // Selected registration for details / voucher modal
+  // Selected registration for details / voucher view
   const [selectedReg, setSelectedReg] = useState(null);
 
-  // New Manual Registration Modal state
+  // New Manual Registration page state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-  const [newRegData, setNewRegData] = useState({
-    title: 'Mr.',
-    firstName: '',
-    lastName: '',
-    officialEmail: '',
-    phoneNumber: '',
-    organisation: '',
-    jobTitle: '',
-    country: 'Kenya',
-    eventTitle: 'Climate-Responsive Budgeting & Strategic Fiscal Management',
-    venue: 'Nairobi, Kenya',
-    format: 'Classroom',
-    durationText: '2 Weeks (10 Days)',
-    participantsCount: 1,
-    totalFee: 1200,
-    needAccommodation: 'No',
-    needAirportTransfer: 'No',
-    status: 'Pending',
-    paymentStatus: 'Unpaid',
-    adminNotes: 'Manually entered by administrator.',
-  });
 
   // KPI stats
   const [kpis, setKpis] = useState(adminRegistrationService.getKPIs());
@@ -1179,39 +1159,18 @@ export default function MsimamiziAdmin() {
     }
   };
 
-  // Add Manual Registration
-  const handleCreateManualRegistration = (e) => {
-    e.preventDefault();
-    if (!newRegData.firstName || !newRegData.lastName || !newRegData.officialEmail) {
-      alert('Please fill in required fields (First Name, Last Name, Email)');
+  // Add Manual Registration (Submitted from shared ECAS Course Registration Form)
+  const handleCreateManualRegistration = (submissionRecord) => {
+    if (!submissionRecord?.firstName || !submissionRecord?.lastName || (!submissionRecord?.personalEmail && !submissionRecord?.officialEmail)) {
+      alert('Please fill in required fields (First Name, Last Name, Email).');
       return;
     }
-    const created = adminRegistrationService.addRegistration(newRegData);
+    const created = adminRegistrationService.addRegistration(submissionRecord);
     if (created) {
       setIsNewModalOpen(false);
       loadData();
-      alert(`Registration ${created.referenceNo} created successfully!`);
-      setNewRegData({
-        title: 'Mr.',
-        firstName: '',
-        lastName: '',
-        officialEmail: '',
-        phoneNumber: '',
-        organisation: '',
-        jobTitle: '',
-        country: 'Kenya',
-        eventTitle: 'Climate-Responsive Budgeting & Strategic Fiscal Management',
-        venue: 'Nairobi, Kenya',
-        format: 'Classroom',
-        durationText: '2 Weeks (10 Days)',
-        participantsCount: 1,
-        totalFee: 1200,
-        needAccommodation: 'No',
-        needAirportTransfer: 'No',
-        status: 'Pending',
-        paymentStatus: 'Unpaid',
-        adminNotes: 'Manually entered by administrator.',
-      });
+      scrollMainTop();
+      showToast(`Registration ${created.referenceNo} saved successfully!`);
     }
   };
 
@@ -3926,7 +3885,7 @@ export default function MsimamiziAdmin() {
                   Admission Dossier • {selectedReg.referenceNo}
                 </span>
                 <h3 className="text-base font-bold text-white mt-0.5">
-                  {selectedReg.title} {selectedReg.firstName} {selectedReg.lastName}
+                  {selectedReg.title} {selectedReg.firstName} {selectedReg.middleName ? `${selectedReg.middleName} ` : ''}{selectedReg.lastName}
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -3998,6 +3957,10 @@ export default function MsimamiziAdmin() {
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
+                    <span className="text-slate-400 block">Personal Email</span>
+                    <span className="text-slate-800 font-medium">{selectedReg.personalEmail || 'N/A'}</span>
+                  </div>
+                  <div>
                     <span className="text-slate-400 block">Official Email</span>
                     <span className="text-slate-800 font-medium">{selectedReg.officialEmail || 'N/A'}</span>
                   </div>
@@ -4013,7 +3976,7 @@ export default function MsimamiziAdmin() {
                   </div>
                   <div>
                     <span className="text-slate-400 block">Job Designation</span>
-                    <span className="text-slate-800 font-medium">{selectedReg.jobTitle}</span>
+                    <span className="text-slate-800 font-medium">{selectedReg.jobTitle || 'N/A'}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block">Country</span>
@@ -4023,8 +3986,42 @@ export default function MsimamiziAdmin() {
                     <span className="text-slate-400 block">Participants Count</span>
                     <strong className="text-slate-800">{selectedReg.participantsCount || 1} Delegate(s)</strong>
                   </div>
+                  {selectedReg.hearAboutUs && (
+                    <div>
+                      <span className="text-slate-400 block">Referral Source</span>
+                      <span className="text-slate-800 font-medium">{selectedReg.hearAboutUs}</span>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {(selectedReg.currentDuties || selectedReg.trainingExpectations || selectedReg.tailorMadeRequirements) && (
+                <div>
+                  <h4 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider mb-2 border-b pb-1">
+                    Learning Profile &amp; Tailor-Made Requirements
+                  </h4>
+                  <div className="space-y-2.5">
+                    {selectedReg.currentDuties && (
+                      <div>
+                        <span className="text-slate-400 block">Current Duties</span>
+                        <p className="text-slate-800 whitespace-pre-line">{selectedReg.currentDuties}</p>
+                      </div>
+                    )}
+                    {selectedReg.trainingExpectations && (
+                      <div>
+                        <span className="text-slate-400 block">Training Expectations</span>
+                        <p className="text-slate-800 whitespace-pre-line">{selectedReg.trainingExpectations}</p>
+                      </div>
+                    )}
+                    {selectedReg.tailorMadeRequirements && (
+                      <div>
+                        <span className="text-slate-400 block">Tailor-made Requirements</span>
+                        <p className="text-slate-800 whitespace-pre-line">{selectedReg.tailorMadeRequirements}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Accommodation & Hospitality */}
               <div>
@@ -4129,180 +4126,38 @@ export default function MsimamiziAdmin() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          DEDICATED PAGE: ADD NEW MANUAL REGISTRATION
+          DEDICATED PAGE: ADD NEW MANUAL REGISTRATION (FULL ECAS REGISTRATION FORM)
       ───────────────────────────────────────────────────────────── */}
       {isNewModalOpen && (
         <div className="max-w-4xl mx-auto">
           {renderBackBar('Back to Registrations', () => setIsNewModalOpen(false))}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-            <div className="bg-[#032e42] p-5 text-white flex items-center justify-between">
+            <div className="bg-[#032e42] p-5 sm:p-6 text-white flex items-center justify-between">
               <div>
                 <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
                   ECAS Course Admissions Desk
                 </span>
-                <h3 className="text-base font-bold mt-0.5">New Manual Course Registration</h3>
+                <h3 className="text-lg font-bold mt-0.5">Course Registration Form</h3>
+                <p className="text-xs text-white/75 mt-0.5">
+                  Please enter delegate information in the form below to process registration for an ECAS course.
+                </p>
               </div>
             </div>
 
-            <form onSubmit={handleCreateManualRegistration} className="p-6 space-y-5 text-xs">
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Title</label>
-                  <select
-                    value={newRegData.title}
-                    onChange={(e) => setNewRegData({ ...newRegData, title: e.target.value })}
-                    className="w-full h-9 px-2 rounded-lg border border-slate-200 bg-white"
-                  >
-                    <option value="Mr.">Mr.</option>
-                    <option value="Ms.">Ms.</option>
-                    <option value="Mrs.">Mrs.</option>
-                    <option value="Dr.">Dr.</option>
-                    <option value="Prof.">Prof.</option>
-                    <option value="Eng.">Eng.</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">First Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newRegData.firstName}
-                    onChange={(e) => setNewRegData({ ...newRegData, firstName: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Last Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newRegData.lastName}
-                    onChange={(e) => setNewRegData({ ...newRegData, lastName: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Official Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={newRegData.officialEmail}
-                    onChange={(e) => setNewRegData({ ...newRegData, officialEmail: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Phone Number</label>
-                  <input
-                    type="text"
-                    value={newRegData.phoneNumber}
-                    onChange={(e) => setNewRegData({ ...newRegData, phoneNumber: e.target.value })}
-                    placeholder="+254 7..."
-                    className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Organization</label>
-                  <input
-                    type="text"
-                    value={newRegData.organisation}
-                    onChange={(e) => setNewRegData({ ...newRegData, organisation: e.target.value })}
-                    placeholder="e.g. Ministry of Finance"
-                    className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Country</label>
-                  <input
-                    type="text"
-                    value={newRegData.country}
-                    onChange={(e) => setNewRegData({ ...newRegData, country: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-600 font-bold mb-1">Course Title</label>
-                <input
-                  type="text"
-                  value={newRegData.eventTitle}
-                  onChange={(e) => setNewRegData({ ...newRegData, eventTitle: e.target.value })}
-                  className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Venue</label>
-                  <select
-                    value={newRegData.venue}
-                    onChange={(e) => setNewRegData({ ...newRegData, venue: e.target.value })}
-                    className="w-full h-9 px-2 rounded-lg border border-slate-200 bg-white"
-                  >
-                    <option value="Nairobi, Kenya">Nairobi, Kenya</option>
-                    <option value="Mombasa, Kenya">Mombasa, Kenya</option>
-                    <option value="Diani, Kenya">Diani, Kenya</option>
-                    <option value="Zanzibar, Tanzania">Zanzibar, Tanzania</option>
-                    <option value="Kigali, Rwanda">Kigali, Rwanda</option>
-                    <option value="Dubai, UAE">Dubai, UAE</option>
-                    <option value="Kuala Lumpur, Malaysia">Kuala Lumpur, Malaysia</option>
-                    <option value="Online / Virtual">Online / Virtual</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Participants</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={newRegData.participantsCount}
-                    onChange={(e) => {
-                      const count = Number(e.target.value) || 1;
-                      setNewRegData({
-                        ...newRegData,
-                        participantsCount: count,
-                        totalFee: count * 1200,
-                      });
-                    }}
-                    className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Total Fee ($)</label>
-                  <input
-                    type="number"
-                    value={newRegData.totalFee}
-                    onChange={(e) => setNewRegData({ ...newRegData, totalFee: Number(e.target.value) || 0 })}
-                    className="w-full h-9 px-2.5 rounded-lg border border-slate-200"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsNewModalOpen(false);
-                    scrollMainTop();
-                  }}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold shadow cursor-pointer"
-                >
-                  Save Registration
-                </button>
-              </div>
-            </form>
+            <div className="p-5 sm:p-8">
+              <CourseRegistrationForm
+                mode="admin"
+                courses={courses}
+                cohortPresets={QUICK_2026_COHORTS}
+                onSubmitRegistration={handleCreateManualRegistration}
+                onBack={() => {
+                  setIsNewModalOpen(false);
+                  scrollMainTop();
+                }}
+                backLabel="Back to Registrations"
+                submitLabel="Complete Registration"
+              />
+            </div>
           </div>
         </div>
       )}

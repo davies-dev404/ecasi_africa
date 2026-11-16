@@ -1,74 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, CheckCircle2, Printer, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Printer, Mail } from "lucide-react";
 import SEO from "@/components/SEO";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { dataService } from "@/lib/dataService";
-import countryListData from "@/data/countriesData.json";
-import CountrySelector from "@/components/CountrySelector";
 import { adminRegistrationService } from "@/services/adminRegistrationService";
-import TurnstileWidget from "@/components/TurnstileWidget";
-import { verifyTurnstile } from "@/services/turnstileService";
 import { printRegistrationVoucher } from "@/utils/printRegistrationVoucher";
-
-const COUNTRY_DIAL_CODES = countryListData;
-
-const INITIAL_FORM_STATE = {
-  title: "",
-  firstName: "",
-  middleName: "",
-  lastName: "",
-  jobTitle: "",
-  organisation: "",
-  country: "Kenya",
-  dialCode: "+254",
-  phoneNumber: "",
-  personalEmail: "",
-  officialEmail: "",
-  currentDuties: "",
-  trainingExpectations: "",
-  tailorMadeRequirements: "",
-  hearAboutUs: "",
-  invoiceTo: "Self",
-  approvingAuthorityName: "",
-  approvingAuthorityEmail: "",
-  participantsCount: 1,
-  needAccommodation: "No",
-  needAirportTransfer: "No",
-  needSafariTour: "No",
-};
-
-function formatDurationRange(datesParam) {
-  if (!datesParam) {
-    return "From: November 23, 2026 To: December 4, 2026";
-  }
-  // Convert e.g. "11 - 15 May 2026" into "From: May 11, 2026 To: May 15, 2026"
-  const match = datesParam.match(/^(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
-  if (match) {
-    const [, startDay, endDay, monthShort, year] = match;
-    const monthNames = {
-      Jan: "January",
-      Feb: "February",
-      Mar: "March",
-      Apr: "April",
-      May: "May",
-      Jun: "June",
-      Jul: "July",
-      Aug: "August",
-      Sep: "September",
-      Oct: "October",
-      Nov: "November",
-      Dec: "December",
-    };
-    const fullMonth = monthNames[monthShort.slice(0, 3)] || monthShort;
-    return `From: ${fullMonth} ${startDay}, ${year} To: ${fullMonth} ${endDay}, ${year}`;
-  }
-  if (datesParam.toLowerCase().startsWith("from:")) {
-    return datesParam;
-  }
-  return `From: ${datesParam}`;
-}
+import CourseRegistrationForm from "@/components/CourseRegistrationForm";
 
 export default function Register() {
   const [searchParams] = useSearchParams();
@@ -97,111 +36,17 @@ export default function Register() {
     courseObj?.title ||
     "Executive Training Programme";
 
-  const baseFeeNumber = useMemo(() => {
-    const cleaned = String(feeParam).replace(/[^0-9.]/g, "");
-    const parsed = parseFloat(cleaned);
-    return !isNaN(parsed) && parsed > 0 ? parsed : 1000;
-  }, [feeParam]);
-
-  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
-  const [notARobot, setNotARobot] = useState(false);
-  const [robotLoading, setRobotLoading] = useState(false);
-  const [robotError, setRobotError] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
-  const [turnstileToken, setTurnstileToken] = useState('');
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const handleFieldChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "country") {
-      const found = COUNTRY_DIAL_CODES.find((c) => c.country === value);
-      setFormData((prev) => ({
-        ...prev,
-        country: value,
-        dialCode: found ? found.code : prev.dialCode,
-      }));
-    } else if (name === "participantsCount") {
-      const num = Math.max(1, parseInt(value || "1", 10));
-      setFormData((prev) => ({ ...prev, participantsCount: num }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleReset = () => {
-    setFormData(INITIAL_FORM_STATE);
-    setNotARobot(false);
-    setRobotError(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const domToken = e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')?.value || '';
-    const effectiveToken = turnstileToken || domToken;
-    if (!notARobot && !effectiveToken) {
-      setRobotError(true);
-      return;
-    }
-    setRobotError(false);
-
-    if (effectiveToken) {
-      setRobotLoading(true);
-      try {
-        const verification = await verifyTurnstile(effectiveToken, 'register');
-        if (verification && verification.success === false) {
-          setRobotError(true);
-          setRobotLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn('[Turnstile Registration Check]:', err);
-      }
-      setRobotLoading(false);
-    }
-
-    const generatedRef = `ECAS-${scheduleId}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const submissionRecord = {
-      ...formData,
-      referenceNo: generatedRef,
-      eventTitle,
-      courseSlug,
-      scheduleId,
-      venue: venueParam,
-      format: formatParam,
-      durationText: formatDurationRange(datesParam),
-      totalFee: baseFeeNumber * (Number(formData.participantsCount) || 1),
-      submittedAt: new Date().toISOString(),
-      displayDate: new Date().toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-      status: "Pending",
-      paymentStatus: "Unpaid",
-    };
-
-    // Save to Msimamizi Admin Portal persistent repository
+  const handleSubmitRegistration = (submissionRecord) => {
     adminRegistrationService.addRegistration(submissionRecord);
-
     setSubmittedData(submissionRecord);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  const selectedCountryObj = useMemo(() => {
-    return (
-      COUNTRY_DIAL_CODES.find((c) => c.country === formData.country) ||
-      COUNTRY_DIAL_CODES.find((c) => c.code === formData.dialCode) ||
-      COUNTRY_DIAL_CODES[0]
-    );
-  }, [formData.country, formData.dialCode]);
-
-  const selectedCountryFlagUrl = selectedCountryObj?.flagUrl || "https://flagcdn.com/w40/ke.png";
-
-  const totalTrainingFee = baseFeeNumber * (Number(formData.participantsCount) || 1);
-  const durationLine = formatDurationRange(datesParam);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#1a202c]">
@@ -392,10 +237,7 @@ export default function Register() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setSubmittedData(null);
-                      handleReset();
-                    }}
+                    onClick={() => setSubmittedData(null)}
                     className="inline-flex items-center gap-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer"
                   >
                     Register Another Participant
@@ -414,7 +256,6 @@ export default function Register() {
               </div>
             </div>
           ) : (
-            /* ── Exact Registration Form Layout Matching Screenshot 1 ── */
             <div>
               {/* Top Heading & Event Subtext */}
               <h1
@@ -428,511 +269,26 @@ export default function Register() {
                 <strong className="font-bold text-[#032e42]">{eventTitle}</strong>
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* 1. Title * */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Title <span className="text-[#d83030]">*</span>
-                  </label>
-                  <select
-                    name="title"
-                    required
-                    value={formData.title}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
-                  >
-                    <option value="">Select a Title</option>
-                    <option value="Mr.">Mr.</option>
-                    <option value="Mrs.">Mrs.</option>
-                    <option value="Ms.">Ms.</option>
-                    <option value="Miss">Miss</option>
-                    <option value="Dr.">Dr.</option>
-                    <option value="Prof.">Prof.</option>
-                    <option value="Eng.">Eng.</option>
-                    <option value="CPA">CPA</option>
-                    <option value="Hon.">Hon.</option>
-                  </select>
-                </div>
-
-                {/* 2. First Name * */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    First Name <span className="text-[#d83030]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    required
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 3. Middle Name */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Middle Name
-                  </label>
-                  <input
-                    type="text"
-                    name="middleName"
-                    placeholder="Middle Name"
-                    value={formData.middleName}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 4. Last Name * */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Last Name <span className="text-[#d83030]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    required
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 5. Job Title */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Job Title
-                  </label>
-                  <input
-                    type="text"
-                    name="jobTitle"
-                    placeholder="Job Title"
-                    value={formData.jobTitle}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 6. Organisation * */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Organisation <span className="text-[#d83030]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="organisation"
-                    required
-                    placeholder="Organisation"
-                    value={formData.organisation}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 7. Country * (Graphical SVG/PNG Flags, No Windows KE regional indicators) */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Country <span className="text-[#d83030]">*</span>
-                  </label>
-                  <CountrySelector
-                    value={formData.country}
-                    onChange={(selected) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        country: selected.country,
-                        dialCode: selected.code || prev.dialCode,
-                      }));
-                    }}
-                  />
-                </div>
-
-                {/* 8. Phone Number * (Flag Image + Dial Code Dropdown + Input) */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Phone Number <span className="text-[#d83030]">*</span>
-                  </label>
-                  <div className="flex items-stretch">
-                    <div className="relative flex items-center bg-[#efefef] border border-r-0 border-[#e2e8f0] rounded-l-[4px] px-2.5 shrink-0 gap-1.5">
-                      <img
-                        src={selectedCountryFlagUrl}
-                        alt=""
-                        aria-hidden="true"
-                        className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm shrink-0 border border-black/10"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                      <select
-                        name="dialCode"
-                        value={formData.dialCode}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const found = COUNTRY_DIAL_CODES.find((c) => c.code === val);
-                          setFormData((prev) => ({
-                            ...prev,
-                            dialCode: val,
-                            country: found ? found.country : prev.country,
-                          }));
-                        }}
-                        aria-label="Country Dial Code"
-                        className="bg-transparent text-[13px] font-medium text-[#1e293b] focus:outline-none cursor-pointer pr-1"
-                      >
-                        {COUNTRY_DIAL_CODES.map((c) => (
-                          <option key={`${c.country}-${c.code}`} value={c.code}>
-                            {c.country} ({c.code})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      required
-                      placeholder="Phone Number"
-                      value={formData.phoneNumber}
-                      onChange={handleFieldChange}
-                      className="flex-1 h-[38px] px-3 rounded-r-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                {/* 9. Personal Email * */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Personal Email <span className="text-[#d83030]">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="personalEmail"
-                    required
-                    placeholder="Personal Email"
-                    value={formData.personalEmail}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 10. Official Email */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Official Email
-                  </label>
-                  <input
-                    type="email"
-                    name="officialEmail"
-                    placeholder="Official Email"
-                    value={formData.officialEmail}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 11. Current Duties */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Current Duties
-                  </label>
-                  <textarea
-                    name="currentDuties"
-                    rows={3}
-                    placeholder="Current Duties"
-                    value={formData.currentDuties}
-                    onChange={handleFieldChange}
-                    className="w-full p-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 12. Training Expectations */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Training Expectations
-                  </label>
-                  <textarea
-                    name="trainingExpectations"
-                    rows={3}
-                    placeholder="Training Expectations"
-                    value={formData.trainingExpectations}
-                    onChange={handleFieldChange}
-                    className="w-full p-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 13. Tailor-made Requirements */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Tailor-made Requirements
-                  </label>
-                  <textarea
-                    name="tailorMadeRequirements"
-                    rows={3}
-                    placeholder="Tailor-Made Requirements"
-                    value={formData.tailorMadeRequirements}
-                    onChange={handleFieldChange}
-                    className="w-full p-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 14. How did you first hear about ECAS Institute? */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    How did you first hear about ECAS Institute?
-                  </label>
-                  <select
-                    name="hearAboutUs"
-                    value={formData.hearAboutUs}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
-                  >
-                    <option value="">Select an option</option>
-                    <option value="Search Engine (Google, Bing)">Search Engine (Google, Bing)</option>
-                    <option value="LinkedIn">LinkedIn</option>
-                    <option value="Facebook / X / Instagram">Facebook / X / Instagram</option>
-                    <option value="Colleague / Referral">Colleague / Referral</option>
-                    <option value="Email Newsletter">Email Newsletter</option>
-                    <option value="Previous ECAS Institute Training">Previous ECAS Institute Training</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                {/* 15. Invoice to? * */}
-                <div className="pt-1">
-                  <label className="block text-[13px] font-medium text-[#334155] mb-2">
-                    Invoice to? <span className="text-[#d83030]">*</span>
-                  </label>
-                  <div className="space-y-1.5 pl-1">
-                    <label className="flex items-center gap-2 text-[13px] text-[#334155] cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.invoiceTo === "Self"}
-                        onChange={() =>
-                          setFormData((prev) => ({ ...prev, invoiceTo: "Self" }))
-                        }
-                        className="w-3.5 h-3.5 accent-[#008000] rounded-sm cursor-pointer"
-                      />
-                      <span>Self</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-[13px] text-[#334155] cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.invoiceTo === "Organisation"}
-                        onChange={() =>
-                          setFormData((prev) => ({ ...prev, invoiceTo: "Organisation" }))
-                        }
-                        className="w-3.5 h-3.5 accent-[#008000] rounded-sm cursor-pointer"
-                      />
-                      <span>Organisation</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* 16. Name of Approving Authority */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Name of Approving Authority
-                  </label>
-                  <input
-                    type="text"
-                    name="approvingAuthorityName"
-                    placeholder="Name Of Approving Authority"
-                    value={formData.approvingAuthorityName}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 17. Email of Approving Authority */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Email of Approving Authority
-                  </label>
-                  <input
-                    type="email"
-                    name="approvingAuthorityEmail"
-                    placeholder="Email Of Approving Authority"
-                    value={formData.approvingAuthorityEmail}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 18. Number of Participants */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Number of Participants
-                  </label>
-                  <input
-                    type="number"
-                    name="participantsCount"
-                    min={1}
-                    max={100}
-                    value={formData.participantsCount}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 19. Would you like accommodation arrangement? */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Would you like accommodation arrangement?
-                  </label>
-                  <select
-                    name="needAccommodation"
-                    value={formData.needAccommodation}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
-                  >
-                    <option value="No">No</option>
-                    <option value="Yes - 4 Star Hotel">Yes - 4 Star Hotel (Nairobi / Mombasa / Diani / Zanzibar / Kigali / Dubai / Kuala Lumpur)</option>
-                    <option value="Yes - 5 Star Hotel">Yes - 5 Star Luxury Hotel</option>
-                    <option value="Yes - Standard Executive Guest House">Yes - Standard Executive Guest House</option>
-                  </select>
-                </div>
-
-                {/* 20. Would you like airport transfer arrangements? */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Would you like airport transfer arrangements?
-                  </label>
-                  <select
-                    name="needAirportTransfer"
-                    value={formData.needAirportTransfer}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
-                  >
-                    <option value="No">No</option>
-                    <option value="Yes - Round Trip (Airport Pickup & Drop-off)">Yes - Round Trip (Airport Pickup & Drop-off)</option>
-                    <option value="Yes - Airport Pickup Only">Yes - Airport Pickup Only</option>
-                    <option value="Yes - Airport Drop-off Only">Yes - Airport Drop-off Only</option>
-                  </select>
-                </div>
-
-                {/* 21. Would you like a safari tour arrangement? */}
-                <div>
-                  <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                    Would you like a safari tour arrangement?
-                  </label>
-                  <select
-                    name="needSafariTour"
-                    value={formData.needSafariTour}
-                    onChange={handleFieldChange}
-                    className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
-                  >
-                    <option value="No">No</option>
-                    <option value="Yes - Nairobi National Park Half-Day Game Drive">Yes - Nairobi National Park Half-Day Game Drive</option>
-                    <option value="Yes - Giraffe Centre & Daphne Sheldrick Elephant Orphanage">Yes - Giraffe Centre & Elephant Orphanage</option>
-                    <option value="Yes - Lake Naivasha & Hell&apos;s Gate Weekend Excursion">Yes - Lake Naivasha &amp; Hell&apos;s Gate Excursion</option>
-                    <option value="Yes - Maasai Mara 3-Day Executive Safari Tour">Yes - Maasai Mara 3-Day Executive Safari Tour</option>
-                  </select>
-                </div>
-
-                {/* Divider before Summary */}
-                <hr className="border-t border-gray-300 my-6" />
-
-                {/* Summary Section (Exact match to Screenshot 1) */}
-                <div className="space-y-3">
-                  <h2
-                    className="text-[16px] font-bold text-[#032e42]"
-                    style={{ fontFamily: "'Fira Sans', sans-serif" }}
-                  >
-                    Summary
-                  </h2>
-
-                  <div>
-                    <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
-                      Training fee
-                    </label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={totalTrainingFee}
-                      className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#475569] cursor-default focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="text-[13px] text-[#334155] pt-1">
-                    Payment Method: Offline Payment
-                  </div>
-
-                  <div className="text-[13px] text-[#334155]">
-                    Duration: {durationLine}
-                  </div>
-                </div>
-
-                {/* Divider after Summary */}
-                <hr className="border-t border-gray-300 my-6" />
-
-                {/* Cloudflare Turnstile Box + 3 Action Buttons (Back | Complete Registration | Reset) */}
-                <div className="space-y-3 pt-1">
-                  {/* Cloudflare Turnstile Verification Widget */}
-                  <div className="space-y-2">
-                    <TurnstileWidget
-                      action="register"
-                      onVerify={(token) => {
-                        setTurnstileToken(token);
-                        setNotARobot(true);
-                        setRobotError(false);
-                      }}
-                      onExpire={() => {
-                        setTurnstileToken('');
-                        setNotARobot(false);
-                      }}
-                      onError={(_errCode, fallbackToken) => {
-                        setTurnstileToken(fallbackToken || `dev-turnstile-fallback-${Date.now()}`);
-                        setNotARobot(true);
-                        setRobotError(false);
-                      }}
-                    />
-                  </div>
-
-                  {robotError && (
-                    <p className="text-xs text-[#d83030] font-medium">
-                      Please confirm that you are not a robot before completing registration.
-                    </p>
-                  )}
-
-                  {/* 3 Buttons Row: Back | Complete Registration | Reset */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (courseSlug) {
-                          navigate(`/executive-training/${courseSlug}`);
-                        } else {
-                          navigate(-1);
-                        }
-                      }}
-                      className="inline-flex items-center gap-1 bg-[#1e73be] hover:bg-[#032e42] text-white text-[12px] font-semibold px-3 py-1.5 rounded-[3px] transition-colors cursor-pointer"
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                      <span>Back</span>
-                    </button>
-
-                    <button
-                      type="submit"
-                      disabled={robotLoading}
-                      className="inline-flex items-center justify-center bg-[#008000] hover:bg-[#006600] disabled:opacity-60 text-white text-[12px] font-semibold px-3.5 py-1.5 rounded-[3px] transition-colors cursor-pointer"
-                    >
-                      {robotLoading ? "Verifying..." : "Complete Registration"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleReset}
-                      className="inline-flex items-center gap-1 bg-[#1e73be] hover:bg-[#032e42] text-white text-[12px] font-semibold px-3 py-1.5 rounded-[3px] transition-colors cursor-pointer"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Reset</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Bottom Divider */}
-                <hr className="border-t border-gray-300 mt-8" />
-              </form>
+              <CourseRegistrationForm
+                mode="public"
+                initialCourseTitle={eventTitle}
+                initialCourseSlug={courseSlug}
+                initialScheduleId={scheduleId}
+                initialDates={datesParam}
+                initialVenue={venueParam}
+                initialFormat={formatParam}
+                initialFee={feeParam}
+                onSubmitRegistration={handleSubmitRegistration}
+                onBack={() => {
+                  if (courseSlug) {
+                    navigate(`/executive-training/${courseSlug}`);
+                  } else {
+                    navigate(-1);
+                  }
+                }}
+                backLabel="Back"
+                submitLabel="Complete Registration"
+              />
             </div>
           )}
         </div>
@@ -944,4 +300,3 @@ export default function Register() {
     </div>
   );
 }
-

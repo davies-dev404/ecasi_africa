@@ -228,9 +228,13 @@ function sanitizeRegistration(array $reg): array {
         'invoiceTo' => sanitizeText($reg['invoiceTo'] ?? 'Self', 64),
         'approvingAuthorityName' => sanitizeText($reg['approvingAuthorityName'] ?? '', 160),
         'approvingAuthorityEmail' => filter_var(trim((string)($reg['approvingAuthorityEmail'] ?? '')), FILTER_SANITIZE_EMAIL),
-        'needAccommodation' => sanitizeText($reg['needAccommodation'] ?? 'No', 16),
-        'needAirportTransfer' => sanitizeText($reg['needAirportTransfer'] ?? 'No', 16),
-        'needSafariTour' => sanitizeText($reg['needSafariTour'] ?? 'No', 16),
+        'currentDuties' => sanitizeText($reg['currentDuties'] ?? '', 1000),
+        'trainingExpectations' => sanitizeText($reg['trainingExpectations'] ?? '', 1000),
+        'tailorMadeRequirements' => sanitizeText($reg['tailorMadeRequirements'] ?? '', 1000),
+        'hearAboutUs' => sanitizeText($reg['hearAboutUs'] ?? '', 120),
+        'needAccommodation' => sanitizeText($reg['needAccommodation'] ?? 'No', 160),
+        'needAirportTransfer' => sanitizeText($reg['needAirportTransfer'] ?? 'No', 120),
+        'needSafariTour' => sanitizeText($reg['needSafariTour'] ?? 'No', 120),
         'status' => in_array($reg['status'] ?? 'Pending', ['Pending', 'Approved', 'Confirmed', 'Completed', 'Cancelled'], true)
             ? $reg['status']
             : 'Pending',
