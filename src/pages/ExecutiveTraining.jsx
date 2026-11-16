@@ -3317,25 +3317,25 @@ function renderModalsAndToast(
                       <span className="text-[11px] opacity-80 mt-1">Instant chat &amp; quick queries</span>
                     </button>
 
-                    {/* Option 2: Email (Gmail Web / Email Client) */}
+                    {/* Option 2: Default Email Client (Gmail App, Outlook, Apple Mail, etc.) */}
                     <div className="flex flex-col gap-2">
                       <button
                         type="button"
-                        onClick={() => handleInquiryAction('email')}
+                        onClick={() => handleInquiryAction('mailto')}
                         className="group flex flex-col items-center justify-center p-4 rounded-xl border-2 border-[#008000] bg-emerald-50/50 hover:bg-[#008000] text-[#032e42] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer text-center h-full"
                       >
                         <div className="w-11 h-11 rounded-full bg-[#008000] text-white group-hover:bg-white group-hover:text-[#008000] flex items-center justify-center mb-2 transition-colors shadow-sm">
                           <Mail className="w-5 h-5 stroke-[2.2]" />
                         </div>
-                        <span className="font-bold text-base leading-snug">Inquire via Gmail</span>
-                        <span className="text-[11px] opacity-80 mt-0.5">Opens Gmail compose</span>
+                        <span className="font-bold text-base leading-snug">Inquire via Email</span>
+                        <span className="text-[11px] opacity-80 mt-0.5">Opens your default Mail app</span>
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleInquiryAction('mailto')}
+                        onClick={() => handleInquiryAction('email')}
                         className="text-center text-[11px] text-slate-500 hover:text-[#008000] hover:underline py-0.5 cursor-pointer"
                       >
-                        or open default Mail app
+                        or compose in Gmail Web
                       </button>
                     </div>
                   </div>

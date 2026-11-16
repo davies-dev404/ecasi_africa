@@ -41,6 +41,7 @@ import {
   Briefcase,
   Building2,
   Paperclip,
+  Eye,
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
@@ -211,6 +212,7 @@ export default function MsimamiziAdmin() {
   const [applications, setApplications] = useState(() => adminRegistrationService.getApplications());
   const [applicationSearch, setApplicationSearch] = useState('');
   const [applicationStatusFilter, setApplicationStatusFilter] = useState('All');
+  const [selectedApplication, setSelectedApplication] = useState(null);
   const [editingVacancy, setEditingVacancy] = useState(null);
   const [isVacancyFormOpen, setIsVacancyFormOpen] = useState(false);
   const [vacancyForm, setVacancyForm] = useState({
@@ -1021,18 +1023,25 @@ export default function MsimamiziAdmin() {
     }
   };
 
-  const handleDownloadCV = (app) => {
-    if (!app?.cvDataUrl) {
-      alert('No CV file payload attached to this record.');
+  const handleDownloadAttachment = (dataUrl, fileName, fallbackName = 'Attachment.pdf') => {
+    if (!dataUrl) {
+      alert('No file payload attached to this record.');
       return;
     }
     const link = document.createElement('a');
-    link.href = app.cvDataUrl;
-    link.download = app.cvFileName || `CV_${app.fullName || app.referenceNo || 'Candidate'}.pdf`;
+    link.href = dataUrl;
+    link.download = fileName || fallbackName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
+
+  const handleDownloadCV = (app) =>
+    handleDownloadAttachment(
+      app?.cvDataUrl,
+      app?.cvFileName,
+      `CV_${app?.fullName || app?.referenceNo || 'Candidate'}.pdf`
+    );
 
   // Update status quickly
   const handleQuickStatusChange = (id, newStatus) => {
@@ -3534,6 +3543,16 @@ export default function MsimamiziAdmin() {
 
                               <td className="py-3.5 px-4 align-top">
                                 <div className="font-extrabold text-slate-900">{app.fullName}</div>
+                                {app.nationalId && (
+                                  <div className="text-[11px] font-semibold text-slate-600 mt-0.5">
+                                    ID/Passport: {app.nationalId}
+                                  </div>
+                                )}
+                                {app.highestQualification && (
+                                  <div className="text-[11px] text-[#032e42] font-semibold">
+                                    {app.highestQualification}
+                                  </div>
+                                )}
                                 {app.email && (
                                   <div className="text-[11px] text-blue-600 mt-0.5">{app.email}</div>
                                 )}
@@ -3596,6 +3615,15 @@ export default function MsimamiziAdmin() {
 
                               <td className="py-3.5 px-4 align-top text-right">
                                 <div className="inline-flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedApplication(app)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-[#032e42] hover:text-white text-slate-700 font-bold text-[11px] transition cursor-pointer"
+                                    title="View Structured Candidate Application Dossier"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>Dossier</span>
+                                  </button>
                                   {app.email && (
                                     <a
                                       href={`mailto:${app.email}?subject=${replySubject}`}
@@ -3627,6 +3655,216 @@ export default function MsimamiziAdmin() {
           )}
         </main>
       </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL: STRUCTURED CANDIDATE RECRUITMENT DOSSIER
+      ───────────────────────────────────────────────────────────── */}
+      {selectedApplication && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 my-8">
+            <div className="bg-[#032e42] p-5 text-white flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
+                  Candidate Application Dossier • {selectedApplication.referenceNo || selectedApplication.id}
+                </span>
+                <h3 className="text-base font-bold text-white mt-0.5">
+                  {selectedApplication.fullName} — {selectedApplication.jobTitle || 'Speculative Application'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedApplication(null)}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 text-xs max-h-[78vh] overflow-y-auto">
+              {/* Personal & Statutory ID Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div>
+                  <span className="text-slate-400 block">National ID / Passport</span>
+                  <strong className="text-slate-800">{selectedApplication.nationalId || 'N/A'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">Gender &amp; DOB</span>
+                  <strong className="text-slate-800">
+                    {[selectedApplication.gender, selectedApplication.dateOfBirth].filter(Boolean).join(' • ') || 'N/A'}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">Disability Status</span>
+                  <strong className="text-slate-800">{selectedApplication.disabilityStatus || 'No'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">Email</span>
+                  <strong className="text-blue-700">{selectedApplication.email}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">Phone</span>
+                  <strong className="text-slate-800 font-mono">{selectedApplication.phone || 'N/A'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">County / Address</span>
+                  <strong className="text-slate-800">
+                    {[selectedApplication.county, selectedApplication.physicalAddress].filter(Boolean).join(' — ') || 'N/A'}
+                  </strong>
+                </div>
+              </div>
+
+              {selectedApplication.careerSummary && (
+                <div>
+                  <h4 className="font-extrabold text-[#032e42] uppercase tracking-wider mb-1.5">Career Summary</h4>
+                  <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-line">
+                    {selectedApplication.careerSummary}
+                  </p>
+                </div>
+              )}
+
+              {/* Academic Qualifications */}
+              {Array.isArray(selectedApplication.education) && selectedApplication.education.length > 0 && (
+                <div>
+                  <h4 className="font-extrabold text-[#032e42] uppercase tracking-wider mb-2">
+                    Academic Qualifications (Highest: {selectedApplication.highestQualification || 'Specified'})
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedApplication.education.map((edu, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap justify-between gap-2">
+                        <div>
+                          <div className="font-bold text-slate-800">
+                            {edu.level ? `${edu.level} — ` : ''}{edu.fieldOfStudy}
+                          </div>
+                          <div className="text-slate-600">{edu.institution}</div>
+                        </div>
+                        <div className="text-right font-semibold text-slate-600">
+                          {edu.grade && <div>{edu.grade}</div>}
+                          {edu.graduationYear && <div className="text-[11px]">{edu.graduationYear}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Professional Membership */}
+              {selectedApplication.professionalMemberships?.bodyName && (
+                <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200">
+                  <strong className="text-[#032e42]">Professional Body Membership:</strong>{' '}
+                  {selectedApplication.professionalMemberships.bodyName}
+                  {selectedApplication.professionalMemberships.membershipNo ? ` (No. ${selectedApplication.professionalMemberships.membershipNo})` : ''} —{' '}
+                  {selectedApplication.professionalMemberships.status}
+                </div>
+              )}
+
+              {/* Work Experience */}
+              {Array.isArray(selectedApplication.experience) && selectedApplication.experience.length > 0 && (
+                <div>
+                  <h4 className="font-extrabold text-[#032e42] uppercase tracking-wider mb-2">Work Experience</h4>
+                  <div className="space-y-2">
+                    {selectedApplication.experience.map((exp, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                        <div className="flex flex-wrap justify-between gap-2">
+                          <strong className="text-slate-900">{exp.jobTitle} — {exp.employer}</strong>
+                          <span className="text-[11px] font-semibold text-slate-500">
+                            {exp.startDate || 'Start'} to {exp.current ? 'Present' : (exp.endDate || 'End')}
+                          </span>
+                        </div>
+                        {exp.responsibilities && (
+                          <p className="text-slate-600 whitespace-pre-line">{exp.responsibilities}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Referees */}
+              {Array.isArray(selectedApplication.referees) && selectedApplication.referees.length > 0 && (
+                <div>
+                  <h4 className="font-extrabold text-[#032e42] uppercase tracking-wider mb-2">Referees</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {selectedApplication.referees.map((ref, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <div className="font-bold text-slate-900">{ref.name}</div>
+                        {ref.organisation && <div className="text-slate-600">{ref.organisation}</div>}
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          {[ref.phone, ref.email].filter(Boolean).join(' • ')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Statutory Clearances & Cover Note */}
+              {Array.isArray(selectedApplication.complianceChecklist) && selectedApplication.complianceChecklist.length > 0 && (
+                <div>
+                  <h4 className="font-extrabold text-[#032e42] uppercase tracking-wider mb-1.5">
+                    Chapter Six / Statutory Documents Declared
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedApplication.complianceChecklist.map((c) => (
+                      <span key={c} className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-[11px]">
+                        ✓ {c}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedApplication.coverLetter && (
+                <div>
+                  <h4 className="font-extrabold text-[#032e42] uppercase tracking-wider mb-1.5">Cover / Application Letter</h4>
+                  <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-line">
+                    {selectedApplication.coverLetter}
+                  </p>
+                </div>
+              )}
+
+              {/* Attached Documents Download Row */}
+              <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedApplication.cvDataUrl && (
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadCV(selectedApplication)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold text-xs cursor-pointer shadow-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download CV ({selectedApplication.cvFileName || 'CV'})</span>
+                    </button>
+                  )}
+                  {selectedApplication.certDataUrl && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDownloadAttachment(
+                          selectedApplication.certDataUrl,
+                          selectedApplication.certFileName,
+                          `Certificates_${selectedApplication.fullName || 'Candidate'}.pdf`
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#032e42] hover:bg-[#05435e] text-white font-bold text-xs cursor-pointer shadow-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download Certificates ({selectedApplication.certFileName})</span>
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedApplication(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+                >
+                  Close Dossier
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─────────────────────────────────────────────────────────────
           MODAL 1: VIEW REGISTRATION DOSSIER & PRINT VOUCHER

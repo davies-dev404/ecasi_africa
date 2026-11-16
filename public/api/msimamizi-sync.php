@@ -279,19 +279,89 @@ function sanitizeVacancy(array $vac): array {
     ];
 }
 
+function sanitizeAttachmentDataUrl($raw): string {
+    if (!is_string($raw)) return '';
+    $trimmed = trim($raw);
+    if ($trimmed === '' || strlen($trimmed) > 4500000) return '';
+    if (preg_match('/^data:(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|octet-stream)|image\/(png|jpeg|jpg|webp)|text\/plain)?;base64,[A-Za-z0-9+\/=]+$/', $trimmed)) {
+        return $trimmed;
+    }
+    return '';
+}
+
 function sanitizeApplication(array $app): array {
     $validStatuses = ['New', 'Shortlisted', 'Interview', 'Hired', 'Archived'];
     $status = sanitizeText($app['status'] ?? 'New', 32);
     if (!in_array($status, $validStatuses, true)) {
         $status = 'New';
     }
-    $rawCv = isset($app['cvDataUrl']) && is_string($app['cvDataUrl']) ? trim($app['cvDataUrl']) : '';
-    $cleanCv = '';
-    if ($rawCv !== '' && strlen($rawCv) <= 4500000) {
-        if (preg_match('/^data:(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|octet-stream)|image\/(png|jpeg|jpg|webp)|text\/plain)?;base64,[A-Za-z0-9+\/=]+$/', $rawCv)) {
-            $cleanCv = $rawCv;
+
+    $cleanEducation = [];
+    if (isset($app['education']) && is_array($app['education'])) {
+        foreach (array_slice($app['education'], 0, 10) as $edu) {
+            if (!is_array($edu)) continue;
+            $inst = sanitizeText($edu['institution'] ?? '', 200);
+            $course = sanitizeText($edu['fieldOfStudy'] ?? '', 200);
+            if ($inst === '' && $course === '') continue;
+            $cleanEducation[] = [
+                'level' => sanitizeText($edu['level'] ?? '', 80),
+                'institution' => $inst,
+                'fieldOfStudy' => $course,
+                'grade' => sanitizeText($edu['grade'] ?? '', 80),
+                'graduationYear' => sanitizeText($edu['graduationYear'] ?? '', 16),
+            ];
         }
     }
+
+    $cleanExperience = [];
+    if (isset($app['experience']) && is_array($app['experience'])) {
+        foreach (array_slice($app['experience'], 0, 15) as $exp) {
+            if (!is_array($exp)) continue;
+            $role = sanitizeText($exp['jobTitle'] ?? '', 180);
+            $org = sanitizeText($exp['employer'] ?? '', 200);
+            if ($role === '' && $org === '') continue;
+            $cleanExperience[] = [
+                'jobTitle' => $role,
+                'employer' => $org,
+                'startDate' => sanitizeText($exp['startDate'] ?? '', 32),
+                'endDate' => sanitizeText($exp['endDate'] ?? '', 32),
+                'current' => !empty($exp['current']),
+                'responsibilities' => sanitizeText($exp['responsibilities'] ?? '', 1500),
+            ];
+        }
+    }
+
+    $cleanReferees = [];
+    if (isset($app['referees']) && is_array($app['referees'])) {
+        foreach (array_slice($app['referees'], 0, 5) as $ref) {
+            if (!is_array($ref)) continue;
+            $name = sanitizeText($ref['name'] ?? '', 160);
+            if ($name === '') continue;
+            $cleanReferees[] = [
+                'name' => $name,
+                'organisation' => sanitizeText($ref['organisation'] ?? '', 200),
+                'title' => sanitizeText($ref['title'] ?? '', 160),
+                'phone' => sanitizeText($ref['phone'] ?? '', 60),
+                'email' => filter_var(trim((string)($ref['email'] ?? '')), FILTER_SANITIZE_EMAIL),
+            ];
+        }
+    }
+
+    $cleanCompliance = [];
+    if (isset($app['complianceChecklist']) && is_array($app['complianceChecklist'])) {
+        foreach (array_slice($app['complianceChecklist'], 0, 12) as $item) {
+            $s = sanitizeText($item, 120);
+            if ($s !== '') $cleanCompliance[] = $s;
+        }
+    }
+
+    $rawMemberships = is_array($app['professionalMemberships'] ?? null) ? $app['professionalMemberships'] : [];
+    $cleanMemberships = [
+        'bodyName' => sanitizeText($rawMemberships['bodyName'] ?? '', 200),
+        'membershipNo' => sanitizeText($rawMemberships['membershipNo'] ?? '', 80),
+        'status' => sanitizeText($rawMemberships['status'] ?? '', 80),
+    ];
+
     return [
         'id' => sanitizeText($app['id'] ?? ('APP-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
         'referenceNo' => sanitizeText($app['referenceNo'] ?? ('CV-' . random_int(100000, 999999)), 64),
@@ -300,12 +370,30 @@ function sanitizeApplication(array $app): array {
         'fullName' => sanitizeText($app['fullName'] ?? '', 160),
         'email' => filter_var(trim((string)($app['email'] ?? '')), FILTER_SANITIZE_EMAIL),
         'phone' => sanitizeText($app['phone'] ?? '', 60),
+        'nationalId' => sanitizeText($app['nationalId'] ?? '', 60),
+        'gender' => sanitizeText($app['gender'] ?? '', 40),
+        'dateOfBirth' => sanitizeText($app['dateOfBirth'] ?? '', 32),
+        'county' => sanitizeText($app['county'] ?? '', 120),
+        'physicalAddress' => sanitizeText($app['physicalAddress'] ?? '', 240),
+        'disabilityStatus' => sanitizeText($app['disabilityStatus'] ?? 'No', 32),
         'specialty' => sanitizeText($app['specialty'] ?? '', 200),
+        'careerSummary' => sanitizeText($app['careerSummary'] ?? '', 2000),
+        'highestQualification' => sanitizeText($app['highestQualification'] ?? '', 120),
+        'education' => $cleanEducation,
+        'professionalMemberships' => $cleanMemberships,
+        'experience' => $cleanExperience,
+        'referees' => $cleanReferees,
+        'complianceChecklist' => $cleanCompliance,
         'coverLetter' => sanitizeText($app['coverLetter'] ?? '', 4000),
         'cvFileName' => sanitizeText($app['cvFileName'] ?? '', 240),
         'cvFileType' => sanitizeText($app['cvFileType'] ?? '', 120),
         'cvFileSize' => isset($app['cvFileSize']) ? max(0, (int)$app['cvFileSize']) : 0,
-        'cvDataUrl' => $cleanCv,
+        'cvDataUrl' => sanitizeAttachmentDataUrl($app['cvDataUrl'] ?? ''),
+        'certFileName' => sanitizeText($app['certFileName'] ?? '', 240),
+        'certFileType' => sanitizeText($app['certFileType'] ?? '', 120),
+        'certFileSize' => isset($app['certFileSize']) ? max(0, (int)$app['certFileSize']) : 0,
+        'certDataUrl' => sanitizeAttachmentDataUrl($app['certDataUrl'] ?? ''),
+        'declarationAccepted' => !empty($app['declarationAccepted']),
         'status' => $status,
         'adminNotes' => sanitizeText($app['adminNotes'] ?? '', 1000),
         'createdAt' => sanitizeText($app['createdAt'] ?? gmdate('c'), 64),
@@ -436,7 +524,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // ─── POST REQUESTS ────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = file_get_contents('php://input');
-    if ($rawInput === false || strlen($rawInput) > 8388608) { // 8 MB limit (supports base64 CVs)
+    if ($rawInput === false || strlen($rawInput) > 12582912) { // 12 MB limit (supports CV & supporting certificates)
         http_response_code(413);
         echo json_encode(['success' => false, 'error' => 'Payload too large or unreadable.']);
         exit;

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header.jsx";
 import Footer from "../components/Footer.jsx";
 import SEO from "../components/SEO.jsx";
+import { adminRegistrationService } from "../services/adminRegistrationService.js";
 import {
   MapPin,
   Clock,
@@ -310,6 +311,7 @@ const ExcursionDetail = () => {
   const [formCourse, setFormCourse] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [preparedMailto, setPreparedMailto] = useState("");
 
   // Update active image when excursion changes
   useEffect(() => {
@@ -320,6 +322,19 @@ const ExcursionDetail = () => {
 
   const handleInquirySubmit = (e) => {
     e.preventDefault();
+    adminRegistrationService.addInquiry({
+      channel: "Email",
+      inquiryType: "Excursion Booking Inquiry",
+      fullName: formName.trim(),
+      email: formEmail.trim(),
+      organisation: formOrg.trim(),
+      courseTitle: `Beyond the Classroom: ${currentExcursion.title}`,
+      cohortDates: formCourse || "2026 Executive Training Cohort",
+      venue: currentExcursion.location || "Nairobi, Kenya",
+      participantsCount: formDelegates,
+      message: formMessage.trim() || `Requested group excursion booking (${formDelegates} delegates).`,
+    });
+
     const subject = encodeURIComponent(
       `Excursion Inquiry: ${currentExcursion.title} (${formOrg || "Corporate Group"})`
     );
@@ -335,7 +350,7 @@ const ExcursionDetail = () => {
         `• Additional Requests:\n${formMessage || "None"}\n\n` +
         `Best regards,\n${formName}`
     );
-    window.location.href = `mailto:info@ecasiafrica.org?subject=${subject}&body=${body}`;
+    setPreparedMailto(`mailto:info@ecasiafrica.org?subject=${subject}&body=${body}`);
     setSubmitted(true);
   };
 
@@ -661,15 +676,15 @@ const ExcursionDetail = () => {
                       <div className="w-12 h-12 rounded-full bg-[#008000] text-white flex items-center justify-center mx-auto mb-3">
                         <CheckCircle2 size={24} />
                       </div>
-                      <h4 className="font-bold text-[#032e42] text-sm mb-1">Inquiry Prepared!</h4>
+                      <h4 className="font-bold text-[#032e42] text-sm mb-1">Inquiry Received!</h4>
                       <p className="text-xs text-slate-600 mb-3">
-                        Your email client has opened with your excursion inquiry pre-filled. If it didn&apos;t open automatically, email us directly at:
+                        Your excursion request has been logged directly with our Admissions Desk. You can also send a copy using your default email app:
                       </p>
                       <a
-                        href="mailto:info@ecasiafrica.org"
-                        className="text-xs font-bold text-[#008000] hover:underline"
+                        href={preparedMailto || "mailto:info@ecasiafrica.org"}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold transition-colors"
                       >
-                        info@ecasiafrica.org
+                        <Mail size={13} /> Open Default Email App
                       </a>
                     </div>
                   ) : (

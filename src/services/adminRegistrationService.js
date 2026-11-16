@@ -564,12 +564,30 @@ class AdminRegistrationService {
         fullName: appData.fullName || '',
         email: appData.email || '',
         phone: appData.phone || '',
+        nationalId: appData.nationalId || '',
+        gender: appData.gender || '',
+        dateOfBirth: appData.dateOfBirth || '',
+        county: appData.county || '',
+        physicalAddress: appData.physicalAddress || '',
+        disabilityStatus: appData.disabilityStatus || 'No',
         specialty: appData.specialty || '',
+        careerSummary: appData.careerSummary || '',
+        highestQualification: appData.highestQualification || '',
+        education: Array.isArray(appData.education) ? appData.education : [],
+        professionalMemberships: appData.professionalMemberships || {},
+        experience: Array.isArray(appData.experience) ? appData.experience : [],
+        referees: Array.isArray(appData.referees) ? appData.referees : [],
+        complianceChecklist: Array.isArray(appData.complianceChecklist) ? appData.complianceChecklist : [],
         coverLetter: appData.coverLetter || '',
         cvFileName: appData.cvFileName || '',
         cvFileType: appData.cvFileType || '',
         cvFileSize: Number(appData.cvFileSize) || 0,
         cvDataUrl: appData.cvDataUrl || '',
+        certFileName: appData.certFileName || '',
+        certFileType: appData.certFileType || '',
+        certFileSize: Number(appData.certFileSize) || 0,
+        certDataUrl: appData.certDataUrl || '',
+        declarationAccepted: Boolean(appData.declarationAccepted),
         status: appData.status || 'New',
         adminNotes: appData.adminNotes || '',
         createdAt: nowIso,
@@ -580,8 +598,8 @@ class AdminRegistrationService {
       try {
         localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(updated));
       } catch {
-        // Keep metadata locally if large base64 CV hits localStorage quota; full CV still uploads to server
-        const slim = [{ ...newApp, cvDataUrl: '' }, ...existing];
+        // Keep metadata locally if large base64 attachments hit localStorage quota; full files upload to server
+        const slim = [{ ...newApp, cvDataUrl: '', certDataUrl: '' }, ...existing];
         localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(slim));
       }
       await pushToServer({ action: 'add_application', application: newApp });
@@ -637,10 +655,16 @@ class AdminRegistrationService {
       'Position / Vacancy',
       'Status',
       'Applicant Name',
+      'National ID / Passport',
       'Email',
       'Phone',
+      'County / Location',
       'Area of Expertise',
+      'Highest Qualification',
+      'Experience Count',
+      'Statutory Clearances',
       'CV File Name',
+      'Certificates File',
       'Cover Note / Message',
     ];
     const rows = records.map((a) => [
@@ -649,10 +673,16 @@ class AdminRegistrationService {
       `"${(a.jobTitle || 'Speculative Application').replace(/"/g, '""')}"`,
       `"${a.status || 'New'}"`,
       `"${(a.fullName || '').replace(/"/g, '""')}"`,
+      `"${(a.nationalId || '').replace(/"/g, '""')}"`,
       `"${a.email || ''}"`,
       `"${a.phone || ''}"`,
+      `"${(a.county || '').replace(/"/g, '""')}"`,
       `"${(a.specialty || '').replace(/"/g, '""')}"`,
+      `"${(a.highestQualification || a.education?.[0]?.level || '').replace(/"/g, '""')}"`,
+      Array.isArray(a.experience) ? a.experience.length : 0,
+      `"${(Array.isArray(a.complianceChecklist) ? a.complianceChecklist.join('; ') : '').replace(/"/g, '""')}"`,
       `"${(a.cvFileName || '').replace(/"/g, '""')}"`,
+      `"${(a.certFileName || '').replace(/"/g, '""')}"`,
       `"${(a.coverLetter || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
     ]);
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
