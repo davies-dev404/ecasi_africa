@@ -124,9 +124,26 @@ export default function MsimamiziAdmin() {
   };
 
   const [activeTab, setActiveTabState] = useState(getInitialTab);
+  const mainScrollRef = useRef(null);
+
+  const scrollMainTop = () => {
+    if (mainScrollRef.current && typeof mainScrollRef.current.scrollTo === 'function') {
+      mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   const setActiveTab = (tab) => {
     setActiveTabState(tab);
+    setEditingCourse(null);
+    setIsNewCourseModalOpen(false);
+    setSelectedReg(null);
+    setIsNewModalOpen(false);
+    setSelectedApplication(null);
+    setIsVacancyFormOpen(false);
+    scrollMainTop();
     try {
       localStorage.setItem('msimamizi_active_tab', tab);
       const url = new URL(window.location.href);
@@ -563,7 +580,7 @@ export default function MsimamiziAdmin() {
     return `${start.getDate()} ${monthNames[start.getMonth()]} - ${end.getDate()} ${monthNames[end.getMonth()]} ${end.getFullYear()}`;
   };
 
-  // Open Edit Course Modal with current image, details, pricing & cohorts
+  // Open Edit Course Page with current image, details, pricing & cohorts
   const openEditCourse = (course) => {
     const feeRaw = Number(String(course.fee || 1200).replace(/[^0-9]/g, '')) || 1200;
     const feeKesRaw = course.feeKes || (feeRaw * 130);
@@ -580,6 +597,7 @@ export default function MsimamiziAdmin() {
         '13 - 24 July 2026'
       ];
 
+    closeDetailViews();
     setEditingCourse(course);
     setEditForm({
       title: course.title || '',
@@ -596,6 +614,7 @@ export default function MsimamiziAdmin() {
     setNewCohortDateInput('');
     setCohortStartDate('');
     setCohortEndDate('');
+    scrollMainTop();
   };
 
   // Add new cohort intake date from custom text input
@@ -747,6 +766,64 @@ export default function MsimamiziAdmin() {
       showToast(`Course "${title}" removed from catalog.`);
     }
   };
+
+  const closeDetailViews = () => {
+    setEditingCourse(null);
+    setIsNewCourseModalOpen(false);
+    setSelectedReg(null);
+    setIsNewModalOpen(false);
+    setSelectedApplication(null);
+    setIsVacancyFormOpen(false);
+  };
+
+  const openNewCoursePage = () => {
+    closeDetailViews();
+    setIsNewCourseModalOpen(true);
+    scrollMainTop();
+  };
+
+  const openNewRegistrationPage = () => {
+    closeDetailViews();
+    setIsNewModalOpen(true);
+    scrollMainTop();
+  };
+
+  const openRegistrationDossierPage = (reg) => {
+    closeDetailViews();
+    setSelectedReg(reg);
+    scrollMainTop();
+  };
+
+  const openApplicationDossierPage = (app) => {
+    closeDetailViews();
+    setSelectedApplication(app);
+    scrollMainTop();
+  };
+
+  const activeDetailView =
+    editingCourse ? 'edit-course' :
+    isNewCourseModalOpen ? 'new-course' :
+    selectedReg ? 'registration-dossier' :
+    isNewModalOpen ? 'new-registration' :
+    selectedApplication ? 'application-dossier' :
+    isVacancyFormOpen ? 'vacancy-form' :
+    null;
+
+  const renderBackBar = (label, onBack) => (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <button
+        type="button"
+        onClick={() => {
+          onBack();
+          scrollMainTop();
+        }}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-[#032e42] hover:text-[#008000] font-bold text-xs shadow-2xs transition cursor-pointer"
+      >
+        <ChevronLeft className="w-4 h-4" />
+        <span>{label}</span>
+      </button>
+    </div>
+  );
 
   // Handle Login
   const handleLoginSubmit = async (e) => {
@@ -987,11 +1064,14 @@ export default function MsimamiziAdmin() {
   };
 
   const openCreateVacancy = () => {
+    closeDetailViews();
     resetVacancyForm();
     setIsVacancyFormOpen(true);
+    scrollMainTop();
   };
 
   const openEditVacancy = (vac) => {
+    closeDetailViews();
     setEditingVacancy(vac);
     setVacancyForm({
       title: vac.title || '',
@@ -1004,6 +1084,7 @@ export default function MsimamiziAdmin() {
       status: vac.status === 'Closed' ? 'Closed' : 'Open',
     });
     setIsVacancyFormOpen(true);
+    scrollMainTop();
   };
 
   const handleSaveVacancy = (e) => {
@@ -1632,7 +1713,7 @@ export default function MsimamiziAdmin() {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsNewModalOpen(true);
+                    openNewRegistrationPage();
                     setIsMobileMenuOpen(false);
                   }}
                   title="New Registration (+)"
@@ -1646,7 +1727,7 @@ export default function MsimamiziAdmin() {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsNewCourseModalOpen(true);
+                    openNewCoursePage();
                     setIsMobileMenuOpen(false);
                   }}
                   title="Upload New Course"
@@ -1729,7 +1810,7 @@ export default function MsimamiziAdmin() {
       {/* ─────────────────────────────────────────────────────────────
           RIGHT MAIN CONTENT AREA
       ───────────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto min-h-screen">
+      <div ref={mainScrollRef} className="flex-1 flex flex-col min-w-0 overflow-y-auto min-h-screen">
         {/* Top Header Bar on Right Side */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3">
@@ -1761,11 +1842,17 @@ export default function MsimamiziAdmin() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base sm:text-lg font-black text-slate-900 capitalize tracking-tight">
-                  {activeTab === 'dashboard' && 'Executive Overview'}
-                  {activeTab === 'registrations' && 'Course Registrations'}
-                  {activeTab === 'inquiries' && 'WhatsApp & Email Inquiries'}
-                  {activeTab === 'courses' && 'Course Catalog & Pricing Management'}
-                  {activeTab === 'vacancies' && 'Vacancies & CV Applications'}
+                  {activeDetailView === 'edit-course' && 'Edit Course & Pricing'}
+                  {activeDetailView === 'new-course' && 'Upload New Course'}
+                  {activeDetailView === 'registration-dossier' && 'Registration Dossier & Voucher'}
+                  {activeDetailView === 'new-registration' && 'New Manual Registration'}
+                  {activeDetailView === 'application-dossier' && 'Candidate Recruitment Dossier'}
+                  {activeDetailView === 'vacancy-form' && (editingVacancy ? 'Edit Job Vacancy' : 'Publish Job Vacancy')}
+                  {!activeDetailView && activeTab === 'dashboard' && 'Executive Overview'}
+                  {!activeDetailView && activeTab === 'registrations' && 'Course Registrations'}
+                  {!activeDetailView && activeTab === 'inquiries' && 'WhatsApp & Email Inquiries'}
+                  {!activeDetailView && activeTab === 'courses' && 'Course Catalog & Pricing Management'}
+                  {!activeDetailView && activeTab === 'vacancies' && 'Vacancies & CV Applications'}
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
                   Live DB
@@ -1806,7 +1893,7 @@ export default function MsimamiziAdmin() {
 
             <button
               type="button"
-              onClick={() => setIsNewModalOpen(true)}
+              onClick={openNewRegistrationPage}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -1817,6 +1904,8 @@ export default function MsimamiziAdmin() {
 
         {/* Content Body */}
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 flex-1 max-w-[1600px] w-full mx-auto">
+          {!activeDetailView && (
+            <>
           {/* ════════════════════════════════════════════════════════════
             TAB 1: OVERVIEW DASHBOARD
         ════════════════════════════════════════════════════════════ */}
@@ -2047,7 +2136,7 @@ export default function MsimamiziAdmin() {
                         registrations.slice(0, 4).map((reg) => (
                           <div
                             key={reg.id}
-                            onClick={() => setSelectedReg(reg)}
+                            onClick={() => openRegistrationDossierPage(reg)}
                             className="py-3 flex items-center justify-between gap-3 hover:bg-slate-50 px-2 rounded-lg transition cursor-pointer"
                           >
                             <div className="min-w-0">
@@ -2088,8 +2177,8 @@ export default function MsimamiziAdmin() {
                     <span>Showing top recent submissions</span>
                     <button
                       type="button"
-                      onClick={() => setIsNewModalOpen(true)}
-                      className="font-bold text-[#032e42] hover:text-[#008000] inline-flex items-center gap-1"
+                      onClick={openNewRegistrationPage}
+                      className="font-bold text-[#032e42] hover:text-[#008000] inline-flex items-center gap-1 cursor-pointer"
                     >
                       <span>+ Add Manual Entry</span>
                     </button>
@@ -2283,7 +2372,7 @@ export default function MsimamiziAdmin() {
                               <div className="inline-flex items-center gap-1.5">
                                 <button
                                   type="button"
-                                  onClick={() => setSelectedReg(r)}
+                                  onClick={() => openRegistrationDossierPage(r)}
                                   title="View delegate dossier"
                                   className="p-1.5 rounded-lg text-slate-500 hover:text-[#032e42] hover:bg-slate-100 transition cursor-pointer"
                                 >
@@ -2293,7 +2382,7 @@ export default function MsimamiziAdmin() {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setSelectedReg(r);
+                                    openRegistrationDossierPage(r);
                                     setTimeout(() => window.print(), 300);
                                   }}
                                   title="Print admission slip"
@@ -2376,7 +2465,7 @@ export default function MsimamiziAdmin() {
 
                   <button
                     type="button"
-                    onClick={() => setIsNewCourseModalOpen(true)}
+                    onClick={openNewCoursePage}
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-md transition cursor-pointer"
                   >
                     <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -3248,146 +3337,6 @@ export default function MsimamiziAdmin() {
                 </div>
               </div>
 
-              {/* Add / Edit Vacancy Form Panel */}
-              {isVacancyFormOpen && (
-                <form
-                  onSubmit={handleSaveVacancy}
-                  className="bg-white p-6 rounded-2xl border-2 border-emerald-200 shadow-md space-y-4 text-xs"
-                >
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <h3 className="text-sm font-black text-[#032e42] flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-[#008000]" />
-                      <span>{editingVacancy ? `Edit Vacancy: ${editingVacancy.title}` : 'Publish New Job Vacancy'}</span>
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsVacancyFormOpen(false);
-                        resetVacancyForm();
-                      }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block font-bold text-slate-700 mb-1">Job Position Title *</label>
-                      <input
-                        type="text"
-                        required
-                        value={vacancyForm.title}
-                        onChange={(e) => setVacancyForm({ ...vacancyForm, title: e.target.value })}
-                        placeholder="e.g. Senior Climate Policy & Carbon Markets Researcher"
-                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Department / Unit</label>
-                      <input
-                        type="text"
-                        value={vacancyForm.department}
-                        onChange={(e) => setVacancyForm({ ...vacancyForm, department: e.target.value })}
-                        placeholder="Research & Executive Training"
-                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Work Location</label>
-                      <input
-                        type="text"
-                        value={vacancyForm.location}
-                        onChange={(e) => setVacancyForm({ ...vacancyForm, location: e.target.value })}
-                        placeholder="Nairobi, Kenya (Hybrid)"
-                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Contract Type</label>
-                      <select
-                        value={vacancyForm.type}
-                        onChange={(e) => setVacancyForm({ ...vacancyForm, type: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
-                      >
-                        <option value="Full-time">Full-time</option>
-                        <option value="Part-time">Part-time</option>
-                        <option value="Consultancy">Consultancy</option>
-                        <option value="Contract">Contract</option>
-                        <option value="Internship / Fellowship">Internship / Fellowship</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Application Deadline</label>
-                      <input
-                        type="text"
-                        value={vacancyForm.deadline}
-                        onChange={(e) => setVacancyForm({ ...vacancyForm, deadline: e.target.value })}
-                        placeholder="e.g. 30 November 2026"
-                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Website Visibility</label>
-                      <select
-                        value={vacancyForm.status}
-                        onChange={(e) => setVacancyForm({ ...vacancyForm, status: e.target.value })}
-                        className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
-                      >
-                        <option value="Open">Open (Visible on Website)</option>
-                        <option value="Closed">Closed (Hidden on Website)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Role Summary &amp; Responsibilities</label>
-                      <textarea
-                        rows={4}
-                        value={vacancyForm.description}
-                        onChange={(e) => setVacancyForm({ ...vacancyForm, description: e.target.value })}
-                        placeholder="Describe the core mandate, key deliverables, and impact of this position..."
-                        className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Qualifications &amp; Requirements</label>
-                      <textarea
-                        rows={4}
-                        value={vacancyForm.requirements}
-                        onChange={(e) => setVacancyForm({ ...vacancyForm, requirements: e.target.value })}
-                        placeholder="List academic background, years of experience, and technical competencies..."
-                        className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsVacancyFormOpen(false);
-                        resetVacancyForm();
-                      }}
-                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold shadow cursor-pointer flex items-center gap-1.5"
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>{editingVacancy ? 'Save Changes & Sync' : 'Publish Vacancy to Website'}</span>
-                    </button>
-                  </div>
-                </form>
-              )}
-
               {/* Published Job Openings List */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
@@ -3644,7 +3593,7 @@ export default function MsimamiziAdmin() {
                                 <div className="inline-flex items-center gap-1.5">
                                   <button
                                     type="button"
-                                    onClick={() => setSelectedApplication(app)}
+                                    onClick={() => openApplicationDossierPage(app)}
                                     className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-[#032e42] hover:text-white text-slate-700 font-bold text-[11px] transition cursor-pointer"
                                     title="View Structured Candidate Application Dossier"
                                   >
@@ -3680,15 +3629,162 @@ export default function MsimamiziAdmin() {
               </div>
             </div>
           )}
-        </main>
-      </div>
+            </>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              DEDICATED PAGE: PUBLISH / EDIT JOB VACANCY
+          ───────────────────────────────────────────────────────────── */}
+          {activeDetailView === 'vacancy-form' && (
+            <div className="max-w-4xl mx-auto">
+              {renderBackBar('Back to Vacancies & CVs', () => {
+                setIsVacancyFormOpen(false);
+                resetVacancyForm();
+              })}
+              <form
+                onSubmit={handleSaveVacancy}
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-xs"
+              >
+                <div className="bg-[#032e42] p-5 text-white flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
+                      ECAS Recruitment &amp; Careers Desk
+                    </span>
+                    <h3 className="text-base font-black flex items-center gap-2 mt-0.5">
+                      <Briefcase className="w-4 h-4 text-[#00c853]" />
+                      <span>{editingVacancy ? `Edit Vacancy: ${editingVacancy.title}` : 'Publish New Job Vacancy'}</span>
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block font-bold text-slate-700 mb-1">Job Position Title *</label>
+                      <input
+                        type="text"
+                        required
+                        value={vacancyForm.title}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, title: e.target.value })}
+                        placeholder="e.g. Senior Climate Policy & Carbon Markets Researcher"
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Department / Unit</label>
+                      <input
+                        type="text"
+                        value={vacancyForm.department}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, department: e.target.value })}
+                        placeholder="Research & Executive Training"
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Work Location</label>
+                      <input
+                        type="text"
+                        value={vacancyForm.location}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, location: e.target.value })}
+                        placeholder="Nairobi, Kenya (Hybrid)"
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Contract Type</label>
+                      <select
+                        value={vacancyForm.type}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, type: e.target.value })}
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+                      >
+                        <option value="Full-time">Full-time</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Consultancy">Consultancy</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Internship / Fellowship">Internship / Fellowship</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Application Deadline</label>
+                      <input
+                        type="text"
+                        value={vacancyForm.deadline}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, deadline: e.target.value })}
+                        placeholder="e.g. 30 November 2026"
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Website Visibility</label>
+                      <select
+                        value={vacancyForm.status}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, status: e.target.value })}
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+                      >
+                        <option value="Open">Open (Visible on Website)</option>
+                        <option value="Closed">Closed (Hidden on Website)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Role Summary &amp; Responsibilities</label>
+                      <textarea
+                        rows={5}
+                        value={vacancyForm.description}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, description: e.target.value })}
+                        placeholder="Describe the core mandate, key deliverables, and impact of this position..."
+                        className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Qualifications &amp; Requirements</label>
+                      <textarea
+                        rows={5}
+                        value={vacancyForm.requirements}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, requirements: e.target.value })}
+                        placeholder="List academic background, years of experience, and technical competencies..."
+                        className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsVacancyFormOpen(false);
+                        resetVacancyForm();
+                        scrollMainTop();
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold shadow cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{editingVacancy ? 'Save Changes & Sync' : 'Publish Vacancy to Website'}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          )}
 
       {/* ─────────────────────────────────────────────────────────────
-          MODAL: STRUCTURED CANDIDATE RECRUITMENT DOSSIER
+          DEDICATED PAGE: STRUCTURED CANDIDATE RECRUITMENT DOSSIER
       ───────────────────────────────────────────────────────────── */}
       {selectedApplication && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 my-8">
+        <div className="max-w-5xl mx-auto">
+          {renderBackBar('Back to Vacancies & CVs', () => setSelectedApplication(null))}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
             <div className="bg-[#032e42] p-5 text-white flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
@@ -3698,16 +3794,9 @@ export default function MsimamiziAdmin() {
                   {selectedApplication.fullName} — {selectedApplication.jobTitle || 'Speculative Application'}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedApplication(null)}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
             </div>
 
-            <div className="p-6 space-y-5 text-xs max-h-[78vh] overflow-y-auto">
+            <div className="p-6 space-y-5 text-xs">
               {/* Personal & Statutory ID Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div>
@@ -3882,10 +3971,13 @@ export default function MsimamiziAdmin() {
 
                 <button
                   type="button"
-                  onClick={() => setSelectedApplication(null)}
+                  onClick={() => {
+                    setSelectedApplication(null);
+                    scrollMainTop();
+                  }}
                   className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
                 >
-                  Close Dossier
+                  Back to Vacancies &amp; CVs
                 </button>
               </div>
             </div>
@@ -3894,12 +3986,12 @@ export default function MsimamiziAdmin() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          MODAL 1: VIEW REGISTRATION DOSSIER & PRINT VOUCHER
+          DEDICATED PAGE: VIEW REGISTRATION DOSSIER & PRINT VOUCHER
       ───────────────────────────────────────────────────────────── */}
       {selectedReg && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 my-8">
-            {/* Modal Header */}
+        <div className="max-w-5xl mx-auto">
+          {renderBackBar('Back to Registrations', () => setSelectedReg(null))}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
             <div className="bg-[#032e42] p-5 text-white flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
@@ -3913,23 +4005,16 @@ export default function MsimamiziAdmin() {
                 <button
                   type="button"
                   onClick={() => printRegistrationVoucher(selectedReg)}
-                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#008000] hover:bg-[#006600] text-white font-bold text-xs transition cursor-pointer"
                   title="Print Official Registration Voucher"
                 >
                   <Printer className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedReg(null)}
-                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
+                  <span>Print Voucher</span>
                 </button>
               </div>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
+            <div className="p-6 space-y-5 text-xs">
               {/* Status & Payment Banner */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -4101,10 +4186,13 @@ export default function MsimamiziAdmin() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedReg(null)}
+                  onClick={() => {
+                    setSelectedReg(null);
+                    scrollMainTop();
+                  }}
                   className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs transition cursor-pointer"
                 >
-                  Close
+                  Back to Registrations
                 </button>
               </div>
             </div>
@@ -4113,23 +4201,22 @@ export default function MsimamiziAdmin() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          MODAL 2: ADD NEW MANUAL REGISTRATION
+          DEDICATED PAGE: ADD NEW MANUAL REGISTRATION
       ───────────────────────────────────────────────────────────── */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 my-8">
+        <div className="max-w-4xl mx-auto">
+          {renderBackBar('Back to Registrations', () => setIsNewModalOpen(false))}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
             <div className="bg-[#032e42] p-5 text-white flex items-center justify-between">
-              <h3 className="text-base font-bold">New Manual Course Registration</h3>
-              <button
-                type="button"
-                onClick={() => setIsNewModalOpen(false)}
-                className="p-1 rounded-lg hover:bg-white/10 text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
+                  ECAS Course Admissions Desk
+                </span>
+                <h3 className="text-base font-bold mt-0.5">New Manual Course Registration</h3>
+              </div>
             </div>
 
-            <form onSubmit={handleCreateManualRegistration} className="p-6 space-y-4 text-xs">
+            <form onSubmit={handleCreateManualRegistration} className="p-6 space-y-5 text-xs">
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-600 font-bold mb-1">Title</label>
@@ -4272,14 +4359,17 @@ export default function MsimamiziAdmin() {
               <div className="pt-3 border-t flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold"
+                  onClick={() => {
+                    setIsNewModalOpen(false);
+                    scrollMainTop();
+                  }}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold shadow"
+                  className="px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold shadow cursor-pointer"
                 >
                   Save Registration
                 </button>
@@ -4290,35 +4380,27 @@ export default function MsimamiziAdmin() {
       )}
 
       {/* ════════════════════════════════════════════════════════════
-          MODAL: EDIT COURSE IMAGE, DETAILS, PRICING & COHORT DATES
+          DEDICATED PAGE: EDIT COURSE IMAGE, DETAILS, PRICING & COHORT DATES
       ════════════════════════════════════════════════════════════ */}
       {editingCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95">
-            {/* Modal Header */}
-            <div className="bg-[#032e42] p-5 text-white flex items-start justify-between">
+        <div className="max-w-5xl mx-auto">
+          {renderBackBar('Back to Courses Catalog', () => setEditingCourse(null))}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-[#032e42] p-5 sm:p-6 text-white flex items-start justify-between">
               <div>
                 <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
                   Course &amp; Image Management &bull; {editForm.category || editingCourse.category || 'Executive Training'}
                 </span>
-                <h3 className="text-base font-black leading-snug mt-1">
+                <h3 className="text-lg font-black leading-snug mt-1">
                   {editForm.title || editingCourse.title}
                 </h3>
                 <p className="text-xs text-white/70 font-mono mt-0.5">
                   Slug: /{editingCourse.slug}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setEditingCourse(null)}
-                className="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleSaveCourseEdit} className="p-4 sm:p-6 space-y-4 max-h-[78vh] overflow-y-auto text-xs">
+            <form onSubmit={handleSaveCourseEdit} className="p-5 sm:p-7 space-y-5 text-xs">
               {/* Course Featured Image Editor (Upload ONLY from Local Computer / Device) */}
               <div className="bg-slate-50/90 p-3.5 sm:p-4 rounded-xl border border-slate-200 space-y-3">
                 <div>
@@ -4657,18 +4739,20 @@ export default function MsimamiziAdmin() {
                 </div>
               </div>
 
-              {/* Modal Action Buttons */}
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setEditingCourse(null)}
+                  onClick={() => {
+                    setEditingCourse(null);
+                    scrollMainTop();
+                  }}
                   className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold transition shadow cursor-pointer flex items-center gap-1.5"
+                  className="px-6 py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold transition shadow cursor-pointer flex items-center gap-1.5"
                 >
                   <Check className="w-4 h-4" />
                   <span>Save Course &amp; Image</span>
@@ -4680,30 +4764,24 @@ export default function MsimamiziAdmin() {
       )}
 
       {/* ════════════════════════════════════════════════════════════
-          MODAL: UPLOAD NEW COURSE / TRAINING
+          DEDICATED PAGE: UPLOAD NEW COURSE / TRAINING
       ════════════════════════════════════════════════════════════ */}
       {isNewCourseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95">
-            <div className="bg-[#032e42] p-5 text-white flex items-center justify-between">
+        <div className="max-w-5xl mx-auto">
+          {renderBackBar('Back to Courses Catalog', () => setIsNewCourseModalOpen(false))}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-[#032e42] p-5 sm:p-6 text-white flex items-center justify-between">
               <div>
                 <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
                   ECAS Institute Catalog
                 </span>
-                <h3 className="text-base font-black leading-snug mt-0.5">
+                <h3 className="text-lg font-black leading-snug mt-0.5">
                   Upload New Executive Training Course
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsNewCourseModalOpen(false)}
-                className="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
 
-            <form onSubmit={handleCreateNewCourse} className="p-6 space-y-4 max-h-[78vh] overflow-y-auto text-xs">
+            <form onSubmit={handleCreateNewCourse} className="p-6 space-y-5 text-xs">
               <div>
                 <label className="block text-slate-700 font-bold mb-1">
                   Course Title <span className="text-red-500">*</span>
@@ -4929,14 +5007,17 @@ export default function MsimamiziAdmin() {
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setIsNewCourseModalOpen(false)}
+                  onClick={() => {
+                    setIsNewCourseModalOpen(false);
+                    scrollMainTop();
+                  }}
                   className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold transition shadow cursor-pointer flex items-center gap-1.5"
+                  className="px-6 py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold transition shadow cursor-pointer flex items-center gap-1.5"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Publish to Catalog</span>
@@ -4946,6 +5027,8 @@ export default function MsimamiziAdmin() {
           </div>
         </div>
       )}
+        </main>
+      </div>
 
       {/* ════════════════════════════════════════════════════════════
           FLOATING TOAST NOTIFICATION
