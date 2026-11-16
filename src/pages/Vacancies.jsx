@@ -1,21 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PageHeroBanner from '@/components/PageHeroBanner';
-import { 
-  Briefcase, 
-  MapPin, 
-  Clock, 
-  ArrowRight, 
-  FileText, 
-  UploadCloud, 
-  Send, 
-  CheckCircle2, 
-  Loader2, 
-  Mail, 
+import {
+  Briefcase,
+  MapPin,
+  Clock,
+  ArrowRight,
+  FileText,
+  UploadCloud,
+  Send,
+  CheckCircle2,
+  Loader2,
+  Mail,
   FileCheck,
+  Building2,
   X
 } from 'lucide-react';
 import {
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { dataService } from '@/lib/dataService';
+import { adminRegistrationService } from '@/services/adminRegistrationService';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -46,10 +48,17 @@ const itemVariants = {
 };
 
 const Vacancies = () => {
-  const vacancies = dataService.getVacancies();
+  const loadOpenVacancies = useCallback(() => {
+    const raw = dataService.getVacancies();
+    const list = Array.isArray(raw) ? raw : [];
+    return list.filter((job) => job && job.status !== 'Closed' && String(job.title || '').trim() !== '');
+  }, []);
+
+  const [vacancies, setVacancies] = useState(() => loadOpenVacancies());
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState('speculative');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -58,42 +67,93 @@ const Vacancies = () => {
     coverLetter: '',
   });
   const [cvFile, setCvFile] = useState(null);
+  const [cvDataUrl, setCvDataUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedRef, setSubmittedRef] = useState('');
+  const [backupMailto, setBackupMailto] = useState('');
 
-  const handleOpenModal = (jobTitle = 'Speculative Application') => {
+  useEffect(() => {
+    dataService.refreshPublicData();
+    const syncVacancies = () => setVacancies(loadOpenVacancies());
+    window.addEventListener('ecasi_vacancies_updated', syncVacancies);
+    window.addEventListener('storage', syncVacancies);
+    return () => {
+      window.removeEventListener('ecasi_vacancies_updated', syncVacancies);
+      window.removeEventListener('storage', syncVacancies);
+    };
+  }, [loadOpenVacancies]);
+
+  const handleOpenModal = (jobTitle = 'Speculative Application', jobId = 'speculative') => {
     setSelectedJob(jobTitle);
+    setSelectedJobId(jobId);
     setIsSubmitted(false);
+    setSubmittedRef('');
     setIsModalOpen(true);
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setCvFile(file);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast({
+        title: 'File Too Large',
+        description: 'Please upload a PDF, DOC, or DOCX CV up to 3 MB so it can be attached directly to your portal application.',
+        variant: 'destructive',
+      });
+      e.target.value = '';
+      return;
     }
+    setCvFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCvDataUrl(typeof reader.result === 'string' ? reader.result : '');
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email) return;
+    if (!formData.fullName.trim() || !formData.email.trim()) return;
+    if (!cvFile) {
+      toast({
+        title: 'CV File Required',
+        description: 'Please attach your CV (PDF, DOC, or DOCX) before submitting.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
-    const subject = `CV Application: ${selectedJob || 'Speculative Application'} - ${formData.fullName}`;
-    const body = `Dear ECAS Institute Team,\n\nI would like to submit my CV for your consideration.\n\nApplicant Details:\n- Name: ${formData.fullName}\n- Email: ${formData.email}\n- Phone: ${formData.phone || 'N/A'}\n- Primary Area of Expertise: ${formData.specialty}\n- Target Position: ${selectedJob || 'Speculative Application'}\n- Attached File: ${cvFile ? cvFile.name : 'Not attached directly'}\n\nCover Note:\n${formData.coverLetter || 'N/A'}\n\nBest regards,\n${formData.fullName}`;
+    const targetJobTitle = selectedJob || 'Speculative Application';
+    const subject = `CV Application: ${targetJobTitle} - ${formData.fullName}`;
+    const body = `Dear ECAS Institute Team,\n\nI would like to submit my CV for your consideration.\n\nApplicant Details:\n- Name: ${formData.fullName}\n- Email: ${formData.email}\n- Phone: ${formData.phone || 'N/A'}\n- Primary Area of Expertise: ${formData.specialty}\n- Target Position: ${targetJobTitle}\n- Uploaded CV File: ${cvFile.name}\n\nCover Note:\n${formData.coverLetter || 'N/A'}\n\nBest regards,\n${formData.fullName}`;
+    setBackupMailto(`mailto:info@ecasiafrica.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
 
-    const mailtoUrl = `mailto:info@ecasiafrica.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const saved = await adminRegistrationService.addApplication({
+      jobId: selectedJobId || 'speculative',
+      jobTitle: targetJobTitle,
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      specialty: formData.specialty,
+      coverLetter: formData.coverLetter.trim(),
+      cvFileName: cvFile.name,
+      cvFileType: cvFile.type || 'application/octet-stream',
+      cvFileSize: cvFile.size || 0,
+      cvDataUrl,
+    });
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      window.location.href = mailtoUrl;
-      toast({
-        title: "Application Ready & Email Opened!",
-        description: "Your application details have been prepared for info@ecasiafrica.org.",
-      });
-    }, 800);
+    setIsSubmitting(false);
+    setSubmittedRef(saved?.referenceNo || '');
+    setIsSubmitted(true);
+    toast({
+      title: 'CV Submitted Successfully!',
+      description: saved?.referenceNo
+        ? `Reference ${saved.referenceNo} has been logged directly in the ECAS Recruitment Portal.`
+        : 'Your application and CV have been received by ECAS Institute.',
+    });
   };
 
   const resetForm = () => {
@@ -105,6 +165,8 @@ const Vacancies = () => {
       coverLetter: '',
     });
     setCvFile(null);
+    setCvDataUrl('');
+    setSubmittedRef('');
     setIsSubmitted(false);
   };
 
@@ -165,30 +227,47 @@ const Vacancies = () => {
               className="space-y-6"
             >
               {vacancies.map((job, index) => (
-                <motion.div 
-                  key={index} 
+                <motion.div
+                  key={job.id || index}
                   variants={itemVariants}
                   className="bg-white rounded-2xl p-6 border-2 border-emerald-200/70 shadow-sm hover:shadow-xl hover:border-emerald-500 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden"
                 >
                   <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
                   <div className="flex-1 pl-2">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
                       <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                        Active Vacancy
+                        Open Vacancy
                       </span>
+                      {job.department && (
+                        <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full">
+                          <Building2 className="h-3.5 w-3.5" /> {job.department}
+                        </span>
+                      )}
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-emerald-600 transition-colors">
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-emerald-600 transition-colors">
                       {job.title}
                     </h3>
+                    {job.description && (
+                      <p className="text-sm text-slate-600 leading-relaxed mb-3 whitespace-pre-line">
+                        {job.description}
+                      </p>
+                    )}
+                    {job.requirements && (
+                      <div className="mb-3 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl p-3">
+                        <span className="font-bold text-slate-800 uppercase tracking-wider block mb-1">Key Requirements:</span>
+                        <span className="whitespace-pre-line">{job.requirements}</span>
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-medium">
-                      <span className="flex items-center gap-1.5 text-emerald-700"><Briefcase className="h-4 w-4" /> {job.type}</span>
-                      <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {job.location}</span>
-                      <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> Deadline: {job.deadline}</span>
+                      <span className="flex items-center gap-1.5 text-emerald-700"><Briefcase className="h-4 w-4" /> {job.type || 'Full-time'}</span>
+                      <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {job.location || 'Nairobi, Kenya'}</span>
+                      <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> Deadline: {job.deadline || 'Open Until Filled'}</span>
                     </div>
                   </div>
-                  <div>
-                    <button 
-                      onClick={() => handleOpenModal(job.title)}
+                  <div className="shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenModal(job.title, job.id || 'vacancy')}
                       className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg w-full md:w-auto cursor-pointer"
                     >
                       Apply Now <ArrowRight className="h-4 w-4" />
@@ -264,21 +343,34 @@ const Vacancies = () => {
           <div className="p-6 bg-white max-h-[80vh] overflow-y-auto">
             {isSubmitted ? (
               <div className="text-center py-8">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="h-10 w-10" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-2">Application Submitted!</h3>
+                <h3 className="text-2xl font-bold text-slate-800 mb-2">Application & CV Received!</h3>
+                {submittedRef && (
+                  <p className="inline-block bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full mb-3">
+                    Reference: {submittedRef}
+                  </p>
+                )}
                 <p className="text-slate-600 text-sm max-w-md mx-auto mb-6">
-                  Thank you for submitting your CV to ECAS Institute. We have received your application and will reach out if a matching position becomes available.
+                  Thank you for submitting your CV ({cvFile?.name || 'attached'}) to ECAS Institute. Your application is now visible to our recruitment team in the ECAS portal.
                 </p>
-                <div className="flex justify-center gap-3">
+                <div className="flex flex-wrap justify-center gap-3">
+                  {backupMailto && (
+                    <a
+                      href={backupMailto}
+                      className="inline-flex items-center gap-1.5 border border-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-sm"
+                    >
+                      <Mail className="h-4 w-4 text-primary" /> Also Email Copy
+                    </a>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
                       resetForm();
                       setIsModalOpen(false);
                     }}
-                    className="bg-primary text-white font-bold px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-colors"
+                    className="bg-primary text-white font-bold px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-colors cursor-pointer"
                   >
                     Done
                   </button>
@@ -366,7 +458,10 @@ const Vacancies = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setCvFile(null)}
+                          onClick={() => {
+                            setCvFile(null);
+                            setCvDataUrl('');
+                          }}
                           className="text-slate-500 hover:text-red-600 p-1 font-bold"
                         >
                           <X className="h-4 w-4" />
@@ -376,7 +471,7 @@ const Vacancies = () => {
                       <label className="cursor-pointer flex flex-col items-center justify-center py-2">
                         <UploadCloud className="h-8 w-8 text-primary mb-2" />
                         <span className="text-sm font-bold text-ecasi-navy">Click to upload CV document</span>
-                        <span className="text-xs font-semibold text-slate-600 mt-1">PDF or DOCX format (Max 10MB)</span>
+                        <span className="text-xs font-semibold text-slate-600 mt-1">PDF, DOC or DOCX format (Max 3MB)</span>
                         <input
                           type="file"
                           accept=".pdf,.doc,.docx"

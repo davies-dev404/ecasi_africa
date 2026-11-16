@@ -456,24 +456,24 @@ function AnimatedMilestoneCard({ milestone }) {
   return (
     <div
       ref={cardRef}
-      className="bg-[#032e42] border-b-4 border-[#008000] rounded-xl p-6 md:p-7 text-center flex flex-col items-center justify-center transition-all duration-300 hover:-translate-y-1 shadow-lg"
+      className="h-full bg-white border border-slate-200/90 border-b-4 border-b-[#008000] rounded-xl p-6 md:p-7 text-center flex flex-col items-center justify-center transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-md"
     >
-      <div className="w-14 h-14 rounded-full bg-[#008000] flex items-center justify-center mb-3.5 text-white shadow-md">
+      <div className="w-14 h-14 rounded-full bg-[#008000]/10 border border-[#008000]/20 flex items-center justify-center mb-3.5 text-[#008000]">
         <IconComp size={26} />
       </div>
       <div
-        className="text-3xl sm:text-4xl font-extrabold text-white mb-1.5 tabular-nums"
+        className="text-3xl sm:text-4xl font-extrabold text-[#032e42] mb-1.5 tabular-nums"
         style={{ fontFamily: "'Fira Sans', sans-serif" }}
       >
         {milestone.prefix && (
-          <span className="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-300 mb-0.5">
+          <span className="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#008000] mb-0.5">
             {milestone.prefix}
           </span>
         )}
         {count.toLocaleString()}
         {milestone.suffix}
       </div>
-      <h3 className="!text-white text-sm sm:text-base font-bold tracking-wide">
+      <h3 className="text-[#032e42] text-sm sm:text-base font-bold tracking-wide">
         {milestone.label}
       </h3>
     </div>
@@ -592,7 +592,7 @@ const Index = () => {
         "hasOfferCatalog": {
           "@type": "OfferCatalog",
           "name": "2026 Executive Training Catalog",
-          "numberOfItems": 213,
+          "numberOfItems": 204,
           "itemListElement": [
             {
               "@type": "OfferCatalog",
@@ -1601,9 +1601,9 @@ const Index = () => {
               </h2>
             </ScrollAnimation>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
               {milestones.map((m, idx) => (
-                <ScrollAnimation key={m.label} animation="scale-in" delay={idx * 80}>
+                <ScrollAnimation key={m.label} animation="scale-in" delay={idx * 80} className="h-full">
                   <AnimatedMilestoneCard milestone={m} />
                 </ScrollAnimation>
               ))}

@@ -114,6 +114,8 @@ function readStore(string $file): array {
         'registrations' => [],
         'inquiries' => [],
         'courses' => [],
+        'vacancies' => [],
+        'applications' => [],
         'accounts' => [],
         'sessions' => [],
         'updatedAt' => gmdate('c'),
@@ -257,6 +259,61 @@ function sanitizeInquiry(array $inq): array {
     ];
 }
 
+function sanitizeVacancy(array $vac): array {
+    $status = sanitizeText($vac['status'] ?? 'Open', 24);
+    if (!in_array($status, ['Open', 'Closed'], true)) {
+        $status = 'Open';
+    }
+    return [
+        'id' => sanitizeText($vac['id'] ?? ('VAC-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
+        'title' => sanitizeText($vac['title'] ?? '', 240),
+        'department' => sanitizeText($vac['department'] ?? 'Research & Executive Training', 160),
+        'location' => sanitizeText($vac['location'] ?? 'Nairobi, Kenya', 160),
+        'type' => sanitizeText($vac['type'] ?? 'Full-time', 80),
+        'deadline' => sanitizeText($vac['deadline'] ?? 'Open Until Filled', 120),
+        'description' => sanitizeText($vac['description'] ?? '', 4000),
+        'requirements' => sanitizeText($vac['requirements'] ?? '', 3000),
+        'status' => $status,
+        'createdAt' => sanitizeText($vac['createdAt'] ?? gmdate('c'), 64),
+        'updatedAt' => sanitizeText($vac['updatedAt'] ?? gmdate('c'), 64),
+    ];
+}
+
+function sanitizeApplication(array $app): array {
+    $validStatuses = ['New', 'Shortlisted', 'Interview', 'Hired', 'Archived'];
+    $status = sanitizeText($app['status'] ?? 'New', 32);
+    if (!in_array($status, $validStatuses, true)) {
+        $status = 'New';
+    }
+    $rawCv = isset($app['cvDataUrl']) && is_string($app['cvDataUrl']) ? trim($app['cvDataUrl']) : '';
+    $cleanCv = '';
+    if ($rawCv !== '' && strlen($rawCv) <= 4500000) {
+        if (preg_match('/^data:(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|octet-stream)|image\/(png|jpeg|jpg|webp)|text\/plain)?;base64,[A-Za-z0-9+\/=]+$/', $rawCv)) {
+            $cleanCv = $rawCv;
+        }
+    }
+    return [
+        'id' => sanitizeText($app['id'] ?? ('APP-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
+        'referenceNo' => sanitizeText($app['referenceNo'] ?? ('CV-' . random_int(100000, 999999)), 64),
+        'jobId' => sanitizeText($app['jobId'] ?? 'speculative', 64),
+        'jobTitle' => sanitizeText($app['jobTitle'] ?? 'Speculative Application', 240),
+        'fullName' => sanitizeText($app['fullName'] ?? '', 160),
+        'email' => filter_var(trim((string)($app['email'] ?? '')), FILTER_SANITIZE_EMAIL),
+        'phone' => sanitizeText($app['phone'] ?? '', 60),
+        'specialty' => sanitizeText($app['specialty'] ?? '', 200),
+        'coverLetter' => sanitizeText($app['coverLetter'] ?? '', 4000),
+        'cvFileName' => sanitizeText($app['cvFileName'] ?? '', 240),
+        'cvFileType' => sanitizeText($app['cvFileType'] ?? '', 120),
+        'cvFileSize' => isset($app['cvFileSize']) ? max(0, (int)$app['cvFileSize']) : 0,
+        'cvDataUrl' => $cleanCv,
+        'status' => $status,
+        'adminNotes' => sanitizeText($app['adminNotes'] ?? '', 1000),
+        'createdAt' => sanitizeText($app['createdAt'] ?? gmdate('c'), 64),
+        'displayDate' => sanitizeText($app['displayDate'] ?? gmdate('j F Y, H:i'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
 function sanitizeCoursesMap(array $courses): array {
     $cleanMap = [];
     foreach ($courses as $slug => $c) {
@@ -344,6 +401,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'registrations' => $store['registrations'] ?? [],
                 'inquiries' => $store['inquiries'] ?? [],
                 'courses' => (object)($store['courses'] ?? []),
+                'vacancies' => $store['vacancies'] ?? [],
+                'applications' => $store['applications'] ?? [],
                 'accounts' => $publicAccounts,
                 'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
             ],
@@ -351,7 +410,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Unauthenticated / public callers receive non-sensitive course catalog updates & non-reversible account digests
+    // Unauthenticated / public callers receive non-sensitive catalog updates, open vacancies & non-reversible account digests
     $digestAccounts = array_map(function ($acc) {
         return [
             'email' => $acc['email'] ?? '',
@@ -366,6 +425,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         'authenticated' => false,
         'data' => [
             'courses' => (object)($store['courses'] ?? []),
+            'vacancies' => $store['vacancies'] ?? [],
             'accounts' => $digestAccounts,
             'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
         ],
@@ -376,7 +436,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // ─── POST REQUESTS ────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = file_get_contents('php://input');
-    if ($rawInput === false || strlen($rawInput) > 4194304) { // 4 MB limit
+    if ($rawInput === false || strlen($rawInput) > 8388608) { // 8 MB limit (supports base64 CVs)
         http_response_code(413);
         echo json_encode(['success' => false, 'error' => 'Payload too large or unreadable.']);
         exit;
@@ -437,6 +497,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => true,
             'referenceNo' => $cleanInq['referenceNo'],
+        ]);
+        exit;
+    }
+
+    // 1c. Public Action: Submit a Job Vacancy / Speculative CV Application
+    if ($action === 'add_application') {
+        $appInput = $payload['application'] ?? null;
+        if (!is_array($appInput) || empty($appInput['fullName']) || empty($appInput['email'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Missing required applicant name or email.']);
+            exit;
+        }
+
+        $cleanApp = sanitizeApplication($appInput);
+        $existingApps = is_array($store['applications'] ?? null) ? $store['applications'] : [];
+        array_unshift($existingApps, $cleanApp);
+        $store['applications'] = array_slice($existingApps, 0, 1000);
+        writeStore($storeFile, $store);
+
+        $actor = $cleanApp['email'] ?: ($cleanApp['fullName'] ?: 'applicant');
+        writeAuditLog($auditLogFile, 'add_application', $actor, 'SUCCESS', 'job=' . $cleanApp['jobTitle'] . ' ref=' . $cleanApp['referenceNo']);
+
+        echo json_encode([
+            'success' => true,
+            'referenceNo' => $cleanApp['referenceNo'],
+            'id' => $cleanApp['id'],
         ]);
         exit;
     }
@@ -603,6 +689,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         writeAuditLog($auditLogFile, 'set_courses', $adminEmail, 'SUCCESS', 'count=' . count($store['courses']));
 
         echo json_encode(['success' => true, 'count' => count($store['courses'])]);
+        exit;
+    }
+
+    if ($action === 'set_vacancies' && isset($payload['vacancies']) && is_array($payload['vacancies'])) {
+        $cleanVacList = [];
+        foreach (array_slice($payload['vacancies'], 0, 500) as $vac) {
+            if (is_array($vac) && !empty($vac['title'])) {
+                $cleanVacList[] = sanitizeVacancy($vac);
+            }
+        }
+        $store['vacancies'] = $cleanVacList;
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_vacancies', $adminEmail, 'SUCCESS', 'count=' . count($cleanVacList));
+
+        echo json_encode(['success' => true, 'count' => count($cleanVacList)]);
+        exit;
+    }
+
+    if ($action === 'set_applications' && isset($payload['applications']) && is_array($payload['applications'])) {
+        $cleanAppList = [];
+        foreach (array_slice($payload['applications'], 0, 1000) as $app) {
+            if (is_array($app)) {
+                $cleanAppList[] = sanitizeApplication($app);
+            }
+        }
+        $store['applications'] = $cleanAppList;
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_applications', $adminEmail, 'SUCCESS', 'count=' . count($cleanAppList));
+
+        echo json_encode(['success' => true, 'count' => count($cleanAppList)]);
         exit;
     }
 

@@ -3,6 +3,8 @@
 
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const INQUIRIES_KEY = 'ecasi_course_inquiries_live';
+const APPLICATIONS_KEY = 'ecasi_vacancy_applications_live';
+const VACANCIES_KEY = 'ecasi_vacancies';
 const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
 const ADMIN_TOKEN_KEY = 'ecasi_msimamizi_token';
 const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
@@ -88,6 +90,10 @@ class AdminRegistrationService {
       if (!storedInq) {
         localStorage.setItem(INQUIRIES_KEY, JSON.stringify([]));
       }
+      const storedApps = localStorage.getItem(APPLICATIONS_KEY);
+      if (!storedApps) {
+        localStorage.setItem(APPLICATIONS_KEY, JSON.stringify([]));
+      }
       this.syncFromServer();
     } catch (e) {
       console.warn('LocalStorage error initializing admin registrations:', e);
@@ -117,7 +123,7 @@ class AdminRegistrationService {
       const json = await res.json();
       if (!json?.success || !json?.data) return;
 
-      const { registrations, inquiries, courses, accounts } = json.data;
+      const { registrations, inquiries, courses, vacancies, applications, accounts } = json.data;
 
       if (Array.isArray(registrations) && registrations.length > 0) {
         const localRegs = this.getRegistrations();
@@ -145,6 +151,25 @@ class AdminRegistrationService {
         const mergedInq = Array.from(mergedInqMap.values());
         localStorage.setItem(INQUIRIES_KEY, JSON.stringify(mergedInq));
         window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+      }
+
+      if (Array.isArray(vacancies)) {
+        localStorage.setItem(VACANCIES_KEY, JSON.stringify(vacancies));
+        window.dispatchEvent(new CustomEvent('ecasi_vacancies_updated'));
+      }
+
+      if (Array.isArray(applications) && applications.length > 0) {
+        const localApps = this.getApplications();
+        const mergedAppsMap = new Map();
+        [...applications, ...localApps].forEach((app) => {
+          const key = app.id || app.referenceNo;
+          if (key && !mergedAppsMap.has(key)) {
+            mergedAppsMap.set(key, app);
+          }
+        });
+        const mergedApps = Array.from(mergedAppsMap.values());
+        localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(mergedApps));
+        window.dispatchEvent(new CustomEvent('ecasi_applications_updated'));
       }
 
       if (courses && typeof courses === 'object' && Object.keys(courses).length > 0) {
@@ -487,20 +512,158 @@ class AdminRegistrationService {
       `"${(i.message || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
     ]);
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    this.triggerCSVDownload(csv, `ECAS_Portal_Inquiries_${new Date().toISOString().split('T')[0]}.csv`);
+  }
+
+  triggerCSVDownload(csvContent, filename) {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `ECAS_Portal_Inquiries_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  // ─── Job Vacancies & CV Applications (Website <-> Msimamizi) ────────────
+  getApplications() {
+    if (typeof window === 'undefined') return [];
+    try {
+      const data = localStorage.getItem(APPLICATIONS_KEY);
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Failed to get vacancy applications:', e);
+      return [];
+    }
+  }
+
+  async addApplication(appData) {
+    if (typeof window === 'undefined') return null;
+    try {
+      const existing = this.getApplications();
+      const newId = `APP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newRef = appData.referenceNo || `CV-${Math.floor(100000 + Math.random() * 900000)}`;
+      const nowIso = new Date().toISOString();
+      const displayDate = new Date().toLocaleString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      const newApp = {
+        id: newId,
+        referenceNo: newRef,
+        jobId: appData.jobId || 'speculative',
+        jobTitle: appData.jobTitle || 'Speculative Application',
+        fullName: appData.fullName || '',
+        email: appData.email || '',
+        phone: appData.phone || '',
+        specialty: appData.specialty || '',
+        coverLetter: appData.coverLetter || '',
+        cvFileName: appData.cvFileName || '',
+        cvFileType: appData.cvFileType || '',
+        cvFileSize: Number(appData.cvFileSize) || 0,
+        cvDataUrl: appData.cvDataUrl || '',
+        status: appData.status || 'New',
+        adminNotes: appData.adminNotes || '',
+        createdAt: nowIso,
+        displayDate,
+      };
+
+      const updated = [newApp, ...existing];
+      try {
+        localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(updated));
+      } catch {
+        // Keep metadata locally if large base64 CV hits localStorage quota; full CV still uploads to server
+        const slim = [{ ...newApp, cvDataUrl: '' }, ...existing];
+        localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(slim));
+      }
+      await pushToServer({ action: 'add_application', application: newApp });
+      window.dispatchEvent(new CustomEvent('ecasi_applications_updated', { detail: newApp }));
+      return newApp;
+    } catch (e) {
+      console.error('Failed to record vacancy application:', e);
+      return null;
+    }
+  }
+
+  updateApplication(id, updates) {
+    if (typeof window === 'undefined') return false;
+    try {
+      const existing = this.getApplications();
+      const updated = existing.map((app) =>
+        app.id === id ? { ...app, ...updates, updatedAt: new Date().toISOString() } : app
+      );
+      localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(updated));
+      pushToServer({ action: 'set_applications', applications: updated });
+      window.dispatchEvent(new CustomEvent('ecasi_applications_updated'));
+      return true;
+    } catch (e) {
+      console.error('Failed to update application:', e);
+      return false;
+    }
+  }
+
+  deleteApplication(id) {
+    if (typeof window === 'undefined') return false;
+    try {
+      const existing = this.getApplications();
+      const updated = existing.filter((app) => app.id !== id);
+      localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(updated));
+      pushToServer({ action: 'set_applications', applications: updated });
+      window.dispatchEvent(new CustomEvent('ecasi_applications_updated'));
+      return true;
+    } catch (e) {
+      console.error('Failed to delete application:', e);
+      return false;
+    }
+  }
+
+  downloadApplicationsCSV() {
+    const records = this.getApplications();
+    if (!records || records.length === 0) {
+      alert('No CV applications available to export.');
+      return;
+    }
+    const headers = [
+      'Reference No',
+      'Date',
+      'Position / Vacancy',
+      'Status',
+      'Applicant Name',
+      'Email',
+      'Phone',
+      'Area of Expertise',
+      'CV File Name',
+      'Cover Note / Message',
+    ];
+    const rows = records.map((a) => [
+      a.referenceNo || '',
+      `"${a.displayDate || ''}"`,
+      `"${(a.jobTitle || 'Speculative Application').replace(/"/g, '""')}"`,
+      `"${a.status || 'New'}"`,
+      `"${(a.fullName || '').replace(/"/g, '""')}"`,
+      `"${a.email || ''}"`,
+      `"${a.phone || ''}"`,
+      `"${(a.specialty || '').replace(/"/g, '""')}"`,
+      `"${(a.cvFileName || '').replace(/"/g, '""')}"`,
+      `"${(a.coverLetter || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`,
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    this.triggerCSVDownload(csv, `ECAS_Vacancy_Applications_${new Date().toISOString().split('T')[0]}.csv`);
   }
 
   // Dashboard Aggregates & KPIs
   getKPIs() {
     const list = this.getRegistrations();
     const inquiries = this.getInquiries();
+    const applications = this.getApplications();
     const totalRegistrations = list.length;
     const pendingCount = list.filter((r) => r.status === 'Pending').length;
     const confirmedCount = list.filter((r) => r.status === 'Confirmed').length;
@@ -515,6 +678,10 @@ class AdminRegistrationService {
     const newInquiriesCount = inquiries.filter((i) => (i.status || 'New') === 'New').length;
     const whatsappInquiriesCount = inquiries.filter((i) => i.channel === 'WhatsApp').length;
     const emailInquiriesCount = inquiries.filter((i) => i.channel === 'Email').length;
+
+    const totalApplications = applications.length;
+    const newApplicationsCount = applications.filter((a) => (a.status || 'New') === 'New').length;
+    const shortlistedApplicationsCount = applications.filter((a) => a.status === 'Shortlisted' || a.status === 'Interview').length;
 
     // Venue breakdown
     const venueMap = {};
@@ -535,6 +702,9 @@ class AdminRegistrationService {
       newInquiriesCount,
       whatsappInquiriesCount,
       emailInquiriesCount,
+      totalApplications,
+      newApplicationsCount,
+      shortlistedApplicationsCount,
       venueBreakdown: venueMap,
     };
   }

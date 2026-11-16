@@ -712,40 +712,7 @@ const Header = () => {
             </div>
           </div>
 
-          {/* ── Always-Visible Compact Mobile & Tablet Navigation Bar (< 1024px) ──
-              Ensures Executive Training, Programmes, Research, Consultancy, About Us & Resources
-              are ALL visible & clickable in portrait on Google Pixel 7 and small phones! ── */}
-          <div className="lg:hidden border-t border-slate-100 bg-slate-50/90 px-2 py-1.5">
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 max-w-[1476px] mx-auto">
-              {[
-                { key: "training", label: "Exec. Training", active: activeDropdown === "training" },
-                { key: "programmes", label: "Programmes", active: activeDropdown === "programmes" },
-                { key: "research", label: "Research", active: activeDropdown === "research" },
-                { key: "consultancy", label: "Consultancy", active: activeDropdown === "consultancy" },
-                { key: "about", label: "About Us", active: activeDropdown === "about" },
-                { key: "resources", label: "Resources", active: activeDropdown === "resources" },
-              ].map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => toggleDropdown(item.key)}
-                  className={`flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[10.5px] sm:text-xs font-extrabold uppercase tracking-tight transition-colors cursor-pointer whitespace-nowrap ${
-                    item.active
-                      ? "bg-[#008000] text-white shadow-xs"
-                      : "bg-white text-[#032e42] border border-slate-200/80 hover:border-[#008000] hover:text-[#008000]"
-                  }`}
-                >
-                  <span className="truncate">{item.label}</span>
-                  <ChevronDown
-                    size={11}
-                    className={`shrink-0 transition-transform ${item.active ? "rotate-180" : ""}`}
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Unified Mega Dropdowns (Rendered cleanly on Mobile, Tablet & Desktop) ── */}
+          {/* ── Unified Mega Dropdowns (Rendered cleanly on Desktop & Menu Links) ── */}
           {activeDropdown === "training" && (
             <div
               className="fixed left-0 right-0 w-full bg-white/98 backdrop-blur-md border-t border-b border-gray-200 z-50 animate-fade-in overflow-y-auto"

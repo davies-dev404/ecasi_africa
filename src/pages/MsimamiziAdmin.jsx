@@ -38,6 +38,9 @@ import {
   Image as ImageIcon,
   Upload,
   MessageSquare,
+  Briefcase,
+  Building2,
+  Paperclip,
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
@@ -95,20 +98,20 @@ export default function MsimamiziAdmin() {
     }
   };
 
-  // Active Tab: 'dashboard' | 'registrations' | 'inquiries' | 'courses' (Persisted across refreshes & URL synced)
+  // Active Tab: 'dashboard' | 'registrations' | 'inquiries' | 'courses' | 'vacancies' (Persisted across refreshes & URL synced)
   const getInitialTab = () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const urlTab = urlParams.get('tab');
-      if (urlTab && ['dashboard', 'registrations', 'inquiries', 'courses'].includes(urlTab)) {
+      if (urlTab && ['dashboard', 'registrations', 'inquiries', 'courses', 'vacancies'].includes(urlTab)) {
         return urlTab;
       }
       const hashTab = window.location.hash.replace('#', '');
-      if (hashTab && ['dashboard', 'registrations', 'inquiries', 'courses'].includes(hashTab)) {
+      if (hashTab && ['dashboard', 'registrations', 'inquiries', 'courses', 'vacancies'].includes(hashTab)) {
         return hashTab;
       }
       const savedTab = localStorage.getItem('msimamizi_active_tab');
-      if (savedTab && ['dashboard', 'registrations', 'inquiries', 'courses'].includes(savedTab)) {
+      if (savedTab && ['dashboard', 'registrations', 'inquiries', 'courses', 'vacancies'].includes(savedTab)) {
         return savedTab;
       }
     } catch {
@@ -199,8 +202,27 @@ export default function MsimamiziAdmin() {
   // KPI stats
   const [kpis, setKpis] = useState(adminRegistrationService.getKPIs());
 
-  // Dynamic Courses Management State (213 Accredited Programs from DataService)
+  // Dynamic Courses Management State (Accredited Programs from DataService)
   const [courses, setCourses] = useState(() => dataService.getCoursesList());
+  const [vacancies, setVacancies] = useState(() => {
+    const list = dataService.getVacancies();
+    return Array.isArray(list) ? list : [];
+  });
+  const [applications, setApplications] = useState(() => adminRegistrationService.getApplications());
+  const [applicationSearch, setApplicationSearch] = useState('');
+  const [applicationStatusFilter, setApplicationStatusFilter] = useState('All');
+  const [editingVacancy, setEditingVacancy] = useState(null);
+  const [isVacancyFormOpen, setIsVacancyFormOpen] = useState(false);
+  const [vacancyForm, setVacancyForm] = useState({
+    title: '',
+    department: 'Research & Executive Training',
+    location: 'Nairobi, Kenya',
+    type: 'Full-time',
+    deadline: '',
+    description: '',
+    requirements: '',
+    status: 'Open',
+  });
   const [toastMessage, setToastMessage] = useState('');
 
   // World-Class Filtering & View State for Courses Catalog (Cached in localStorage & sessionStorage)
@@ -494,12 +516,16 @@ export default function MsimamiziAdmin() {
     setIsAuthenticated(adminRegistrationService.isAuthenticated());
   }, []);
 
-  // Load registrations, inquiries & listen for real-time updates
+  // Load registrations, inquiries, vacancies, applications & listen for real-time updates
   const loadData = () => {
     const list = adminRegistrationService.getRegistrations();
     const inqList = adminRegistrationService.getInquiries();
+    const vacList = dataService.getVacancies();
+    const appList = adminRegistrationService.getApplications();
     setRegistrations(list);
     setInquiries(inqList);
+    setVacancies(Array.isArray(vacList) ? vacList : []);
+    setApplications(Array.isArray(appList) ? appList : []);
     setKpis(adminRegistrationService.getKPIs());
   };
 
@@ -508,9 +534,13 @@ export default function MsimamiziAdmin() {
     const handleUpdate = () => loadData();
     window.addEventListener('ecasi_registration_updated', handleUpdate);
     window.addEventListener('ecasi_inquiry_updated', handleUpdate);
+    window.addEventListener('ecasi_vacancies_updated', handleUpdate);
+    window.addEventListener('ecasi_applications_updated', handleUpdate);
     return () => {
       window.removeEventListener('ecasi_registration_updated', handleUpdate);
       window.removeEventListener('ecasi_inquiry_updated', handleUpdate);
+      window.removeEventListener('ecasi_vacancies_updated', handleUpdate);
+      window.removeEventListener('ecasi_applications_updated', handleUpdate);
     };
   }, []);
 
@@ -894,6 +924,114 @@ export default function MsimamiziAdmin() {
       loadData();
       setToastMessage(`Inquiry ${refNo} deleted.`);
     }
+  };
+
+  const filteredApplications = useMemo(() => {
+    return applications.filter((app) => {
+      if (applicationStatusFilter !== 'All' && (app.status || 'New') !== applicationStatusFilter) {
+        return false;
+      }
+      if (applicationSearch.trim()) {
+        const q = applicationSearch.toLowerCase().trim();
+        const hay = `${app.referenceNo || ''} ${app.fullName || ''} ${app.email || ''} ${app.phone || ''} ${app.jobTitle || ''} ${app.specialty || ''} ${app.cvFileName || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [applications, applicationSearch, applicationStatusFilter]);
+
+  const resetVacancyForm = () => {
+    setEditingVacancy(null);
+    setVacancyForm({
+      title: '',
+      department: 'Research & Executive Training',
+      location: 'Nairobi, Kenya',
+      type: 'Full-time',
+      deadline: '',
+      description: '',
+      requirements: '',
+      status: 'Open',
+    });
+  };
+
+  const openCreateVacancy = () => {
+    resetVacancyForm();
+    setIsVacancyFormOpen(true);
+  };
+
+  const openEditVacancy = (vac) => {
+    setEditingVacancy(vac);
+    setVacancyForm({
+      title: vac.title || '',
+      department: vac.department || 'Research & Executive Training',
+      location: vac.location || 'Nairobi, Kenya',
+      type: vac.type || 'Full-time',
+      deadline: vac.deadline || '',
+      description: vac.description || '',
+      requirements: vac.requirements || '',
+      status: vac.status === 'Closed' ? 'Closed' : 'Open',
+    });
+    setIsVacancyFormOpen(true);
+  };
+
+  const handleSaveVacancy = (e) => {
+    e.preventDefault();
+    if (!vacancyForm.title.trim()) {
+      alert('Please enter a vacancy position title.');
+      return;
+    }
+    const saved = dataService.saveVacancy({
+      ...vacancyForm,
+      id: editingVacancy?.id,
+      createdAt: editingVacancy?.createdAt,
+    });
+    if (saved) {
+      loadData();
+      setIsVacancyFormOpen(false);
+      resetVacancyForm();
+      showToast(`Vacancy "${saved.title}" saved and synced live to ecasiafrica.org/vacancies.`);
+    }
+  };
+
+  const handleToggleVacancyStatus = (vac) => {
+    dataService.toggleVacancyStatus(vac.id);
+    loadData();
+    showToast(`Vacancy "${vac.title}" marked as ${vac.status === 'Closed' ? 'Open' : 'Closed'}.`);
+  };
+
+  const handleDeleteVacancy = (vac) => {
+    if (window.confirm(`Delete vacancy "${vac.title}" from the website and portal?`)) {
+      dataService.deleteVacancy(vac.id);
+      loadData();
+      showToast(`Vacancy "${vac.title}" removed.`);
+    }
+  };
+
+  const handleUpdateApplicationStatus = (id, status) => {
+    adminRegistrationService.updateApplication(id, { status });
+    loadData();
+    showToast(`Application status updated to ${status}.`);
+  };
+
+  const handleDeleteApplication = (id, refNo) => {
+    if (window.confirm(`Delete candidate CV submission ${refNo}?`)) {
+      adminRegistrationService.deleteApplication(id);
+      loadData();
+      showToast(`Application ${refNo} deleted.`);
+    }
+  };
+
+  const handleDownloadCV = (app) => {
+    if (!app?.cvDataUrl) {
+      alert('No CV file payload attached to this record.');
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = app.cvDataUrl;
+    link.download = app.cvFileName || `CV_${app.fullName || app.referenceNo || 'Candidate'}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Update status quickly
@@ -1424,6 +1562,37 @@ export default function MsimamiziAdmin() {
                     </span>
                   )}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('vacancies');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  title={isSidebarCollapsed ? `Vacancies (${vacancies.length}) & CVs (${applications.length})` : undefined}
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
+                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'vacancies'
+                      ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
+                      : 'text-white/70 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                  <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                    <Briefcase className={`w-5 h-5 shrink-0 ${activeTab === 'vacancies' ? 'text-white' : 'text-[#00c853]'}`} />
+                    {!isSidebarCollapsed && <span>Vacancies &amp; CVs</span>}
+                  </div>
+                  {!isSidebarCollapsed ? (
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'vacancies' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
+                      }`}>
+                      {applications.length}
+                    </span>
+                  ) : (
+                    applications.length > 0 && (
+                      <span className="absolute top-1.5 right-1.5 min-w-[18px] h-4.5 px-1 bg-[#008000] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#032e42] shadow-sm">
+                        {applications.length}
+                      </span>
+                    )
+                  )}
+                </button>
               </nav>
             </div>
 
@@ -1571,6 +1740,7 @@ export default function MsimamiziAdmin() {
                   {activeTab === 'registrations' && 'Course Registrations'}
                   {activeTab === 'inquiries' && 'WhatsApp & Email Inquiries'}
                   {activeTab === 'courses' && 'Course Catalog & Pricing Management'}
+                  {activeTab === 'vacancies' && 'Vacancies & CV Applications'}
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
                   Live DB
@@ -1724,6 +1894,46 @@ export default function MsimamiziAdmin() {
                   >
                     <MessageSquare className="w-3.5 h-3.5 text-[#00c853]" />
                     <span>Open Inquiries Log ({inquiries.length})</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Vacancies & Submitted CVs Live Summary Banner */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#032e42]/10 text-[#032e42] flex items-center justify-center shrink-0 border border-slate-200">
+                    <Briefcase className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-extrabold text-slate-900 text-sm">
+                        Career Vacancies &amp; Candidate CV Submissions
+                      </h3>
+                      {(kpis.newApplicationsCount || 0) > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase">
+                          {kpis.newApplicationsCount} New CV{(kpis.newApplicationsCount || 0) > 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Post job openings synced live to ecasiafrica.org/vacancies and review or download candidate CVs submitted online.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">
+                    Open Roles: {vacancies.filter((v) => v.status !== 'Closed').length}
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
+                    CVs Received: {applications.length}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('vacancies')}
+                    className="px-4 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span>Manage Vacancies &amp; CVs</span>
                   </button>
                 </div>
               </div>
@@ -2119,7 +2329,7 @@ export default function MsimamiziAdmin() {
                     type="button"
                     onClick={exportCoursesCSV}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm cursor-pointer"
-                    title="Export complete 213 courses catalog to CSV"
+                    title={`Export complete ${courses.length} courses catalog to CSV`}
                   >
                     <Download className="w-3.5 h-3.5 text-slate-500" />
                     <span>Export Catalog (CSV)</span>
@@ -2931,6 +3141,475 @@ export default function MsimamiziAdmin() {
                                     onClick={() => handleDeleteInquiry(inq.id, inq.referenceNo)}
                                     className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                                     title="Delete Inquiry"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              TAB 5: VACANCIES & CANDIDATE CV SUBMISSIONS
+          ───────────────────────────────────────────────────────────── */}
+          {activeTab === 'vacancies' && (
+            <div className="space-y-6">
+              {/* Top Action Header */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h2 className="text-lg font-black text-[#032e42]">
+                      Vacancies &amp; Candidate CV Recruitment Desk
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                      {vacancies.filter((v) => v.status !== 'Closed').length} Open / {vacancies.length} Total
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-bold">
+                      {applications.length} CV{applications.length === 1 ? '' : 's'} Received
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Publish or update career openings to sync live to ecasiafrica.org/vacancies, and review or download candidate CVs uploaded online.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={openCreateVacancy}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-md transition cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>Post New Vacancy</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => adminRegistrationService.downloadApplicationsCSV()}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Export CVs (CSV)</span>
+                  </button>
+
+                  <a
+                    href="https://ecasiafrica.org/vacancies"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>View Website Page</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Add / Edit Vacancy Form Panel */}
+              {isVacancyFormOpen && (
+                <form
+                  onSubmit={handleSaveVacancy}
+                  className="bg-white p-6 rounded-2xl border-2 border-emerald-200 shadow-md space-y-4 text-xs"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="text-sm font-black text-[#032e42] flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-[#008000]" />
+                      <span>{editingVacancy ? `Edit Vacancy: ${editingVacancy.title}` : 'Publish New Job Vacancy'}</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsVacancyFormOpen(false);
+                        resetVacancyForm();
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block font-bold text-slate-700 mb-1">Job Position Title *</label>
+                      <input
+                        type="text"
+                        required
+                        value={vacancyForm.title}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, title: e.target.value })}
+                        placeholder="e.g. Senior Climate Policy & Carbon Markets Researcher"
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Department / Unit</label>
+                      <input
+                        type="text"
+                        value={vacancyForm.department}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, department: e.target.value })}
+                        placeholder="Research & Executive Training"
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Work Location</label>
+                      <input
+                        type="text"
+                        value={vacancyForm.location}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, location: e.target.value })}
+                        placeholder="Nairobi, Kenya (Hybrid)"
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Contract Type</label>
+                      <select
+                        value={vacancyForm.type}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, type: e.target.value })}
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+                      >
+                        <option value="Full-time">Full-time</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Consultancy">Consultancy</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Internship / Fellowship">Internship / Fellowship</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Application Deadline</label>
+                      <input
+                        type="text"
+                        value={vacancyForm.deadline}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, deadline: e.target.value })}
+                        placeholder="e.g. 30 November 2026"
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Website Visibility</label>
+                      <select
+                        value={vacancyForm.status}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, status: e.target.value })}
+                        className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+                      >
+                        <option value="Open">Open (Visible on Website)</option>
+                        <option value="Closed">Closed (Hidden on Website)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Role Summary &amp; Responsibilities</label>
+                      <textarea
+                        rows={4}
+                        value={vacancyForm.description}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, description: e.target.value })}
+                        placeholder="Describe the core mandate, key deliverables, and impact of this position..."
+                        className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Qualifications &amp; Requirements</label>
+                      <textarea
+                        rows={4}
+                        value={vacancyForm.requirements}
+                        onChange={(e) => setVacancyForm({ ...vacancyForm, requirements: e.target.value })}
+                        placeholder="List academic background, years of experience, and technical competencies..."
+                        className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsVacancyFormOpen(false);
+                        resetVacancyForm();
+                      }}
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold shadow cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{editingVacancy ? 'Save Changes & Sync' : 'Publish Vacancy to Website'}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Published Job Openings List */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+                  <h3 className="text-sm font-extrabold text-[#032e42]">
+                    Managed Job Openings ({vacancies.length})
+                  </h3>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Active vacancies appear immediately on ecasiafrica.org/vacancies
+                  </span>
+                </div>
+
+                {vacancies.length === 0 ? (
+                  <div className="p-10 text-center">
+                    <Briefcase className="w-9 h-9 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm font-bold text-slate-700">No Vacancies Posted Yet</p>
+                    <p className="text-xs text-slate-500 mt-1 mb-4">
+                      Click &ldquo;Post New Vacancy&rdquo; above to publish a role to the ECAS Careers page. Visitors can still submit speculative CVs anytime.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openCreateVacancy}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#008000] text-white text-xs font-bold cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Create First Vacancy
+                    </button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {vacancies.map((vac) => {
+                      const applicantCount = applications.filter(
+                        (a) => a.jobId === vac.id || a.jobTitle === vac.title
+                      ).length;
+                      const isOpen = vac.status !== 'Closed';
+                      return (
+                        <div key={vac.id} className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50/60">
+                          <div className="space-y-1.5 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  isOpen
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    : 'bg-slate-200 text-slate-700'
+                                }`}
+                              >
+                                {isOpen ? 'Open on Website' : 'Closed'}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                                <Building2 className="w-3 h-3" /> {vac.department || 'General'}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#032e42] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                {applicantCount} CV{applicantCount === 1 ? '' : 's'}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-extrabold text-[#032e42]">{vac.title}</h4>
+                            <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 font-medium">
+                              <span className="flex items-center gap-1"><Briefcase className="w-3.5 h-3.5" /> {vac.type || 'Full-time'}</span>
+                              <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {vac.location || 'Nairobi, Kenya'}</span>
+                              <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Deadline: {vac.deadline || 'Open Until Filled'}</span>
+                            </div>
+                            {vac.description && (
+                              <p className="text-xs text-slate-600 line-clamp-2 max-w-3xl">{vac.description}</p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => openEditVacancy(vac)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold cursor-pointer"
+                            >
+                              <Edit className="w-3.5 h-3.5" /> Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleVacancyStatus(vac)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border ${
+                                isOpen
+                                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
+                              }`}
+                            >
+                              {isOpen ? 'Close Role' : 'Reopen Role'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteVacancy(vac)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete Vacancy"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Received Candidate CVs & Job Applications Table */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-slate-50/70">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#032e42]">
+                      Submitted CVs &amp; Job Applications ({filteredApplications.length})
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Applications and uploaded CV documents submitted from both open vacancies and speculative talent pool.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={applicationSearch}
+                        onChange={(e) => setApplicationSearch(e.target.value)}
+                        placeholder="Search candidate, email, role..."
+                        className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs w-56 focus:outline-none focus:border-[#008000]"
+                      />
+                    </div>
+                    <select
+                      value={applicationStatusFilter}
+                      onChange={(e) => setApplicationStatusFilter(e.target.value)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:border-[#008000]"
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="New">New</option>
+                      <option value="Shortlisted">Shortlisted</option>
+                      <option value="Interview">Interview</option>
+                      <option value="Hired">Hired</option>
+                      <option value="Archived">Archived</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                        <th className="py-3.5 px-4">Ref &amp; Date</th>
+                        <th className="py-3.5 px-4">Position Applied</th>
+                        <th className="py-3.5 px-4">Candidate Details</th>
+                        <th className="py-3.5 px-4">Attached CV &amp; Note</th>
+                        <th className="py-3.5 px-4">Status</th>
+                        <th className="py-3.5 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs">
+                      {filteredApplications.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                            <p className="font-bold text-slate-600">No CV submissions recorded yet</p>
+                            <p className="text-[11px] mt-0.5">
+                              Candidate CVs submitted from ecasiafrica.org/vacancies will appear here automatically.
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredApplications.map((app) => {
+                          const replySubject = encodeURIComponent(`Regarding Your ECAS Application (${app.referenceNo || ''}): ${app.jobTitle || 'Talent Pool'}`);
+                          const sizeKb = app.cvFileSize ? `${Math.max(1, Math.round(app.cvFileSize / 1024))} KB` : '';
+                          return (
+                            <tr key={app.id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                                <span className="font-mono font-bold text-[#032e42] block">
+                                  {app.referenceNo || app.id}
+                                </span>
+                                <span className="text-[11px] text-slate-400">{app.displayDate || 'Recent'}</span>
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top max-w-[200px]">
+                                <div className="font-bold text-slate-800">{app.jobTitle || 'Speculative Application'}</div>
+                                <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                                  {app.specialty || 'Sustainability & Policy'}
+                                </div>
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="font-extrabold text-slate-900">{app.fullName}</div>
+                                {app.email && (
+                                  <div className="text-[11px] text-blue-600 mt-0.5">{app.email}</div>
+                                )}
+                                {app.phone && (
+                                  <div className="text-[11px] text-slate-600 font-mono mt-0.5">{app.phone}</div>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top max-w-xs">
+                                {app.cvFileName ? (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold text-[11px]">
+                                      <Paperclip className="w-3 h-3" />
+                                      <span className="truncate max-w-[160px]">{app.cvFileName}</span>
+                                      {sizeKb && <span className="text-[10px] font-normal text-emerald-700">({sizeKb})</span>}
+                                    </span>
+                                    {app.cvDataUrl && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadCV(app)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#032e42] hover:bg-[#05435e] text-white font-bold text-[11px] cursor-pointer"
+                                      >
+                                        <Download className="w-3 h-3" /> Download CV
+                                      </button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 italic">No CV attachment</span>
+                                )}
+                                {app.coverLetter && (
+                                  <p className="text-[11px] text-slate-500 italic mt-1.5 line-clamp-2 bg-slate-50 p-1.5 rounded border border-slate-100">
+                                    &ldquo;{app.coverLetter}&rdquo;
+                                  </p>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top">
+                                <select
+                                  value={app.status || 'New'}
+                                  onChange={(e) => handleUpdateApplicationStatus(app.id, e.target.value)}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border focus:outline-none cursor-pointer ${
+                                    (app.status || 'New') === 'New'
+                                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                      : app.status === 'Shortlisted'
+                                      ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                      : app.status === 'Interview'
+                                      ? 'bg-purple-50 text-purple-800 border-purple-200'
+                                      : app.status === 'Hired'
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                                  }`}
+                                >
+                                  <option value="New">New</option>
+                                  <option value="Shortlisted">Shortlisted</option>
+                                  <option value="Interview">Interview</option>
+                                  <option value="Hired">Hired</option>
+                                  <option value="Archived">Archived</option>
+                                </select>
+                              </td>
+
+                              <td className="py-3.5 px-4 align-top text-right">
+                                <div className="inline-flex items-center gap-1.5">
+                                  {app.email && (
+                                    <a
+                                      href={`mailto:${app.email}?subject=${replySubject}`}
+                                      className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] transition"
+                                      title="Email Candidate"
+                                    >
+                                      Email
+                                    </a>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteApplication(app.id, app.referenceNo)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                    title="Delete Application"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>

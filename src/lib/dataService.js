@@ -36,13 +36,18 @@ const getLocalStorageData = (key) => {
   }
 };
 
-const syncCoursesToServer = (cachedCourses) => {
-  if (typeof window === 'undefined') return;
+const getSyncEndpoint = () => {
+  if (typeof window === 'undefined') return '';
   const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return;
-  const endpoint = host.endsWith('ecasiafrica.org')
+  if (host === 'localhost' || host === '127.0.0.1') return '';
+  return host.endsWith('ecasiafrica.org')
     ? '/api/msimamizi-sync.php'
     : 'https://ecasiafrica.org/api/msimamizi-sync.php';
+};
+
+const postAdminSync = (payload) => {
+  const endpoint = getSyncEndpoint();
+  if (!endpoint) return Promise.resolve(null);
   const token =
     sessionStorage.getItem('ecasi_msimamizi_token') ||
     localStorage.getItem('ecasi_msimamizi_token') ||
@@ -51,34 +56,46 @@ const syncCoursesToServer = (cachedCourses) => {
   if (token) {
     headers['X-Admin-Token'] = token;
   }
-  fetch(endpoint, {
+  return fetch(endpoint, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ action: 'set_courses', courses: cachedCourses || {} }),
-  }).catch(() => {});
+    body: JSON.stringify(payload),
+  })
+    .then((res) => (res.ok ? res.json() : null))
+    .catch(() => null);
 };
 
-// Automatically hydrate course overrides (images, pricing, new courses) from central server on public & admin sites
-if (typeof window !== 'undefined') {
-  const host = window.location.hostname;
-  if (host !== 'localhost' && host !== '127.0.0.1') {
-    const endpoint = host.endsWith('ecasiafrica.org')
-      ? '/api/msimamizi-sync.php?scope=public'
-      : 'https://ecasiafrica.org/api/msimamizi-sync.php?scope=public';
-    fetch(endpoint, { method: 'GET', cache: 'no-store' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        const remoteCourses = json?.data?.courses;
-        if (remoteCourses && typeof remoteCourses === 'object' && Object.keys(remoteCourses).length > 0) {
-          const localCached = getLocalStorageData(KEYS.COURSES) || {};
-          const merged = { ...localCached, ...remoteCourses };
-          localStorage.setItem(KEYS.COURSES, JSON.stringify(merged));
-          window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
-        }
-      })
-      .catch(() => {});
-  }
-}
+const syncCoursesToServer = (cachedCourses) =>
+  postAdminSync({ action: 'set_courses', courses: cachedCourses || {} });
+
+const syncVacanciesToServer = (vacanciesList) =>
+  postAdminSync({ action: 'set_vacancies', vacancies: Array.isArray(vacanciesList) ? vacanciesList : [] });
+
+const hydratePublicFromServer = () => {
+  const baseEndpoint = getSyncEndpoint();
+  if (!baseEndpoint) return Promise.resolve(null);
+  return fetch(`${baseEndpoint}?scope=public`, { method: 'GET', cache: 'no-store' })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((json) => {
+      const remoteCourses = json?.data?.courses;
+      if (remoteCourses && typeof remoteCourses === 'object' && Object.keys(remoteCourses).length > 0) {
+        const localCached = getLocalStorageData(KEYS.COURSES) || {};
+        const merged = { ...localCached, ...remoteCourses };
+        localStorage.setItem(KEYS.COURSES, JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
+      }
+      const remoteVacancies = json?.data?.vacancies;
+      if (Array.isArray(remoteVacancies)) {
+        localStorage.setItem(KEYS.VACANCIES, JSON.stringify(remoteVacancies));
+        window.dispatchEvent(new CustomEvent('ecasi_vacancies_updated'));
+      }
+      return json?.data || null;
+    })
+    .catch(() => null);
+};
+
+// Automatically hydrate courses & vacancies overrides from central server on public & admin sites
+hydratePublicFromServer();
 
 export const dataService = {
   KEYS,
@@ -135,14 +152,17 @@ export const dataService = {
     });
     return merged;
   },
-  getCoursesList() {
+  getCoursesList(includeCategoryPages = false) {
     const courses = this.getCourses();
     if (!courses) return [];
-    if (Array.isArray(courses)) return courses;
-    return Object.entries(courses).map(([slugKey, courseObj]) => ({
-      slug: slugKey,
-      ...(courseObj || {})
-    }));
+    const rawList = Array.isArray(courses)
+      ? courses
+      : Object.entries(courses).map(([slugKey, courseObj]) => ({
+          slug: slugKey,
+          ...(courseObj || {})
+        }));
+    if (includeCategoryPages) return rawList;
+    return rawList.filter((c) => c && !c.isCategoryPage);
   },
   getCourseBySlug(slug) {
     if (!slug) return null;
@@ -155,7 +175,7 @@ export const dataService = {
       return { slug: cleanSlug, ...courses[cleanSlug] };
     }
 
-    const list = this.getCoursesList();
+    const list = this.getCoursesList(true);
     
     // 1. Exact match on slug or id
     const exact = list.find((c) => (c?.slug || '').toLowerCase() === cleanSlug || (c?.id || '').toLowerCase() === cleanSlug);
@@ -303,5 +323,74 @@ export const dataService = {
       console.error("Error deleting course", e);
       return false;
     }
+  },
+
+  refreshPublicData() {
+    return hydratePublicFromServer();
+  },
+
+  // ─── Vacancy Mutations (Msimamizi Admin <-> Public Vacancies Page) ───────────
+  setVacancies(vacanciesList) {
+    try {
+      const cleanList = Array.isArray(vacanciesList) ? vacanciesList : [];
+      localStorage.setItem(KEYS.VACANCIES, JSON.stringify(cleanList));
+      syncVacanciesToServer(cleanList);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ecasi_vacancies_updated'));
+      }
+      return cleanList;
+    } catch (e) {
+      console.error("Error saving vacancies list", e);
+      return null;
+    }
+  },
+
+  saveVacancy(vacancyData) {
+    if (!vacancyData || !String(vacancyData.title || '').trim()) return null;
+    const current = this.getVacancies();
+    const existingList = Array.isArray(current) ? current : [];
+    const nowIso = new Date().toISOString();
+    const vacId = vacancyData.id || `VAC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const record = {
+      id: vacId,
+      title: String(vacancyData.title || '').trim(),
+      department: String(vacancyData.department || 'Research & Executive Training').trim(),
+      location: String(vacancyData.location || 'Nairobi, Kenya').trim(),
+      type: String(vacancyData.type || 'Full-time').trim(),
+      deadline: String(vacancyData.deadline || 'Open Until Filled').trim(),
+      description: String(vacancyData.description || '').trim(),
+      requirements: String(vacancyData.requirements || '').trim(),
+      status: vacancyData.status === 'Closed' ? 'Closed' : 'Open',
+      createdAt: vacancyData.createdAt || nowIso,
+      updatedAt: nowIso,
+    };
+
+    const exists = existingList.some((v) => v.id === vacId);
+    const updated = exists
+      ? existingList.map((v) => (v.id === vacId ? { ...v, ...record } : v))
+      : [record, ...existingList];
+
+    this.setVacancies(updated);
+    return record;
+  },
+
+  toggleVacancyStatus(id) {
+    if (!id) return false;
+    const existingList = Array.isArray(this.getVacancies()) ? this.getVacancies() : [];
+    const updated = existingList.map((v) =>
+      v.id === id
+        ? { ...v, status: v.status === 'Closed' ? 'Open' : 'Closed', updatedAt: new Date().toISOString() }
+        : v
+    );
+    this.setVacancies(updated);
+    return true;
+  },
+
+  deleteVacancy(id) {
+    if (!id) return false;
+    const existingList = Array.isArray(this.getVacancies()) ? this.getVacancies() : [];
+    const updated = existingList.filter((v) => v.id !== id);
+    this.setVacancies(updated);
+    return true;
   }
 };
