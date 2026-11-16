@@ -10,9 +10,11 @@ const ADMIN_TOKEN_KEY = 'ecasi_msimamizi_token';
 const ADMIN_ACCOUNTS_KEY = 'ecasi_msimamizi_accounts';
 const ADMIN_CURRENT_USER_KEY = 'ecasi_msimamizi_user';
 const ADMIN_LAST_ACTIVITY_KEY = 'ecasi_msimamizi_last_activity';
+const ADMIN_TAB_ID_KEY = 'ecasi_msimamizi_tab_id';
+const ADMIN_ACTIVE_SESSIONS_KEY = 'ecasi_msimamizi_active_sessions';
 const COURSES_KEY = 'ecasi_courses_v2026_v3';
 
-export const ADMIN_SESSION_IDLE_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes max idle session
+export const ADMIN_SESSION_IDLE_TIMEOUT_MS = 10 * 60 * 1000; // Silent 10-minute idle timeout
 
 export function normalizeAdminEmail(raw) {
   let clean = String(raw || '')
@@ -46,6 +48,54 @@ export function getStoredAdminToken() {
   return sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
 }
 
+function getOrCreateTabSessionId() {
+  if (typeof window === 'undefined') return 'tab_ssr';
+  try {
+    let tabId = sessionStorage.getItem(ADMIN_TAB_ID_KEY);
+    if (!tabId) {
+      tabId = `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+      sessionStorage.setItem(ADMIN_TAB_ID_KEY, tabId);
+    }
+    return tabId;
+  } catch {
+    return `tab_${Date.now().toString(36)}`;
+  }
+}
+
+function readLocalActiveSessions() {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(ADMIN_ACTIVE_SESSIONS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (!parsed || typeof parsed !== 'object') return {};
+    const now = Date.now();
+    const cleaned = {};
+    Object.entries(parsed).forEach(([em, lock]) => {
+      if (!lock || typeof lock !== 'object') return;
+      const expired = (lock.expiresAt || 0) <= now;
+      const closed = lock.closingAt && now - lock.closingAt >= 2000;
+      if (!expired && !closed) {
+        cleaned[em] = lock;
+      }
+    });
+    if (Object.keys(cleaned).length !== Object.keys(parsed).length) {
+      localStorage.setItem(ADMIN_ACTIVE_SESSIONS_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalActiveSessions(map) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ADMIN_ACTIVE_SESSIONS_KEY, JSON.stringify(map || {}));
+  } catch {
+    // ignore storage errors
+  }
+}
+
 function clearLegacyPersistentAuth() {
   if (typeof window === 'undefined') return;
   try {
@@ -55,6 +105,37 @@ function clearLegacyPersistentAuth() {
     localStorage.removeItem(ADMIN_LAST_ACTIVITY_KEY);
   } catch {
     // ignore storage errors
+  }
+}
+
+export function getSyncUrl() {
+  if (typeof window === 'undefined') return '/api/msimamizi-sync.php';
+  const host = window.location.hostname;
+  // Both ecasiafrica.org and msimamizi.ecasiafrica.org share the /public_html Document Root
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('ecasiafrica.org')) {
+    return '/api/msimamizi-sync.php';
+  }
+  return 'https://ecasiafrica.org/api/msimamizi-sync.php';
+}
+
+function sendKeepaliveLifecycle(action, explicitToken = '') {
+  if (typeof window === 'undefined') return;
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return;
+  const token = explicitToken || getStoredAdminToken();
+  if (!token) return;
+  try {
+    fetch(getSyncUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Token': token,
+      },
+      body: JSON.stringify({ action, token }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // ignore unload fetch failures
   }
 }
 
@@ -71,6 +152,25 @@ if (typeof window !== 'undefined') {
       window.location.pathname.startsWith('/admin') ||
       window.location.pathname.startsWith('/portal');
     if (isAdminHostOrRoute && (navType === 'navigate' || navType === 'back_forward')) {
+      const staleToken = sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
+      const staleUserRaw = sessionStorage.getItem(ADMIN_CURRENT_USER_KEY) || '';
+      const tabId = sessionStorage.getItem(ADMIN_TAB_ID_KEY) || '';
+      if (staleToken) {
+        sendKeepaliveLifecycle('logout', staleToken);
+      }
+      if (staleUserRaw && tabId) {
+        try {
+          const parsedUser = JSON.parse(staleUserRaw);
+          const em = normalizeAdminEmail(parsedUser?.email || '');
+          const locks = readLocalActiveSessions();
+          if (em && locks[em]?.tabId === tabId) {
+            delete locks[em];
+            writeLocalActiveSessions(locks);
+          }
+        } catch {
+          // ignore
+        }
+      }
       sessionStorage.removeItem(ADMIN_AUTH_KEY);
       sessionStorage.removeItem(ADMIN_TOKEN_KEY);
       sessionStorage.removeItem(ADMIN_CURRENT_USER_KEY);
@@ -81,18 +181,8 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export function getSyncUrl() {
-  if (typeof window === 'undefined') return '/api/msimamizi-sync.php';
-  const host = window.location.hostname;
-  // Both ecasiafrica.org and msimamizi.ecasiafrica.org share the /public_html Document Root
-  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('ecasiafrica.org')) {
-    return '/api/msimamizi-sync.php';
-  }
-  return 'https://ecasiafrica.org/api/msimamizi-sync.php';
-}
-
-async function pushToServer(payload) {
-  if (typeof window === 'undefined') return null;
+async function pushToServerWithStatus(payload) {
+  if (typeof window === 'undefined') return { unreachable: true, status: 0, data: null };
   try {
     const token = getStoredAdminToken();
     const headers = { 'Content-Type': 'application/json' };
@@ -104,12 +194,21 @@ async function pushToServer(payload) {
       headers,
       body: JSON.stringify(payload),
     });
-    if (!res.ok) return null;
-    return await res.json();
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return { unreachable: true, status: res.status, data: null };
+    }
+    const data = await res.json();
+    return { unreachable: false, status: res.status, ok: res.ok, data };
   } catch {
-    // Offline or local dev fallback: localStorage already updated
-    return null;
+    return { unreachable: true, status: 0, data: null };
   }
+}
+
+async function pushToServer(payload) {
+  const result = await pushToServerWithStatus(payload);
+  if (result.unreachable || !result.ok) return null;
+  return result.data;
 }
 
 class AdminRegistrationService {
@@ -119,6 +218,9 @@ class AdminRegistrationService {
 
   init() {
     if (typeof window === 'undefined') return;
+    this._tabId = getOrCreateTabSessionId();
+    this._lastServerTouchAt = 0;
+    this._initSessionCoordination();
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) {
@@ -132,9 +234,152 @@ class AdminRegistrationService {
       if (!storedApps) {
         localStorage.setItem(APPLICATIONS_KEY, JSON.stringify([]));
       }
+      if (this.isAuthenticated()) {
+        this._resumeLocalSessionLock();
+      }
       this.syncFromServer();
     } catch (e) {
       console.warn('LocalStorage error initializing admin registrations:', e);
+    }
+  }
+
+  _initSessionCoordination() {
+    if (typeof window === 'undefined') return;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        this._channel = new BroadcastChannel('ecasi_msimamizi_session');
+        this._channel.onmessage = (ev) => {
+          const msg = ev?.data;
+          if (!msg || typeof msg !== 'object') return;
+          if (msg.type === 'PING_ACTIVE_SESSION') {
+            if (!this.isAuthenticated()) return;
+            const cur = this.getCurrentUser();
+            const curEmail = normalizeAdminEmail(cur?.email || '');
+            const targetEmail = normalizeAdminEmail(msg.email || '');
+            if (curEmail && curEmail === targetEmail && msg.senderTabId !== this._tabId) {
+              this._channel.postMessage({
+                type: 'PONG_ACTIVE_SESSION',
+                email: curEmail,
+                ownerTabId: this._tabId,
+                pingId: msg.pingId,
+              });
+            }
+          }
+        };
+      } catch {
+        this._channel = null;
+      }
+    }
+
+    const markClosing = () => {
+      if (sessionStorage.getItem(ADMIN_AUTH_KEY) !== 'true') return;
+      const cur = this.getCurrentUser();
+      const email = normalizeAdminEmail(cur?.email || '');
+      if (email) {
+        const locks = readLocalActiveSessions();
+        if (locks[email]?.tabId === this._tabId) {
+          locks[email].closingAt = Date.now();
+          writeLocalActiveSessions(locks);
+        }
+      }
+      sendKeepaliveLifecycle('tab_closing');
+    };
+
+    window.addEventListener('pagehide', markClosing);
+  }
+
+  _hasLiveTabViaBroadcast(email) {
+    const normEmail = normalizeAdminEmail(email);
+    if (!normEmail || !this._channel || typeof window === 'undefined') {
+      return Promise.resolve(false);
+    }
+    return new Promise((resolve) => {
+      const pingId = `${this._tabId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      let settled = false;
+      const handleMsg = (ev) => {
+        const d = ev?.data;
+        if (
+          d?.type === 'PONG_ACTIVE_SESSION' &&
+          d.pingId === pingId &&
+          normalizeAdminEmail(d.email || '') === normEmail &&
+          d.ownerTabId !== this._tabId
+        ) {
+          if (!settled) {
+            settled = true;
+            this._channel.removeEventListener('message', handleMsg);
+            window.clearTimeout(timer);
+            resolve(true);
+          }
+        }
+      };
+      this._channel.addEventListener('message', handleMsg);
+      const timer = window.setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          this._channel.removeEventListener('message', handleMsg);
+          resolve(false);
+        }
+      }, 120);
+      try {
+        this._channel.postMessage({
+          type: 'PING_ACTIVE_SESSION',
+          email: normEmail,
+          senderTabId: this._tabId,
+          pingId,
+        });
+      } catch {
+        window.clearTimeout(timer);
+        resolve(false);
+      }
+    });
+  }
+
+  async _isAccountLockedInBrowser(email) {
+    const normEmail = normalizeAdminEmail(email);
+    if (!normEmail) return false;
+    const liveTabOpen = await this._hasLiveTabViaBroadcast(normEmail);
+    if (liveTabOpen) return true;
+    const locks = readLocalActiveSessions();
+    const lock = locks[normEmail];
+    if (!lock) return false;
+    if (lock.tabId === this._tabId) return false;
+    return (lock.expiresAt || 0) > Date.now() && (!lock.closingAt || Date.now() - lock.closingAt < 2000);
+  }
+
+  _setLocalSessionLock(email) {
+    const normEmail = normalizeAdminEmail(email);
+    if (!normEmail || typeof window === 'undefined') return;
+    const locks = readLocalActiveSessions();
+    locks[normEmail] = {
+      email: normEmail,
+      tabId: this._tabId || getOrCreateTabSessionId(),
+      expiresAt: Date.now() + ADMIN_SESSION_IDLE_TIMEOUT_MS,
+      closingAt: null,
+    };
+    writeLocalActiveSessions(locks);
+  }
+
+  _resumeLocalSessionLock() {
+    const cur = this.getCurrentUser();
+    const normEmail = normalizeAdminEmail(cur?.email || '');
+    if (!normEmail) return;
+    const locks = readLocalActiveSessions();
+    if (locks[normEmail] && locks[normEmail].tabId === this._tabId) {
+      delete locks[normEmail].closingAt;
+      locks[normEmail].expiresAt = Date.now() + ADMIN_SESSION_IDLE_TIMEOUT_MS;
+      writeLocalActiveSessions(locks);
+    } else if (!locks[normEmail]) {
+      this._setLocalSessionLock(normEmail);
+    }
+  }
+
+  _clearLocalSessionLock(email) {
+    const normEmail = normalizeAdminEmail(email);
+    if (!normEmail || typeof window === 'undefined') return;
+    const locks = readLocalActiveSessions();
+    if (locks[normEmail] && locks[normEmail].tabId === this._tabId) {
+      delete locks[normEmail];
+      writeLocalActiveSessions(locks);
     }
   }
 
@@ -159,6 +404,11 @@ class AdminRegistrationService {
       });
       if (!res.ok) return;
       const json = await res.json();
+      if (scope === 'admin' && json?.authenticated === false) {
+        this.logout();
+        window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
+        return;
+      }
       if (!json?.success || !json?.data) return;
 
       const { registrations, inquiries, courses, vacancies, applications, accounts } = json.data;
@@ -843,7 +1093,7 @@ class AdminRegistrationService {
   }
 
   // Create first password / register new administrator using authorized email
-  registerAdmin(email, password) {
+  async registerAdmin(email, password) {
     if (typeof window === 'undefined') return { success: false, message: 'Browser storage unavailable' };
 
     const cleanEmail = normalizeAdminEmail(email);
@@ -867,15 +1117,45 @@ class AdminRegistrationService {
       };
     }
 
+    const lockedInBrowser = await this._isAccountLockedInBrowser(cleanEmail);
+    if (lockedInBrowser) {
+      return {
+        success: false,
+        message: 'This account is already signed in on another active session. Only one active session is allowed per account.',
+      };
+    }
+
     try {
       const accounts = this.getAdminAccounts();
       const existingIdx = accounts.findIndex((a) => normalizeAdminEmail(a.email) === cleanEmail);
       const digest = computeCredentialDigest(cleanEmail, cleanPass);
 
+      const serverRes = await pushToServerWithStatus({
+        action: 'register_admin',
+        email: cleanEmail,
+        password: cleanPass,
+        credentialDigest: digest,
+      });
+
+      if (!serverRes.unreachable) {
+        if (serverRes.status === 409 || serverRes.data?.code === 'SESSION_ALREADY_ACTIVE') {
+          return {
+            success: false,
+            message: serverRes.data?.error || 'This account is already signed in on another active session. Concurrent sessions are not permitted.',
+          };
+        }
+        if (!serverRes.ok || !serverRes.data?.success) {
+          return {
+            success: false,
+            message: serverRes.data?.error || 'Unable to register administrator credentials.',
+          };
+        }
+      }
+
       const userRecord = {
         email: cleanEmail,
         credentialDigest: digest,
-        role: 'Administrator',
+        role: serverRes.data?.user?.role || 'Administrator',
         updatedAt: new Date().toISOString(),
       };
 
@@ -888,20 +1168,11 @@ class AdminRegistrationService {
 
       localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
 
-      // Sync with hardened server endpoint (which stores bcrypt hash & credentialDigest & issues session token)
-      pushToServer({
-        action: 'register_admin',
-        email: cleanEmail,
-        password: cleanPass,
-        credentialDigest: digest,
-      }).then((res) => {
-        if (res?.token) {
-          this._storeToken(res.token);
-          this.syncFromServer();
-        }
-      });
-
+      if (serverRes.data?.token) {
+        this._storeToken(serverRes.data.token);
+      }
       this._setAuthSession(cleanEmail, userRecord.role);
+      this.syncFromServer();
 
       return {
         success: true,
@@ -918,11 +1189,40 @@ class AdminRegistrationService {
   touchSessionActivity() {
     if (typeof window === 'undefined') return;
     if (sessionStorage.getItem(ADMIN_AUTH_KEY) !== 'true') return;
+    const now = Date.now();
     try {
-      sessionStorage.setItem(ADMIN_LAST_ACTIVITY_KEY, String(Date.now()));
+      sessionStorage.setItem(ADMIN_LAST_ACTIVITY_KEY, String(now));
+      this._resumeLocalSessionLock();
     } catch {
       // ignore
     }
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1' && now - (this._lastServerTouchAt || 0) >= 45000) {
+      this._lastServerTouchAt = now;
+      pushToServerWithStatus({ action: 'touch_activity' }).then((res) => {
+        if (!res.unreachable && res.status === 401) {
+          this.logout();
+          window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
+        }
+      });
+    }
+  }
+
+  async verifyServerSession() {
+    if (typeof window === 'undefined') return true;
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return this.isAuthenticated();
+    }
+    const token = getStoredAdminToken();
+    if (!token) return false;
+    const res = await pushToServerWithStatus({ action: 'verify_session' });
+    if (!res.unreachable && res.status === 401) {
+      this.logout();
+      window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
+      return false;
+    }
+    return true;
   }
 
   getRemainingIdleMs() {
@@ -939,7 +1239,7 @@ class AdminRegistrationService {
     return Date.now() - rawLast >= ADMIN_SESSION_IDLE_TIMEOUT_MS;
   }
 
-  // Admin authentication check (strict per-tab session + max 20-minute idle expiry; never auto-logs in via localStorage)
+  // Admin authentication check (strict per-tab session + silent 10-minute idle expiry; never auto-logs in via localStorage)
   isAuthenticated() {
     if (typeof window === 'undefined') return false;
     clearLegacyPersistentAuth();
@@ -978,45 +1278,46 @@ class AdminRegistrationService {
       };
     }
 
-    const accounts = this.getAdminAccounts();
-    const candidateDigest = computeCredentialDigest(inputUser, inputPass);
-
-    // 1. Check registered / custom administrator accounts via non-reversible digest
-    const matched = accounts.find((a) => normalizeAdminEmail(a.email) === inputUser);
-    const isMatchedDigest = matched && matched.credentialDigest === candidateDigest;
-    const isBootstrapPass = inputPass === 'msimamizi2026' || inputPass === '2026' || inputPass === 'ecasi2026!';
-
-    if (isMatchedDigest || isBootstrapPass) {
-      const role = matched?.role || 'Administrator';
-      this._setAuthSession(inputUser, role);
-
-      // Obtain server-side session token in background and sync protected records
-      pushToServer({
-        action: 'login',
-        email: inputUser,
-        password: inputPass,
-        credentialDigest: candidateDigest,
-      }).then((res) => {
-        if (res?.token) {
-          this._storeToken(res.token);
-          this.syncFromServer();
-        }
-      });
-
-      return { success: true, user: { email: inputUser, role } };
+    // 1. Same-browser check: prevent 2nd / 3rd active tab/window session on the same account
+    const lockedInBrowser = await this._isAccountLockedInBrowser(inputUser);
+    if (lockedInBrowser) {
+      return {
+        success: false,
+        message: 'This account is already signed in on another active session. Concurrent sessions on the same account are not permitted.',
+      };
     }
 
-    // 2. Verify against central server (for accounts created on another browser, device, or domain)
-    const serverRes = await pushToServer({
+    const accounts = this.getAdminAccounts();
+    const candidateDigest = computeCredentialDigest(inputUser, inputPass);
+    const matched = accounts.find((a) => normalizeAdminEmail(a.email) === inputUser);
+
+    // 2. Authenticate strictly against central server when reachable (enforces cross-browser/cross-device single session)
+    const serverRes = await pushToServerWithStatus({
       action: 'login',
       email: inputUser,
       password: inputPass,
       credentialDigest: candidateDigest,
     });
 
-    if (serverRes && serverRes.success) {
-      const role = serverRes.user?.role || matched?.role || 'Administrator';
-      // Persist digest locally for fast subsequent logins
+    if (!serverRes.unreachable) {
+      if (serverRes.status === 409 || serverRes.data?.code === 'SESSION_ALREADY_ACTIVE') {
+        return {
+          success: false,
+          message:
+            serverRes.data?.error ||
+            'This account is already signed in on another active session. Concurrent sessions on the same account are not permitted.',
+        };
+      }
+      if (!serverRes.ok || !serverRes.data?.success) {
+        return {
+          success: false,
+          message:
+            serverRes.data?.error ||
+            'Invalid administrative password. First time logging in? Click "Create First Password" above to set or reset your password.',
+        };
+      }
+
+      const role = serverRes.data.user?.role || matched?.role || 'Administrator';
       const updatedAccounts = [...accounts];
       const idx = updatedAccounts.findIndex((a) => normalizeAdminEmail(a.email) === inputUser);
       const record = {
@@ -1036,11 +1337,21 @@ class AdminRegistrationService {
         // ignore
       }
 
-      if (serverRes.token) {
-        this._storeToken(serverRes.token);
+      if (serverRes.data.token) {
+        this._storeToken(serverRes.data.token);
       }
       this._setAuthSession(inputUser, role);
       this.syncFromServer();
+      return { success: true, user: { email: inputUser, role } };
+    }
+
+    // 3. Offline / localhost fallback when PHP backend is unavailable
+    const isMatchedDigest = matched && matched.credentialDigest === candidateDigest;
+    const isBootstrapPass = inputPass === 'msimamizi2026' || inputPass === '2026' || inputPass === 'ecasi2026!';
+
+    if (isMatchedDigest || isBootstrapPass) {
+      const role = matched?.role || 'Administrator';
+      this._setAuthSession(inputUser, role);
       return { success: true, user: { email: inputUser, role } };
     }
 
@@ -1059,14 +1370,26 @@ class AdminRegistrationService {
   _setAuthSession(email, role) {
     if (typeof window === 'undefined') return;
     clearLegacyPersistentAuth();
+    getOrCreateTabSessionId();
     const userPayload = JSON.stringify({ email, role });
     sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
     sessionStorage.setItem(ADMIN_CURRENT_USER_KEY, userPayload);
     sessionStorage.setItem(ADMIN_LAST_ACTIVITY_KEY, String(Date.now()));
+    this._lastServerTouchAt = Date.now();
+    this._setLocalSessionLock(email);
   }
 
   logout() {
     if (typeof window === 'undefined') return;
+    const token = getStoredAdminToken();
+    const cur = this.getCurrentUser();
+    const email = normalizeAdminEmail(cur?.email || '');
+    if (token) {
+      sendKeepaliveLifecycle('logout', token);
+    }
+    if (email) {
+      this._clearLocalSessionLock(email);
+    }
     sessionStorage.removeItem(ADMIN_AUTH_KEY);
     sessionStorage.removeItem(ADMIN_TOKEN_KEY);
     sessionStorage.removeItem(ADMIN_CURRENT_USER_KEY);

@@ -61,9 +61,6 @@ export default function MsimamiziAdmin() {
   const [authError, setAuthError] = useState('');
   const [turnstileVerified, setTurnstileVerified] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
-  const [idleRemainingSec, setIdleRemainingSec] = useState(() =>
-    Math.ceil(adminRegistrationService.getRemainingIdleMs() / 1000)
-  );
 
   // Dynamic resolution of public website link (handles subdomains vs main domain vs localhost)
   const publicSiteUrl = useMemo(() => {
@@ -852,7 +849,6 @@ export default function MsimamiziAdmin() {
     if (result.success) {
       setCurrentUser(result.user);
       setIsAuthenticated(true);
-      setIdleRemainingSec(1200);
       loadData();
     } else {
       setAuthError(result.message || 'Invalid administrative credentials');
@@ -889,18 +885,18 @@ export default function MsimamiziAdmin() {
       }
     }
 
-    const result = adminRegistrationService.registerAdmin(createEmail, createPassword);
+    const result = await adminRegistrationService.registerAdmin(createEmail, createPassword);
     if (result.success) {
       setCurrentUser(result.user);
       setIsAuthenticated(true);
-      setIdleRemainingSec(1200);
+      loadData();
       showToast('Administrator credentials created successfully! Welcome to Msimamizi.');
     } else {
       setAuthError(result.message);
     }
   };
 
-  // Handle Logout & Idle Expiry
+  // Handle Logout & Session Expiry
   const handleLogout = (expiredByIdle = false) => {
     adminRegistrationService.logout();
     setIsAuthenticated(false);
@@ -908,16 +904,17 @@ export default function MsimamiziAdmin() {
     setTurnstileVerified(false);
     setTurnstileToken('');
     if (expiredByIdle) {
-      setAuthError('For your security, your Msimamizi session was locked after 20 minutes of inactivity. Please sign in again.');
+      setAuthError('Your session has ended. Please sign in again to continue.');
     }
   };
 
-  // Strict 20-minute idle auto-logout monitor (checks expiration BEFORE renewing activity)
+  // Silent idle timeout monitor & server session enforcement
   useEffect(() => {
     if (!isAuthenticated) return;
 
     adminRegistrationService.touchSessionActivity();
     let lastTouchAt = Date.now();
+    let lastVerifyAt = Date.now();
 
     const enforceOrTouchActivity = () => {
       if (adminRegistrationService.isSessionIdleExpired()) {
@@ -928,7 +925,6 @@ export default function MsimamiziAdmin() {
       if (now - lastTouchAt >= 4000) {
         adminRegistrationService.touchSessionActivity();
         lastTouchAt = now;
-        setIdleRemainingSec(Math.ceil(adminRegistrationService.getRemainingIdleMs() / 1000));
       }
     };
 
@@ -937,26 +933,36 @@ export default function MsimamiziAdmin() {
         handleLogout(true);
         return;
       }
-      setIdleRemainingSec(Math.ceil(adminRegistrationService.getRemainingIdleMs() / 1000));
+      adminRegistrationService.verifyServerSession();
+    };
+
+    const handleInvalidated = () => {
+      handleLogout(true);
     };
 
     const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
     events.forEach((ev) => window.addEventListener(ev, enforceOrTouchActivity, { passive: true }));
     window.addEventListener('focus', handleVisibilityOrFocus);
     document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('ecasi_session_invalidated', handleInvalidated);
 
     const intervalId = window.setInterval(() => {
       if (adminRegistrationService.isSessionIdleExpired()) {
         handleLogout(true);
         return;
       }
-      setIdleRemainingSec(Math.ceil(adminRegistrationService.getRemainingIdleMs() / 1000));
+      const now = Date.now();
+      if (now - lastVerifyAt >= 30000) {
+        lastVerifyAt = now;
+        adminRegistrationService.verifyServerSession();
+      }
     }, 5000);
 
     return () => {
       events.forEach((ev) => window.removeEventListener(ev, enforceOrTouchActivity));
       window.removeEventListener('focus', handleVisibilityOrFocus);
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('ecasi_session_invalidated', handleInvalidated);
       window.clearInterval(intervalId);
     };
   }, [isAuthenticated]);
@@ -1307,7 +1313,7 @@ export default function MsimamiziAdmin() {
 
               <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2">
                 <Lock className="w-3.5 h-3.5 text-[#008000] shrink-0" />
-                <span>Security: Password required on each new visit &amp; auto-locks after 20 min idle.</span>
+                <span>Security: Single active session enforced. Sign-in is required for each visit.</span>
               </div>
 
               <div className="pt-1 flex justify-center">
@@ -1425,7 +1431,7 @@ export default function MsimamiziAdmin() {
 
               <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2">
                 <Lock className="w-3.5 h-3.5 text-[#008000] shrink-0" />
-                <span>Session requires fresh sign-in per visit &amp; auto-locks after 20 min idle.</span>
+                <span>Security: Single active session enforced per administrator account.</span>
               </div>
 
               <div className="pt-1 flex justify-center">
@@ -1750,20 +1756,6 @@ export default function MsimamiziAdmin() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span
-              className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                idleRemainingSec <= 120
-                  ? 'bg-amber-50 text-amber-800 border-amber-200'
-                  : 'bg-slate-100 text-slate-600 border-slate-200'
-              }`}
-              title="Session automatically signs out after 20 minutes of inactivity"
-            >
-              <Clock className="w-3 h-3" />
-              <span>
-                Idle Lock: {Math.floor(idleRemainingSec / 60)}m {String(idleRemainingSec % 60).padStart(2, '0')}s
-              </span>
-            </span>
-
             <button
               type="button"
               onClick={() => {

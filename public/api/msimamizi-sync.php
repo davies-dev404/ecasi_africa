@@ -136,6 +136,8 @@ function writeStore(string $file, array $data): void {
     @chmod($file, 0600);
 }
 
+const ADMIN_IDLE_TIMEOUT_SECONDS = 600; // Silent 10-minute idle timeout
+
 function getBearerToken(): string {
     $header = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     if (stripos($header, 'Bearer ') === 0) {
@@ -144,17 +146,42 @@ function getBearerToken(): string {
     return trim($header);
 }
 
-function validateAdminToken(array &$store, string $token): ?string {
+function pruneExpiredSessions(array &$store, int $now): void {
+    if (!isset($store['sessions']) || !is_array($store['sessions'])) {
+        $store['sessions'] = [];
+        return;
+    }
+    foreach ($store['sessions'] as $tokHash => $session) {
+        $expiresAt = (int)($session['expiresAt'] ?? 0);
+        $closingAt = isset($session['closingAt']) ? (int)$session['closingAt'] : 0;
+        if ($expiresAt < $now || ($closingAt > 0 && ($now - $closingAt) >= 2)) {
+            unset($store['sessions'][$tokHash]);
+        }
+    }
+}
+
+function hasActiveSessionForEmail(array &$store, string $email, int $now): bool {
+    pruneExpiredSessions($store, $now);
+    $normTarget = normalizeAdminEmail($email);
+    if ($normTarget === '') return false;
+    foreach ($store['sessions'] as $session) {
+        if (normalizeAdminEmail($session['email'] ?? '') === $normTarget) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function validateAdminToken(array &$store, string $token, bool $extendIdle = true): ?string {
     if (empty($token) || strlen($token) < 32) return null;
     $now = time();
-    $sessions = is_array($store['sessions'] ?? null) ? $store['sessions'] : [];
-    foreach ($sessions as $tokHash => $session) {
-        if (($session['expiresAt'] ?? 0) < $now) {
-            unset($store['sessions'][$tokHash]);
-            continue;
-        }
+    pruneExpiredSessions($store, $now);
+    foreach ($store['sessions'] as $tokHash => $session) {
         if (hash_equals($tokHash, hash('sha256', $token))) {
-            $store['sessions'][$tokHash]['expiresAt'] = $now + 1200; // Sliding 20-minute idle timeout
+            unset($store['sessions'][$tokHash]['closingAt']);
+            if ($extendIdle) {
+                $store['sessions'][$tokHash]['expiresAt'] = $now + ADMIN_IDLE_TIMEOUT_SECONDS;
+            }
             return $session['email'] ?? null;
         }
     }
@@ -164,20 +191,12 @@ function validateAdminToken(array &$store, string $token): ?string {
 function issueAdminToken(array &$store, string $email): string {
     $rawToken = bin2hex(random_bytes(32));
     $tokHash = hash('sha256', $rawToken);
-    if (!isset($store['sessions']) || !is_array($store['sessions'])) {
-        $store['sessions'] = [];
-    }
-    // Prune expired sessions
     $now = time();
-    foreach ($store['sessions'] as $k => $s) {
-        if (($s['expiresAt'] ?? 0) < $now) {
-            unset($store['sessions'][$k]);
-        }
-    }
+    pruneExpiredSessions($store, $now);
     $store['sessions'][$tokHash] = [
         'email' => $email,
         'issuedAt' => $now,
-        'expiresAt' => $now + 1200, // 20 minutes max idle expiry
+        'expiresAt' => $now + ADMIN_IDLE_TIMEOUT_SECONDS,
         'ip' => getClientIp(),
     ];
     return $rawToken;
@@ -469,12 +488,21 @@ $store = readStore($storeFile);
 // ─── GET REQUESTS ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $scope = $_GET['scope'] ?? 'public';
+    $isVerify = ($_GET['verify'] ?? '') === '1';
     $token = getBearerToken();
-    $adminEmail = validateAdminToken($store, $token);
+    $adminEmail = validateAdminToken($store, $token, !$isVerify);
 
     // Only authenticated administrators receive registrations & inquiries (PII)
     if ($scope === 'admin' && $adminEmail !== null) {
-        writeStore($storeFile, $store); // Persist sliding 20-minute session activity window
+        writeStore($storeFile, $store); // Persist session resume / sliding idle activity window
+        if ($isVerify) {
+            echo json_encode([
+                'success' => true,
+                'authenticated' => true,
+                'email' => $adminEmail,
+            ]);
+            exit;
+        }
         $publicAccounts = array_map(function ($acc) {
             return [
                 'email' => $acc['email'] ?? '',
@@ -496,6 +524,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'accounts' => $publicAccounts,
                 'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
             ],
+        ]);
+        exit;
+    }
+
+    if ($scope === 'admin' && $isVerify && $adminEmail === null) {
+        writeStore($storeFile, $store);
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'authenticated' => false,
+            'error' => 'Session expired or invalid.',
         ]);
         exit;
     }
@@ -658,6 +697,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        if (hasActiveSessionForEmail($store, $email, time())) {
+            writeAuditLog($auditLogFile, 'admin_login', $email, 'DENIED_DUPLICATE_SESSION');
+            http_response_code(409);
+            echo json_encode([
+                'success' => false,
+                'code' => 'SESSION_ALREADY_ACTIVE',
+                'error' => 'This account is already signed in on another active session. Concurrent sessions on the same account are not permitted.',
+            ]);
+            exit;
+        }
+
         $token = issueAdminToken($store, $email);
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'admin_login', $email, 'SUCCESS');
@@ -689,6 +739,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (strlen($password) < 6) {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Password must be at least 6 characters long.']);
+            exit;
+        }
+
+        if (hasActiveSessionForEmail($store, $email, time())) {
+            writeAuditLog($auditLogFile, 'register_admin', $email, 'DENIED_DUPLICATE_SESSION');
+            http_response_code(409);
+            echo json_encode([
+                'success' => false,
+                'code' => 'SESSION_ALREADY_ACTIVE',
+                'error' => 'This account is already signed in on another active session. Concurrent sessions on the same account are not permitted.',
+            ]);
             exit;
         }
 
@@ -733,13 +794,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // 3b. Session Lifecycle Actions (Logout, Tab Closing, Silent Session Check)
+    if ($action === 'logout' || $action === 'tab_closing') {
+        $lifecycleToken = getBearerToken() ?: sanitizeText($payload['token'] ?? '', 128);
+        $now = time();
+        pruneExpiredSessions($store, $now);
+        if (!empty($lifecycleToken) && strlen($lifecycleToken) >= 32) {
+            $targetHash = hash('sha256', $lifecycleToken);
+            foreach ($store['sessions'] as $tokHash => $session) {
+                if (hash_equals($tokHash, $targetHash)) {
+                    $actorEmail = $session['email'] ?? 'admin';
+                    if ($action === 'logout') {
+                        unset($store['sessions'][$tokHash]);
+                        writeAuditLog($auditLogFile, 'admin_logout', $actorEmail, 'SUCCESS');
+                    } else {
+                        $store['sessions'][$tokHash]['closingAt'] = $now;
+                    }
+                    break;
+                }
+            }
+        }
+        writeStore($storeFile, $store);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($action === 'verify_session') {
+        $token = getBearerToken();
+        $adminEmail = validateAdminToken($store, $token, false);
+        writeStore($storeFile, $store);
+        if ($adminEmail === null) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'authenticated' => false, 'error' => 'Session expired or ended.']);
+            exit;
+        }
+        echo json_encode(['success' => true, 'authenticated' => true, 'email' => $adminEmail]);
+        exit;
+    }
+
     // 4. All Subsequent Mutations Require a Valid Admin Session Token
     $token = getBearerToken();
-    $adminEmail = validateAdminToken($store, $token);
+    $adminEmail = validateAdminToken($store, $token, true);
     if ($adminEmail === null) {
+        writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, $action ?: 'unknown', 'unauthenticated', 'DENIED_INVALID_TOKEN');
         http_response_code(401);
         echo json_encode(['success' => false, 'error' => 'Authentication required. Please sign in to Msimamizi.']);
+        exit;
+    }
+
+    if ($action === 'touch_activity') {
+        writeStore($storeFile, $store);
+        echo json_encode(['success' => true, 'email' => $adminEmail]);
         exit;
     }
 
