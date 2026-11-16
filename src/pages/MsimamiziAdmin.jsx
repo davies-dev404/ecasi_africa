@@ -15,8 +15,6 @@ import {
   Printer,
   ChevronRight,
   ChevronLeft,
-  ChevronsRight,
-  ChevronsLeft,
   ExternalLink,
   Lock,
   LogOut,
@@ -1487,76 +1485,69 @@ export default function MsimamiziAdmin() {
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans selection:bg-[#008000] selection:text-white flex flex-col md:flex-row">
       {/* ─────────────────────────────────────────────────────────────
-          LEFT VERTICAL SIDEBAR (COLLAPSIBLE / MINIMIZABLE)
+          LEFT VERTICAL SIDEBAR (MINIMIZABLE TO HAMBURGER)
       ───────────────────────────────────────────────────────────── */}
-      <aside className={`w-full ${isSidebarCollapsed ? 'md:w-20' : 'md:w-64 lg:w-72'
-        } bg-[#032e42] text-white flex-shrink-0 flex flex-col justify-between border-r border-[#022433] md:sticky md:top-0 md:h-screen md:overflow-y-auto z-40 shadow-xl transition-all duration-300 ease-in-out`}>
+      <aside className={`w-full md:w-64 lg:w-72 bg-[#032e42] text-white flex-shrink-0 flex-col justify-between border-r border-[#022433] md:sticky md:top-0 md:h-screen md:overflow-y-auto z-40 shadow-xl transition-all duration-300 ease-in-out ${
+        isMobileMenuOpen ? 'flex' : 'hidden'
+      } ${
+        isSidebarCollapsed ? 'md:hidden' : 'md:flex'
+      }`}>
         {/* Top Branding & Navigation */}
         <div className="flex flex-col">
           {/* Header Brand */}
-          <div className={`border-b border-white/10 flex items-center transition-all ${isSidebarCollapsed ? 'p-3 flex-row md:flex-col gap-2 justify-between md:justify-center' : 'p-5 justify-between'
-            }`}>
-            <div className={`flex items-center gap-3 ${isSidebarCollapsed ? 'md:flex-col md:gap-1' : ''}`}>
+          <div className="border-b border-white/10 p-5 flex items-center justify-between transition-all">
+            <div className="flex items-center gap-3 min-w-0">
               <div
-                className="w-10 h-10 rounded-xl bg-white p-1.5 shadow flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition"
-                onClick={() => isSidebarCollapsed && setIsSidebarCollapsed(false)}
-                title={isSidebarCollapsed ? "Click to expand sidebar" : "ECAS Msimamizi"}
+                className="w-10 h-10 rounded-xl bg-white p-1.5 shadow flex items-center justify-center shrink-0"
+                title="ECAS Msimamizi"
               >
                 <img src="/logo.png" alt="ECAS Logo" className="w-full h-full object-contain" />
               </div>
-              {!isSidebarCollapsed && (
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-base tracking-tight text-white truncate">
-                      ECAS Msimamizi
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded bg-[#008000] text-white text-[9px] font-black uppercase tracking-wider">
-                      PRO
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-emerald-400 font-mono flex items-center gap-1.5 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
-                    Live Sync Active
-                  </p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-base tracking-tight text-white truncate">
+                    ECAS Msimamizi
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-[#008000] text-white text-[9px] font-black uppercase tracking-wider">
+                    PRO
+                  </span>
                 </div>
-              )}
+                <p className="text-[11px] text-emerald-400 font-mono flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                  Live Sync Active
+                </p>
+              </div>
             </div>
 
-            {/* Desktop Minimize / Expand Toggle Button */}
+            {/* Desktop Minimize-to-Hamburger Toggle Button */}
             <button
               type="button"
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden md:flex p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer"
-              title={isSidebarCollapsed ? "Expand sidebar navigation" : "Minimize sidebar navigation"}
-              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Minimize sidebar"}
+              onClick={() => setIsSidebarCollapsed(true)}
+              className="hidden md:flex p-1.5 rounded-lg text-white/75 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              title="Minimize navigation to hamburger"
+              aria-label="Minimize navigation to hamburger"
             >
-              {isSidebarCollapsed ? (
-                <ChevronsRight className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <ChevronsLeft className="w-4 h-4" />
-              )}
+              <Menu className="w-4 h-4" />
             </button>
 
-            {/* Mobile Nav Toggle */}
+            {/* Mobile Nav Close */}
             <button
               type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => setIsMobileMenuOpen(false)}
               className="md:hidden p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 cursor-pointer"
-              aria-label="Toggle navigation menu"
+              aria-label="Close navigation menu"
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Navigation Items (Visible on desktop, toggled on mobile) */}
-          <div className={`${isSidebarCollapsed ? 'p-2 space-y-4' : 'p-4 space-y-6'} ${isMobileMenuOpen ? 'block' : 'hidden md:block'}`}>
+          {/* Navigation Items */}
+          <div className="p-4 space-y-6">
             {/* Main Menu */}
             <div>
-              {!isSidebarCollapsed && (
-                <p className="px-3 text-[10px] font-extrabold tracking-wider text-white/40 uppercase mb-2">
-                  Management Modules
-                </p>
-              )}
+              <p className="px-3 text-[10px] font-extrabold tracking-wider text-white/40 uppercase mb-2">
+                Management Modules
+              </p>
               <nav className="space-y-1.5">
                 <button
                   type="button"
@@ -1564,18 +1555,16 @@ export default function MsimamiziAdmin() {
                     setActiveTab('dashboard');
                     setIsMobileMenuOpen(false);
                   }}
-                  title={isSidebarCollapsed ? "Overview Dashboard" : undefined}
-                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
-                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'dashboard'
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'dashboard'
                       ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                  <div className="flex items-center gap-3">
                     <Compass className={`w-5 h-5 shrink-0 ${activeTab === 'dashboard' ? 'text-white' : 'text-[#00c853]'}`} />
-                    {!isSidebarCollapsed && <span>Overview Dashboard</span>}
+                    <span>Overview Dashboard</span>
                   </div>
-                  {!isSidebarCollapsed && activeTab === 'dashboard' && <ChevronRight className="w-4 h-4 text-white/70" />}
+                  {activeTab === 'dashboard' && <ChevronRight className="w-4 h-4 text-white/70" />}
                 </button>
 
                 <button
@@ -1584,29 +1573,19 @@ export default function MsimamiziAdmin() {
                     setActiveTab('registrations');
                     setIsMobileMenuOpen(false);
                   }}
-                  title={isSidebarCollapsed ? `Course Registrations (${registrations.length})` : undefined}
-                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
-                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'registrations'
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'registrations'
                       ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                  <div className="flex items-center gap-3">
                     <Users className={`w-5 h-5 shrink-0 ${activeTab === 'registrations' ? 'text-white' : 'text-[#00c853]'}`} />
-                    {!isSidebarCollapsed && <span>Registrations</span>}
+                    <span>Registrations</span>
                   </div>
-                  {!isSidebarCollapsed ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'registrations' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                      }`}>
-                      {registrations.length}
-                    </span>
-                  ) : (
-                    registrations.length > 0 && (
-                      <span className="absolute top-1.5 right-1.5 min-w-[18px] h-4.5 px-1 bg-[#008000] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#032e42] shadow-sm">
-                        {registrations.length}
-                      </span>
-                    )
-                  )}
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'registrations' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
+                    }`}>
+                    {registrations.length}
+                  </span>
                 </button>
 
                 <button
@@ -1615,29 +1594,19 @@ export default function MsimamiziAdmin() {
                     setActiveTab('inquiries');
                     setIsMobileMenuOpen(false);
                   }}
-                  title={isSidebarCollapsed ? `WhatsApp & Email Inquiries (${inquiries.length})` : undefined}
-                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
-                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'inquiries'
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'inquiries'
                       ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                  <div className="flex items-center gap-3">
                     <MessageSquare className={`w-5 h-5 shrink-0 ${activeTab === 'inquiries' ? 'text-white' : 'text-[#00c853]'}`} />
-                    {!isSidebarCollapsed && <span>Inquiries &amp; Leads</span>}
+                    <span>Inquiries &amp; Leads</span>
                   </div>
-                  {!isSidebarCollapsed ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'inquiries' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                      }`}>
-                      {inquiries.length}
-                    </span>
-                  ) : (
-                    inquiries.length > 0 && (
-                      <span className="absolute top-1.5 right-1.5 min-w-[18px] h-4.5 px-1 bg-[#008000] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#032e42] shadow-sm">
-                        {inquiries.length}
-                      </span>
-                    )
-                  )}
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'inquiries' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
+                    }`}>
+                    {inquiries.length}
+                  </span>
                 </button>
 
                 <button
@@ -1646,27 +1615,19 @@ export default function MsimamiziAdmin() {
                     setActiveTab('courses');
                     setIsMobileMenuOpen(false);
                   }}
-                  title={isSidebarCollapsed ? `Courses & Fees (${courses.length})` : undefined}
-                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
-                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'courses'
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'courses'
                       ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                  <div className="flex items-center gap-3">
                     <GraduationCap className={`w-5 h-5 shrink-0 ${activeTab === 'courses' ? 'text-white' : 'text-[#00c853]'}`} />
-                    {!isSidebarCollapsed && <span>Courses &amp; Fees</span>}
+                    <span>Courses &amp; Fees</span>
                   </div>
-                  {!isSidebarCollapsed ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'courses' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                      }`}>
-                      {courses.length}
-                    </span>
-                  ) : (
-                    <span className="absolute top-1.5 right-1.5 px-1 bg-white/20 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-[#032e42]">
-                      {courses.length}
-                    </span>
-                  )}
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'courses' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
+                    }`}>
+                    {courses.length}
+                  </span>
                 </button>
 
                 <button
@@ -1675,131 +1636,56 @@ export default function MsimamiziAdmin() {
                     setActiveTab('vacancies');
                     setIsMobileMenuOpen(false);
                   }}
-                  title={isSidebarCollapsed ? `Vacancies (${vacancies.length}) & CVs (${applications.length})` : undefined}
-                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-3.5 py-3'
-                    } rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'vacancies'
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'vacancies'
                       ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                  <div className="flex items-center gap-3">
                     <Briefcase className={`w-5 h-5 shrink-0 ${activeTab === 'vacancies' ? 'text-white' : 'text-[#00c853]'}`} />
-                    {!isSidebarCollapsed && <span>Vacancies &amp; CVs</span>}
+                    <span>Vacancies &amp; CVs</span>
                   </div>
-                  {!isSidebarCollapsed ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'vacancies' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                      }`}>
-                      {applications.length}
-                    </span>
-                  ) : (
-                    applications.length > 0 && (
-                      <span className="absolute top-1.5 right-1.5 min-w-[18px] h-4.5 px-1 bg-[#008000] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#032e42] shadow-sm">
-                        {applications.length}
-                      </span>
-                    )
-                  )}
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'vacancies' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
+                    }`}>
+                    {applications.length}
+                  </span>
                 </button>
               </nav>
-            </div>
-
-            {/* Quick Actions Panel */}
-            <div>
-              {!isSidebarCollapsed && (
-                <p className="px-3 text-[10px] font-extrabold tracking-wider text-white/40 uppercase mb-2">
-                  Quick Actions
-                </p>
-              )}
-              <div className={`space-y-2 ${isSidebarCollapsed ? 'flex flex-col items-center' : ''}`}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    openNewRegistrationPage();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  title="New Registration (+)"
-                  className={`${isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2.5 justify-center gap-2'
-                    } flex items-center rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold border border-white/15 shadow-sm transition cursor-pointer`}
-                >
-                  <Plus className="w-4 h-4 text-[#00c853]" />
-                  {!isSidebarCollapsed && <span>+ New Registration</span>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    openNewCoursePage();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  title="Upload New Course"
-                  className={`${isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2.5 justify-center gap-2'
-                    } flex items-center rounded-xl bg-white/5 hover:bg-white/10 text-white/90 text-xs font-semibold border border-white/10 transition cursor-pointer`}
-                >
-                  <Plus className="w-4 h-4 text-amber-400" />
-                  {!isSidebarCollapsed && <span>+ Upload New Course</span>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => adminRegistrationService.downloadCSV()}
-                  title="Export Registrations to CSV"
-                  className={`${isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full px-3.5 py-2 justify-center gap-2'
-                    } flex items-center rounded-xl bg-transparent hover:bg-white/5 text-white/70 hover:text-white text-xs font-medium transition cursor-pointer`}
-                >
-                  <Download className="w-4 h-4 text-slate-400" />
-                  {!isSidebarCollapsed && <span>Export Registrations (CSV)</span>}
-                </button>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Sidebar Footer */}
-        <div className={`border-t border-white/10 bg-[#022433] ${isSidebarCollapsed ? 'p-2 space-y-2 flex flex-col items-center' : 'p-4 space-y-3'
-          } ${isMobileMenuOpen ? 'block' : 'hidden md:block'}`}>
-          {!isSidebarCollapsed ? (
-            <a
-              href={publicSiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition cursor-pointer"
-            >
-              <span className="flex items-center gap-2">
-                <ExternalLink className="w-3.5 h-3.5 text-[#00c853]" />
-                <span>Public Website</span>
-              </span>
-              <span className="text-[10px] text-white/50 font-mono">ecasiafrica.org</span>
-            </a>
-          ) : (
-            <a
-              href={publicSiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Public Website (ecasiafrica.org)"
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-emerald-400 transition cursor-pointer"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          )}
+        <div className="border-t border-white/10 bg-[#022433] p-4 space-y-3">
+          <a
+            href={publicSiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <ExternalLink className="w-3.5 h-3.5 text-[#00c853]" />
+              <span>Public Website</span>
+            </span>
+            <span className="text-[10px] text-white/50 font-mono">ecasiafrica.org</span>
+          </a>
 
-          <div className={`flex items-center ${isSidebarCollapsed ? 'flex-col gap-2 pt-1' : 'justify-between pt-1'}`}>
-            <div className={`flex items-center gap-2 min-w-0 ${isSidebarCollapsed ? 'justify-center' : ''}`} title={`${currentUser?.role || 'Administrator'} (${currentUser?.email || 'admin@ecasiafrica.org'})`}>
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-2 min-w-0" title={`${currentUser?.role || 'Administrator'} (${currentUser?.email || 'admin@ecasiafrica.org'})`}>
               <div className="w-8 h-8 rounded-full bg-[#008000] flex items-center justify-center text-white font-extrabold text-xs shrink-0 uppercase">
                 {currentUser?.email ? currentUser.email.substring(0, 2) : 'AD'}
               </div>
-              {!isSidebarCollapsed && (
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-white truncate">{currentUser?.role || 'Administrator'}</p>
-                  <p className="text-[10px] text-white/60 truncate font-mono">{currentUser?.email || 'admin@ecasiafrica.org'}</p>
-                </div>
-              )}
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white truncate">{currentUser?.role || 'Administrator'}</p>
+                <p className="text-[10px] text-white/60 truncate font-mono">{currentUser?.email || 'admin@ecasiafrica.org'}</p>
+              </div>
             </div>
 
             <button
               type="button"
               onClick={() => handleLogout(false)}
               title="Logout from Msimamizi"
-              className={`p-2 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer ${isSidebarCollapsed ? 'w-10 h-10 flex items-center justify-center' : ''
-                }`}
+              className="p-2 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -1814,28 +1700,27 @@ export default function MsimamiziAdmin() {
         {/* Top Header Bar on Right Side */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3">
-            {/* Mobile Hamburger */}
+            {/* Mobile Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100 cursor-pointer"
-              aria-label="Toggle menu"
+              className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[#032e42] hover:bg-slate-100 cursor-pointer"
+              aria-label="Toggle navigation menu"
             >
-              <Menu className="w-5 h-5" />
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            {/* Desktop Minimize / Expand Toggle in Topbar */}
+            {/* Desktop Hamburger Toggle (Minimize / Expand Sidebar) */}
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden md:inline-flex p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
-              title={isSidebarCollapsed ? "Expand sidebar navigation" : "Minimize sidebar navigation"}
-              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Minimize sidebar"}
+              className="hidden md:inline-flex items-center gap-2 px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[#032e42] hover:bg-slate-100 transition cursor-pointer"
+              title={isSidebarCollapsed ? "Open navigation menu" : "Minimize navigation to hamburger"}
+              aria-label={isSidebarCollapsed ? "Open navigation menu" : "Minimize navigation to hamburger"}
             >
-              {isSidebarCollapsed ? (
-                <ChevronsRight className="w-4 h-4 text-[#008000]" />
-              ) : (
-                <ChevronsLeft className="w-4 h-4" />
+              <Menu className="w-5 h-5" />
+              {isSidebarCollapsed && (
+                <span className="text-xs font-bold">Menu</span>
               )}
             </button>
 
@@ -1983,6 +1868,57 @@ export default function MsimamiziAdmin() {
                   <div className="w-12 h-12 rounded-xl bg-[#008000]/10 text-[#008000] flex items-center justify-center shrink-0">
                     <DollarSign className="w-6 h-6" />
                   </div>
+                </div>
+              </div>
+
+              {/* Quick Actions Panel (Overview Dashboard) */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-sm uppercase tracking-wide">
+                      Quick Actions
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Direct shortcuts for delegate enrolments, course publishing, vacancies, and CSV exports.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <button
+                    type="button"
+                    onClick={openNewRegistrationPage}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 shrink-0" />
+                    <span>+ New Registration</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={openNewCoursePage}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#032e42] hover:bg-[#05435e] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>+ Upload New Course</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={openCreateVacancy}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#032e42] text-xs font-bold border border-emerald-200 transition cursor-pointer"
+                  >
+                    <Briefcase className="w-4 h-4 text-[#008000] shrink-0" />
+                    <span>+ Post Job Vacancy</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => adminRegistrationService.downloadCSV()}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span>Export Registrations (CSV)</span>
+                  </button>
                 </div>
               </div>
 
@@ -5028,6 +4964,26 @@ export default function MsimamiziAdmin() {
         </div>
       )}
         </main>
+
+        {/* Transparent Portal Footer: ECAS Copyright & Transparent Tagline */}
+        <footer className="mt-auto bg-transparent border-t border-slate-200/50 px-4 sm:px-6 lg:px-8 py-5 max-w-[1600px] w-full mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left bg-transparent">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 bg-transparent">
+              <img
+                src="/logo_transparent.png"
+                alt="ECAS Institute"
+                className="h-7 w-auto object-contain opacity-45 select-none pointer-events-none"
+              />
+              <span className="hidden sm:inline-block h-4 w-px bg-slate-300/60" aria-hidden="true" />
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#032e42]/40 bg-transparent select-none">
+                Environment | Energy | Climate Action
+              </p>
+            </div>
+            <p className="text-xs font-medium text-slate-500/75 bg-transparent">
+              Copyright &copy; ECAS Institute, {new Date().getFullYear()}. All rights reserved.
+            </p>
+          </div>
+        </footer>
       </div>
 
       {/* ════════════════════════════════════════════════════════════
