@@ -40,7 +40,7 @@ const Oceans = () => {
       {/* ── Page Title & Breadcrumb Banner ── */}
       <PageHeroBanner
         title="Oceans & Marine Programme"
-        image="/images/programmes/oceans-coral-reef.png"
+        image="/images/programmes/oceans_marine_horizon.png"
         icon={Waves}
         breadcrumbs={[
           { label: 'Home', path: '/' },

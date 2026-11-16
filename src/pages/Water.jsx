@@ -40,7 +40,7 @@ const Water = () => {
       {/* ── Page Title & Breadcrumb Banner ── */}
       <PageHeroBanner
         title="Fresh Water Programme"
-        image="/images/programmes/water-river-aerial.png"
+        image="/images/programmes/freshwater_conservation.png"
         icon={Droplets}
         breadcrumbs={[
           { label: 'Home', path: '/' },
@@ -74,7 +74,7 @@ const Water = () => {
             alt="Aerial view of Tana River and forests"
             className="w-full max-w-[500px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "/images/programmes/water-river-aerial.png";
+              e.target.src = "/images/programmes/freshwater_conservation.png";
             }}
           />
         </motion.div>

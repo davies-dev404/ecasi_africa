@@ -1017,7 +1017,7 @@ export const specialtiesData = [
       <p>Mining and extractive industries play a significant role in Africa's economies, generating revenues, employment, and infrastructure. But poorly governed extractives sectors can also lead to environmental destruction, community displacement, health risks, and conflict.</p>
       <p>ECAS Institute works with governments, mining companies, communities, and civil society to promote responsible, sustainable, and equitable mining practices. Our services span environmental impact assessment, regulatory reform, community engagement, and monitoring of mining impacts.</p>
     `,
-    image: "/images/research/pi.jpg",
+    image: "/images/programmes/sustainable_mining.png",
     icon: Anchor,
     benefits: [
       { icon: Shield, title: "Environmental Assessment", description: "Environmental impact assessment for mining projects." },
@@ -1055,7 +1055,7 @@ export const specialtiesData = [
       <p>Freshwater is one of Africa's most precious and most threatened resources. Population growth, urbanisation, agricultural expansion, pollution, and climate change are increasing pressure on the continent's rivers, lakes, and groundwater systems. Many communities face water scarcity, poor water quality, and inadequate sanitation.</p>
       <p>ECAS Institute's Freshwater Programme provides technical advisory and capacity building services on integrated water resources management, transboundary water cooperation, water security planning, and watershed management. We support governments, river basin authorities, and local communities in managing their freshwater resources sustainably.</p>
     `,
-    image: "/images/programmes/water-river-aerial.png",
+    image: "/images/programmes/freshwater_conservation.png",
     icon: Droplet,
     benefits: [
       { icon: Droplet, title: "IWRM", description: "Integrated water resources management planning." },
@@ -1074,7 +1074,7 @@ export const specialtiesData = [
       <p>Africa's coastal and island states are custodians of vast ocean territories rich in biodiversity, fisheries, minerals, and potential for blue economy development. Yet marine ecosystems face growing threats from overfishing, pollution, habitat destruction, and climate change impacts including ocean acidification and sea-level rise.</p>
       <p>ECAS Institute supports African coastal states in developing sustainable ocean governance frameworks, marine spatial planning, fisheries management strategies, and blue economy development plans that balance economic opportunity with conservation.</p>
     `,
-    image: "/images/programmes/ocean_sustainable.png",
+    image: "/images/programmes/oceans_marine_horizon.png",
     icon: Anchor,
     benefits: [
       { icon: Anchor, title: "Marine Governance", description: "Sustainable ocean governance frameworks." },

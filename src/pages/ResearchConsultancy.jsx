@@ -55,7 +55,7 @@ const slugHeroImages = {
   'climate-and-technology': '/images/research/tech.png',
   'energy-transition': '/images/courses/20241003_133952069-1-1024x683.jpg',
   'agriculture-and-food-systems-2': '/images/programmes/agriculture_farm.png',
-  'natural-resources': '/images/programmes/water-river-aerial.png',
+  'natural-resources': '/images/programmes/freshwater_conservation.png',
   'transport-and-e-mobility': '/images/beyond/nairobi_expressway.jpg',
   'waste-and-circular-economy-2': '/images/Gallery/1732710492385.jpg',
   'just-transition': '/images/Gallery/1714399115076.jpg',

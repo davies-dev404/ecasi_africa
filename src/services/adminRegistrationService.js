@@ -665,7 +665,7 @@ class AdminRegistrationService {
       'Statutory Clearances',
       'CV File Name',
       'Certificates File',
-      'Cover Note / Message',
+      'Cover Letter',
     ];
     const rows = records.map((a) => [
       a.referenceNo || '',

@@ -86,26 +86,31 @@ const naturalResourceProgrammes = [
   {
     icon: TreePine,
     title: "Forests, Biodiversity & Ecosystems",
+    image: "/images/programmes/tana_river.png",
     path: "/specialties/forests",
   },
   {
     icon: Compass,
     title: "Sustainable Mining & Extractives",
+    image: "/images/programmes/sustainable_mining.png",
     path: "/specialties/mining-extractives",
   },
   {
     icon: Globe,
     title: "Environment, Migration & Mobility",
+    image: "/images/programmes/migration-community.png",
     path: "/specialties/security-migration",
   },
   {
     icon: Compass,
     title: "Fresh Water Programme",
+    image: "/images/programmes/freshwater_conservation.png",
     path: "/specialties/water",
   },
   {
     icon: Wind,
     title: "Oceans & Marine Programme",
+    image: "/images/programmes/oceans_marine_horizon.png",
     path: "/specialties/oceans-marine",
   }
 ];
@@ -253,17 +258,28 @@ const Programmes = () => {
               <motion.div 
                 key={sIdx}
                 variants={itemVariants}
-                className="bg-slate-50 rounded-2xl p-7 border border-slate-100 hover:bg-white hover:border-primary/20 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between group"
+                className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 hover:bg-white hover:border-primary/20 hover:shadow-xl transition-all duration-300 h-full flex flex-col justify-between group"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                    <sub.icon className="h-5 w-5" />
+                  {sub.image && (
+                    <div className="h-44 w-full overflow-hidden relative bg-slate-200">
+                      <img
+                        src={sub.image}
+                        alt={sub.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                  )}
+                  <div className="p-6 pb-2">
+                    <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <sub.icon className="h-5 w-5" />
+                    </div>
+                    <h4 className="font-bold text-slate-800 text-base mb-2 leading-snug group-hover:text-primary transition-colors">
+                      {sub.title}
+                    </h4>
                   </div>
-                  <h4 className="font-bold text-slate-800 text-base mb-3 leading-snug group-hover:text-primary transition-colors">
-                    {sub.title}
-                  </h4>
                 </div>
-                <div className="pt-4 mt-4 border-t border-slate-200/50">
+                <div className="px-6 pb-6 pt-3 border-t border-slate-200/50">
                   <Link to={sub.path} className="text-primary text-xs font-bold flex items-center gap-1.5 hover:text-primary/80">
                     Learn More <ArrowRight className="h-3.5 w-3.5" />
                   </Link>

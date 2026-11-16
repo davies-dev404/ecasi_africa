@@ -3505,7 +3505,7 @@ export default function MsimamiziAdmin() {
                         <th className="py-3.5 px-4">Ref &amp; Date</th>
                         <th className="py-3.5 px-4">Position Applied</th>
                         <th className="py-3.5 px-4">Candidate Details</th>
-                        <th className="py-3.5 px-4">Attached CV &amp; Note</th>
+                        <th className="py-3.5 px-4">Attached CV &amp; Cover Letter</th>
                         <th className="py-3.5 px-4">Status</th>
                         <th className="py-3.5 px-4 text-right">Actions</th>
                       </tr>
@@ -3815,7 +3815,7 @@ export default function MsimamiziAdmin() {
 
               {selectedApplication.coverLetter && (
                 <div>
-                  <h4 className="font-extrabold text-[#032e42] uppercase tracking-wider mb-1.5">Cover / Application Letter</h4>
+                  <h4 className="font-extrabold text-[#032e42] uppercase tracking-wider mb-1.5">Cover Letter</h4>
                   <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-line">
                     {selectedApplication.coverLetter}
                   </p>

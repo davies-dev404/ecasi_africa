@@ -40,7 +40,7 @@ const Mining = () => {
       {/* ── Page Title & Breadcrumb Banner ── */}
       <PageHeroBanner
         title="Sustainable Mining & Extractives"
-        image="/images/Gallery/1715195548735.jpg"
+        image="/images/programmes/sustainable_mining.png"
         icon={HardHat}
         breadcrumbs={[
           { label: 'Home', path: '/' },
@@ -60,11 +60,11 @@ const Mining = () => {
           className="mb-10 flex justify-center"
         >
           <img
-            src="/images/research/pi.jpg"
-            alt="Sustainable Mining & Extractives environmental impact assessment"
+            src="/images/programmes/sustainable_mining.png"
+            alt="Sustainable Mining & Extractives land rehabilitation and environmental monitoring"
             className="w-full max-w-[700px] h-auto border border-gray-200 shadow-sm rounded-lg"
             onError={(e) => {
-              e.target.src = "/images/research/image-2.png";
+              e.target.src = "/images/programmes/tana_river.png";
             }}
           />
         </motion.div>

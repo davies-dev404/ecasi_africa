@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
@@ -9,118 +10,27 @@ import {
   MapPin,
   Clock,
   ArrowRight,
-  ArrowLeft,
   FileText,
   UploadCloud,
-  Send,
-  CheckCircle2,
-  Loader2,
-  Mail,
-  FileCheck,
   Building2,
-  User,
-  GraduationCap,
-  ShieldCheck,
-  Plus,
-  Trash2,
-  Printer,
-  X
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { dataService } from '@/lib/dataService';
-import { adminRegistrationService } from '@/services/adminRegistrationService';
-
-const DRAFT_STORAGE_KEY = 'ecasi_recruitment_draft_v1';
-
-const APPLICATION_STEPS = [
-  { id: 1, label: 'Personal Profile', icon: User },
-  { id: 2, label: 'Education', icon: GraduationCap },
-  { id: 3, label: 'Experience & Referees', icon: Briefcase },
-  { id: 4, label: 'Documents & CV', icon: UploadCloud },
-  { id: 5, label: 'Review & Submit', icon: ShieldCheck },
-];
-
-const STATUTORY_CLEARANCES = [
-  'Valid National ID / Passport Copy',
-  'KRA Tax Compliance Certificate (TCC)',
-  'DCI Certificate of Good Conduct',
-  'HELB Clearance Certificate',
-  'EACC Self-Declaration / Clearance',
-  'CRB Clearance Report',
-];
-
-const emptyEducation = () => ({
-  level: "Bachelor's Degree",
-  institution: '',
-  fieldOfStudy: '',
-  grade: '',
-  graduationYear: '',
-});
-
-const emptyExperience = () => ({
-  jobTitle: '',
-  employer: '',
-  startDate: '',
-  endDate: '',
-  current: false,
-  responsibilities: '',
-});
-
-const emptyReferee = () => ({
-  name: '',
-  organisation: '',
-  title: '',
-  phone: '',
-  email: '',
-});
-
-const createInitialDraft = () => ({
-  fullName: '',
-  email: '',
-  phone: '',
-  nationalId: '',
-  gender: 'Prefer not to say',
-  dateOfBirth: '',
-  county: 'Nairobi, Kenya',
-  physicalAddress: '',
-  disabilityStatus: 'No',
-  specialty: 'Environmental Researcher',
-  highestQualification: "Bachelor's Degree",
-  careerSummary: '',
-  education: [emptyEducation()],
-  professionalMemberships: {
-    bodyName: '',
-    membershipNo: '',
-    status: 'Active / Good Standing',
-  },
-  experience: [emptyExperience()],
-  referees: [emptyReferee(), emptyReferee()],
-  complianceChecklist: ['Valid National ID / Passport Copy'],
-  coverLetter: '',
-});
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.15 }
-  }
+    transition: { staggerChildren: 0.15 },
+  },
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 100, damping: 15 }
-  }
+    transition: { type: 'spring', stiffness: 100, damping: 15 },
+  },
 };
 
 const Vacancies = () => {
@@ -131,43 +41,6 @@ const Vacancies = () => {
   }, []);
 
   const [vacancies, setVacancies] = useState(() => loadOpenVacancies());
-  const { toast } = useToast();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState('');
-  const [selectedJobId, setSelectedJobId] = useState('speculative');
-  const [activeStep, setActiveStep] = useState(1);
-
-  const [formData, setFormData] = useState(() => {
-    try {
-      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (saved) {
-        return { ...createInitialDraft(), ...JSON.parse(saved) };
-      }
-    } catch {
-      // ignore invalid draft JSON
-    }
-    return createInitialDraft();
-  });
-
-  const [cvFile, setCvFile] = useState(null);
-  const [cvDataUrl, setCvDataUrl] = useState('');
-  const [certFile, setCertFile] = useState(null);
-  const [certDataUrl, setCertDataUrl] = useState('');
-  const [declarationAccepted, setDeclarationAccepted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submittedRecord, setSubmittedRecord] = useState(null);
-  const [backupMailto, setBackupMailto] = useState('');
-
-  // Auto-save text draft locally so applicants do not lose progress
-  useEffect(() => {
-    if (isSubmitted) return;
-    try {
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(formData));
-    } catch {
-      // ignore storage errors
-    }
-  }, [formData, isSubmitted]);
 
   useEffect(() => {
     dataService.refreshPublicData();
@@ -180,203 +53,11 @@ const Vacancies = () => {
     };
   }, [loadOpenVacancies]);
 
-  const handleOpenModal = (jobTitle = 'Speculative Application', jobId = 'speculative') => {
-    setSelectedJob(jobTitle);
-    setSelectedJobId(jobId);
-    setActiveStep(1);
-    setIsSubmitted(false);
-    setSubmittedRecord(null);
-    setDeclarationAccepted(false);
-    setIsModalOpen(true);
-  };
-
-  const readAttachmentFile = (e, maxMb, onSuccess) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > maxMb * 1024 * 1024) {
-      toast({
-        title: 'File Too Large',
-        description: `Please upload a document up to ${maxMb} MB so it uploads smoothly to the recruitment portal.`,
-        variant: 'destructive',
-      });
-      e.target.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      onSuccess(file, typeof reader.result === 'string' ? reader.result : '');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const updateArrayItem = (field, idx, patch) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: prev[field].map((item, i) => (i === idx ? { ...item, ...patch } : item)),
-    }));
-  };
-
-  const addArrayItem = (field, factory, maxItems) => {
-    setFormData((prev) => {
-      if (prev[field].length >= maxItems) return prev;
-      return { ...prev, [field]: [...prev[field], factory()] };
-    });
-  };
-
-  const removeArrayItem = (field, idx, minItems = 1) => {
-    setFormData((prev) => {
-      if (prev[field].length <= minItems) return prev;
-      return { ...prev, [field]: prev[field].filter((_, i) => i !== idx) };
-    });
-  };
-
-  const toggleComplianceItem = (itemLabel) => {
-    setFormData((prev) => {
-      const exists = prev.complianceChecklist.includes(itemLabel);
-      return {
-        ...prev,
-        complianceChecklist: exists
-          ? prev.complianceChecklist.filter((c) => c !== itemLabel)
-          : [...prev.complianceChecklist, itemLabel],
-      };
-    });
-  };
-
-  const validateAndAdvance = (nextStep) => {
-    if (nextStep <= activeStep) {
-      setActiveStep(nextStep);
-      return;
-    }
-    if (activeStep === 1) {
-      if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.nationalId.trim()) {
-        toast({
-          title: 'Personal Details Required',
-          description: 'Please enter Full Legal Name, Email Address, Mobile Phone, and National ID / Passport Number.',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-    if (activeStep === 2) {
-      const hasAcademic = formData.education.some((ed) => ed.institution.trim() && ed.fieldOfStudy.trim());
-      if (!hasAcademic) {
-        toast({
-          title: 'Academic Qualification Required',
-          description: 'Please fill in at least one Institution Attended and Field of Study.',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-    if (activeStep === 4 && !cvFile) {
-      toast({
-        title: 'CV Upload Required',
-        description: 'Please attach your Curriculum Vitae (PDF, DOC, or DOCX) before proceeding to final review.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    setActiveStep(nextStep);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!cvFile) {
-      setActiveStep(4);
-      toast({
-        title: 'CV Document Missing',
-        description: 'Please upload your CV before submitting.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    if (!declarationAccepted) {
-      toast({
-        title: 'Declaration Required',
-        description: 'Please confirm the applicant integrity declaration before final submission.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const targetJobTitle = selectedJob || 'Speculative Application';
-    const subject = `Job Application: ${targetJobTitle} - ${formData.fullName}`;
-    const body = `Dear Chief Executive Officer / HR Director, ECAS Institute,\n\nI have submitted my online application for "${targetJobTitle}".\n\nApplicant Summary:\n- Name: ${formData.fullName}\n- National ID / Passport: ${formData.nationalId}\n- Email: ${formData.email}\n- Phone: ${formData.phone}\n- Highest Qualification: ${formData.highestQualification}\n- Attached CV: ${cvFile.name}\n\nCover Note:\n${formData.coverLetter || 'Submitted via ECAS Online Recruitment Portal.'}\n\nBest regards,\n${formData.fullName}`;
-    setBackupMailto(`mailto:info@ecasiafrica.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-
-    const saved = await adminRegistrationService.addApplication({
-      jobId: selectedJobId || 'speculative',
-      jobTitle: targetJobTitle,
-      fullName: formData.fullName.trim(),
-      email: formData.email.trim(),
-      phone: formData.phone.trim(),
-      nationalId: formData.nationalId.trim(),
-      gender: formData.gender,
-      dateOfBirth: formData.dateOfBirth,
-      county: formData.county.trim(),
-      physicalAddress: formData.physicalAddress.trim(),
-      disabilityStatus: formData.disabilityStatus,
-      specialty: formData.specialty,
-      highestQualification: formData.highestQualification,
-      careerSummary: formData.careerSummary.trim(),
-      education: formData.education.filter((ed) => ed.institution.trim() || ed.fieldOfStudy.trim()),
-      professionalMemberships: formData.professionalMemberships,
-      experience: formData.experience.filter((ex) => ex.jobTitle.trim() || ex.employer.trim()),
-      referees: formData.referees.filter((ref) => ref.name.trim()),
-      complianceChecklist: formData.complianceChecklist,
-      coverLetter: formData.coverLetter.trim(),
-      cvFileName: cvFile.name,
-      cvFileType: cvFile.type || 'application/octet-stream',
-      cvFileSize: cvFile.size || 0,
-      cvDataUrl,
-      certFileName: certFile?.name || '',
-      certFileType: certFile?.type || '',
-      certFileSize: certFile?.size || 0,
-      certDataUrl,
-      declarationAccepted: true,
-    });
-
-    setIsSubmitting(false);
-    setSubmittedRecord(saved);
-    setIsSubmitted(true);
-    try {
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
-    toast({
-      title: 'Application Submitted to ECAS Portal!',
-      description: saved?.referenceNo
-        ? `Tracking Reference ${saved.referenceNo} saved. Our HR team will review your profile.`
-        : 'Your structured application and CV have been received by ECAS Institute.',
-    });
-  };
-
-  const resetForm = () => {
-    const blank = createInitialDraft();
-    setFormData(blank);
-    try {
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
-    setCvFile(null);
-    setCvDataUrl('');
-    setCertFile(null);
-    setCertDataUrl('');
-    setDeclarationAccepted(false);
-    setActiveStep(1);
-    setSubmittedRecord(null);
-    setIsSubmitted(false);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50/50">
       <SEO
         title="Vacancies"
-        description="Join the Environmental Capacity and Sustainability Institute (ECAS Institute). View our latest career opportunities and job vacancies."
+        description="Join the Environmental Capacity and Sustainability Institute (ECAS Institute). View our latest career opportunities and submit your application online."
       />
       <Header />
 
@@ -395,8 +76,7 @@ const Vacancies = () => {
       {/* Main Section */}
       <section className="py-12 md:py-16">
         <div className="healthcare-container max-w-4xl mx-auto">
-          
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -413,7 +93,7 @@ const Vacancies = () => {
                 No Vacancies Currently Available
               </span>
             )}
-            
+
             <h2 className="text-3xl font-serif font-bold text-slate-800 mb-4">Current Opportunities</h2>
             <p className="text-slate-600">
               Discover roles where you can make a tangible impact on environmental policy and sustainability.
@@ -421,65 +101,67 @@ const Vacancies = () => {
           </motion.div>
 
           {vacancies.length > 0 ? (
-            <motion.div 
+            <motion.div
               variants={containerVariants}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
               className="space-y-6"
             >
-              {vacancies.map((job, index) => (
-                <motion.div
-                  key={job.id || index}
-                  variants={itemVariants}
-                  className="bg-white rounded-2xl p-6 border-2 border-emerald-200/70 shadow-sm hover:shadow-xl hover:border-emerald-500 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden"
-                >
-                  <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
-                  <div className="flex-1 pl-2">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                        Open Vacancy
-                      </span>
-                      {job.department && (
-                        <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full">
-                          <Building2 className="h-3.5 w-3.5" /> {job.department}
+              {vacancies.map((job, index) => {
+                const applyUrl = `/vacancies/apply/${encodeURIComponent(job.id || 'vacancy')}?title=${encodeURIComponent(job.title)}`;
+                return (
+                  <motion.div
+                    key={job.id || index}
+                    variants={itemVariants}
+                    className="bg-white rounded-2xl p-6 border-2 border-emerald-200/70 shadow-sm hover:shadow-xl hover:border-emerald-500 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
+                    <div className="flex-1 pl-2">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                          Open Vacancy
                         </span>
-                      )}
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-emerald-600 transition-colors">
-                      {job.title}
-                    </h3>
-                    {job.description && (
-                      <p className="text-sm text-slate-600 leading-relaxed mb-3 whitespace-pre-line">
-                        {job.description}
-                      </p>
-                    )}
-                    {job.requirements && (
-                      <div className="mb-3 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl p-3">
-                        <span className="font-bold text-slate-800 uppercase tracking-wider block mb-1">Key Requirements:</span>
-                        <span className="whitespace-pre-line">{job.requirements}</span>
+                        {job.department && (
+                          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full">
+                            <Building2 className="h-3.5 w-3.5" /> {job.department}
+                          </span>
+                        )}
                       </div>
-                    )}
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-medium">
-                      <span className="flex items-center gap-1.5 text-emerald-700"><Briefcase className="h-4 w-4" /> {job.type || 'Full-time'}</span>
-                      <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {job.location || 'Nairobi, Kenya'}</span>
-                      <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> Deadline: {job.deadline || 'Open Until Filled'}</span>
+                      <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-emerald-600 transition-colors">
+                        {job.title}
+                      </h3>
+                      {job.description && (
+                        <p className="text-sm text-slate-600 leading-relaxed mb-3 whitespace-pre-line">
+                          {job.description}
+                        </p>
+                      )}
+                      {job.requirements && (
+                        <div className="mb-3 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl p-3">
+                          <span className="font-bold text-slate-800 uppercase tracking-wider block mb-1">Key Requirements:</span>
+                          <span className="whitespace-pre-line">{job.requirements}</span>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-medium">
+                        <span className="flex items-center gap-1.5 text-emerald-700"><Briefcase className="h-4 w-4" /> {job.type || 'Full-time'}</span>
+                        <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {job.location || 'Nairobi, Kenya'}</span>
+                        <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> Deadline: {job.deadline || 'Open Until Filled'}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenModal(job.title, job.id || 'vacancy')}
-                      className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg w-full md:w-auto cursor-pointer"
-                    >
-                      Apply Now <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                    <div className="shrink-0">
+                      <Link
+                        to={applyUrl}
+                        className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg w-full md:w-auto"
+                      >
+                        Apply Now <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -493,19 +175,24 @@ const Vacancies = () => {
                 No Vacancies Currently Available
               </h3>
               <p className="text-slate-600 max-w-lg mx-auto leading-relaxed font-medium">
-                Thank you for your interest in joining ECAS Institute. We currently do not have any open positions. Please check back later or submit your CV below for future opportunities.
+                Thank you for your interest in joining ECAS Institute. We currently do not have any open positions. Please check back later or submit your CV &amp; application below for future opportunities.
               </p>
             </motion.div>
           )}
-
         </div>
       </section>
-      
-      {/* General Application CTA */}
+
+      {/* General Application CTA — navigates directly to dedicated Application Page */}
       <section className="bg-primary py-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')" }}></div>
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage:
+              "url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E')",
+          }}
+        ></div>
         <div className="healthcare-container max-w-3xl text-center relative z-10">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -514,821 +201,18 @@ const Vacancies = () => {
               Speculative Applications
             </h2>
             <p className="text-white/80 mb-8 leading-relaxed">
-              We are always on the lookout for talented researchers, policy analysts, and sustainability experts. You are welcome to send your CV to our talent pool.
+              We are always on the lookout for talented researchers, policy analysts, and sustainability experts. You are welcome to submit your CV, Cover Letter, and credentials through our online application page.
             </p>
-            <button 
-              onClick={() => handleOpenModal('Speculative Application')}
-              className="inline-flex items-center gap-2 bg-white text-primary px-8 py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all cursor-pointer"
+            <Link
+              to="/vacancies/apply"
+              className="inline-flex items-center gap-2 bg-white text-primary px-8 py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
             >
               <UploadCloud className="h-5 w-5" />
-              Send Your CV
-            </button>
+              Submit Your CV &amp; Application
+            </Link>
           </motion.div>
         </div>
       </section>
-
-      {/* Online Recruitment Application Modal (Structured ERP Format) */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[780px] p-0 overflow-hidden rounded-2xl border-none shadow-2xl">
-          <div className="bg-[#032e42] p-5 sm:p-6 text-white relative">
-            <DialogHeader>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <DialogTitle className="text-xl sm:text-2xl font-serif font-bold text-white flex items-center gap-2">
-                  <FileCheck className="h-6 w-6 text-[#00c853]" />
-                  <span>ECAS Online Recruitment Application</span>
-                </DialogTitle>
-                <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/10 text-emerald-300 border border-white/15">
-                  Draft Auto-Saved
-                </span>
-              </div>
-              <DialogDescription className="text-white/85 text-sm mt-1">
-                {selectedJob ? `Applying For: ${selectedJob}` : 'Join the ECAS Institute Talent Pool'}
-              </DialogDescription>
-            </DialogHeader>
-
-            {/* 5-Step Progress Indicator */}
-            {!isSubmitted && (
-              <div className="mt-4 pt-4 border-t border-white/15 grid grid-cols-5 gap-1.5 sm:gap-2">
-                {APPLICATION_STEPS.map((st) => {
-                  const Icon = st.icon;
-                  const isCurrent = activeStep === st.id;
-                  const isDone = activeStep > st.id;
-                  return (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => validateAndAdvance(st.id)}
-                      className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all cursor-pointer ${
-                        isCurrent
-                          ? 'bg-[#008000] text-white shadow-sm'
-                          : isDone
-                          ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30'
-                          : 'bg-white/5 text-white/60 hover:bg-white/10'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate hidden sm:inline">{st.id}. {st.label}</span>
-                      <span className="sm:hidden">{st.id}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="p-5 sm:p-6 bg-white max-h-[75vh] overflow-y-auto">
-            {isSubmitted ? (
-              <div className="text-center py-6 space-y-4">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="h-10 w-10" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-[#032e42] mb-1">Application Submitted!</h3>
-                  {submittedRecord?.referenceNo && (
-                    <span className="inline-block bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono font-bold px-3 py-1 rounded-full">
-                      Tracking Reference: {submittedRecord.referenceNo}
-                    </span>
-                  )}
-                </div>
-                <div className="max-w-lg mx-auto bg-slate-50 border border-slate-200 rounded-xl p-4 text-left text-xs space-y-1.5 text-slate-700">
-                  <div><strong>Position:</strong> {selectedJob || 'Speculative Application'}</div>
-                  <div><strong>Applicant:</strong> {formData.fullName} ({formData.nationalId})</div>
-                  <div><strong>Email / Phone:</strong> {formData.email} • {formData.phone}</div>
-                  <div><strong>Highest Qualification:</strong> {formData.highestQualification} ({formData.education.length} academic record{formData.education.length > 1 ? 's' : ''})</div>
-                  <div><strong>Attached CV:</strong> {cvFile?.name || 'Attached'}</div>
-                </div>
-                <p className="text-slate-600 text-xs max-w-md mx-auto">
-                  Your structured application profile and uploaded CV have been recorded directly in the ECAS Recruitment Portal for HR review.
-                </p>
-                <div className="flex flex-wrap justify-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="inline-flex items-center gap-1.5 border border-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-xs cursor-pointer"
-                  >
-                    <Printer className="h-4 w-4 text-[#032e42]" /> Print Summary
-                  </button>
-                  {backupMailto && (
-                    <a
-                      href={backupMailto}
-                      className="inline-flex items-center gap-1.5 border border-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-xs"
-                    >
-                      <Mail className="h-4 w-4 text-primary" /> Email Optional Copy (Default Mail App)
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetForm();
-                      setIsModalOpen(false);
-                    }}
-                    className="bg-[#008000] text-white font-bold px-6 py-2.5 rounded-xl hover:bg-[#006600] transition-colors text-xs cursor-pointer"
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* STEP 1: PERSONAL & STATUTORY DETAILS */}
-                {activeStep === 1 && (
-                  <div className="space-y-4">
-                    <div className="border-b border-slate-100 pb-2">
-                      <h4 className="text-sm font-extrabold text-[#032e42] uppercase tracking-wider">
-                        1. Applicant Profile &amp; Identification
-                      </h4>
-                      <p className="text-xs text-slate-500">Enter your official details matching your National ID or Passport.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Full Legal Name *</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Jane Wanjiku Mwangi"
-                          value={formData.fullName}
-                          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">National ID / Passport No. *</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. 34567890"
-                          value={formData.nationalId}
-                          onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
-                        <input
-                          type="email"
-                          required
-                          placeholder="jane@example.com"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Phone Number *</label>
-                        <input
-                          type="tel"
-                          required
-                          placeholder="+254 700 000 000"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
-                        <select
-                          value={formData.gender}
-                          onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:border-[#008000]"
-                        >
-                          <option value="Female">Female</option>
-                          <option value="Male">Male</option>
-                          <option value="Prefer not to say">Prefer not to say</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>
-                        <input
-                          type="date"
-                          value={formData.dateOfBirth}
-                          onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">County / Country of Residence</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Nairobi, Kenya"
-                          value={formData.county}
-                          onChange={(e) => setFormData({ ...formData, county: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Person Living With Disability?</label>
-                        <select
-                          value={formData.disabilityStatus}
-                          onChange={(e) => setFormData({ ...formData, disabilityStatus: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:border-[#008000]"
-                        >
-                          <option value="No">No</option>
-                          <option value="Yes">Yes (ECAS is an Equal Opportunity Employer)</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Primary Area of Expertise</label>
-                        <select
-                          value={formData.specialty}
-                          onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:border-[#008000]"
-                        >
-                          <option value="Environmental Researcher">Environmental Researcher</option>
-                          <option value="Policy Analyst">Policy Analyst</option>
-                          <option value="Climate Finance & Carbon Markets">Climate Finance &amp; Carbon Markets</option>
-                          <option value="Sustainability & ESG Lead">Sustainability &amp; ESG Lead</option>
-                          <option value="Project Management & M&E">Project Management &amp; M&amp;E</option>
-                          <option value="Corporate Governance & Legal">Corporate Governance &amp; Legal</option>
-                          <option value="Finance, Admin & Operations">Finance, Admin &amp; Operations</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Postal / Physical Address</label>
-                        <input
-                          type="text"
-                          placeholder="P.O. Box or Estate / Street"
-                          value={formData.physicalAddress}
-                          onChange={(e) => setFormData({ ...formData, physicalAddress: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Personal Profile / Career Summary</label>
-                      <textarea
-                        rows={2}
-                        placeholder="Briefly summarize your core competencies, years of experience, and impact..."
-                        value={formData.careerSummary}
-                        onChange={(e) => setFormData({ ...formData, careerSummary: e.target.value })}
-                        className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* STEP 2: ACADEMIC QUALIFICATIONS & PROFESSIONAL BODIES */}
-                {activeStep === 2 && (
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                      <div>
-                        <h4 className="text-sm font-extrabold text-[#032e42] uppercase tracking-wider">
-                          2. Academic Qualifications &amp; Professional Bodies
-                        </h4>
-                        <p className="text-xs text-slate-500">List qualifications starting from the highest level attained.</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => addArrayItem('education', emptyEducation, 8)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#008000]/10 text-[#008000] hover:bg-[#008000] hover:text-white text-xs font-bold transition cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Qualification
-                      </button>
-                    </div>
-
-                    <div className="max-w-xs">
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Highest Education Level Attained *</label>
-                      <select
-                        value={formData.highestQualification}
-                        onChange={(e) => setFormData({ ...formData, highestQualification: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:border-[#008000]"
-                      >
-                        <option value="PhD / Doctorate">PhD / Doctorate</option>
-                        <option value="Master's Degree">Master&apos;s Degree</option>
-                        <option value="Postgraduate Diploma">Postgraduate Diploma</option>
-                        <option value="Bachelor's Degree">Bachelor&apos;s Degree</option>
-                        <option value="Higher Diploma / Diploma">Higher Diploma / Diploma</option>
-                        <option value="Certificate / KCSE">Certificate / KCSE</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-3">
-                      {formData.education.map((edu, idx) => (
-                        <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-extrabold text-[#032e42]">Qualification #{idx + 1}</span>
-                            {formData.education.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeArrayItem('education', idx, 1)}
-                                className="text-red-500 hover:text-red-700 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" /> Remove
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">Level</label>
-                              <select
-                                value={edu.level}
-                                onChange={(e) => updateArrayItem('education', idx, { level: e.target.value })}
-                                className="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                              >
-                                <option value="PhD / Doctorate">PhD / Doctorate</option>
-                                <option value="Master's Degree">Master&apos;s Degree</option>
-                                <option value="Postgraduate Diploma">Postgraduate Diploma</option>
-                                <option value="Bachelor's Degree">Bachelor&apos;s Degree</option>
-                                <option value="Diploma / Higher Diploma">Diploma / Higher Diploma</option>
-                                <option value="Certificate / KCSE">Certificate / KCSE</option>
-                              </select>
-                            </div>
-                            <div className="sm:col-span-2">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">Institution / University Attended *</label>
-                              <input
-                                type="text"
-                                placeholder="e.g. University of Nairobi"
-                                value={edu.institution}
-                                onChange={(e) => updateArrayItem('education', idx, { institution: e.target.value })}
-                                className="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                              />
-                            </div>
-                            <div className="sm:col-span-2">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">Course / Specialization *</label>
-                              <input
-                                type="text"
-                                placeholder="e.g. B.Sc. Environmental Science & Policy"
-                                value={edu.fieldOfStudy}
-                                onChange={(e) => updateArrayItem('education', idx, { fieldOfStudy: e.target.value })}
-                                className="w-full px-2.5 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[11px] font-bold text-slate-600 mb-1">Grade / Class</label>
-                                <input
-                                  type="text"
-                                  placeholder="e.g. Second Upper"
-                                  value={edu.grade}
-                                  onChange={(e) => updateArrayItem('education', idx, { grade: e.target.value })}
-                                  className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[11px] font-bold text-slate-600 mb-1">Grad Year</label>
-                                <input
-                                  type="text"
-                                  placeholder="e.g. 2021"
-                                  value={edu.graduationYear}
-                                  onChange={(e) => updateArrayItem('education', idx, { graduationYear: e.target.value })}
-                                  className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Professional Body Membership */}
-                    <div className="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200/80 space-y-2.5">
-                      <span className="text-xs font-extrabold text-[#032e42] block">
-                        Professional Body Membership &amp; Practicing Certificate (Optional)
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        <input
-                          type="text"
-                          placeholder="Body Name (e.g. NEMA, ICPAK, EIK, LSK)"
-                          value={formData.professionalMemberships.bodyName}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              professionalMemberships: { ...formData.professionalMemberships, bodyName: e.target.value },
-                            })
-                          }
-                          className="px-2.5 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Membership / License No."
-                          value={formData.professionalMemberships.membershipNo}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              professionalMemberships: { ...formData.professionalMemberships, membershipNo: e.target.value },
-                            })
-                          }
-                          className="px-2.5 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                        />
-                        <select
-                          value={formData.professionalMemberships.status}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              professionalMemberships: { ...formData.professionalMemberships, status: e.target.value },
-                            })
-                          }
-                          className="px-2.5 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                        >
-                          <option value="Active / Good Standing">Active / Good Standing</option>
-                          <option value="Associate Member">Associate Member</option>
-                          <option value="Renewal in Progress">Renewal in Progress</option>
-                          <option value="Not Applicable">Not Applicable</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* STEP 3: WORK EXPERIENCE & REFEREES */}
-                {activeStep === 3 && (
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                      <div>
-                        <h4 className="text-sm font-extrabold text-[#032e42] uppercase tracking-wider">
-                          3. Chronological Work Experience &amp; Referees
-                        </h4>
-                        <p className="text-xs text-slate-500">Provide relevant roles (most recent first) and up to 3 referees.</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => addArrayItem('experience', emptyExperience, 10)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#008000]/10 text-[#008000] hover:bg-[#008000] hover:text-white text-xs font-bold transition cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Role
-                      </button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {formData.experience.map((exp, idx) => (
-                        <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-extrabold text-[#032e42]">Employment Entry #{idx + 1}</span>
-                            {formData.experience.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeArrayItem('experience', idx, 1)}
-                                className="text-red-500 hover:text-red-700 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" /> Remove
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <input
-                              type="text"
-                              placeholder="Job Title / Designation"
-                              value={exp.jobTitle}
-                              onChange={(e) => updateArrayItem('experience', idx, { jobTitle: e.target.value })}
-                              className="px-2.5 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Employer / Organization Name"
-                              value={exp.employer}
-                              onChange={(e) => updateArrayItem('experience', idx, { employer: e.target.value })}
-                              className="px-2.5 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                            />
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1">
-                                <label className="block text-[10px] font-bold text-slate-500">From</label>
-                                <input
-                                  type="month"
-                                  value={exp.startDate}
-                                  onChange={(e) => updateArrayItem('experience', idx, { startDate: e.target.value })}
-                                  className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <label className="block text-[10px] font-bold text-slate-500">To</label>
-                                <input
-                                  type="month"
-                                  disabled={exp.current}
-                                  value={exp.current ? '' : exp.endDate}
-                                  onChange={(e) => updateArrayItem('experience', idx, { endDate: e.target.value })}
-                                  className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs bg-white disabled:bg-slate-100"
-                                />
-                              </div>
-                            </div>
-                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 pt-3 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={exp.current}
-                                onChange={(e) => updateArrayItem('experience', idx, { current: e.target.checked })}
-                              />
-                              Currently working in this role
-                            </label>
-                          </div>
-                          <textarea
-                            rows={2}
-                            placeholder="Key duties, projects led, and achievements..."
-                            value={exp.responsibilities}
-                            onChange={(e) => updateArrayItem('experience', idx, { responsibilities: e.target.value })}
-                            className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Referees Section */}
-                    <div className="space-y-2.5 pt-2 border-t border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-[#032e42] uppercase tracking-wider">Professional Referees</span>
-                        <button
-                          type="button"
-                          onClick={() => addArrayItem('referees', emptyReferee, 3)}
-                          className="text-xs font-bold text-[#008000] hover:underline cursor-pointer inline-flex items-center gap-1"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> Add Referee
-                        </button>
-                      </div>
-                      {formData.referees.map((ref, idx) => (
-                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                          <input
-                            type="text"
-                            placeholder={`Referee ${idx + 1} Full Name`}
-                            value={ref.name}
-                            onChange={(e) => updateArrayItem('referees', idx, { name: e.target.value })}
-                            className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Title & Organization"
-                            value={ref.organisation}
-                            onChange={(e) => updateArrayItem('referees', idx, { organisation: e.target.value })}
-                            className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
-                          />
-                          <input
-                            type="tel"
-                            placeholder="Phone Number"
-                            value={ref.phone}
-                            onChange={(e) => updateArrayItem('referees', idx, { phone: e.target.value })}
-                            className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
-                          />
-                          <input
-                            type="email"
-                            placeholder="Official Email"
-                            value={ref.email}
-                            onChange={(e) => updateArrayItem('referees', idx, { email: e.target.value })}
-                            className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* STEP 4: DOCUMENTS, CV UPLOAD & STATUTORY COMPLIANCE */}
-                {activeStep === 4 && (
-                  <div className="space-y-4">
-                    <div className="border-b border-slate-100 pb-2">
-                      <h4 className="text-sm font-extrabold text-[#032e42] uppercase tracking-wider">
-                        4. Required Document Uploads &amp; Compliance Clearances
-                      </h4>
-                      <p className="text-xs text-slate-500">Attach your updated CV (required) and optional merged certificates PDF.</p>
-                    </div>
-
-                    {/* Upload 1: CV (Required) */}
-                    <div>
-                      <label className="block text-xs font-bold text-[#032e42] uppercase tracking-wider mb-1">
-                        1. Curriculum Vitae (CV) *
-                      </label>
-                      <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-[#008000] transition-colors bg-slate-50/70">
-                        {cvFile ? (
-                          <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-300">
-                            <div className="flex items-center gap-2 overflow-hidden text-left">
-                              <FileText className="h-5 w-5 text-[#008000] shrink-0" />
-                              <span className="text-sm font-bold text-[#032e42] truncate max-w-[260px]">{cvFile.name}</span>
-                              <span className="text-xs font-semibold text-slate-600">
-                                ({(cvFile.size / (1024 * 1024)).toFixed(2)} MB)
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCvFile(null);
-                                setCvDataUrl('');
-                              }}
-                              className="text-slate-500 hover:text-red-600 p-1 cursor-pointer"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <label className="cursor-pointer flex flex-col items-center justify-center py-2">
-                            <UploadCloud className="h-7 w-7 text-[#008000] mb-1.5" />
-                            <span className="text-sm font-bold text-[#032e42]">Click to attach Curriculum Vitae (CV)</span>
-                            <span className="text-xs text-slate-500 mt-0.5">PDF, DOC or DOCX (Max 3 MB)</span>
-                            <input
-                              type="file"
-                              accept=".pdf,.doc,.docx"
-                              onChange={(e) =>
-                                readAttachmentFile(e, 3, (file, dataUrl) => {
-                                  setCvFile(file);
-                                  setCvDataUrl(dataUrl);
-                                })
-                              }
-                              className="hidden"
-                            />
-                          </label>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Upload 2: Supporting Certificates & ID Bundle (Optional) */}
-                    <div>
-                      <label className="block text-xs font-bold text-[#032e42] uppercase tracking-wider mb-1">
-                        2. Academic Certificates, ID &amp; Testimonials Bundle (Optional)
-                      </label>
-                      <div className="border border-dashed border-slate-300 rounded-xl p-3.5 text-center hover:border-[#008000] transition-colors bg-slate-50/50">
-                        {certFile ? (
-                          <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
-                            <div className="flex items-center gap-2 overflow-hidden text-left">
-                              <FileText className="h-4 w-4 text-[#032e42] shrink-0" />
-                              <span className="text-xs font-bold text-[#032e42] truncate max-w-[260px]">{certFile.name}</span>
-                              <span className="text-[11px] text-slate-500">
-                                ({(certFile.size / (1024 * 1024)).toFixed(2)} MB)
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCertFile(null);
-                                setCertDataUrl('');
-                              }}
-                              className="text-slate-500 hover:text-red-600 p-1 cursor-pointer"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <label className="cursor-pointer flex items-center justify-center gap-2 py-1 text-xs font-semibold text-slate-600">
-                            <UploadCloud className="h-4 w-4 text-[#032e42]" />
-                            <span>Attach Combined PDF of Certificates / National ID (Optional, Max 2.5 MB)</span>
-                            <input
-                              type="file"
-                              accept=".pdf,.jpg,.jpeg,.png"
-                              onChange={(e) =>
-                                readAttachmentFile(e, 2.5, (file, dataUrl) => {
-                                  setCertFile(file);
-                                  setCertDataUrl(dataUrl);
-                                })
-                              }
-                              className="hidden"
-                            />
-                          </label>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Chapter Six & Statutory Compliance Clearances */}
-                    <div>
-                      <label className="block text-xs font-bold text-[#032e42] uppercase tracking-wider mb-1.5">
-                        3. Chapter Six &amp; Statutory Documents Held / Available Upon Shortlisting
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {STATUTORY_CLEARANCES.map((docName) => {
-                          const checked = formData.complianceChecklist.includes(docName);
-                          return (
-                            <label
-                              key={docName}
-                              className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
-                                checked
-                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
-                                  : 'bg-slate-50 border-slate-200 text-slate-600 font-medium'
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleComplianceItem(docName)}
-                              />
-                              <span>{docName}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Cover Letter */}
-                    <div>
-                      <label className="block text-xs font-bold text-[#032e42] uppercase tracking-wider mb-1">
-                        4. Application / Cover Letter (Addressed to CEO / HR Director, ECAS Institute)
-                      </label>
-                      <textarea
-                        rows={3}
-                        placeholder="State your suitability for the position and motivation for joining ECAS Institute..."
-                        value={formData.coverLetter}
-                        onChange={(e) => setFormData({ ...formData, coverLetter: e.target.value })}
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-[#008000]"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* STEP 5: REVIEW & DECLARATION */}
-                {activeStep === 5 && (
-                  <div className="space-y-4">
-                    <div className="border-b border-slate-100 pb-2">
-                      <h4 className="text-sm font-extrabold text-[#032e42] uppercase tracking-wider">
-                        5. Final Application Review &amp; Applicant Declaration
-                      </h4>
-                      <p className="text-xs text-slate-500">Verify all sections below before submitting your dossier to ECAS Institute.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-extrabold text-[#032e42] uppercase">Personal Details</span>
-                          <button type="button" onClick={() => setActiveStep(1)} className="text-[#008000] font-bold hover:underline cursor-pointer">Edit</button>
-                        </div>
-                        <p><strong>Name:</strong> {formData.fullName}</p>
-                        <p><strong>National ID:</strong> {formData.nationalId}</p>
-                        <p><strong>Email / Tel:</strong> {formData.email} • {formData.phone}</p>
-                        <p><strong>Location:</strong> {formData.county}</p>
-                      </div>
-
-                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-extrabold text-[#032e42] uppercase">Education &amp; Experience</span>
-                          <button type="button" onClick={() => setActiveStep(2)} className="text-[#008000] font-bold hover:underline cursor-pointer">Edit</button>
-                        </div>
-                        <p><strong>Highest Level:</strong> {formData.highestQualification}</p>
-                        <p><strong>Academic Entries:</strong> {formData.education.filter((e) => e.institution.trim()).length}</p>
-                        <p><strong>Work Roles:</strong> {formData.experience.filter((x) => x.jobTitle.trim() || x.employer.trim()).length}</p>
-                        <p><strong>Referees Listed:</strong> {formData.referees.filter((r) => r.name.trim()).length}</p>
-                      </div>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-emerald-900 uppercase">Attached Documents &amp; Clearances</span>
-                        <button type="button" onClick={() => setActiveStep(4)} className="text-[#008000] font-bold hover:underline cursor-pointer">Edit</button>
-                      </div>
-                      <p><strong>CV Document:</strong> {cvFile ? `${cvFile.name} (${(cvFile.size / 1024).toFixed(0)} KB)` : 'Missing'}</p>
-                      <p><strong>Certificates Bundle:</strong> {certFile ? certFile.name : 'Not attached (optional)'}</p>
-                      <p><strong>Compliance Ready:</strong> {formData.complianceChecklist.length} document(s) checked</p>
-                    </div>
-
-                    <label className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-slate-800 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={declarationAccepted}
-                        onChange={(e) => setDeclarationAccepted(e.target.checked)}
-                        className="mt-0.5"
-                      />
-                      <span>
-                        <strong>Applicant Declaration *:</strong> I certify that all personal, academic, professional experience, and statutory compliance information provided in this application is complete and truthful. I understand that any false declaration may result in disqualification.
-                      </span>
-                    </label>
-                  </div>
-                )}
-
-                {/* Navigation Footer */}
-                <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {activeStep > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveStep((s) => Math.max(1, s - 1))}
-                        className="inline-flex items-center gap-1 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 cursor-pointer"
-                      >
-                        <ArrowLeft className="w-3.5 h-3.5" /> Previous Step
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="text-xs font-semibold text-slate-500 hover:text-red-600 px-2 py-1 cursor-pointer"
-                    >
-                      Clear Draft
-                    </button>
-                  </div>
-
-                  {activeStep < 5 ? (
-                    <button
-                      type="button"
-                      onClick={() => validateAndAdvance(activeStep + 1)}
-                      className="inline-flex items-center gap-1.5 bg-[#032e42] hover:bg-[#05435e] text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow cursor-pointer"
-                    >
-                      <span>Save &amp; Continue</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || !declarationAccepted}
-                      className="inline-flex items-center justify-center gap-2 bg-[#008000] hover:bg-[#006600] text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-md disabled:opacity-60 cursor-pointer"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" /> Submitting Application...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4" /> Submit Application to ECAS Portal
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </form>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Footer />
     </div>
@@ -1336,4 +220,3 @@ const Vacancies = () => {
 };
 
 export default Vacancies;
-
