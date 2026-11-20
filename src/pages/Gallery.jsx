@@ -52,9 +52,9 @@ const Gallery = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <SEO 
-        title="Gallery | ECASI Africa"
-        description="Explore photos from ECASI Africa training programmes, field research, community engagement events, and regional partnerships across Africa."
+      <SEO
+        title="Training Event Gallery & Past Programmes | ECAS Institute"
+        description="Explore photos and highlights from ECAS Institute past executive training programmes, conferences, fieldwork, and institutional capacity building events across Africa, Dubai, and Kuala Lumpur."
       />
       <Header />
       

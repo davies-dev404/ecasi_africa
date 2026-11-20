@@ -8,8 +8,31 @@ Options -MultiViews -Indexes
   RewriteCond %{HTTPS} off
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+  # Canonicalize www to apex domain on main public site
+  RewriteCond %{HTTP_HOST} ^www\.ecasiafrica\.org$ [NC]
+  RewriteRule ^(.*)$ https://ecasiafrica.org/$1 [L,R=301]
+
   # Block direct web access to any hidden files or internal data directories
   RewriteRule (^|/)\. - [F,L]
+
+  # Permanent HTTP 301 Redirects for legacy / retired WordPress & indexed URLs
+  RewriteCond %{HTTP_HOST} !^msimamizi\. [NC]
+  RewriteRule ^past-training(/.*)?$ https://ecasiafrica.org/gallery [R=301,L,NC]
+
+  RewriteCond %{HTTP_HOST} !^msimamizi\. [NC]
+  RewriteRule ^courses/?$ https://ecasiafrica.org/institute-overview [R=301,L,NC]
+
+  RewriteCond %{HTTP_HOST} !^msimamizi\. [NC]
+  RewriteRule ^executive-training/?$ https://ecasiafrica.org/institute-overview [R=301,L,NC]
+
+  RewriteCond %{HTTP_HOST} !^msimamizi\. [NC]
+  RewriteRule ^the-institute/?$ https://ecasiafrica.org/about [R=301,L,NC]
+
+  RewriteCond %{HTTP_HOST} !^msimamizi\. [NC]
+  RewriteRule ^research/?$ https://ecasiafrica.org/research/overview [R=301,L,NC]
+
+  RewriteCond %{HTTP_HOST} !^msimamizi\. [NC]
+  RewriteRule ^consultancy/?$ https://ecasiafrica.org/research/consulting [R=301,L,NC]
 
   RewriteRule ^index\.html$ - [L]
 

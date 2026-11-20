@@ -1,4 +1,36 @@
 {
+  "redirects": [
+    {
+      "source": "/past-training",
+      "destination": "/gallery",
+      "permanent": true
+    },
+    {
+      "source": "/past-training/:path*",
+      "destination": "/gallery",
+      "permanent": true
+    },
+    {
+      "source": "/courses",
+      "destination": "/institute-overview",
+      "permanent": true
+    },
+    {
+      "source": "/executive-training",
+      "destination": "/institute-overview",
+      "permanent": true
+    },
+    {
+      "source": "/the-institute",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/research",
+      "destination": "/research/overview",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",

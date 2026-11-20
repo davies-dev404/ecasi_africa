@@ -5,7 +5,7 @@ deployment:
 
     # 1. Clean old build assets & legacy physical folders that interfere with SPA routes
     - /bin/rm -rf $DEPLOYPATH/assets
-    - /bin/rm -rf $DEPLOYPATH/contact $DEPLOYPATH/gallery $DEPLOYPATH/msimamizi $DEPLOYPATH/msimamizi.ecasiafrica.org $DEPLOYPATH/contact.html $DEPLOYPATH/gallery.html $DEPLOYPATH/contact.php $DEPLOYPATH/gallery.php
+    - /bin/rm -rf $DEPLOYPATH/contact $DEPLOYPATH/gallery $DEPLOYPATH/past-training $DEPLOYPATH/msimamizi $DEPLOYPATH/msimamizi.ecasiafrica.org $DEPLOYPATH/contact.html $DEPLOYPATH/gallery.html $DEPLOYPATH/past-training.html $DEPLOYPATH/contact.php $DEPLOYPATH/gallery.php $DEPLOYPATH/past-training.php
 
     # 2. Deploy production build & public assets to shared Document Root (/home/ecasorke/public_html)
     #    Serves both https://ecasiafrica.org and https://msimamizi.ecasiafrica.org

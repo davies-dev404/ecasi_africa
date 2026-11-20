@@ -47,6 +47,7 @@ import TurnstileWidget from '@/components/TurnstileWidget';
 import { verifyTurnstile } from '@/services/turnstileService';
 import { printRegistrationVoucher } from '@/utils/printRegistrationVoucher';
 import CourseRegistrationForm from '@/components/CourseRegistrationForm';
+import SEO from '@/components/SEO';
 
 export default function MsimamiziAdmin() {
 
@@ -1180,6 +1181,11 @@ export default function MsimamiziAdmin() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#021f2d] flex items-center justify-center p-4 selection:bg-[#008000] selection:text-white">
+        <SEO
+          title="ECAS Msimamizi Admin Portal"
+          description="ECAS Institute administrative portal."
+          noIndex
+        />
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100">
           {/* Top Banner */}
           <div className="bg-[#032e42] p-8 text-center relative overflow-hidden">
@@ -1449,6 +1455,11 @@ export default function MsimamiziAdmin() {
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans selection:bg-[#008000] selection:text-white flex flex-col md:flex-row">
+      <SEO
+        title="ECAS Msimamizi Admin Portal"
+        description="ECAS Institute administrative portal."
+        noIndex
+      />
       {/* ─────────────────────────────────────────────────────────────
           LEFT VERTICAL SIDEBAR (MINIMIZABLE TO HAMBURGER)
       ───────────────────────────────────────────────────────────── */}

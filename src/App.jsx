@@ -168,6 +168,8 @@ const App = () => {
 
           {/* Sitelink Redirects to handle Google's indexed URLs and prevent 404s */}
           <Route path="/programmes" element={<Programmes />} />
+          <Route path="/past-training" element={<Navigate to="/gallery" replace />} />
+          <Route path="/past-training/*" element={<Navigate to="/gallery" replace />} />
           <Route path="/courses" element={<Navigate to="/institute-overview" replace />} />
           <Route path="/executive-training" element={<Navigate to="/institute-overview" replace />} />
           <Route path="/the-institute" element={<Navigate to="/about" replace />} />

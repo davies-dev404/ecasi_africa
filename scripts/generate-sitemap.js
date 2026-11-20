@@ -162,6 +162,10 @@ const robotsTxt = `# ECAS Institute (ECASI Africa) robots.txt
 
 User-agent: *
 Allow: /
+Disallow: /msimamizi
+Disallow: /admin
+Disallow: /portal
+Disallow: /api/
 
 # Explicit AI Search Engine Crawlers (Google AI Overviews, Gemini, OpenAI Search, Perplexity, Claude, Applebot)
 User-agent: Google-Extended
