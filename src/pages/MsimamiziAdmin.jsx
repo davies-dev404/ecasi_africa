@@ -97,6 +97,24 @@ export default function MsimamiziAdmin() {
   // Mobile sidebar toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Lock body scroll and listen for Escape key when mobile menu is open
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setIsMobileMenuOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [isMobileMenuOpen]);
+
   // Desktop sidebar collapse / minimize state (Persisted in localStorage)
   const [isSidebarCollapsed, setIsSidebarCollapsedState] = useState(() => {
     try {
@@ -1591,191 +1609,215 @@ export default function MsimamiziAdmin() {
         noIndex
       />
       {/* ─────────────────────────────────────────────────────────────
-          LEFT VERTICAL SIDEBAR (SLIM DARK NAVY RAIL, MINIMIZABLE TO HAMBURGER)
+          MOBILE SLIDE-OVER BACKDROP & DRAWER (MAKAZIFLOW LAYOUT & STYLE)
       ───────────────────────────────────────────────────────────── */}
-      <aside className={`w-full md:w-56 bg-[#08172e] text-white flex-shrink-0 flex-col justify-between border-r border-white/10 md:sticky md:top-0 md:h-screen md:overflow-y-auto z-40 transition-all duration-300 ease-in-out ${
-        isMobileMenuOpen ? 'flex' : 'hidden'
-      } ${
-        isSidebarCollapsed ? 'md:hidden' : 'md:flex'
-      }`}>
-        {/* Top Branding & Navigation */}
+      {/* Backdrop overlay for mobile drawer */}
+      <div
+        onClick={() => setIsMobileMenuOpen(false)}
+        className={`fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden ${
+          isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden="true"
+      />
+
+      {/* ─────────────────────────────────────────────────────────────
+          SIDEBAR NAVIGATION (OFF-CANVAS DRAWER ON MOBILE, RAIL ON DESKTOP)
+      ───────────────────────────────────────────────────────────── */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 w-[290px] max-w-[85vw] bg-[#071728] text-white flex flex-col justify-between border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out
+          md:static md:w-60 md:h-screen md:sticky md:top-0 md:z-30 md:shadow-none md:translate-x-0
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          ${isSidebarCollapsed ? 'md:hidden' : 'md:flex'}
+        `}
+      >
+        {/* Top Header & Brand */}
         <div className="flex flex-col">
-          {/* Header Brand */}
-          <div className="relative border-b border-white/10 px-4 py-5 flex flex-col items-center text-center">
+          <div className="relative border-b border-white/10 px-5 pt-6 pb-5 flex flex-col items-center text-center bg-[#071728]">
             {/* Desktop Minimize-to-Hamburger Toggle Button */}
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(true)}
-              className="hidden md:flex absolute top-3 right-3 p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              className="hidden md:flex absolute top-3.5 right-3.5 p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer"
               title="Minimize navigation to hamburger"
               aria-label="Minimize navigation to hamburger"
             >
               <Menu className="w-4 h-4" />
             </button>
 
-            {/* Mobile Nav Close */}
+            {/* Mobile Close Button (MakaziFlow style: rounded cyan outline button with X) */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden absolute top-3 right-3 p-1.5 rounded-lg text-white/75 hover:text-white hover:bg-white/10 cursor-pointer"
+              className="md:hidden absolute top-3.5 right-3.5 p-1.5 rounded-lg border border-cyan-400/60 bg-[#002b40]/60 text-cyan-400 hover:bg-cyan-900/40 hover:text-white transition cursor-pointer"
               aria-label="Close navigation menu"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-11 h-11 rounded-xl bg-white p-1.5 shadow-sm flex items-center justify-center mb-2">
-              <img src="/logo.png" alt="ECAS Logo" className="w-full h-full object-contain" />
+            {/* Brand Logo & Title */}
+            <div className="flex flex-col items-center justify-center">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-white p-1 shadow-sm flex items-center justify-center shrink-0">
+                  <img src="/logo.png" alt="ECAS Logo" className="w-full h-full object-contain" />
+                </div>
+                <div className="font-['Outfit',sans-serif] font-bold text-lg tracking-tight text-white">
+                  ECAS<span className="text-cyan-400">.Msimamizi</span>
+                </div>
+              </div>
+
+              {/* MakaziFlow Pill Badge */}
+              <div className="mt-1 px-4 py-0.5 rounded-full border border-cyan-400/50 bg-[#002b40] text-cyan-400 text-[10.5px] font-bold tracking-widest uppercase shadow-sm">
+                MSIMAMIZI
+              </div>
             </div>
-            <div className="font-['Outfit',sans-serif] font-bold text-base tracking-tight text-white">
-              ECAS<span className="text-[#00a99d]">.Msimamizi</span>
-            </div>
-            <span className="mt-1.5 px-2.5 py-0.5 rounded-full bg-[#00a99d]/15 border border-[#00a99d]/35 text-[#00a99d] text-[9px] font-bold uppercase tracking-widest">
-              Administration
-            </span>
           </div>
 
-          {/* Navigation Items (Strictly Navigation, Quick Actions live on Dashboard) */}
-          <div className="px-2.5 py-4 space-y-1">
-            <p className="px-3 text-[10px] font-bold tracking-wider text-white/35 uppercase mb-2">
-              Platform Modules
-            </p>
-            <nav className="space-y-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('dashboard');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
-                  activeTab === 'dashboard'
-                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
-                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <Compass className={`w-4 h-4 shrink-0 ${activeTab === 'dashboard' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
-                  <span>Overview</span>
-                </span>
-              </button>
+          {/* Navigation Items (MakaziFlow Vertical Rail Style) */}
+          <nav className="py-2 overflow-y-auto max-h-[calc(100vh-230px)] space-y-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('dashboard');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
+                activeTab === 'dashboard'
+                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
+              }`}
+            >
+              <span className="flex items-center gap-3.5">
+                <LayoutGrid className={`w-5 h-5 shrink-0 ${activeTab === 'dashboard' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
+                <span className="text-[14px]">Overview</span>
+              </span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('registrations');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
-                  activeTab === 'registrations'
-                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
-                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <Users className={`w-4 h-4 shrink-0 ${activeTab === 'registrations' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
-                  <span>Registrations</span>
-                </span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === 'registrations' ? 'bg-[#00a99d] text-white' : 'bg-white/10 text-white/75'
-                }`}>
-                  {registrations.length}
-                </span>
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('registrations');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
+                activeTab === 'registrations'
+                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
+              }`}
+            >
+              <span className="flex items-center gap-3.5">
+                <Users className={`w-5 h-5 shrink-0 ${activeTab === 'registrations' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
+                <span className="text-[14px]">Registrations</span>
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                activeTab === 'registrations'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                  : 'bg-white/10 text-white/70'
+              }`}>
+                {registrations.length}
+              </span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('inquiries');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
-                  activeTab === 'inquiries'
-                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
-                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <MessageSquare className={`w-4 h-4 shrink-0 ${activeTab === 'inquiries' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
-                  <span>Inquiries &amp; Leads</span>
-                </span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === 'inquiries' ? 'bg-[#00a99d] text-white' : 'bg-white/10 text-white/75'
-                }`}>
-                  {inquiries.length}
-                </span>
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('inquiries');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
+                activeTab === 'inquiries'
+                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
+              }`}
+            >
+              <span className="flex items-center gap-3.5">
+                <MessageSquare className={`w-5 h-5 shrink-0 ${activeTab === 'inquiries' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
+                <span className="text-[14px]">Inquiries &amp; Leads</span>
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                activeTab === 'inquiries'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                  : 'bg-white/10 text-white/70'
+              }`}>
+                {inquiries.length}
+              </span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('courses');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
-                  activeTab === 'courses'
-                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
-                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <GraduationCap className={`w-4 h-4 shrink-0 ${activeTab === 'courses' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
-                  <span>Courses &amp; Fees</span>
-                </span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === 'courses' ? 'bg-[#00a99d] text-white' : 'bg-white/10 text-white/75'
-                }`}>
-                  {courses.length}
-                </span>
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('courses');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
+                activeTab === 'courses'
+                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
+              }`}
+            >
+              <span className="flex items-center gap-3.5">
+                <GraduationCap className={`w-5 h-5 shrink-0 ${activeTab === 'courses' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
+                <span className="text-[14px]">Courses &amp; Fees</span>
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                activeTab === 'courses'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                  : 'bg-white/10 text-white/70'
+              }`}>
+                {courses.length}
+              </span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('vacancies');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
-                  activeTab === 'vacancies'
-                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
-                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <Briefcase className={`w-4 h-4 shrink-0 ${activeTab === 'vacancies' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
-                  <span>Vacancies &amp; CVs</span>
-                </span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === 'vacancies' ? 'bg-[#00a99d] text-white' : 'bg-white/10 text-white/75'
-                }`}>
-                  {applications.length}
-                </span>
-              </button>
-            </nav>
-          </div>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('vacancies');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
+                activeTab === 'vacancies'
+                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
+              }`}
+            >
+              <span className="flex items-center gap-3.5">
+                <Briefcase className={`w-5 h-5 shrink-0 ${activeTab === 'vacancies' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
+                <span className="text-[14px]">Vacancies &amp; CVs</span>
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                activeTab === 'vacancies'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                  : 'bg-white/10 text-white/70'
+              }`}>
+                {applications.length}
+              </span>
+            </button>
+          </nav>
         </div>
 
-        {/* Bottom Sidebar Footer */}
-        <div className="border-t border-white/10 bg-[#061124] px-3 py-3 space-y-2.5">
+        {/* Bottom Sidebar Footer (MakaziFlow Style) */}
+        <div className="border-t border-white/10 bg-[#061424] px-4 py-3.5 space-y-3">
           <a
             href={publicSiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-white/75 hover:text-white transition cursor-pointer"
+            className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition cursor-pointer"
           >
-            <span className="flex items-center gap-1.5">
-              <ExternalLink className="w-3 h-3 text-[#00a99d]" />
+            <span className="flex items-center gap-2">
+              <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
               <span>ecasiafrica.org</span>
             </span>
-            <ArrowUpRight className="w-3 h-3 text-white/40" />
+            <ArrowUpRight className="w-3.5 h-3.5 text-white/40" />
           </a>
 
           <div className="flex items-center justify-between gap-2 pt-0.5">
-            <div className="flex items-center gap-2 min-w-0" title={`${currentUser?.role || 'Administrator'} (${currentUser?.email || 'admin@ecasiafrica.org'})`}>
-              <div className="w-7 h-7 rounded-full bg-[#00a99d] flex items-center justify-center text-white font-bold text-[10px] shrink-0 uppercase">
+            <div className="flex items-center gap-2.5 min-w-0" title={`${currentUser?.role || 'Administrator'} (${currentUser?.email || 'admin@ecasiafrica.org'})`}>
+              <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold text-xs shrink-0 uppercase">
                 {currentUser?.email ? currentUser.email.substring(0, 2) : 'AD'}
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-white truncate">{currentUser?.role || 'Administrator'}</p>
-                <p className="text-[10px] text-white/50 truncate font-mono">{currentUser?.email || 'admin@ecasiafrica.org'}</p>
+                <p className="text-xs font-semibold text-white truncate">{currentUser?.role || 'Administrator'}</p>
+                <p className="text-[10.5px] text-white/50 truncate font-mono">{currentUser?.email || 'admin@ecasiafrica.org'}</p>
               </div>
             </div>
 
@@ -1785,8 +1827,14 @@ export default function MsimamiziAdmin() {
               title="Logout from Msimamizi"
               className="p-1.5 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer shrink-0"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* MakaziFlow Domain Signature Bar (as seen in Image 1) */}
+          <div className="pt-2 border-t border-white/5 flex items-center gap-2 text-[11.5px] text-cyan-400/90 font-mono">
+            <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="truncate">msimamizi.ecasiafrica.org</span>
           </div>
         </div>
       </aside>
