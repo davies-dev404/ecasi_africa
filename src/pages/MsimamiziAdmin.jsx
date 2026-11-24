@@ -40,7 +40,24 @@ import {
   Building2,
   Paperclip,
   Eye,
+  TrendingUp,
+  Bell,
+  Activity,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+} from 'recharts';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
 import TurnstileWidget from '@/components/TurnstileWidget';
@@ -1175,12 +1192,118 @@ export default function MsimamiziAdmin() {
     }
   };
 
+  // Brief MakaziFlow-inspired Msimamizi initial loading splash
+  const [showInitialLoader, setShowInitialLoader] = useState(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowInitialLoader(false), 320);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // Dashboard Analytics Data (Computed live from portal records)
+  const venueAnalyticsData = useMemo(() => {
+    const map = {};
+    registrations.forEach((r) => {
+      const key = (r.venue || 'Nairobi, Kenya').split(',')[0].trim() || 'Nairobi';
+      if (!map[key]) {
+        map[key] = { name: key, revenueUSD: 0, bookings: 0 };
+      }
+      map[key].revenueUSD += Number(r.totalFee) || 0;
+      map[key].bookings += 1;
+    });
+    const list = Object.values(map).sort((a, b) => b.revenueUSD - a.revenueUSD);
+    if (list.length > 0) return list.slice(0, 7);
+    return [
+      { name: 'Nairobi', revenueUSD: 0, bookings: 0 },
+      { name: 'Mombasa', revenueUSD: 0, bookings: 0 },
+      { name: 'Diani', revenueUSD: 0, bookings: 0 },
+      { name: 'Zanzibar', revenueUSD: 0, bookings: 0 },
+      { name: 'Dubai', revenueUSD: 0, bookings: 0 },
+    ];
+  }, [registrations]);
+
+  const statusDistributionData = useMemo(() => {
+    const counts = { Confirmed: 0, Approved: 0, Pending: 0, Completed: 0 };
+    registrations.forEach((r) => {
+      const st = r.status || 'Pending';
+      if (st in counts) {
+        counts[st] += 1;
+      } else {
+        counts.Pending += 1;
+      }
+    });
+    const palette = [
+      { name: 'Confirmed', value: counts.Confirmed, color: '#00a99d' },
+      { name: 'Approved', value: counts.Approved, color: '#0d2240' },
+      { name: 'Pending', value: counts.Pending, color: '#f59e0b' },
+      { name: 'Completed', value: counts.Completed, color: '#008000' },
+    ];
+    return palette.filter((item) => item.value > 0);
+  }, [registrations]);
+
+  const monthlyActivityData = useMemo(() => {
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i -= 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        registrations: 0,
+        inquiries: 0,
+        applications: 0,
+      });
+    }
+    const bucket = Object.fromEntries(months.map((m) => [m.key, m]));
+    const assign = (items, field) => {
+      items.forEach((item) => {
+        const dt = item?.submittedAt ? new Date(item.submittedAt) : null;
+        if (!dt || Number.isNaN(dt.getTime())) return;
+        const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+        if (bucket[k]) bucket[k][field] += 1;
+      });
+    };
+    assign(registrations, 'registrations');
+    assign(inquiries, 'inquiries');
+    assign(applications, 'applications');
+    return months;
+  }, [registrations, inquiries, applications]);
+
+  const initialLoaderOverlay = showInitialLoader ? (
+    <div className="fixed inset-0 z-[99999] bg-white flex items-center justify-center font-['Inter',sans-serif] text-[13px] transition-opacity duration-300">
+      <div className="min-w-[260px] text-[#212529] text-center border border-slate-200 rounded-xl shadow-lg bg-white overflow-hidden">
+        <div className="flex justify-between items-center px-4 py-3 gap-6">
+          <div className="font-['Outfit',sans-serif] text-[24px] font-bold text-[#0d2240] tracking-tight flex items-center">
+            ECAS<span className="text-[#00a99d]">.Msimamizi</span>
+          </div>
+          <svg
+            className="animate-spin w-7 h-7"
+            viewBox="0 0 40 40"
+            aria-hidden="true"
+          >
+            <path
+              fill="#e7e7e7"
+              d="M20.201,5.169c-8.254,0-14.946,6.692-14.946,14.946c0,8.255,6.692,14.946,14.946,14.946s14.946-6.691,14.946-14.946C35.146,11.861,28.455,5.169,20.201,5.169z M20.201,31.749c-6.425,0-11.634-5.208-11.634-11.634c0-6.425,5.209-11.634,11.634-11.634c6.425,0,11.633,5.209,11.633,11.634C31.834,26.541,26.626,31.749,20.201,31.749z"
+            />
+            <path
+              fill="#00a99d"
+              d="M26.013,10.047l1.654-2.866c-2.198-1.272-4.743-2.012-7.466-2.012h0v3.312h0C22.32,8.481,24.301,9.057,26.013,10.047z"
+            />
+          </svg>
+        </div>
+        <div className="px-4 py-2.5 border-t border-slate-200 text-slate-500 text-xs">
+          Please Wait. Loading...
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. LOGIN SCREEN (If not authenticated)
   // ─────────────────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#021f2d] flex items-center justify-center p-4 selection:bg-[#008000] selection:text-white">
+      <div className="min-h-screen bg-[#08172e] flex items-center justify-center p-4 font-['Inter',sans-serif] selection:bg-[#00a99d] selection:text-white">
+        {initialLoaderOverlay}
         <SEO
           title="ECAS Msimamizi Admin Portal"
           description="ECAS Institute administrative portal."
@@ -1451,19 +1574,26 @@ export default function MsimamiziAdmin() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 2. MAIN MSIMAMIZI ADMIN PORTAL INTERFACE
+  // 2. MAIN MSIMAMIZI ADMIN PORTAL INTERFACE (MAKAZIFLOW-INSPIRED LAYOUT)
   // ─────────────────────────────────────────────────────────────────────────────
+  const openVacanciesCount = vacancies.filter((v) => v.status !== 'Closed').length;
+  const attentionTotalCount =
+    (kpis.pendingCount || 0) +
+    (kpis.newInquiriesCount || 0) +
+    (kpis.newApplicationsCount || 0);
+
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans selection:bg-[#008000] selection:text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0d2240] font-['Inter',sans-serif] selection:bg-[#00a99d] selection:text-white flex flex-col md:flex-row">
+      {initialLoaderOverlay}
       <SEO
         title="ECAS Msimamizi Admin Portal"
         description="ECAS Institute administrative portal."
         noIndex
       />
       {/* ─────────────────────────────────────────────────────────────
-          LEFT VERTICAL SIDEBAR (MINIMIZABLE TO HAMBURGER)
+          LEFT VERTICAL SIDEBAR (SLIM DARK NAVY RAIL, MINIMIZABLE TO HAMBURGER)
       ───────────────────────────────────────────────────────────── */}
-      <aside className={`w-full md:w-64 lg:w-72 bg-[#032e42] text-white flex-shrink-0 flex-col justify-between border-r border-[#022433] md:sticky md:top-0 md:h-screen md:overflow-y-auto z-40 shadow-xl transition-all duration-300 ease-in-out ${
+      <aside className={`w-full md:w-56 bg-[#08172e] text-white flex-shrink-0 flex-col justify-between border-r border-white/10 md:sticky md:top-0 md:h-screen md:overflow-y-auto z-40 transition-all duration-300 ease-in-out ${
         isMobileMenuOpen ? 'flex' : 'hidden'
       } ${
         isSidebarCollapsed ? 'md:hidden' : 'md:flex'
@@ -1471,35 +1601,12 @@ export default function MsimamiziAdmin() {
         {/* Top Branding & Navigation */}
         <div className="flex flex-col">
           {/* Header Brand */}
-          <div className="border-b border-white/10 p-5 flex items-center justify-between transition-all">
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                className="w-10 h-10 rounded-xl bg-white p-1.5 shadow flex items-center justify-center shrink-0"
-                title="ECAS Msimamizi"
-              >
-                <img src="/logo.png" alt="ECAS Logo" className="w-full h-full object-contain" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-base tracking-tight text-white truncate">
-                    ECAS Msimamizi
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-[#008000] text-white text-[9px] font-black uppercase tracking-wider">
-                    PRO
-                  </span>
-                </div>
-                <p className="text-[11px] text-emerald-400 font-mono flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
-                  Live Sync Active
-                </p>
-              </div>
-            </div>
-
+          <div className="relative border-b border-white/10 px-4 py-5 flex flex-col items-center text-center">
             {/* Desktop Minimize-to-Hamburger Toggle Button */}
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(true)}
-              className="hidden md:flex p-1.5 rounded-lg text-white/75 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              className="hidden md:flex absolute top-3 right-3 p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer"
               title="Minimize navigation to hamburger"
               aria-label="Minimize navigation to hamburger"
             >
@@ -1510,150 +1617,165 @@ export default function MsimamiziAdmin() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 cursor-pointer"
+              className="md:hidden absolute top-3 right-3 p-1.5 rounded-lg text-white/75 hover:text-white hover:bg-white/10 cursor-pointer"
               aria-label="Close navigation menu"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
+
+            <div className="w-11 h-11 rounded-xl bg-white p-1.5 shadow-sm flex items-center justify-center mb-2">
+              <img src="/logo.png" alt="ECAS Logo" className="w-full h-full object-contain" />
+            </div>
+            <div className="font-['Outfit',sans-serif] font-bold text-base tracking-tight text-white">
+              ECAS<span className="text-[#00a99d]">.Msimamizi</span>
+            </div>
+            <span className="mt-1.5 px-2.5 py-0.5 rounded-full bg-[#00a99d]/15 border border-[#00a99d]/35 text-[#00a99d] text-[9px] font-bold uppercase tracking-widest">
+              Administration
+            </span>
           </div>
 
-          {/* Navigation Items */}
-          <div className="p-4 space-y-6">
-            {/* Main Menu */}
-            <div>
-              <p className="px-3 text-[10px] font-extrabold tracking-wider text-white/40 uppercase mb-2">
-                Management Modules
-              </p>
-              <nav className="space-y-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('dashboard');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'dashboard'
-                      ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Compass className={`w-5 h-5 shrink-0 ${activeTab === 'dashboard' ? 'text-white' : 'text-[#00c853]'}`} />
-                    <span>Overview Dashboard</span>
-                  </div>
-                  {activeTab === 'dashboard' && <ChevronRight className="w-4 h-4 text-white/70" />}
-                </button>
+          {/* Navigation Items (Strictly Navigation, Quick Actions live on Dashboard) */}
+          <div className="px-2.5 py-4 space-y-1">
+            <p className="px-3 text-[10px] font-bold tracking-wider text-white/35 uppercase mb-2">
+              Platform Modules
+            </p>
+            <nav className="space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
+                  activeTab === 'dashboard'
+                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
+                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Compass className={`w-4 h-4 shrink-0 ${activeTab === 'dashboard' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
+                  <span>Overview</span>
+                </span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('registrations');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'registrations'
-                      ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Users className={`w-5 h-5 shrink-0 ${activeTab === 'registrations' ? 'text-white' : 'text-[#00c853]'}`} />
-                    <span>Registrations</span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'registrations' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                    }`}>
-                    {registrations.length}
-                  </span>
-                </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('registrations');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
+                  activeTab === 'registrations'
+                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
+                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Users className={`w-4 h-4 shrink-0 ${activeTab === 'registrations' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
+                  <span>Registrations</span>
+                </span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeTab === 'registrations' ? 'bg-[#00a99d] text-white' : 'bg-white/10 text-white/75'
+                }`}>
+                  {registrations.length}
+                </span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('inquiries');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'inquiries'
-                      ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className={`w-5 h-5 shrink-0 ${activeTab === 'inquiries' ? 'text-white' : 'text-[#00c853]'}`} />
-                    <span>Inquiries &amp; Leads</span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'inquiries' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                    }`}>
-                    {inquiries.length}
-                  </span>
-                </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('inquiries');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
+                  activeTab === 'inquiries'
+                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
+                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <MessageSquare className={`w-4 h-4 shrink-0 ${activeTab === 'inquiries' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
+                  <span>Inquiries &amp; Leads</span>
+                </span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeTab === 'inquiries' ? 'bg-[#00a99d] text-white' : 'bg-white/10 text-white/75'
+                }`}>
+                  {inquiries.length}
+                </span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('courses');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'courses'
-                      ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <GraduationCap className={`w-5 h-5 shrink-0 ${activeTab === 'courses' ? 'text-white' : 'text-[#00c853]'}`} />
-                    <span>Courses &amp; Fees</span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'courses' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                    }`}>
-                    {courses.length}
-                  </span>
-                </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('courses');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
+                  activeTab === 'courses'
+                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
+                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <GraduationCap className={`w-4 h-4 shrink-0 ${activeTab === 'courses' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
+                  <span>Courses &amp; Fees</span>
+                </span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeTab === 'courses' ? 'bg-[#00a99d] text-white' : 'bg-white/10 text-white/75'
+                }`}>
+                  {courses.length}
+                </span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('vacancies');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all cursor-pointer relative group ${activeTab === 'vacancies'
-                      ? 'bg-[#008000] text-white shadow-lg shadow-emerald-950/40'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Briefcase className={`w-5 h-5 shrink-0 ${activeTab === 'vacancies' ? 'text-white' : 'text-[#00c853]'}`} />
-                    <span>Vacancies &amp; CVs</span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'vacancies' ? 'bg-white text-[#008000]' : 'bg-white/10 text-white'
-                    }`}>
-                    {applications.length}
-                  </span>
-                </button>
-              </nav>
-            </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('vacancies');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all cursor-pointer ${
+                  activeTab === 'vacancies'
+                    ? 'bg-white/10 text-white border-l-2 border-[#00a99d] rounded-l-none'
+                    : 'text-slate-300/80 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Briefcase className={`w-4 h-4 shrink-0 ${activeTab === 'vacancies' ? 'text-[#00a99d]' : 'text-slate-400'}`} />
+                  <span>Vacancies &amp; CVs</span>
+                </span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeTab === 'vacancies' ? 'bg-[#00a99d] text-white' : 'bg-white/10 text-white/75'
+                }`}>
+                  {applications.length}
+                </span>
+              </button>
+            </nav>
           </div>
         </div>
 
         {/* Bottom Sidebar Footer */}
-        <div className="border-t border-white/10 bg-[#022433] p-4 space-y-3">
+        <div className="border-t border-white/10 bg-[#061124] px-3 py-3 space-y-2.5">
           <a
             href={publicSiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition cursor-pointer"
+            className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-white/75 hover:text-white transition cursor-pointer"
           >
-            <span className="flex items-center gap-2">
-              <ExternalLink className="w-3.5 h-3.5 text-[#00c853]" />
-              <span>Public Website</span>
+            <span className="flex items-center gap-1.5">
+              <ExternalLink className="w-3 h-3 text-[#00a99d]" />
+              <span>ecasiafrica.org</span>
             </span>
-            <span className="text-[10px] text-white/50 font-mono">ecasiafrica.org</span>
+            <ArrowUpRight className="w-3 h-3 text-white/40" />
           </a>
 
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between gap-2 pt-0.5">
             <div className="flex items-center gap-2 min-w-0" title={`${currentUser?.role || 'Administrator'} (${currentUser?.email || 'admin@ecasiafrica.org'})`}>
-              <div className="w-8 h-8 rounded-full bg-[#008000] flex items-center justify-center text-white font-extrabold text-xs shrink-0 uppercase">
+              <div className="w-7 h-7 rounded-full bg-[#00a99d] flex items-center justify-center text-white font-bold text-[10px] shrink-0 uppercase">
                 {currentUser?.email ? currentUser.email.substring(0, 2) : 'AD'}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-white truncate">{currentUser?.role || 'Administrator'}</p>
-                <p className="text-[10px] text-white/60 truncate font-mono">{currentUser?.email || 'admin@ecasiafrica.org'}</p>
+                <p className="text-[11px] font-semibold text-white truncate">{currentUser?.role || 'Administrator'}</p>
+                <p className="text-[10px] text-white/50 truncate font-mono">{currentUser?.email || 'admin@ecasiafrica.org'}</p>
               </div>
             </div>
 
@@ -1661,9 +1783,9 @@ export default function MsimamiziAdmin() {
               type="button"
               onClick={() => handleLogout(false)}
               title="Logout from Msimamizi"
-              className="p-2 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer"
+              className="p-1.5 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer shrink-0"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -1673,413 +1795,671 @@ export default function MsimamiziAdmin() {
           RIGHT MAIN CONTENT AREA
       ───────────────────────────────────────────────────────────── */}
       <div ref={mainScrollRef} className="flex-1 flex flex-col min-w-0 overflow-y-auto min-h-screen">
-        {/* Top Header Bar on Right Side */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 shadow-xs">
-          <div className="flex items-center gap-3">
+        {/* Top White Utility Bar */}
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 min-w-0">
             {/* Mobile Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[#032e42] hover:bg-slate-100 cursor-pointer"
+              className="md:hidden inline-flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-[#0d2240] hover:bg-slate-50 cursor-pointer"
               aria-label="Toggle navigation menu"
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
 
             {/* Desktop Hamburger Toggle (Minimize / Expand Sidebar) */}
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden md:inline-flex items-center gap-2 px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[#032e42] hover:bg-slate-100 transition cursor-pointer"
+              className="hidden md:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[#0d2240] hover:bg-slate-50 transition cursor-pointer"
               title={isSidebarCollapsed ? "Open navigation menu" : "Minimize navigation to hamburger"}
               aria-label={isSidebarCollapsed ? "Open navigation menu" : "Minimize navigation to hamburger"}
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
               {isSidebarCollapsed && (
-                <span className="text-xs font-bold">Menu</span>
+                <span className="text-[11px] font-semibold">Menu</span>
               )}
             </button>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black text-slate-900 capitalize tracking-tight">
-                  {activeDetailView === 'edit-course' && 'Edit Course & Pricing'}
-                  {activeDetailView === 'new-course' && 'Upload New Course'}
-                  {activeDetailView === 'registration-dossier' && 'Registration Dossier & Voucher'}
-                  {activeDetailView === 'new-registration' && 'New Manual Registration'}
-                  {activeDetailView === 'application-dossier' && 'Candidate Recruitment Dossier'}
-                  {activeDetailView === 'vacancy-form' && (editingVacancy ? 'Edit Job Vacancy' : 'Publish Job Vacancy')}
-                  {!activeDetailView && activeTab === 'dashboard' && 'Executive Overview'}
-                  {!activeDetailView && activeTab === 'registrations' && 'Course Registrations'}
-                  {!activeDetailView && activeTab === 'inquiries' && 'WhatsApp & Email Inquiries'}
-                  {!activeDetailView && activeTab === 'courses' && 'Course Catalog & Pricing Management'}
-                  {!activeDetailView && activeTab === 'vacancies' && 'Vacancies & CV Applications'}
-                </h1>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
-                  Live DB
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 hidden sm:block">
-                msimamizi.ecasiafrica.org • Institute Central Administration
-              </p>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100/90 border border-slate-200/70 text-[#0d2240] text-xs font-semibold truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00a99d] shrink-0" />
+              <span className="truncate">
+                {activeDetailView === 'edit-course' && 'Edit Course & Pricing'}
+                {activeDetailView === 'new-course' && 'Upload New Course'}
+                {activeDetailView === 'registration-dossier' && 'Registration Dossier'}
+                {activeDetailView === 'new-registration' && 'Course Registration Form'}
+                {activeDetailView === 'application-dossier' && 'Candidate Dossier'}
+                {activeDetailView === 'vacancy-form' && (editingVacancy ? 'Edit Job Vacancy' : 'Publish Job Vacancy')}
+                {!activeDetailView && activeTab === 'dashboard' && 'Overview'}
+                {!activeDetailView && activeTab === 'registrations' && 'Registrations'}
+                {!activeDetailView && activeTab === 'inquiries' && 'Inquiries & Leads'}
+                {!activeDetailView && activeTab === 'courses' && 'Courses & Fees'}
+                {!activeDetailView && activeTab === 'vacancies' && 'Vacancies & CVs'}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#00a99d]" />
+              <span>{currentUser?.role || 'Administrator'}</span>
+            </span>
+
             <button
               type="button"
               onClick={() => {
                 loadData();
                 setToastMessage('Data refreshed from live database.');
               }}
-              className="p-2 rounded-xl text-slate-600 hover:text-[#008000] hover:bg-slate-100 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition cursor-pointer"
               title="Sync / Refresh Data"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Refresh</span>
             </button>
 
             <button
               type="button"
-              onClick={openNewRegistrationPage}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              onClick={() => handleLogout(false)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 text-xs font-medium transition cursor-pointer"
+              title="Logout"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">New Registration</span>
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </header>
 
-        {/* Content Body */}
-        <main className="p-4 sm:p-6 lg:p-8 space-y-6 flex-1 max-w-[1600px] w-full mx-auto">
+        {/* Centered SaaS Content Body */}
+        <main className="p-4 sm:p-6 lg:px-8 lg:py-6 space-y-5 flex-1 max-w-[1180px] w-full mx-auto">
           {!activeDetailView && (
             <>
           {/* ════════════════════════════════════════════════════════════
-            TAB 1: OVERVIEW DASHBOARD
+            TAB 1: PLATFORM OVERVIEW DASHBOARD (MAKAZIFLOW LAYOUT)
         ════════════════════════════════════════════════════════════ */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              {/* KPI Cards Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Total Registrations
-                    </p>
-                    <p className="text-2xl sm:text-3xl font-extrabold text-[#032e42] mt-1">
-                      {kpis.totalRegistrations}
-                    </p>
-                    <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 mt-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>Live across all venues</span>
-                    </span>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-[#032e42]/10 text-[#032e42] flex items-center justify-center shrink-0">
-                    <Users className="w-6 h-6" />
-                  </div>
+            <div className="space-y-5">
+              {/* Row 1: Dashboard Heading + Quick Action Strip */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div>
+                  <h1 className="font-['Outfit',sans-serif] text-xl sm:text-2xl font-bold text-[#0d2240] tracking-tight">
+                    Platform Overview Dashboard
+                  </h1>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Real-time visibility across ECAS registrations, catalog programmes, client inquiries, and career vacancies.
+                  </p>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Pending Review
-                    </p>
-                    <p className="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">
-                      {kpis.pendingCount}
-                    </p>
-                    <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
-                      <Clock className="w-3 h-3 text-amber-500" />
-                      <span>Requires proforma invoice</span>
-                    </span>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Confirmed Enrolments
-                    </p>
-                    <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700 mt-1">
-                      {kpis.confirmedCount}
-                    </p>
-                    <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      <span>LPO or payment received</span>
-                    </span>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Total Enrolment Value
-                    </p>
-                    <p className="text-2xl sm:text-3xl font-extrabold text-[#032e42] mt-1">
-                      ${kpis.totalRevenueUSD.toLocaleString()}
-                    </p>
-                    <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 mt-1">
-                      <DollarSign className="w-3 h-3" />
-                      <span>{kpis.totalDelegates} Total delegates booked</span>
-                    </span>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-[#008000]/10 text-[#008000] flex items-center justify-center shrink-0">
-                    <DollarSign className="w-6 h-6" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Actions Panel (Overview Dashboard) */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                  <div>
-                    <h3 className="font-extrabold text-slate-900 text-sm uppercase tracking-wide">
-                      Quick Actions
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Direct shortcuts for delegate enrolments, course publishing, vacancies, and CSV exports.
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Dashboard Quick Actions */}
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={openNewRegistrationPage}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00a99d] hover:bg-[#008e84] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
                   >
-                    <Plus className="w-4 h-4 shrink-0" />
-                    <span>+ New Registration</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>New Registration</span>
                   </button>
-
                   <button
                     type="button"
                     onClick={openNewCoursePage}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#032e42] hover:bg-[#05435e] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d2240] hover:bg-[#163460] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
                   >
-                    <Plus className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>+ Upload New Course</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Upload Course</span>
                   </button>
-
                   <button
                     type="button"
                     onClick={openCreateVacancy}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#032e42] text-xs font-bold border border-emerald-200 transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[#0d2240] text-xs font-semibold transition cursor-pointer"
                   >
-                    <Briefcase className="w-4 h-4 text-[#008000] shrink-0" />
-                    <span>+ Post Job Vacancy</span>
+                    <Briefcase className="w-3.5 h-3.5 text-[#00a99d]" />
+                    <span>Post Vacancy</span>
                   </button>
-
                   <button
                     type="button"
                     onClick={() => adminRegistrationService.downloadCSV()}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
                   >
-                    <Download className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span>Export Registrations (CSV)</span>
+                    <Download className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Export CSV</span>
                   </button>
                 </div>
               </div>
 
-              {/* WhatsApp & Email Inquiries Live Summary Banner */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#008000] flex items-center justify-center shrink-0 border border-emerald-200">
-                    <MessageSquare className="w-6 h-6" />
+              {/* Row 2: Attention Needed Alert Box */}
+              <div className="bg-amber-50/75 border border-amber-200/90 rounded-xl p-4">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#0d2240]">
+                    <Bell className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Attention Needed ({attentionTotalCount})</span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-extrabold text-slate-900 text-sm">
-                        WhatsApp &amp; Email Course Inquiries
-                      </h3>
-                      {(kpis.newInquiriesCount || 0) > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase">
-                          {kpis.newInquiriesCount} New Unread
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Every course inquiry, in-house request, or brochure/calendar request sent via WhatsApp or Email is logged here automatically.
-                    </p>
-                  </div>
+                  <span className="text-[11px] font-medium text-amber-800/80">
+                    Quick operational alerts
+                  </span>
                 </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">
-                    WhatsApp: {kpis.whatsappInquiriesCount || 0}
-                  </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-800">
-                    Email: {kpis.emailInquiriesCount || 0}
-                  </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterStatus('Pending');
+                      setActiveTab('registrations');
+                    }}
+                    className="text-left bg-white hover:bg-amber-50/40 border border-amber-200/80 rounded-lg px-3.5 py-2.5 transition cursor-pointer flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-[#0d2240] truncate">
+                        {kpis.pendingCount} Pending Registration{kpis.pendingCount === 1 ? '' : 's'}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        Require proforma invoice dispatch or admission confirmation
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setActiveTab('inquiries')}
-                    className="px-4 py-2 rounded-xl bg-[#032e42] hover:bg-[#05435e] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                    className="text-left bg-white hover:bg-amber-50/40 border border-amber-200/80 rounded-lg px-3.5 py-2.5 transition cursor-pointer flex items-center justify-between gap-3"
                   >
-                    <MessageSquare className="w-3.5 h-3.5 text-[#00c853]" />
-                    <span>Open Inquiries Log ({inquiries.length})</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Vacancies & Submitted CVs Live Summary Banner */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#032e42]/10 text-[#032e42] flex items-center justify-center shrink-0 border border-slate-200">
-                    <Briefcase className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-extrabold text-slate-900 text-sm">
-                        Career Vacancies &amp; Candidate CV Submissions
-                      </h3>
-                      {(kpis.newApplicationsCount || 0) > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase">
-                          {kpis.newApplicationsCount} New CV{(kpis.newApplicationsCount || 0) > 1 ? 's' : ''}
-                        </span>
-                      )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-[#0d2240] truncate">
+                        {kpis.newInquiriesCount || 0} Unread Course Inquir{(kpis.newInquiriesCount || 0) === 1 ? 'y' : 'ies'}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        WhatsApp &amp; Email follow-ups logged from website forms
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Post job openings synced live to ecasiafrica.org/vacancies and review or download candidate CVs submitted online.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">
-                    Open Roles: {vacancies.filter((v) => v.status !== 'Closed').length}
-                  </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
-                    CVs Received: {applications.length}
-                  </div>
+                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setActiveTab('vacancies')}
-                    className="px-4 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                    className="text-left bg-white hover:bg-amber-50/40 border border-amber-200/80 rounded-lg px-3.5 py-2.5 transition cursor-pointer flex items-center justify-between gap-3"
                   >
-                    <Briefcase className="w-3.5 h-3.5" />
-                    <span>Manage Vacancies &amp; CVs</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-[#0d2240] truncate">
+                        {kpis.newApplicationsCount || 0} New Candidate CV{(kpis.newApplicationsCount || 0) === 1 ? '' : 's'} Received
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        {openVacanciesCount} active job openings synced live to website
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('courses')}
+                    className="text-left bg-white hover:bg-amber-50/40 border border-amber-200/80 rounded-lg px-3.5 py-2.5 transition cursor-pointer flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-[#0d2240] truncate">
+                        {courses.length} Accredited Courses Synchronized
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        Manage 2026 cohort dates, fees, and course cover imagery
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
                   </button>
                 </div>
               </div>
 
-              {/* Destination Breakdown & Quick Summary */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Venue Distribution */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-[#008000]" />
-                      <span>Enrolments by Venue</span>
-                    </h3>
-                    <span className="text-xs font-bold text-slate-400">2026 Cohorts</span>
+              {/* Row 3: 8 Crisp KPI Metric Cards (2 Rows × 4 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Total Registrations
+                    </span>
+                    <span className="w-7 h-7 rounded-lg bg-[#0d2240]/5 text-[#0d2240] flex items-center justify-center shrink-0">
+                      <Users className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
+                    {kpis.totalRegistrations}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {kpis.totalDelegates} total delegates booked
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Confirmed Enrolments
+                    </span>
+                    <span className="w-7 h-7 rounded-lg bg-[#00a99d]/10 text-[#00a99d] flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
+                    {kpis.confirmedCount}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {kpis.approvedCount} approved / invoiced
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Pending Review
+                    </span>
+                    <span className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                      <Clock className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
+                    {kpis.pendingCount}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Awaiting LPO or confirmation
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Enrolment Value (USD)
+                    </span>
+                    <span className="w-7 h-7 rounded-lg bg-emerald-50 text-[#008000] flex items-center justify-center shrink-0">
+                      <DollarSign className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
+                    ${kpis.totalRevenueUSD.toLocaleString()}
+                  </p>
+                  <p className="text-[11px] text-[#00a99d] font-medium mt-1">
+                    Paid: ${(kpis.paidRevenueUSD || 0).toLocaleString()} USD
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Catalog Courses
+                    </span>
+                    <span className="w-7 h-7 rounded-lg bg-[#0d2240]/5 text-[#0d2240] flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
+                    {courses.length}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Active training programmes
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Inquiries &amp; Leads
+                    </span>
+                    <span className="w-7 h-7 rounded-lg bg-[#00a99d]/10 text-[#00a99d] flex items-center justify-center shrink-0">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
+                    {kpis.totalInquiries || 0}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    WA: {kpis.whatsappInquiriesCount || 0} • Email: {kpis.emailInquiriesCount || 0}
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Active Vacancies
+                    </span>
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 text-[#0d2240] flex items-center justify-center shrink-0">
+                      <Briefcase className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
+                    {openVacanciesCount}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {vacancies.length} total posted positions
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Candidate CVs
+                    </span>
+                    <span className="w-7 h-7 rounded-lg bg-emerald-50 text-[#008000] flex items-center justify-center shrink-0">
+                      <FileText className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
+                    {applications.length}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {kpis.shortlistedApplicationsCount || 0} shortlisted for interview
+                  </p>
+                </div>
+              </div>
+
+              {/* Row 4: 2-Column Analytics Charts (Venue Bar Chart + Status Donut Chart) */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Bar Chart */}
+                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 p-5 shadow-[0_1px_2px_rgba(13,34,64,0.03)]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <div>
+                      <h3 className="font-['Outfit',sans-serif] text-sm font-bold text-[#0d2240]">
+                        Enrolment Value Analytics (By Venue)
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Total registration value across training destinations (USD)
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00a99d]">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-[#00a99d]" />
+                      <span>Fee Value (USD)</span>
+                    </span>
                   </div>
 
-                  <div className="space-y-3">
-                    {Object.entries(kpis.venueBreakdown).length === 0 ? (
-                      <div className="py-8 text-center text-slate-400">
-                        <MapPin className="w-6 h-6 mx-auto mb-1.5 opacity-40 text-slate-400" />
-                        <p className="text-xs font-semibold text-slate-600">No venue registrations yet.</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Enrolments will populate breakdown by destination automatically.</p>
+                  <div className="h-[220px] w-full">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                      <BarChart data={venueAnalyticsData} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: '10px',
+                            border: '1px solid #e2e8f0',
+                            fontSize: '12px',
+                            boxShadow: '0 4px 12px rgba(13,34,64,0.08)',
+                          }}
+                          formatter={(val) => [`$${Number(val).toLocaleString()} USD`, 'Total Value']}
+                        />
+                        <Bar dataKey="revenueUSD" fill="#00a99d" radius={[6, 6, 0, 0]} maxBarSize={44} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Donut Chart */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-[0_1px_2px_rgba(13,34,64,0.03)] flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-['Outfit',sans-serif] text-sm font-bold text-[#0d2240]">
+                      Admission Status Mix
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Current distribution across all bookings
+                    </p>
+                  </div>
+
+                  {statusDistributionData.length === 0 ? (
+                    <div className="h-[200px] flex flex-col items-center justify-center text-slate-400">
+                      <div className="w-24 h-24 rounded-full border-[12px] border-slate-100 mb-2" />
+                      <p className="text-xs font-medium text-slate-500">No registration statuses yet</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="h-[180px] w-full">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                          <PieChart>
+                            <Pie
+                              data={statusDistributionData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={48}
+                              outerRadius={72}
+                              paddingAngle={3}
+                              dataKey="value"
+                            >
+                              {statusDistributionData.map((entry) => (
+                                <Cell key={entry.name} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                borderRadius: '10px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '12px',
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                        {statusDistributionData.map((entry) => (
+                          <span key={entry.name} className="inline-flex items-center gap-1.5 text-[11px] text-slate-600 font-medium">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                            <span>{entry.name} ({entry.value})</span>
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Row 5: Full-Width Platform Activity Trend Chart */}
+              <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-[0_1px_2px_rgba(13,34,64,0.03)]">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                  <div>
+                    <h3 className="font-['Outfit',sans-serif] text-sm font-bold text-[#0d2240] flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-[#00a99d]" />
+                      <span>Enrolment &amp; Inquiry Growth (Last 6 Months)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Monthly intake volume across registrations, website inquiries, and job applications
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 text-[11px] font-medium text-slate-500">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#00a99d]" />
+                      <span>Registrations</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#0d2240]" />
+                      <span>Inquiries</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <AreaChart data={monthlyActivityData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="ecasiTealFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#00a99d" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#00a99d" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '10px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '12px',
+                          boxShadow: '0 4px 12px rgba(13,34,64,0.08)',
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="registrations"
+                        name="Registrations"
+                        stroke="#00a99d"
+                        strokeWidth={2}
+                        fill="url(#ecasiTealFill)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="inquiries"
+                        name="Inquiries"
+                        stroke="#0d2240"
+                        strokeWidth={2}
+                        fill="none"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Row 6: 3-Column Bottom Feeds (Inquiries | Registrations | Candidate CVs) */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Feed 1: Recent Inquiries */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] flex flex-col">
+                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                    <h3 className="font-['Outfit',sans-serif] text-xs font-bold uppercase tracking-wider text-[#0d2240] flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-[#00a99d]" />
+                      <span>Recent Inquiries</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('inquiries')}
+                      className="text-[11px] font-semibold text-[#00a99d] hover:underline cursor-pointer"
+                    >
+                      View All
+                    </button>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 mt-1">
+                    {inquiries.length === 0 ? (
+                      <div className="py-8 text-center text-slate-400 text-xs">
+                        No WhatsApp or Email inquiries yet.
                       </div>
                     ) : (
-                      Object.entries(kpis.venueBreakdown).map(([venueName, count]) => {
-                        const percentage = Math.round((count / (kpis.totalRegistrations || 1)) * 100);
-                        return (
-                          <div key={venueName} className="space-y-1">
-                            <div className="flex items-center justify-between text-xs font-semibold">
-                              <span className="text-slate-700">{venueName}</span>
-                              <span className="text-slate-900 font-bold">{count} ({percentage}%)</span>
-                            </div>
-                            <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-[#008000] transition-all duration-500"
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
+                      inquiries.slice(0, 6).map((inq) => (
+                        <div
+                          key={inq.id}
+                          onClick={() => setActiveTab('inquiries')}
+                          className="py-2.5 flex items-start justify-between gap-2 hover:bg-slate-50 px-1.5 rounded-lg transition cursor-pointer"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#0d2240] truncate">
+                              {inq.fullName || inq.senderName || 'Prospective Delegate'}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate">
+                              {inq.courseTitle || inq.inquiryType}
+                            </p>
                           </div>
-                        );
-                      })
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                            inq.channel === 'WhatsApp'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}>
+                            {inq.channel || 'Inquiry'}
+                          </span>
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
 
-                {/* Recent Enrolment Feed */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-[#032e42]" />
-                        <span>Recent Registrations Stream</span>
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('registrations')}
-                        className="text-xs font-bold text-[#008000] hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>View All</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="divide-y divide-slate-100">
-                      {registrations.length === 0 ? (
-                        <div className="py-8 text-center text-slate-400">
-                          <Users className="w-6 h-6 mx-auto mb-1.5 opacity-40 text-slate-400" />
-                          <p className="text-xs font-semibold text-slate-600">No client registrations received yet.</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">Submissions from ecasiafrica.org/register stream directly here.</p>
-                        </div>
-                      ) : (
-                        registrations.slice(0, 4).map((reg) => (
-                          <div
-                            key={reg.id}
-                            onClick={() => openRegistrationDossierPage(reg)}
-                            className="py-3 flex items-center justify-between gap-3 hover:bg-slate-50 px-2 rounded-lg transition cursor-pointer"
-                          >
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-sm text-slate-800 truncate">
-                                  {reg.title} {reg.firstName} {reg.lastName}
-                                </span>
-                                <span className="text-xs text-slate-500 font-medium truncate hidden sm:inline">
-                                  • {reg.organisation}
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-500 truncate mt-0.5">
-                                {reg.eventTitle}
-                              </p>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <span
-                                className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${reg.status === 'Confirmed'
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : reg.status === 'Approved'
-                                      ? 'bg-blue-100 text-blue-800'
-                                      : 'bg-amber-100 text-amber-800'
-                                  }`}
-                              >
-                                {reg.status}
-                              </span>
-                              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                                {reg.venue.split(',')[0]}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>Showing top recent submissions</span>
+                {/* Feed 2: Recent Registrations */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] flex flex-col">
+                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                    <h3 className="font-['Outfit',sans-serif] text-xs font-bold uppercase tracking-wider text-[#0d2240] flex items-center gap-1.5">
+                      <DollarSign className="w-3.5 h-3.5 text-[#00a99d]" />
+                      <span>Recent Registrations</span>
+                    </h3>
                     <button
                       type="button"
-                      onClick={openNewRegistrationPage}
-                      className="font-bold text-[#032e42] hover:text-[#008000] inline-flex items-center gap-1 cursor-pointer"
+                      onClick={() => setActiveTab('registrations')}
+                      className="text-[11px] font-semibold text-[#00a99d] hover:underline cursor-pointer"
                     >
-                      <span>+ Add Manual Entry</span>
+                      View All
                     </button>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 mt-1">
+                    {registrations.length === 0 ? (
+                      <div className="py-8 text-center text-slate-400 text-xs">
+                        No course registrations received yet.
+                      </div>
+                    ) : (
+                      registrations.slice(0, 6).map((reg) => (
+                        <div
+                          key={reg.id}
+                          onClick={() => openRegistrationDossierPage(reg)}
+                          className="py-2.5 flex items-start justify-between gap-2 hover:bg-slate-50 px-1.5 rounded-lg transition cursor-pointer"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#0d2240] truncate">
+                              {reg.title} {reg.firstName} {reg.lastName}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate">
+                              {reg.eventTitle}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-[11px] font-bold text-[#0d2240]">
+                              ${(reg.totalFee || 0).toLocaleString()}
+                            </p>
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                              reg.status === 'Confirmed'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : reg.status === 'Approved'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {reg.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Feed 3: New Candidate CVs */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] flex flex-col">
+                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                    <h3 className="font-['Outfit',sans-serif] text-xs font-bold uppercase tracking-wider text-[#0d2240] flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-[#00a99d]" />
+                      <span>Career Submissions</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('vacancies')}
+                      className="text-[11px] font-semibold text-[#00a99d] hover:underline cursor-pointer"
+                    >
+                      View All
+                    </button>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 mt-1">
+                    {applications.length === 0 ? (
+                      <div className="py-8 text-center text-slate-400 text-xs">
+                        No candidate CVs submitted yet.
+                      </div>
+                    ) : (
+                      applications.slice(0, 6).map((app) => (
+                        <div
+                          key={app.id}
+                          onClick={() => openApplicationDossierPage(app)}
+                          className="py-2.5 flex items-start justify-between gap-2 hover:bg-slate-50 px-1.5 rounded-lg transition cursor-pointer"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#0d2240] truncate">
+                              {app.fullName || 'Candidate'}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate">
+                              {app.jobTitle || 'Role Application'}
+                            </p>
+                          </div>
+                          <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[#0d2240] text-[10px] font-semibold shrink-0">
+                            {app.status || 'New'}
+                          </span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -4824,7 +5204,7 @@ export default function MsimamiziAdmin() {
         </main>
 
         {/* Transparent Portal Footer: ECAS Copyright & Transparent Tagline */}
-        <footer className="mt-auto bg-transparent border-t border-slate-200/50 px-4 sm:px-6 lg:px-8 py-5 max-w-[1600px] w-full mx-auto">
+        <footer className="mt-auto bg-transparent border-t border-slate-200/60 px-4 sm:px-6 lg:px-8 py-4 max-w-[1180px] w-full mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left bg-transparent">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 bg-transparent">
               <img
