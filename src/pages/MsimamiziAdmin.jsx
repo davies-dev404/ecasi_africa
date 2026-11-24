@@ -253,8 +253,13 @@ export default function MsimamiziAdmin() {
     deadline: '',
     description: '',
     requirements: '',
+    posterDataUrl: '',
+    posterFileName: '',
+    posterFileType: '',
     status: 'Open',
   });
+  const [isPosterDragging, setIsPosterDragging] = useState(false);
+  const [posterPreviewModal, setPosterPreviewModal] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
   // World-Class Filtering & View State for Courses Catalog (Cached in localStorage & sessionStorage)
@@ -1071,6 +1076,7 @@ export default function MsimamiziAdmin() {
 
   const resetVacancyForm = () => {
     setEditingVacancy(null);
+    setIsPosterDragging(false);
     setVacancyForm({
       title: '',
       department: 'Research & Executive Training',
@@ -1079,6 +1085,9 @@ export default function MsimamiziAdmin() {
       deadline: '',
       description: '',
       requirements: '',
+      posterDataUrl: '',
+      posterFileName: '',
+      posterFileType: '',
       status: 'Open',
     });
   };
@@ -1093,6 +1102,7 @@ export default function MsimamiziAdmin() {
   const openEditVacancy = (vac) => {
     closeDetailViews();
     setEditingVacancy(vac);
+    setIsPosterDragging(false);
     setVacancyForm({
       title: vac.title || '',
       department: vac.department || 'Research & Executive Training',
@@ -1101,10 +1111,103 @@ export default function MsimamiziAdmin() {
       deadline: vac.deadline || '',
       description: vac.description || '',
       requirements: vac.requirements || '',
+      posterDataUrl: vac.posterDataUrl || '',
+      posterFileName: vac.posterFileName || '',
+      posterFileType: vac.posterFileType || '',
       status: vac.status === 'Closed' ? 'Closed' : 'Open',
     });
     setIsVacancyFormOpen(true);
     scrollMainTop();
+  };
+
+  const handleVacancyPosterUpload = (file) => {
+    if (!file) return;
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    if (!isImage && !isPdf) {
+      alert('Please attach a valid job poster image (JPG, PNG, WEBP) or PDF document.');
+      return;
+    }
+
+    if (isPdf) {
+      if (file.size > 3 * 1024 * 1024) {
+        alert('PDF job poster must be 3 MB or smaller so it syncs smoothly to the website.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setVacancyForm((prev) => ({
+          ...prev,
+          posterDataUrl: ev.target.result,
+          posterFileName: file.name,
+          posterFileType: 'application/pdf',
+        }));
+        showToast(`Job poster PDF "${file.name}" attached! Click Publish to sync live.`);
+      };
+      reader.onerror = () => alert('Could not read the selected PDF file.');
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    if (file.size > 12 * 1024 * 1024) {
+      alert('Image file is too large. Please select an image under 12 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const originalDataUrl = ev.target.result;
+      const img = new window.Image();
+      img.onload = () => {
+        const maxW = 1600;
+        const maxH = 2200;
+        let width = img.width;
+        let height = img.height;
+
+        // Keep original crisp file if already compact & within bounds
+        if (file.size <= 450 * 1024 && width <= maxW && height <= maxH) {
+          setVacancyForm((prev) => ({
+            ...prev,
+            posterDataUrl: originalDataUrl,
+            posterFileName: file.name,
+            posterFileType: file.type || 'image/jpeg',
+          }));
+          showToast(`Job poster "${file.name}" attached! You can skip typing text if you prefer.`);
+          return;
+        }
+
+        if (width > maxW || height > maxH) {
+          const ratio = Math.min(maxW / width, maxH / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let compressed = canvas.toDataURL('image/jpeg', 0.86);
+        if (compressed.length > 1200000) {
+          compressed = canvas.toDataURL('image/jpeg', 0.76);
+        }
+
+        setVacancyForm((prev) => ({
+          ...prev,
+          posterDataUrl: compressed,
+          posterFileName: file.name,
+          posterFileType: 'image/jpeg',
+        }));
+        showToast(`Job poster "${file.name}" attached and optimized for web! Click Publish to sync live.`);
+      };
+      img.onerror = () => alert('Could not read the selected image file.');
+      img.src = originalDataUrl;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveVacancy = (e) => {
@@ -3696,35 +3799,72 @@ export default function MsimamiziAdmin() {
                         (a) => a.jobId === vac.id || a.jobTitle === vac.title
                       ).length;
                       const isOpen = vac.status !== 'Closed';
+                      const hasPoster = Boolean(vac.posterDataUrl);
+                      const isPosterPdf = hasPoster && (vac.posterFileType === 'application/pdf' || vac.posterDataUrl.startsWith('data:application/pdf'));
                       return (
                         <div key={vac.id} className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50/60">
-                          <div className="space-y-1.5 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                  isOpen
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                    : 'bg-slate-200 text-slate-700'
-                                }`}
+                          <div className="flex items-start gap-4 flex-1 min-w-0">
+                            {hasPoster && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPosterPreviewModal({
+                                    title: vac.title,
+                                    dataUrl: vac.posterDataUrl,
+                                    fileName: vac.posterFileName || `${vac.title}_Poster`,
+                                    isPdf: isPosterPdf,
+                                  })
+                                }
+                                title="Click to preview attached job poster"
+                                className="w-16 h-20 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden shrink-0 flex flex-col items-center justify-center hover:border-[#008000] hover:shadow-sm transition cursor-pointer group relative"
                               >
-                                {isOpen ? 'Open on Website' : 'Closed'}
-                              </span>
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                                <Building2 className="w-3 h-3" /> {vac.department || 'General'}
-                              </span>
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#032e42] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                {applicantCount} CV{applicantCount === 1 ? '' : 's'}
-                              </span>
-                            </div>
-                            <h4 className="text-sm font-extrabold text-[#032e42]">{vac.title}</h4>
-                            <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 font-medium">
-                              <span className="flex items-center gap-1"><Briefcase className="w-3.5 h-3.5" /> {vac.type || 'Full-time'}</span>
-                              <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {vac.location || 'Nairobi, Kenya'}</span>
-                              <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Deadline: {vac.deadline || 'Open Until Filled'}</span>
-                            </div>
-                            {vac.description && (
-                              <p className="text-xs text-slate-600 line-clamp-2 max-w-3xl">{vac.description}</p>
+                                {isPosterPdf ? (
+                                  <div className="flex flex-col items-center justify-center p-1.5 text-center">
+                                    <FileText className="w-6 h-6 text-red-600 mb-1" />
+                                    <span className="text-[9px] font-black uppercase text-slate-600">PDF</span>
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={vac.posterDataUrl}
+                                    alt={`${vac.title} poster`}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                  />
+                                )}
+                              </button>
                             )}
+                            <div className="space-y-1.5 flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                    isOpen
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                      : 'bg-slate-200 text-slate-700'
+                                  }`}
+                                >
+                                  {isOpen ? 'Open on Website' : 'Closed'}
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                                  <Building2 className="w-3 h-3" /> {vac.department || 'General'}
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#032e42] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                  {applicantCount} CV{applicantCount === 1 ? '' : 's'}
+                                </span>
+                                {hasPoster && (
+                                  <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                    <Paperclip className="w-3 h-3" /> {isPosterPdf ? 'PDF Poster Attached' : 'Job Poster Attached'}
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="text-sm font-extrabold text-[#032e42]">{vac.title}</h4>
+                              <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 font-medium">
+                                <span className="flex items-center gap-1"><Briefcase className="w-3.5 h-3.5" /> {vac.type || 'Full-time'}</span>
+                                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {vac.location || 'Nairobi, Kenya'}</span>
+                                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Deadline: {vac.deadline || 'Open Until Filled'}</span>
+                              </div>
+                              {vac.description && (
+                                <p className="text-xs text-slate-600 line-clamp-2 max-w-3xl">{vac.description}</p>
+                              )}
+                            </div>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -4056,24 +4196,184 @@ export default function MsimamiziAdmin() {
                     </div>
                   </div>
 
+                  {/* Job Poster / Advert Attachment (Optional — use instead of typing words) */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                          <ImageIcon className="w-4 h-4 text-[#008000]" />
+                          <span>Attach Job Poster / Advert</span>
+                          <span className="ml-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                            Optional — Skip typing text below
+                          </span>
+                        </label>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Already have a designed vacancy poster or PDF job advert? Upload it here (JPG, PNG, WEBP, or PDF) and leave the text boxes below blank if you prefer.
+                        </p>
+                      </div>
+                      {vacancyForm.posterDataUrl && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setVacancyForm({
+                              ...vacancyForm,
+                              posterDataUrl: '',
+                              posterFileName: '',
+                              posterFileType: '',
+                            })
+                          }
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[11px] font-bold transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove Poster
+                        </button>
+                      )}
+                    </div>
+
+                    {!vacancyForm.posterDataUrl ? (
+                      <label
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsPosterDragging(true);
+                        }}
+                        onDragLeave={() => setIsPosterDragging(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsPosterDragging(false);
+                          const dropped = e.dataTransfer?.files?.[0];
+                          if (dropped) handleVacancyPosterUpload(dropped);
+                        }}
+                        className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-7 text-center transition cursor-pointer ${
+                          isPosterDragging
+                            ? 'border-[#008000] bg-emerald-50/70'
+                            : 'border-slate-300 bg-white hover:border-[#008000] hover:bg-emerald-50/30'
+                        }`}
+                      >
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,application/pdf"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleVacancyPosterUpload(f);
+                            e.target.value = '';
+                          }}
+                          className="hidden"
+                        />
+                        <div className="w-11 h-11 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-[#008000]">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-[#032e42]">
+                            Click to upload job poster or drag &amp; drop here
+                          </p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Supports PNG, JPG, WEBP images or PDF posters (up to 3 MB for PDF)
+                          </p>
+                        </div>
+                      </label>
+                    ) : (
+                      <div className="bg-white rounded-xl border border-emerald-200 p-3.5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        {vacancyForm.posterFileType === 'application/pdf' ||
+                        vacancyForm.posterDataUrl.startsWith('data:application/pdf') ? (
+                          <div className="w-20 h-24 rounded-xl bg-red-50 border border-red-200 flex flex-col items-center justify-center shrink-0 text-red-600">
+                            <FileText className="w-8 h-8 mb-1" />
+                            <span className="text-[10px] font-black uppercase">PDF Poster</span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPosterPreviewModal({
+                                title: vacancyForm.title || 'Job Poster Preview',
+                                dataUrl: vacancyForm.posterDataUrl,
+                                fileName: vacancyForm.posterFileName || 'job-poster.jpg',
+                                isPdf: false,
+                              })
+                            }
+                            className="w-24 h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 hover:border-[#008000] transition cursor-pointer group relative"
+                            title="Click to inspect full poster"
+                          >
+                            <img
+                              src={vacancyForm.posterDataUrl}
+                              alt="Attached Job Poster Preview"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          </button>
+                        )}
+
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <div>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                              <CheckCircle2 className="w-3 h-3" /> Poster Ready to Publish
+                            </span>
+                            <p className="text-xs font-bold text-[#032e42] truncate mt-1">
+                              {vacancyForm.posterFileName || 'Attached Job Poster'}
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              Visitors will see this poster directly on the Careers &amp; Vacancies page.
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPosterPreviewModal({
+                                  title: vacancyForm.title || 'Job Poster Preview',
+                                  dataUrl: vacancyForm.posterDataUrl,
+                                  fileName: vacancyForm.posterFileName || 'job-poster',
+                                  isPdf:
+                                    vacancyForm.posterFileType === 'application/pdf' ||
+                                    vacancyForm.posterDataUrl.startsWith('data:application/pdf'),
+                                })
+                              }
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#054461] text-white text-[11px] font-bold transition cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> View Full Poster
+                            </button>
+
+                            <label className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition cursor-pointer">
+                              <Upload className="w-3.5 h-3.5" /> Replace File
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp,application/pdf"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) handleVacancyPosterUpload(f);
+                                  e.target.value = '';
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Role Summary &amp; Responsibilities</label>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Role Summary &amp; Responsibilities{' '}
+                        <span className="font-normal text-slate-400">(Optional if poster attached)</span>
+                      </label>
                       <textarea
                         rows={5}
                         value={vacancyForm.description}
                         onChange={(e) => setVacancyForm({ ...vacancyForm, description: e.target.value })}
-                        placeholder="Describe the core mandate, key deliverables, and impact of this position..."
+                        placeholder="Describe the core mandate, key deliverables, and impact of this position — or leave blank if covered in the job poster above..."
                         className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Qualifications &amp; Requirements</label>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Qualifications &amp; Requirements{' '}
+                        <span className="font-normal text-slate-400">(Optional if poster attached)</span>
+                      </label>
                       <textarea
                         rows={5}
                         value={vacancyForm.requirements}
                         onChange={(e) => setVacancyForm({ ...vacancyForm, requirements: e.target.value })}
-                        placeholder="List academic background, years of experience, and technical competencies..."
+                        placeholder="List academic background, years of experience, and technical competencies — or leave blank if covered in the job poster above..."
                         className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
                       />
                     </div>
@@ -5271,6 +5571,63 @@ export default function MsimamiziAdmin() {
           </div>
         </footer>
       </div>
+
+      {/* ════════════════════════════════════════════════════════════
+          JOB POSTER FULL-SIZE PREVIEW MODAL
+      ════════════════════════════════════════════════════════════ */}
+      {posterPreviewModal && (
+        <div
+          onClick={() => setPosterPreviewModal(null)}
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200"
+          >
+            <div className="bg-[#032e42] text-white px-5 py-3.5 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">
+                  Vacancy Job Poster Preview
+                </p>
+                <h4 className="text-sm font-bold truncate">{posterPreviewModal.title}</h4>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={posterPreviewModal.dataUrl}
+                  download={posterPreviewModal.fileName || 'vacancy-poster'}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPosterPreviewModal(null)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                  aria-label="Close poster preview"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-slate-100 p-4 flex items-center justify-center">
+              {posterPreviewModal.isPdf ? (
+                <iframe
+                  src={posterPreviewModal.dataUrl}
+                  title={posterPreviewModal.title}
+                  className="w-full h-[72vh] rounded-xl border border-slate-200 bg-white"
+                />
+              ) : (
+                <img
+                  src={posterPreviewModal.dataUrl}
+                  alt={posterPreviewModal.title}
+                  className="max-w-full max-h-[75vh] w-auto h-auto rounded-xl shadow-md object-contain bg-white"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ════════════════════════════════════════════════════════════
           FLOATING TOAST NOTIFICATION

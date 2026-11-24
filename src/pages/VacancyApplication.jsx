@@ -25,6 +25,8 @@ import {
   Clock,
   Building2,
   X,
+  Eye,
+  Download,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { dataService } from '@/lib/dataService';
@@ -141,6 +143,7 @@ const VacancyApplication = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedRecord, setSubmittedRecord] = useState(null);
   const [backupMailto, setBackupMailto] = useState('');
+  const [showPosterModal, setShowPosterModal] = useState(false);
 
   useEffect(() => {
     dataService.refreshPublicData();
@@ -416,6 +419,24 @@ const VacancyApplication = () => {
                   <span className="flex items-center gap-1 font-medium"><Briefcase className="w-3.5 h-3.5 text-[#008000]" /> {activeVacancyDetails.type || 'Full-time'}</span>
                   <span className="flex items-center gap-1 font-medium"><MapPin className="w-3.5 h-3.5 text-[#008000]" /> {activeVacancyDetails.location || 'Nairobi, Kenya'}</span>
                   <span className="flex items-center gap-1 font-medium"><Clock className="w-3.5 h-3.5 text-[#008000]" /> Deadline: {activeVacancyDetails.deadline || 'Open Until Filled'}</span>
+                </div>
+              )}
+              {activeVacancyDetails?.posterDataUrl && (
+                <div className="pt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPosterModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#054461] text-white text-xs font-bold transition cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> View Official Job Poster
+                  </button>
+                  <a
+                    href={activeVacancyDetails.posterDataUrl}
+                    download={activeVacancyDetails.posterFileName || `${selectedJob || 'vacancy'}_poster`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download Poster
+                  </a>
                 </div>
               )}
             </div>
@@ -1230,6 +1251,61 @@ const VacancyApplication = () => {
           </div>
         </div>
       </main>
+
+      {showPosterModal && activeVacancyDetails?.posterDataUrl && (
+        <div
+          onClick={() => setShowPosterModal(false)}
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200"
+          >
+            <div className="bg-[#032e42] text-white px-5 py-3.5 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">
+                  Official ECAS Vacancy Poster
+                </p>
+                <h4 className="text-sm font-bold truncate">{activeVacancyDetails.title || selectedJob}</h4>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={activeVacancyDetails.posterDataUrl}
+                  download={activeVacancyDetails.posterFileName || 'vacancy-poster'}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition"
+                >
+                  <Download className="h-3.5 w-3.5" /> Download
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowPosterModal(false)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                  aria-label="Close poster preview"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-slate-100 p-4 flex items-center justify-center">
+              {activeVacancyDetails.posterFileType === 'application/pdf' ||
+              activeVacancyDetails.posterDataUrl.startsWith('data:application/pdf') ? (
+                <iframe
+                  src={activeVacancyDetails.posterDataUrl}
+                  title={activeVacancyDetails.title || 'Vacancy Poster'}
+                  className="w-full h-[75vh] rounded-xl border border-slate-200 bg-white"
+                />
+              ) : (
+                <img
+                  src={activeVacancyDetails.posterDataUrl}
+                  alt={activeVacancyDetails.title || 'Vacancy Poster'}
+                  className="max-w-full max-h-[78vh] w-auto h-auto rounded-xl shadow-md object-contain bg-white"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

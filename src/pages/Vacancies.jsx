@@ -13,6 +13,10 @@ import {
   FileText,
   UploadCloud,
   Building2,
+  Download,
+  Eye,
+  X,
+  ZoomIn,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
 
@@ -41,6 +45,16 @@ const Vacancies = () => {
   }, []);
 
   const [vacancies, setVacancies] = useState(() => loadOpenVacancies());
+  const [previewPoster, setPreviewPoster] = useState(null);
+
+  useEffect(() => {
+    if (!previewPoster) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setPreviewPoster(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [previewPoster]);
 
   useEffect(() => {
     dataService.refreshPublicData();
@@ -110,52 +124,135 @@ const Vacancies = () => {
             >
               {vacancies.map((job, index) => {
                 const applyUrl = `/vacancies/apply/${encodeURIComponent(job.id || 'vacancy')}?title=${encodeURIComponent(job.title)}`;
+                const hasPoster = Boolean(job.posterDataUrl);
+                const isPosterPdf =
+                  hasPoster &&
+                  (job.posterFileType === 'application/pdf' ||
+                    job.posterDataUrl.startsWith('data:application/pdf'));
                 return (
                   <motion.div
                     key={job.id || index}
                     variants={itemVariants}
-                    className="bg-white rounded-2xl p-6 border-2 border-emerald-200/70 shadow-sm hover:shadow-xl hover:border-emerald-500 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden"
+                    className="bg-white rounded-2xl p-6 border-2 border-emerald-200/70 shadow-sm hover:shadow-xl hover:border-emerald-500 transition-all group flex flex-col gap-5 relative overflow-hidden"
                   >
                     <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
-                    <div className="flex-1 pl-2">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                          Open Vacancy
-                        </span>
-                        {job.department && (
-                          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full">
-                            <Building2 className="h-3.5 w-3.5" /> {job.department}
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pl-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                            Open Vacancy
                           </span>
+                          {job.department && (
+                            <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 rounded-full">
+                              <Building2 className="h-3.5 w-3.5" /> {job.department}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-emerald-600 transition-colors">
+                          {job.title}
+                        </h3>
+                        {job.description && (
+                          <p className="text-sm text-slate-600 leading-relaxed mb-3 whitespace-pre-line">
+                            {job.description}
+                          </p>
+                        )}
+                        {job.requirements && (
+                          <div className="mb-3 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl p-3">
+                            <span className="font-bold text-slate-800 uppercase tracking-wider block mb-1">Key Requirements:</span>
+                            <span className="whitespace-pre-line">{job.requirements}</span>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-medium">
+                          <span className="flex items-center gap-1.5 text-emerald-700"><Briefcase className="h-4 w-4" /> {job.type || 'Full-time'}</span>
+                          <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {job.location || 'Nairobi, Kenya'}</span>
+                          <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> Deadline: {job.deadline || 'Open Until Filled'}</span>
+                        </div>
+                      </div>
+                      <div className="shrink-0 flex flex-col sm:flex-row md:flex-col gap-2.5">
+                        <Link
+                          to={applyUrl}
+                          className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg w-full md:w-auto"
+                        >
+                          Apply Now <ArrowRight className="h-4 w-4" />
+                        </Link>
+                        {hasPoster && (
+                          <a
+                            href={job.posterDataUrl}
+                            download={job.posterFileName || `${job.title.replace(/\s+/g, '_')}_Poster`}
+                            className="inline-flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition w-full md:w-auto"
+                          >
+                            <Download className="h-3.5 w-3.5" /> Download Poster
+                          </a>
                         )}
                       </div>
-                      <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-emerald-600 transition-colors">
-                        {job.title}
-                      </h3>
-                      {job.description && (
-                        <p className="text-sm text-slate-600 leading-relaxed mb-3 whitespace-pre-line">
-                          {job.description}
-                        </p>
-                      )}
-                      {job.requirements && (
-                        <div className="mb-3 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl p-3">
-                          <span className="font-bold text-slate-800 uppercase tracking-wider block mb-1">Key Requirements:</span>
-                          <span className="whitespace-pre-line">{job.requirements}</span>
-                        </div>
-                      )}
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-medium">
-                        <span className="flex items-center gap-1.5 text-emerald-700"><Briefcase className="h-4 w-4" /> {job.type || 'Full-time'}</span>
-                        <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {job.location || 'Nairobi, Kenya'}</span>
-                        <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> Deadline: {job.deadline || 'Open Until Filled'}</span>
+                    </div>
+
+                    {hasPoster && (
+                      <div className="pl-2 pt-2 border-t border-slate-100">
+                        {isPosterPdf ? (
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-11 h-11 rounded-xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
+                                <FileText className="h-5 w-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                                  Official Vacancy Poster / Advert (PDF)
+                                </p>
+                                <p className="text-sm font-semibold text-slate-800 truncate">
+                                  {job.posterFileName || `${job.title} — Job Advert.pdf`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewPoster({
+                                    title: job.title,
+                                    dataUrl: job.posterDataUrl,
+                                    fileName: job.posterFileName || `${job.title}.pdf`,
+                                    isPdf: true,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] hover:bg-[#054461] text-white text-xs font-bold transition cursor-pointer"
+                              >
+                                <Eye className="h-3.5 w-3.5" /> View Poster
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group/poster">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewPoster({
+                                  title: job.title,
+                                  dataUrl: job.posterDataUrl,
+                                  fileName: job.posterFileName || `${job.title}_Poster.jpg`,
+                                  isPdf: false,
+                                })
+                              }
+                              className="w-full block text-left cursor-pointer focus:outline-none"
+                              title="Click to zoom in and view full job poster"
+                            >
+                              <img
+                                src={job.posterDataUrl}
+                                alt={`${job.title} Vacancy Poster`}
+                                className="w-full max-h-[560px] object-contain bg-slate-50 mx-auto"
+                              />
+                              <div className="bg-slate-900/75 text-white px-4 py-2 text-xs font-semibold flex items-center justify-between">
+                                <span className="flex items-center gap-1.5">
+                                  <ZoomIn className="h-3.5 w-3.5 text-emerald-400" />
+                                  Click poster to enlarge and view full details
+                                </span>
+                                <span className="text-emerald-300 font-bold">Full View</span>
+                              </div>
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div className="shrink-0">
-                      <Link
-                        to={applyUrl}
-                        className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg w-full md:w-auto"
-                      >
-                        Apply Now <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </div>
+                    )}
                   </motion.div>
                 );
               })}
@@ -213,6 +310,61 @@ const Vacancies = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* Full-Screen Job Poster Lightbox Modal */}
+      {previewPoster && (
+        <div
+          onClick={() => setPreviewPoster(null)}
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200"
+          >
+            <div className="bg-[#032e42] text-white px-5 py-3.5 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">
+                  Official ECAS Vacancy Poster
+                </p>
+                <h4 className="text-sm font-bold truncate">{previewPoster.title}</h4>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={previewPoster.dataUrl}
+                  download={previewPoster.fileName || 'vacancy-poster'}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition"
+                >
+                  <Download className="h-3.5 w-3.5" /> Download
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPoster(null)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                  aria-label="Close poster preview"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-slate-100 p-4 flex items-center justify-center">
+              {previewPoster.isPdf ? (
+                <iframe
+                  src={previewPoster.dataUrl}
+                  title={previewPoster.title}
+                  className="w-full h-[75vh] rounded-xl border border-slate-200 bg-white"
+                />
+              ) : (
+                <img
+                  src={previewPoster.dataUrl}
+                  alt={previewPoster.title}
+                  className="max-w-full max-h-[78vh] w-auto h-auto rounded-xl shadow-md object-contain bg-white"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
