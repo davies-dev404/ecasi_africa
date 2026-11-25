@@ -14,6 +14,7 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('X-Content-Type-Options: nosniff');
+header('X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex');
 
 // 1. Strict CORS Origin Allowlist
 $allowedOrigins = [
@@ -278,6 +279,7 @@ function readStore(string $file): array {
     $default = [
         'registrations' => [],
         'inquiries' => [],
+        'deletedInquiryIds' => [],
         'courses' => [],
         'vacancies' => [],
         'applications' => [],
@@ -1059,6 +1061,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'data' => [
                 'registrations' => $store['registrations'] ?? [],
                 'inquiries' => $store['inquiries'] ?? [],
+                'deletedInquiryIds' => array_values($store['deletedInquiryIds'] ?? []),
                 'courses' => (object)($store['courses'] ?? []),
                 'vacancies' => $store['vacancies'] ?? [],
                 'applications' => $store['applications'] ?? [],
@@ -1089,18 +1092,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Unauthenticated / public callers receive non-sensitive catalog updates, open vacancies, published CMS & announcements
-    // Never expose credential digests or hashes to unauthenticated callers — only safe setup status
-    $publicAccountStatus = array_map(function ($acc) {
-        return [
-            'email' => $acc['email'] ?? '',
-            'passwordInitialized' => !empty($acc['passwordHash']) || !empty($acc['passwordInitialized']),
-            'role' => normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN'),
-            'status' => $acc['status'] ?? 'Active',
-            'updatedAt' => $acc['updatedAt'] ?? null,
-        ];
-    }, is_array($store['accounts']) ? $store['accounts'] : []);
-
+    // Unauthenticated / public callers receive only non-sensitive public catalog, open vacancies, published CMS & announcements.
+    // Never expose admin accounts, emails, roles, PII, or internal setup status unauthenticated.
     $publishedCms = [];
     foreach (($store['cmsContent'] ?? []) as $k => $sec) {
         if (is_array($sec) && ($sec['status'] ?? 'Draft') === 'Published') {
@@ -1120,7 +1113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'cohorts' => $store['cohorts'] ?? [],
             'cmsContent' => (object)$publishedCms,
             'announcements' => $publishedAnnouncements,
-            'accounts' => $publicAccountStatus,
             'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
         ],
     ]);
@@ -1181,9 +1173,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $cleanInq = sanitizeInquiry($inqInput);
         $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
-        array_unshift($existingInq, $cleanInq);
-        $store['inquiries'] = array_slice($existingInq, 0, 5000);
-        writeStore($storeFile, $store);
+        $alreadyExists = false;
+        foreach ($existingInq as $item) {
+            if (
+                (!empty($cleanInq['id']) && ($item['id'] ?? '') === $cleanInq['id']) ||
+                (!empty($cleanInq['referenceNo']) && ($item['referenceNo'] ?? '') === $cleanInq['referenceNo'])
+            ) {
+                $alreadyExists = true;
+                break;
+            }
+        }
+        if (!$alreadyExists) {
+            array_unshift($existingInq, $cleanInq);
+            $store['inquiries'] = array_slice($existingInq, 0, 5000);
+            if (!empty($cleanInq['id']) && is_array($store['deletedInquiryIds'] ?? null)) {
+                $store['deletedInquiryIds'] = array_values(array_filter(
+                    $store['deletedInquiryIds'],
+                    fn($delId) => $delId !== $cleanInq['id']
+                ));
+            }
+            if (!writeStore($storeFile, $store)) {
+                writeAuditLog($auditLogFile, 'add_inquiry', 'system', 'FAILED_STORAGE_WRITE', "dir={$dataDir}");
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Unable to persist inquiry to storage.']);
+                exit;
+            }
+        }
 
         $actor = $cleanInq['email'] ?: ($cleanInq['phone'] ?: 'public_visitor');
         writeAuditLog($auditLogFile, 'add_inquiry', $actor, 'SUCCESS', 'channel=' . $cleanInq['channel'] . ' ref=' . $cleanInq['referenceNo']);
@@ -1191,6 +1206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => true,
             'referenceNo' => $cleanInq['referenceNo'],
+            'id' => $cleanInq['id'],
         ]);
         exit;
     }
@@ -1229,8 +1245,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!isAuthorizedAdmin($email, $store)) {
             writeAuditLog($auditLogFile, 'admin_login', $email, 'DENIED_UNAUTHORIZED_EMAIL');
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Account not provisioned. Please contact a Super Admin (Jacob Olonde or Gift Rioba) to add your @ecasiafrica.org account.']);
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'Invalid email or password.']);
             exit;
         }
 
@@ -1279,13 +1295,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'admin_login', $email, 'FAILED_BAD_PASSWORD');
             http_response_code(401);
-            $errMessage = $hasPasswordSet
-                ? 'Invalid email or password. Please enter the password you created for this account.'
-                : 'Invalid credentials. If this is your very first visit and you have not set a password yet, use First-Time Setup once.';
             echo json_encode([
                 'success' => false,
-                'passwordInitialized' => $hasPasswordSet,
-                'error' => $errMessage,
+                'error' => 'Invalid email or password.',
             ]);
             exit;
         }
@@ -1333,7 +1345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!isAuthorizedAdmin($email, $store)) {
             writeAuditLog($auditLogFile, 'register_admin', $email, 'DENIED_UNAUTHORIZED_EMAIL');
             http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Account not provisioned. Only users added by Super Admins (Jacob Olonde or Gift Rioba) may activate an @ecasiafrica.org login.']);
+            echo json_encode(['success' => false, 'error' => 'Unable to activate this account. Please verify your details or contact your system administrator.']);
             exit;
         }
 
@@ -1370,8 +1382,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode([
                 'success' => false,
                 'code' => 'PASSWORD_ALREADY_SET',
-                'passwordInitialized' => true,
-                'error' => 'Your password has already been created and is permanently locked. First-time setup cannot be used again — please use Sign In with your existing password.',
+                'error' => 'Unable to complete setup for this account. Please sign in with your existing password.',
             ]);
             exit;
         }
@@ -1428,7 +1439,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'success' => true,
             'passwordCreated' => true,
             'requiresSignIn' => true,
-            'message' => 'Your password has been securely created and permanently locked. Please sign in now using your email and new password.',
+            'message' => 'Account password configured successfully. Please sign in to continue.',
             'user' => [
                 'email' => $email,
                 'role' => $finalRole,
@@ -1527,6 +1538,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         writeAuditLog($auditLogFile, 'set_registrations', $adminEmail, 'SUCCESS', 'count=' . count($cleanList));
 
         echo json_encode(['success' => true, 'count' => count($cleanList)]);
+        exit;
+    }
+
+    if ($action === 'update_inquiry' && !empty($payload['id']) && is_array($payload['updates'] ?? null)) {
+        $enforcePermission('crm.write');
+        $targetId = sanitizeText($payload['id'], 64);
+        $updates = $payload['updates'];
+        $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
+        $updated = false;
+        foreach ($existingInq as $idx => $inq) {
+            if (($inq['id'] ?? '') === $targetId) {
+                $existingInq[$idx] = sanitizeInquiry(array_merge($inq, $updates, ['id' => $inq['id']]));
+                $updated = true;
+                break;
+            }
+        }
+        if (!$updated && is_array($payload['inquiry'] ?? null)) {
+            $cleanItem = sanitizeInquiry(array_merge($payload['inquiry'], $updates, ['id' => $targetId]));
+            array_unshift($existingInq, $cleanItem);
+            $updated = true;
+        }
+        $store['inquiries'] = array_slice($existingInq, 0, 5000);
+        if ($updated) {
+            appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_LEAD', 'Lead', $targetId, '', sanitizeText($updates['status'] ?? 'Updated', 200));
+            writeStore($storeFile, $store);
+            writeAuditLog($auditLogFile, 'update_inquiry', $adminEmail, 'SUCCESS', "id={$targetId}");
+        }
+        echo json_encode(['success' => true, 'updated' => $updated, 'inquiries' => $store['inquiries']]);
+        exit;
+    }
+
+    if ($action === 'delete_inquiry' && !empty($payload['id'])) {
+        $enforcePermission('crm.write');
+        $targetId = sanitizeText($payload['id'], 64);
+        $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
+        $store['inquiries'] = array_values(array_filter($existingInq, fn($inq) => ($inq['id'] ?? '') !== $targetId));
+        $deletedIds = is_array($store['deletedInquiryIds'] ?? null) ? $store['deletedInquiryIds'] : [];
+        if (!in_array($targetId, $deletedIds, true)) {
+            array_unshift($deletedIds, $targetId);
+        }
+        $store['deletedInquiryIds'] = array_slice($deletedIds, 0, 2000);
+        appendAuditEvent($store, $adminEmail, $adminRole, 'DELETE_LEAD', 'Lead', $targetId, 'Active', 'Deleted');
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'delete_inquiry', $adminEmail, 'SUCCESS', "id={$targetId}");
+        echo json_encode([
+            'success' => true,
+            'inquiries' => $store['inquiries'],
+            'deletedInquiryIds' => $store['deletedInquiryIds'],
+        ]);
+        exit;
+    }
+
+    if ($action === 'merge_inquiries' && isset($payload['inquiries']) && is_array($payload['inquiries'])) {
+        $enforcePermission('crm.view');
+        $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
+        $deletedIds = is_array($store['deletedInquiryIds'] ?? null) ? $store['deletedInquiryIds'] : [];
+        $seenKeys = [];
+        foreach ($existingInq as $ex) {
+            if (!empty($ex['id'])) $seenKeys['id:' . $ex['id']] = true;
+            if (!empty($ex['referenceNo'])) $seenKeys['ref:' . $ex['referenceNo']] = true;
+        }
+        $addedCount = 0;
+        foreach (array_slice($payload['inquiries'], 0, 500) as $candidate) {
+            if (!is_array($candidate)) continue;
+            $cleanInq = sanitizeInquiry($candidate);
+            $candId = $cleanInq['id'] ?? '';
+            $candRef = $cleanInq['referenceNo'] ?? '';
+            if ($candId !== '' && in_array($candId, $deletedIds, true)) continue;
+            if (($candId !== '' && isset($seenKeys['id:' . $candId])) || ($candRef !== '' && isset($seenKeys['ref:' . $candRef]))) {
+                continue;
+            }
+            $existingInq[] = $cleanInq;
+            if ($candId !== '') $seenKeys['id:' . $candId] = true;
+            if ($candRef !== '') $seenKeys['ref:' . $candRef] = true;
+            $addedCount++;
+        }
+        if ($addedCount > 0) {
+            usort($existingInq, function ($a, $b) {
+                return strcmp((string)($b['createdAt'] ?? ''), (string)($a['createdAt'] ?? ''));
+            });
+            $store['inquiries'] = array_slice($existingInq, 0, 5000);
+            writeStore($storeFile, $store);
+            writeAuditLog($auditLogFile, 'merge_inquiries', $adminEmail, 'SUCCESS', "added={$addedCount} total=" . count($store['inquiries']));
+        }
+        echo json_encode([
+            'success' => true,
+            'added' => $addedCount,
+            'inquiries' => $store['inquiries'] ?? [],
+            'deletedInquiryIds' => $deletedIds,
+        ]);
         exit;
     }
 

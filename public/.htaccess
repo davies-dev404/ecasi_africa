@@ -55,6 +55,12 @@ Options -MultiViews -Indexes
   RewriteRule . /index.html [L]
 </IfModule>
 
+# Mark Admin Portal Subdomain & Routes for Strict Non-Indexing
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase Host ^msimamizi\. IS_MSIMAMIZI_PORTAL=1
+  SetEnvIfNoCase Request_URI ^/(msimamizi|admin|portal|api)(/|$) IS_MSIMAMIZI_PORTAL=1
+</IfModule>
+
 # Configure Secure Server HTTP Headers
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
@@ -63,4 +69,6 @@ Options -MultiViews -Indexes
   Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   Header set Content-Security-Policy "upgrade-insecure-requests;"
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex" env=IS_MSIMAMIZI_PORTAL
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex" env=REDIRECT_IS_MSIMAMIZI_PORTAL
 </IfModule>

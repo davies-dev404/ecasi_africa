@@ -543,6 +543,30 @@ function MsimamiziAdminInner() {
     setIsAuthenticated(adminRegistrationService.isAuthenticated());
   }, []);
 
+  // Automatically sync live data (including new website inquiries) whenever logged in + periodic 30s refresh
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    const performSync = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      await adminRegistrationService.syncFromServer();
+      if (!cancelled) {
+        loadData();
+      }
+    };
+    performSync();
+    const syncTimer = window.setInterval(performSync, 30000);
+    const onFocusSync = () => {
+      performSync();
+    };
+    window.addEventListener('focus', onFocusSync);
+    return () => {
+      cancelled = true;
+      window.clearInterval(syncTimer);
+      window.removeEventListener('focus', onFocusSync);
+    };
+  }, [isAuthenticated]);
+
   // Enterprise Collections State
   const [invoices, setInvoices] = useState(() => msimamiziEnterpriseService.getInvoices());
   const [payments, setPayments] = useState(() => msimamiziEnterpriseService.getPayments());
@@ -928,11 +952,6 @@ function MsimamiziAdminInner() {
     setAuthError('');
     setAuthSuccess('');
 
-    if (adminRegistrationService.isPasswordInitialized(createEmail)) {
-      setAuthError('Your password has already been created and is permanently locked. Please use Sign In with your existing password.');
-      return;
-    }
-
     if (createPassword !== confirmPassword) {
       setAuthError('Passwords do not match. Please verify both fields.');
       return;
@@ -970,7 +989,7 @@ function MsimamiziAdminInner() {
       setAuthMode('login');
       setAuthSuccess(
         result.message ||
-          'Your password has been securely created and permanently locked. Please sign in below with your new password.'
+          'Account password configured successfully. Please sign in to continue.'
       );
     } else {
       setAuthError(result.message);
@@ -1516,8 +1535,7 @@ function MsimamiziAdminInner() {
       <div className="min-h-screen bg-[#08172e] flex items-center justify-center p-4 font-['Inter',sans-serif] selection:bg-[#00a99d] selection:text-white">
         {initialLoaderOverlay}
         <SEO
-          title="ECAS Msimamizi Admin Portal"
-          description="ECAS Institute administrative portal."
+          title="Portal"
           noIndex
         />
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100">
@@ -1532,12 +1550,8 @@ function MsimamiziAdminInner() {
                 ECAS Msimamizi
               </h1>
               <p className="text-xs text-white/80 mt-1 uppercase tracking-widest font-semibold">
-                Executive Training Admin Portal
+                Administrative Portal
               </p>
-              <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#008000]/30 border border-[#008000]/50 text-white text-[11px] font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00c853] animate-pulse" />
-                msimamizi.ecasiafrica.org
-              </div>
             </div>
           </div>
 
@@ -1583,7 +1597,7 @@ function MsimamiziAdminInner() {
             <form onSubmit={handleLoginSubmit} className="p-6 sm:p-8 space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Administrator Email / Username
+                  Administrator Email
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1592,7 +1606,7 @@ function MsimamiziAdminInner() {
                     required
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
-                    placeholder="admin@ecasiafrica.org"
+                    placeholder="Enter your email address"
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
@@ -1600,7 +1614,7 @@ function MsimamiziAdminInner() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Security Password / Access PIN
+                  Password
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1613,11 +1627,6 @@ function MsimamiziAdminInner() {
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2">
-                <Lock className="w-3.5 h-3.5 text-[#008000] shrink-0" />
-                <span>Security: Single active session enforced. Sign-in is required for each visit.</span>
               </div>
 
               <div className="pt-1 flex justify-center">
@@ -1674,44 +1683,12 @@ function MsimamiziAdminInner() {
             </form>
           )}
 
-          {/* One-Time First-Time Administrator Password Setup Form (Permanently locked once created) */}
-          {authMode === 'create' && (() => {
-            const isEmailAlreadyLocked = Boolean(createEmail.trim()) && adminRegistrationService.isPasswordInitialized(createEmail);
-            return (
+          {/* First-Time Password Setup Form (enforced server-side) */}
+          {authMode === 'create' && (
             <form onSubmit={handleCreatePasswordSubmit} className="p-6 sm:p-8 space-y-4">
-              <div className="bg-amber-50 border border-amber-200/90 rounded-xl p-3 text-xs text-amber-950 flex items-start gap-2">
-                <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                <p>
-                  <strong>One-Time Setup Only:</strong> Create your personal password once using your authorized <strong>@ecasiafrica.org</strong> email. Once created, your password is permanently locked and you will sign in normally on the Sign In tab.
-                </p>
-              </div>
-
-              {isEmailAlreadyLocked && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                  <div>
-                    <p className="font-bold">Password Already Created &amp; Locked</p>
-                    <p className="mt-0.5">
-                      This account already has an active password. First-time setup is permanently disabled for this email.{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuthEmail(createEmail);
-                          setAuthMode('login');
-                          setAuthError('');
-                        }}
-                        className="underline font-bold cursor-pointer"
-                      >
-                        Go to Sign In →
-                      </button>
-                    </p>
-                  </div>
-                </div>
-              )}
-
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Official Institutional Email
+                  Administrator Email
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1720,18 +1697,15 @@ function MsimamiziAdminInner() {
                     required
                     value={createEmail}
                     onChange={(e) => setCreateEmail(e.target.value)}
-                    placeholder="yourname@ecasiafrica.org"
+                    placeholder="Enter your email address"
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Must end with <strong className="font-mono text-slate-700">@ecasiafrica.org</strong>
-                </p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Create New Password
+                  Create Password
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1763,11 +1737,6 @@ function MsimamiziAdminInner() {
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2">
-                <Lock className="w-3.5 h-3.5 text-[#008000] shrink-0" />
-                <span>Security: Single active session enforced per administrator account.</span>
               </div>
 
               <div className="pt-1 flex justify-center">
@@ -1806,11 +1775,10 @@ function MsimamiziAdminInner() {
 
               <button
                 type="submit"
-                disabled={isEmailAlreadyLocked}
-                className="w-full h-11 bg-[#008000] hover:bg-[#006600] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-11 bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
               >
                 <Lock className="w-4 h-4" />
-                <span>Create &amp; Lock Password</span>
+                <span>Set Account Password</span>
               </button>
 
               <div className="pt-2 text-center border-t border-slate-100">
@@ -1823,8 +1791,7 @@ function MsimamiziAdminInner() {
                 </a>
               </div>
             </form>
-            );
-          })()}
+          )}
         </div>
       </div>
     );
@@ -2076,8 +2043,7 @@ function MsimamiziAdminInner() {
     <div className="min-h-screen bg-[#F5F8FC] text-[#10243E] font-['Inter',sans-serif] selection:bg-[#00B8B0] selection:text-white flex flex-col md:flex-row">
       {initialLoaderOverlay}
       <SEO
-        title="ECASIAFRICA Msimamizi — Institutional Management System"
-        description="ECAS Institute enterprise institutional administration platform."
+        title="Portal"
         noIndex
       />
 

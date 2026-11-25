@@ -3,6 +3,7 @@
 
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const INQUIRIES_KEY = 'ecasi_course_inquiries_live';
+const DELETED_INQUIRIES_KEY = 'ecasi_deleted_inquiries_v1';
 const APPLICATIONS_KEY = 'ecasi_vacancy_applications_live';
 const VACANCIES_KEY = 'ecasi_vacancies';
 const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
@@ -220,8 +221,19 @@ if (typeof window !== 'undefined') {
   }
 }
 
-async function pushToServerWithStatus(payload) {
+async function pushToServerWithStatus(payload, options = {}) {
   if (typeof window === 'undefined') return { unreachable: true, status: 0, data: null };
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return { unreachable: true, status: 0, data: null };
+  }
+  let payloadStr = '';
+  try {
+    payloadStr = JSON.stringify(payload);
+  } catch {
+    return { unreachable: true, status: 0, data: null };
+  }
+  const canKeepalive = payloadStr.length < 60000;
   try {
     const token = getStoredAdminToken();
     const headers = { 'Content-Type': 'application/json' };
@@ -231,7 +243,8 @@ async function pushToServerWithStatus(payload) {
     const res = await fetch(getSyncUrl(), {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload),
+      body: payloadStr,
+      ...(canKeepalive ? { keepalive: true } : {}),
     });
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
@@ -240,12 +253,27 @@ async function pushToServerWithStatus(payload) {
     const data = await res.json();
     return { unreachable: false, status: res.status, ok: res.ok, data };
   } catch {
+    if (
+      options.beaconFallback &&
+      canKeepalive &&
+      typeof navigator !== 'undefined' &&
+      typeof navigator.sendBeacon === 'function'
+    ) {
+      try {
+        navigator.sendBeacon(
+          getSyncUrl(),
+          new Blob([payloadStr], { type: 'text/plain;charset=UTF-8' })
+        );
+      } catch {
+        // ignore beacon errors
+      }
+    }
     return { unreachable: true, status: 0, data: null };
   }
 }
 
-async function pushToServer(payload) {
-  const result = await pushToServerWithStatus(payload);
+async function pushToServer(payload, options = {}) {
+  const result = await pushToServerWithStatus(payload, options);
   if (result.unreachable || !result.ok) return null;
   return result.data;
 }
@@ -435,148 +463,191 @@ class AdminRegistrationService {
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') return;
 
-    try {
-      const isAuth = this.isAuthenticated();
-      const token = getStoredAdminToken();
-      const scope = isAuth && token ? 'admin' : 'public';
-      const headers = {};
-      if (token) {
-        headers['X-Admin-Token'] = token;
-      }
-
-      const res = await fetch(`${getSyncUrl()}?scope=${scope}`, {
-        method: 'GET',
-        headers,
-        cache: 'no-store',
-      });
-      if (!res.ok) return;
-      const json = await res.json();
-      if (scope === 'admin' && json?.authenticated === false) {
-        this.logout();
-        window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
-        return;
-      }
-      if (!json?.success || !json?.data) return;
-
-      const {
-        registrations,
-        inquiries,
-        courses,
-        vacancies,
-        applications,
-        accounts,
-        invoices,
-        payments,
-        cohorts,
-        communications,
-        templates,
-        announcements,
-        cmsContent,
-        settings,
-        auditEvents,
-      } = json.data;
-
-      try {
-        if (Array.isArray(invoices)) localStorage.setItem('ecasi_msimamizi_invoices_v1', JSON.stringify(invoices));
-        if (Array.isArray(payments)) localStorage.setItem('ecasi_msimamizi_payments_v1', JSON.stringify(payments));
-        if (Array.isArray(cohorts)) localStorage.setItem('ecasi_msimamizi_cohorts_v1', JSON.stringify(cohorts));
-        if (Array.isArray(communications)) localStorage.setItem('ecasi_msimamizi_communications_v1', JSON.stringify(communications));
-        if (Array.isArray(templates) && templates.length > 0) localStorage.setItem('ecasi_msimamizi_templates_v1', JSON.stringify(templates));
-        if (Array.isArray(announcements)) localStorage.setItem('ecasi_msimamizi_announcements_v1', JSON.stringify(announcements));
-        if (cmsContent && typeof cmsContent === 'object' && Object.keys(cmsContent).length > 0) {
-          localStorage.setItem('ecasi_msimamizi_cms_v1', JSON.stringify(cmsContent));
-        }
-        if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
-          localStorage.setItem('ecasi_msimamizi_settings_v1', JSON.stringify(settings));
-        }
-        if (Array.isArray(auditEvents)) localStorage.setItem('ecasi_msimamizi_audit_events_v1', JSON.stringify(auditEvents));
-        window.dispatchEvent(new CustomEvent('ecasi_enterprise_updated', { detail: { topic: 'server_sync' } }));
-      } catch {
-        // ignore storage quota errors on secondary cache
-      }
-
-      if (Array.isArray(registrations) && registrations.length > 0) {
-        const localRegs = this.getRegistrations();
-        const mergedMap = new Map();
-        [...registrations, ...localRegs].forEach((r) => {
-          const key = r.id || r.referenceNo;
-          if (key && !mergedMap.has(key)) {
-            mergedMap.set(key, r);
-          }
-        });
-        const merged = Array.from(mergedMap.values());
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-        window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
-      }
-
-      if (Array.isArray(inquiries) && inquiries.length > 0) {
-        const localInq = this.getInquiries();
-        const mergedInqMap = new Map();
-        [...inquiries, ...localInq].forEach((inq) => {
-          const key = inq.id || inq.referenceNo;
-          if (key && !mergedInqMap.has(key)) {
-            mergedInqMap.set(key, inq);
-          }
-        });
-        const mergedInq = Array.from(mergedInqMap.values());
-        localStorage.setItem(INQUIRIES_KEY, JSON.stringify(mergedInq));
-        window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
-      }
-
-      if (Array.isArray(vacancies)) {
-        localStorage.setItem(VACANCIES_KEY, JSON.stringify(vacancies));
-        window.dispatchEvent(new CustomEvent('ecasi_vacancies_updated'));
-      }
-
-      if (Array.isArray(applications) && applications.length > 0) {
-        const localApps = this.getApplications();
-        const mergedAppsMap = new Map();
-        [...applications, ...localApps].forEach((app) => {
-          const key = app.id || app.referenceNo;
-          if (key && !mergedAppsMap.has(key)) {
-            mergedAppsMap.set(key, app);
-          }
-        });
-        const mergedApps = Array.from(mergedAppsMap.values());
-        localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(mergedApps));
-        window.dispatchEvent(new CustomEvent('ecasi_applications_updated'));
-      }
-
-      if (courses && typeof courses === 'object' && Object.keys(courses).length > 0) {
-        const localCoursesRaw = localStorage.getItem(COURSES_KEY);
-        const localCourses = localCoursesRaw ? JSON.parse(localCoursesRaw) : {};
-        const mergedCourses = { ...localCourses, ...courses };
-        localStorage.setItem(COURSES_KEY, JSON.stringify(mergedCourses));
-        window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
-      }
-
-      if (Array.isArray(accounts) && accounts.length > 0) {
-        const localAccounts = this.getAdminAccounts();
-        const accountMap = new Map();
-        localAccounts.forEach((loc) => {
-          const em = normalizeAdminEmail(loc.email);
-          if (em) accountMap.set(em, { ...loc, email: em });
-        });
-        accounts.forEach((rem) => {
-          const em = normalizeAdminEmail(rem.email);
-          if (!em) return;
-          const existing = accountMap.get(em) || { email: em, role: 'Administrator' };
-          accountMap.set(em, {
-            ...existing,
-            name: rem.name || existing.name || '',
-            role: rem.role || existing.role || 'Administrator',
-            status: rem.status || existing.status || 'Active',
-            passwordInitialized: Boolean(rem.passwordInitialized || existing.passwordInitialized),
-            credentialDigest: rem.credentialDigest || existing.credentialDigest,
-            updatedAt: rem.updatedAt || existing.updatedAt,
-          });
-        });
-        localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(Array.from(accountMap.values())));
-        window.dispatchEvent(new CustomEvent('ecasi_accounts_updated'));
-      }
-    } catch {
-      // Ignore network sync errors
+    if (this._activeSyncPromise) {
+      return this._activeSyncPromise;
     }
+
+    this._activeSyncPromise = (async () => {
+      try {
+        const isAuth = this.isAuthenticated();
+        const token = getStoredAdminToken();
+        const scope = isAuth && token ? 'admin' : 'public';
+        const headers = {};
+        if (token) {
+          headers['X-Admin-Token'] = token;
+        }
+
+        const res = await fetch(`${getSyncUrl()}?scope=${scope}&t=${Date.now()}`, {
+          method: 'GET',
+          headers,
+          cache: 'no-store',
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (scope === 'admin' && json?.authenticated === false) {
+          this.logout();
+          window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
+          return;
+        }
+        if (!json?.success || !json?.data) return;
+
+        const {
+          registrations,
+          inquiries,
+          deletedInquiryIds,
+          courses,
+          vacancies,
+          applications,
+          accounts,
+          invoices,
+          payments,
+          cohorts,
+          communications,
+          templates,
+          announcements,
+          cmsContent,
+          settings,
+          auditEvents,
+        } = json.data;
+
+        try {
+          if (Array.isArray(invoices)) localStorage.setItem('ecasi_msimamizi_invoices_v1', JSON.stringify(invoices));
+          if (Array.isArray(payments)) localStorage.setItem('ecasi_msimamizi_payments_v1', JSON.stringify(payments));
+          if (Array.isArray(cohorts)) localStorage.setItem('ecasi_msimamizi_cohorts_v1', JSON.stringify(cohorts));
+          if (Array.isArray(communications)) localStorage.setItem('ecasi_msimamizi_communications_v1', JSON.stringify(communications));
+          if (Array.isArray(templates) && templates.length > 0) localStorage.setItem('ecasi_msimamizi_templates_v1', JSON.stringify(templates));
+          if (Array.isArray(announcements)) localStorage.setItem('ecasi_msimamizi_announcements_v1', JSON.stringify(announcements));
+          if (cmsContent && typeof cmsContent === 'object' && Object.keys(cmsContent).length > 0) {
+            localStorage.setItem('ecasi_msimamizi_cms_v1', JSON.stringify(cmsContent));
+          }
+          if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
+            localStorage.setItem('ecasi_msimamizi_settings_v1', JSON.stringify(settings));
+          }
+          if (Array.isArray(auditEvents)) localStorage.setItem('ecasi_msimamizi_audit_events_v1', JSON.stringify(auditEvents));
+          window.dispatchEvent(new CustomEvent('ecasi_enterprise_updated', { detail: { topic: 'server_sync' } }));
+        } catch {
+          // ignore storage quota errors on secondary cache
+        }
+
+        if (Array.isArray(registrations) && registrations.length > 0) {
+          const localRegs = this.getRegistrations();
+          const mergedMap = new Map();
+          [...registrations, ...localRegs].forEach((r) => {
+            const key = r.id || r.referenceNo;
+            if (key && !mergedMap.has(key)) {
+              mergedMap.set(key, r);
+            }
+          });
+          const merged = Array.from(mergedMap.values());
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
+        }
+
+        if (scope === 'admin' && Array.isArray(inquiries)) {
+          let localDeletedIds = [];
+          try {
+            const rawDel = localStorage.getItem(DELETED_INQUIRIES_KEY);
+            localDeletedIds = rawDel ? JSON.parse(rawDel) : [];
+          } catch {
+            localDeletedIds = [];
+          }
+          const deletedSet = new Set([
+            ...(Array.isArray(deletedInquiryIds) ? deletedInquiryIds : []),
+            ...(Array.isArray(localDeletedIds) ? localDeletedIds : []),
+          ]);
+          try {
+            localStorage.setItem(DELETED_INQUIRIES_KEY, JSON.stringify(Array.from(deletedSet).slice(0, 2000)));
+          } catch {
+            // ignore
+          }
+
+          const serverKeys = new Set();
+          inquiries.forEach((inq) => {
+            if (inq?.id) serverKeys.add(`id:${inq.id}`);
+            if (inq?.referenceNo) serverKeys.add(`ref:${inq.referenceNo}`);
+          });
+
+          const localInq = this.getInquiries();
+          const unsyncedLocal = localInq.filter((inq) => {
+            if (!inq || (inq.id && deletedSet.has(inq.id))) return false;
+            const hasId = inq.id && serverKeys.has(`id:${inq.id}`);
+            const hasRef = inq.referenceNo && serverKeys.has(`ref:${inq.referenceNo}`);
+            return !hasId && !hasRef;
+          });
+
+          let finalInquiries = inquiries.filter((inq) => !inq?.id || !deletedSet.has(inq.id));
+          if (unsyncedLocal.length > 0) {
+            const mergeRes = await pushToServer({ action: 'merge_inquiries', inquiries: unsyncedLocal });
+            if (mergeRes?.success && Array.isArray(mergeRes.inquiries)) {
+              finalInquiries = mergeRes.inquiries;
+            } else {
+              finalInquiries = [...unsyncedLocal, ...finalInquiries];
+            }
+          }
+
+          localStorage.setItem(INQUIRIES_KEY, JSON.stringify(finalInquiries));
+          window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+        }
+
+        if (Array.isArray(vacancies)) {
+          localStorage.setItem(VACANCIES_KEY, JSON.stringify(vacancies));
+          window.dispatchEvent(new CustomEvent('ecasi_vacancies_updated'));
+        }
+
+        if (Array.isArray(applications) && applications.length > 0) {
+          const localApps = this.getApplications();
+          const mergedAppsMap = new Map();
+          [...applications, ...localApps].forEach((app) => {
+            const key = app.id || app.referenceNo;
+            if (key && !mergedAppsMap.has(key)) {
+              mergedAppsMap.set(key, app);
+            }
+          });
+          const mergedApps = Array.from(mergedAppsMap.values());
+          localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(mergedApps));
+          window.dispatchEvent(new CustomEvent('ecasi_applications_updated'));
+        }
+
+        if (courses && typeof courses === 'object' && Object.keys(courses).length > 0) {
+          const localCoursesRaw = localStorage.getItem(COURSES_KEY);
+          const localCourses = localCoursesRaw ? JSON.parse(localCoursesRaw) : {};
+          const mergedCourses = { ...localCourses, ...courses };
+          localStorage.setItem(COURSES_KEY, JSON.stringify(mergedCourses));
+          window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
+        }
+
+        if (Array.isArray(accounts) && accounts.length > 0) {
+          const localAccounts = this.getAdminAccounts();
+          const accountMap = new Map();
+          localAccounts.forEach((loc) => {
+            const em = normalizeAdminEmail(loc.email);
+            if (em) accountMap.set(em, { ...loc, email: em });
+          });
+          accounts.forEach((rem) => {
+            const em = normalizeAdminEmail(rem.email);
+            if (!em) return;
+            const existing = accountMap.get(em) || { email: em, role: 'Administrator' };
+            accountMap.set(em, {
+              ...existing,
+              name: rem.name || existing.name || '',
+              role: rem.role || existing.role || 'Administrator',
+              status: rem.status || existing.status || 'Active',
+              passwordInitialized: Boolean(rem.passwordInitialized || existing.passwordInitialized),
+              credentialDigest: rem.credentialDigest || existing.credentialDigest,
+              updatedAt: rem.updatedAt || existing.updatedAt,
+            });
+          });
+          localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(Array.from(accountMap.values())));
+          window.dispatchEvent(new CustomEvent('ecasi_accounts_updated'));
+        }
+      } catch {
+        // Ignore network sync errors
+      } finally {
+        this._activeSyncPromise = null;
+      }
+    })();
+
+    return this._activeSyncPromise;
   }
 
   // Retrieve all real registrations (no fake mock seeds)
@@ -806,7 +877,7 @@ class AdminRegistrationService {
 
       const updated = [newInquiry, ...existing];
       localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'add_inquiry', inquiry: newInquiry });
+      pushToServer({ action: 'add_inquiry', inquiry: newInquiry }, { beaconFallback: true });
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated', { detail: newInquiry }));
       return newInquiry;
     } catch (e) {
@@ -819,11 +890,17 @@ class AdminRegistrationService {
     if (typeof window === 'undefined') return false;
     try {
       const existing = this.getInquiries();
+      const target = existing.find((inq) => inq.id === id);
       const updated = existing.map((inq) =>
         inq.id === id ? { ...inq, ...updates, updatedAt: new Date().toISOString() } : inq
       );
       localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_inquiries', inquiries: updated });
+      pushToServer({
+        action: 'update_inquiry',
+        id,
+        updates,
+        ...(target ? { inquiry: target } : {}),
+      }, { beaconFallback: true });
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
       return true;
     } catch (e) {
@@ -838,7 +915,17 @@ class AdminRegistrationService {
       const existing = this.getInquiries();
       const updated = existing.filter((inq) => inq.id !== id);
       localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_inquiries', inquiries: updated });
+      try {
+        const rawDel = localStorage.getItem(DELETED_INQUIRIES_KEY);
+        const delList = rawDel ? JSON.parse(rawDel) : [];
+        if (id && Array.isArray(delList) && !delList.includes(id)) {
+          delList.unshift(id);
+          localStorage.setItem(DELETED_INQUIRIES_KEY, JSON.stringify(delList.slice(0, 2000)));
+        }
+      } catch {
+        // ignore tombstone write failure
+      }
+      pushToServer({ action: 'delete_inquiry', id }, { beaconFallback: true });
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
       return true;
     } catch (e) {
@@ -1204,7 +1291,7 @@ class AdminRegistrationService {
     if (!this.isAuthorizedAdminEmail(cleanEmail)) {
       return {
         success: false,
-        message: 'Unauthorized email. Msimamizi portal access requires an official @ecasiafrica.org email address.',
+        message: 'Unable to activate this account. Please verify your email or contact your system administrator.',
       };
     }
 
@@ -1224,7 +1311,7 @@ class AdminRegistrationService {
         return {
           success: false,
           code: 'PASSWORD_ALREADY_SET',
-          message: 'Your password has already been created and is permanently locked. Please use Sign In with your existing password.',
+          message: 'Unable to complete setup for this account. Please sign in with your existing password.',
         };
       }
 
@@ -1257,7 +1344,7 @@ class AdminRegistrationService {
             code: 'PASSWORD_ALREADY_SET',
             message:
               serverRes.data?.error ||
-              'Your password has already been created and is permanently locked. Please use Sign In with your existing password.',
+              'Unable to complete setup for this account. Please sign in with your existing password.',
           };
         }
         if (!serverRes.ok || !serverRes.data?.success) {
@@ -1297,7 +1384,7 @@ class AdminRegistrationService {
         requiresSignIn: true,
         message:
           serverRes.data?.message ||
-          'Your password has been securely created and permanently locked. Please sign in now using your new password.',
+          'Account password configured successfully. Please sign in to continue.',
         user: { email: cleanEmail, role: resolvedRole },
       };
     } catch (e) {
@@ -1395,7 +1482,7 @@ class AdminRegistrationService {
     if (!this.isAuthorizedAdminEmail(inputUser)) {
       return {
         success: false,
-        message: 'Access restricted. Please sign in with your official @ecasiafrica.org administrator email.',
+        message: 'Invalid email or password.',
       };
     }
 
@@ -1474,7 +1561,7 @@ class AdminRegistrationService {
         this._storeToken(serverRes.data.token);
       }
       this._setAuthSession(inputUser, role);
-      this.syncFromServer();
+      await this.syncFromServer();
       return { success: true, user: { email: inputUser, role } };
     }
 
