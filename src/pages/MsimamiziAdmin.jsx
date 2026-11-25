@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   Users,
-  GraduationCap,
   Calendar,
   DollarSign,
   MapPin,
@@ -40,9 +39,7 @@ import {
   Building2,
   Paperclip,
   Eye,
-  TrendingUp,
   Bell,
-  Activity,
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
@@ -155,8 +152,7 @@ function MsimamiziAdminInner() {
     }
   };
 
-  // Active Tab across all 41 Master Navigation modules (Persisted across refreshes & URL synced)
-  const validTabIds = useMemo(() => ALL_NAV_ITEMS.map((i) => i.id), []);
+  // Active Tab across all Master Navigation modules (Persisted across refreshes & URL synced)
   const getInitialTab = () => {
     try {
       const validIds = ALL_NAV_ITEMS.map((i) => i.id);
@@ -247,9 +243,6 @@ function MsimamiziAdminInner() {
 
   // New Manual Registration page state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-
-  // KPI stats
-  const [kpis, setKpis] = useState(adminRegistrationService.getKPIs());
 
   // Dynamic Courses Management State (Accredited Programs from DataService)
   const [courses, setCourses] = useState(() => dataService.getCoursesList());
@@ -591,7 +584,6 @@ function MsimamiziAdminInner() {
     setInquiries(inqList);
     setVacancies(Array.isArray(vacList) ? vacList : []);
     setApplications(Array.isArray(appList) ? appList : []);
-    setKpis(adminRegistrationService.getKPIs());
     setInvoices(msimamiziEnterpriseService.getInvoices());
     setPayments(msimamiziEnterpriseService.getPayments());
     setCohorts(msimamiziEnterpriseService.getCohorts());
@@ -1428,75 +1420,6 @@ function MsimamiziAdminInner() {
     const timer = window.setTimeout(() => setShowInitialLoader(false), 320);
     return () => window.clearTimeout(timer);
   }, []);
-
-  // Dashboard Analytics Data (Computed live from portal records)
-  const venueAnalyticsData = useMemo(() => {
-    const map = {};
-    registrations.forEach((r) => {
-      const key = (r.venue || 'Nairobi, Kenya').split(',')[0].trim() || 'Nairobi';
-      if (!map[key]) {
-        map[key] = { name: key, revenueUSD: 0, bookings: 0 };
-      }
-      map[key].revenueUSD += Number(r.totalFee) || 0;
-      map[key].bookings += 1;
-    });
-    const list = Object.values(map).sort((a, b) => b.revenueUSD - a.revenueUSD);
-    if (list.length > 0) return list.slice(0, 7);
-    return [
-      { name: 'Nairobi', revenueUSD: 0, bookings: 0 },
-      { name: 'Mombasa', revenueUSD: 0, bookings: 0 },
-      { name: 'Diani', revenueUSD: 0, bookings: 0 },
-      { name: 'Zanzibar', revenueUSD: 0, bookings: 0 },
-      { name: 'Dubai', revenueUSD: 0, bookings: 0 },
-    ];
-  }, [registrations]);
-
-  const statusDistributionData = useMemo(() => {
-    const counts = { Confirmed: 0, Approved: 0, Pending: 0, Completed: 0 };
-    registrations.forEach((r) => {
-      const st = r.status || 'Pending';
-      if (st in counts) {
-        counts[st] += 1;
-      } else {
-        counts.Pending += 1;
-      }
-    });
-    const palette = [
-      { name: 'Confirmed', value: counts.Confirmed, color: '#00a99d' },
-      { name: 'Approved', value: counts.Approved, color: '#0d2240' },
-      { name: 'Pending', value: counts.Pending, color: '#f59e0b' },
-      { name: 'Completed', value: counts.Completed, color: '#008000' },
-    ];
-    return palette.filter((item) => item.value > 0);
-  }, [registrations]);
-
-  const monthlyActivityData = useMemo(() => {
-    const now = new Date();
-    const months = [];
-    for (let i = 5; i >= 0; i -= 1) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
-        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-        label: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-        registrations: 0,
-        inquiries: 0,
-        applications: 0,
-      });
-    }
-    const bucket = Object.fromEntries(months.map((m) => [m.key, m]));
-    const assign = (items, field) => {
-      items.forEach((item) => {
-        const dt = item?.submittedAt ? new Date(item.submittedAt) : null;
-        if (!dt || Number.isNaN(dt.getTime())) return;
-        const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
-        if (bucket[k]) bucket[k][field] += 1;
-      });
-    };
-    assign(registrations, 'registrations');
-    assign(inquiries, 'inquiries');
-    assign(applications, 'applications');
-    return months;
-  }, [registrations, inquiries, applications]);
 
   const initialLoaderOverlay = showInitialLoader ? (
     <div className="fixed inset-0 z-[99999] bg-white flex items-center justify-center font-['Inter',sans-serif] text-[13px] transition-opacity duration-300">
