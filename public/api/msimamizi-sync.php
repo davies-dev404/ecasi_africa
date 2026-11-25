@@ -41,13 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// 2. Authorized Administrator Allowlist & Institutional Domain Validator
-const AUTHORIZED_ADMINS = [
-    'riobag@ecasiafrica.org',
-    'acob@ecasiafrica.org',
+// 2. Designated Super Administrators (Jacob Olonde & Gift Rioba) & Institutional Domain Validator
+const SUPER_ADMINS = [
     'jacob@ecasiafrica.org',
-    'info@ecasiafrica.org',
-    'admin@ecasiafrica.org',
+    'acob@ecasiafrica.org',
+    'riobag@ecasiafrica.org',
+    'gift@ecasiafrica.org',
 ];
 
 function normalizeAdminEmail(string $raw): string {
@@ -59,11 +58,31 @@ function normalizeAdminEmail(string $raw): string {
     return $clean;
 }
 
-function isAuthorizedAdmin(string $email): bool {
+function isSuperAdminEmail(string $email): bool {
+    return in_array(normalizeAdminEmail($email), SUPER_ADMINS, true);
+}
+
+function isValidInstitutionalEmail(string $email): bool {
+    $norm = normalizeAdminEmail($email);
+    if ($norm === '' || !filter_var($norm, FILTER_VALIDATE_EMAIL)) return false;
+    return str_ends_with($norm, '@ecasiafrica.org');
+}
+
+function isAuthorizedAdmin(string $email, ?array $store = null): bool {
     $norm = normalizeAdminEmail($email);
     if ($norm === '') return false;
-    if (in_array($norm, AUTHORIZED_ADMINS, true)) return true;
-    return str_ends_with($norm, '@ecasiafrica.org');
+    if (isSuperAdminEmail($norm)) return true;
+    if (!isValidInstitutionalEmail($norm)) return false;
+    if ($store !== null) {
+        $accounts = is_array($store['accounts'] ?? null) ? $store['accounts'] : [];
+        foreach ($accounts as $acc) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $norm) {
+                return true;
+            }
+        }
+        return false;
+    }
+    return true;
 }
 
 // 2b. Role-Based Access Control (RBAC) Matrix (Server-side enforcement)
@@ -112,13 +131,16 @@ function roleHasPermission(string $role, string $permission): bool {
 
 function getAdminRoleFromStore(array $store, string $email): string {
     $norm = normalizeAdminEmail($email);
+    if (isSuperAdminEmail($norm)) {
+        return 'SUPER_ADMIN';
+    }
     $accounts = is_array($store['accounts'] ?? null) ? $store['accounts'] : [];
     foreach ($accounts as $acc) {
         if (normalizeAdminEmail($acc['email'] ?? '') === $norm) {
-            return normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN');
+            return normalizeAdminRole($acc['role'] ?? 'SUPPORT_OFFICER');
         }
     }
-    return 'SUPER_ADMIN';
+    return 'REPORTS_VIEWER';
 }
 
 function appendAuditEvent(
@@ -1126,10 +1148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $password = trim((string)($payload['password'] ?? ''));
         $clientDigest = sanitizeText($payload['credentialDigest'] ?? '', 120);
 
-        if (!isAuthorizedAdmin($email)) {
+        if (!isAuthorizedAdmin($email, $store)) {
             writeAuditLog($auditLogFile, 'admin_login', $email, 'DENIED_UNAUTHORIZED_EMAIL');
             http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Unauthorized administrator email.']);
+            echo json_encode(['success' => false, 'error' => 'Account not provisioned. Please contact a Super Admin (Jacob Olonde or Gift Rioba) to add your @ecasiafrica.org account.']);
             exit;
         }
 
@@ -1212,10 +1234,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $password = trim((string)($payload['password'] ?? ''));
         $clientDigest = sanitizeText($payload['credentialDigest'] ?? '', 120);
 
-        if (!isAuthorizedAdmin($email)) {
+        if (!isAuthorizedAdmin($email, $store)) {
             writeAuditLog($auditLogFile, 'register_admin', $email, 'DENIED_UNAUTHORIZED_EMAIL');
             http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Unauthorized email. Access restricted to authorized @ecasiafrica.org administrators.']);
+            echo json_encode(['success' => false, 'error' => 'Account not provisioned. Only users added by Super Admins (Jacob Olonde or Gift Rioba) may activate an @ecasiafrica.org login.']);
             exit;
         }
 
@@ -1250,11 +1272,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        $assignedRole = $foundIdx >= 0
+            ? normalizeAdminRole($accounts[$foundIdx]['role'] ?? 'SUPPORT_OFFICER')
+            : (isSuperAdminEmail($email) ? 'SUPER_ADMIN' : 'SUPPORT_OFFICER');
+
         $record = [
             'email' => $email,
             'passwordHash' => $hash,
             'credentialDigest' => $clientDigest,
-            'role' => 'Administrator',
+            'role' => isSuperAdminEmail($email) ? 'SUPER_ADMIN' : $assignedRole,
+            'status' => $foundIdx >= 0 ? ($accounts[$foundIdx]['status'] ?? 'Active') : 'Active',
             'updatedAt' => gmdate('c'),
         ];
 
@@ -1628,14 +1655,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'manage_staff_account') {
         $enforcePermission('admin.manage');
         $targetEmail = normalizeAdminEmail((string)($payload['email'] ?? ''));
-        if (!isAuthorizedAdmin($targetEmail)) {
+        if (!isValidInstitutionalEmail($targetEmail)) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Staff account must use an official @ecasiafrica.org email address.']);
+            echo json_encode(['success' => false, 'error' => 'Staff account must use a valid @ecasiafrica.org email address.']);
             exit;
         }
-        $newRole = normalizeAdminRole($payload['role'] ?? 'SUPPORT_OFFICER');
-        $newStatus = in_array($payload['status'] ?? 'Active', ['Active', 'Suspended'], true) ? $payload['status'] : 'Active';
+        $isProtectedSuper = isSuperAdminEmail($targetEmail);
+        $newRole = $isProtectedSuper ? 'SUPER_ADMIN' : normalizeAdminRole($payload['role'] ?? 'SUPPORT_OFFICER');
+        $newStatus = $isProtectedSuper ? 'Active' : (in_array($payload['status'] ?? 'Active', ['Active', 'Suspended'], true) ? $payload['status'] : 'Active');
         $newName = sanitizeText($payload['name'] ?? '', 140);
+        $initialPassword = trim((string)($payload['password'] ?? ''));
+        $clientDigest = sanitizeText($payload['credentialDigest'] ?? '', 120);
+
+        if ($initialPassword !== '' && strlen($initialPassword) < 6) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Initial password must be at least 6 characters long.']);
+            exit;
+        }
+
         $accounts = is_array($store['accounts'] ?? null) ? $store['accounts'] : [];
         $idx = -1;
         foreach ($accounts as $i => $acc) {
@@ -1644,26 +1681,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
         }
-        $prevRole = $idx >= 0 ? ($accounts[$idx]['role'] ?? 'SUPER_ADMIN') : 'None';
+        $prevRole = $idx >= 0 ? ($accounts[$idx]['role'] ?? 'SUPPORT_OFFICER') : 'None';
         if ($idx >= 0) {
             $accounts[$idx]['role'] = $newRole;
             $accounts[$idx]['status'] = $newStatus;
             if ($newName !== '') $accounts[$idx]['name'] = $newName;
+            if ($initialPassword !== '') {
+                $accounts[$idx]['passwordHash'] = password_hash($initialPassword, PASSWORD_BCRYPT);
+                if ($clientDigest !== '') $accounts[$idx]['credentialDigest'] = $clientDigest;
+            }
             $accounts[$idx]['updatedAt'] = gmdate('c');
+            $accounts[$idx]['addedBy'] = $accounts[$idx]['addedBy'] ?? $adminEmail;
         } else {
-            $accounts[] = [
+            $entry = [
                 'email' => $targetEmail,
                 'name' => $newName,
                 'role' => $newRole,
                 'status' => $newStatus,
+                'addedBy' => $adminEmail,
                 'createdAt' => gmdate('c'),
                 'updatedAt' => gmdate('c'),
             ];
+            if ($initialPassword !== '') {
+                $entry['passwordHash'] = password_hash($initialPassword, PASSWORD_BCRYPT);
+                if ($clientDigest !== '') $entry['credentialDigest'] = $clientDigest;
+            }
+            $accounts[] = $entry;
         }
         $store['accounts'] = $accounts;
-        appendAuditEvent($store, $adminEmail, $adminRole, 'MANAGE_STAFF_PERMISSION', 'StaffAccount', $targetEmail, "role={$prevRole}", "role={$newRole}, status={$newStatus}");
+        appendAuditEvent($store, $adminEmail, $adminRole, $idx >= 0 ? 'UPDATE_STAFF_USER' : 'ADD_STAFF_USER', 'StaffAccount', $targetEmail, "role={$prevRole}", "role={$newRole}, status={$newStatus}" . ($initialPassword !== '' ? ', password_set' : ''));
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'manage_staff_account', $adminEmail, 'SUCCESS', "target={$targetEmail} role={$newRole} status={$newStatus}");
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($action === 'delete_staff_account') {
+        $enforcePermission('admin.manage');
+        $targetEmail = normalizeAdminEmail((string)($payload['email'] ?? ''));
+        if (isSuperAdminEmail($targetEmail)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Primary Super Admin accounts (Jacob Olonde & Gift Rioba) cannot be deleted.']);
+            exit;
+        }
+        $accounts = is_array($store['accounts'] ?? null) ? $store['accounts'] : [];
+        $store['accounts'] = array_values(array_filter($accounts, function ($acc) use ($targetEmail) {
+            return normalizeAdminEmail($acc['email'] ?? '') !== $targetEmail;
+        }));
+        appendAuditEvent($store, $adminEmail, $adminRole, 'REMOVE_STAFF_USER', 'StaffAccount', $targetEmail, 'Active', 'Removed');
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'delete_staff_account', $adminEmail, 'SUCCESS', "target={$targetEmail}");
         echo json_encode(['success' => true]);
         exit;
     }

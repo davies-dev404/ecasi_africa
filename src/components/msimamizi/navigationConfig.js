@@ -49,6 +49,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'dashboard_group',
     label: 'DASHBOARD',
+    icon: LayoutGrid,
     items: [
       { id: 'dashboard', label: 'Overview', icon: LayoutGrid, permission: 'dashboard.view' },
     ],
@@ -56,6 +57,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'admissions_group',
     label: 'ADMISSIONS MANAGEMENT',
+    icon: UserCheck,
     items: [
       { id: 'registrations', label: 'Registrations', icon: Users, permission: 'admissions.view', badgeKey: 'registrations' },
       { id: 'applicants', label: 'Applicants', icon: UserCheck, permission: 'admissions.view' },
@@ -66,6 +68,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'crm_group',
     label: 'CLIENT RELATIONSHIP MANAGEMENT',
+    icon: MessageSquare,
     items: [
       { id: 'inquiries', label: 'Inquiries & Leads', icon: MessageSquare, permission: 'crm.view', badgeKey: 'inquiries' },
       { id: 'lead-pipeline', label: 'Lead Pipeline', icon: GitBranch, permission: 'crm.view' },
@@ -76,6 +79,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'academic_group',
     label: 'ACADEMIC MANAGEMENT',
+    icon: BookOpen,
     items: [
       { id: 'courses', label: 'Courses & Programmes', icon: BookOpen, permission: 'courses.view', badgeKey: 'courses' },
       { id: 'course-categories', label: 'Course Categories', icon: FolderTree, permission: 'courses.view' },
@@ -87,6 +91,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'finance_group',
     label: 'FINANCE MANAGEMENT',
+    icon: Wallet,
     items: [
       { id: 'finance-overview', label: 'Financial Overview', icon: Wallet, permission: 'finance.view' },
       { id: 'invoices', label: 'Invoices', icon: Receipt, permission: 'finance.view', badgeKey: 'invoices' },
@@ -98,6 +103,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'recruitment_group',
     label: 'CAREERS & RECRUITMENT',
+    icon: Briefcase,
     items: [
       { id: 'vacancies', label: 'Vacancies', icon: Briefcase, permission: 'recruitment.view', badgeKey: 'vacancies' },
       { id: 'candidate-cvs', label: 'Candidate CVs', icon: FileUser, permission: 'recruitment.view', badgeKey: 'applications' },
@@ -109,6 +115,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'reports_group',
     label: 'REPORTING & ANALYTICS',
+    icon: BarChart3,
     items: [
       { id: 'institutional-analytics', label: 'Institutional Analytics', icon: BarChart3, permission: 'reports.view' },
       { id: 'admissions-reports', label: 'Admissions Reports', icon: FileBarChart2, permission: 'reports.view' },
@@ -121,6 +128,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'communications_group',
     label: 'COMMUNICATIONS',
+    icon: Mail,
     items: [
       { id: 'email-centre', label: 'Email Centre', icon: Mail, permission: 'communications.view' },
       { id: 'notifications', label: 'Notifications', icon: Bell, permission: 'communications.view' },
@@ -131,6 +139,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'website_group',
     label: 'WEBSITE MANAGEMENT',
+    icon: Globe,
     items: [
       { id: 'cms-homepage', label: 'Homepage Content', icon: Globe, permission: 'cms.view' },
       { id: 'cms-programmes', label: 'Programme Content', icon: Layers, permission: 'cms.view' },
@@ -143,6 +152,7 @@ export const MASTER_NAV_GROUPS = [
   {
     id: 'admin_group',
     label: 'ADMINISTRATION',
+    icon: ShieldCheck,
     items: [
       { id: 'staff-accounts', label: 'Staff Accounts', icon: UserCog, permission: 'admin.manage' },
       { id: 'roles-permissions', label: 'Roles & Permissions', icon: ShieldCheck, permission: 'admin.manage' },

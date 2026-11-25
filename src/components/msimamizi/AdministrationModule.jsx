@@ -5,7 +5,7 @@ import {
   ScrollText,
   Settings,
   Activity,
-  Plus,
+  UserPlus,
   RefreshCw,
   Download,
   Search,
@@ -16,7 +16,14 @@ import {
   HardDrive,
   Mail,
   Lock,
+  Crown,
+  User,
+  KeyRound,
+  Trash2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
+import { isSuperAdminEmail } from '@/services/adminRegistrationService';
 import {
   ROLE_CATALOG,
   normalizeRole,
@@ -33,7 +40,8 @@ export default function AdministrationModule({
   onDataChange,
   showToast,
 }) {
-  const [staffForm, setStaffForm] = useState({ email: '', name: '', role: 'ADMISSIONS_OFFICER', status: 'Active' });
+  const [staffForm, setStaffForm] = useState({ email: '', name: '', role: 'ADMISSIONS_OFFICER', status: 'Active', password: '' });
+  const [showStaffPass, setShowStaffPass] = useState(false);
   const [auditSearch, setAuditSearch] = useState('');
   const [auditEntityFilter, setAuditEntityFilter] = useState('All');
   const [settingsForm, setSettingsForm] = useState(settings || msimamiziEnterpriseService.getSettings());
@@ -67,120 +75,297 @@ export default function AdministrationModule({
     });
   }, [auditEvents, auditSearch, auditEntityFilter]);
 
-  // 1. STAFF ACCOUNTS
+  // 1. STAFF ACCOUNTS (Super Admins Jacob Olonde & Gift Rioba manage @ecasiafrica.org users)
   if (activeTab === 'staff-accounts') {
     const handleSaveStaff = async (e) => {
       e.preventDefault();
-      const res = await msimamiziEnterpriseService.manageStaffAccount(staffForm, currentUser);
+      const rawEmail = staffForm.email.trim();
+      const fullEmail = rawEmail.includes('@') ? rawEmail : `${rawEmail}@ecasiafrica.org`;
+      const res = await msimamiziEnterpriseService.manageStaffAccount(
+        { ...staffForm, email: fullEmail },
+        currentUser
+      );
       if (!res.success) {
         alert(res.error);
         return;
       }
-      setStaffForm({ email: '', name: '', role: 'ADMISSIONS_OFFICER', status: 'Active' });
+      setStaffForm({ email: '', name: '', role: 'ADMISSIONS_OFFICER', status: 'Active', password: '' });
       onDataChange();
-      showToast('Staff account permissions updated & synced.');
+      showToast(
+        res.isNew
+          ? `Added ${fullEmail} to ECAS Msimamizi (${staffForm.role}).`
+          : `Updated permissions for ${fullEmail}.`
+      );
+    };
+
+    const handleQuickResetPassword = async (acc) => {
+      const nextPass = window.prompt(`Enter a new temporary password (min. 6 characters) for ${acc.email}:`);
+      if (!nextPass) return;
+      if (nextPass.trim().length < 6) {
+        alert('Password must be at least 6 characters.');
+        return;
+      }
+      const res = await msimamiziEnterpriseService.manageStaffAccount(
+        { email: acc.email, name: acc.name, role: acc.role, status: acc.status || 'Active', password: nextPass.trim() },
+        currentUser
+      );
+      if (res.success) {
+        onDataChange();
+        showToast(`Password updated for ${acc.email}.`);
+      } else {
+        alert(res.error);
+      }
     };
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-              <UserCog className="w-5 h-5 text-[#00B8B0]" /> Staff Accounts ({staffAccounts.length})
-            </h2>
-            <p className="text-xs text-[#718096]">Assign roles and enforce backend &amp; frontend RBAC permissions for @ecasiafrica.org staff.</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
-                  <th className="py-3 px-4">Staff Member</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Quick Role Change</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {staffAccounts.map((acc) => {
-                  const def = getRoleDefinition(acc.role);
-                  return (
-                    <tr key={acc.email} className="hover:bg-[#F5F8FC]">
-                      <td className="py-3 px-4">
-                        <p className="font-bold text-[#10243E]">{acc.name || acc.email.split('@')[0]}</p>
-                        <p className="text-[11px] font-mono text-[#718096]">{acc.email}</p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2.5 py-0.5 rounded-full border text-[10.5px] font-bold ${def.badgeColor}`}>
-                          {def.label}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          acc.status === 'Suspended' ? 'bg-red-100 text-[#DC4545]' : 'bg-emerald-100 text-[#16A36A]'
-                        }`}>
-                          {acc.status || 'Active'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5">
-                          <select
-                            value={normalizeRole(acc.role)}
-                            onChange={async (e) => {
-                              const res = await msimamiziEnterpriseService.manageStaffAccount(
-                                { email: acc.email, name: acc.name, role: e.target.value, status: acc.status || 'Active' },
-                                currentUser
-                              );
-                              if (res.success) {
-                                onDataChange();
-                                showToast(`Updated ${acc.email} to ${e.target.value}.`);
-                              }
-                            }}
-                            className="h-8 px-2 rounded-lg border border-slate-300 bg-white text-[11px] font-bold"
-                          >
-                            {ROLE_CATALOG.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
-                          </select>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              const nextStatus = acc.status === 'Suspended' ? 'Active' : 'Suspended';
-                              await msimamiziEnterpriseService.manageStaffAccount(
-                                { email: acc.email, name: acc.name, role: acc.role, status: nextStatus },
-                                currentUser
-                              );
-                              onDataChange();
-                              showToast(`${acc.email} marked as ${nextStatus}.`);
-                            }}
-                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[10.5px] font-bold cursor-pointer"
-                          >
-                            {acc.status === 'Suspended' ? 'Activate' : 'Suspend'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      <div className="space-y-5">
+        {/* Primary Super Admin Authority Banner */}
+        <div className="bg-[#071C2D] text-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/10 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="w-10 h-10 rounded-xl bg-[#00B8B0]/20 border border-[#00B8B0]/40 text-[#00B8B0] flex items-center justify-center shrink-0">
+              <Crown className="w-5 h-5" />
+            </span>
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#00B8B0]">
+                Super Admin User Provisioning Authority
+              </p>
+              <h3 className="text-sm font-black mt-0.5">
+                Primary Super Admins: Jacob Olonde (jacob@ecasiafrica.org) &amp; Gift Rioba (riobag@ecasiafrica.org)
+              </h3>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Only Super Admins can add, assign roles to, suspend, or remove other <strong className="text-white">@ecasiafrica.org</strong> institutional users.
+              </p>
+            </div>
           </div>
         </div>
 
-        <form onSubmit={handleSaveStaff} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3 text-xs h-fit">
-          <h3 className="text-sm font-black text-[#10243E] flex items-center gap-1.5">
-            <Plus className="w-4 h-4 text-[#00B8B0]" /> Add / Update Staff Access
-          </h3>
-          <input required type="email" placeholder="staffname@ecasiafrica.org" value={staffForm.email} onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-          <input placeholder="Full Name" value={staffForm.name} onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-          <select value={staffForm.role} onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white font-semibold">
-            {ROLE_CATALOG.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
-          </select>
-          <select value={staffForm.status} onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
-            <option value="Active">Active</option>
-            <option value="Suspended">Suspended</option>
-          </select>
-          <button type="submit" className="w-full py-2.5 rounded-xl bg-[#00B8B0] text-white font-bold cursor-pointer">
-            Save Staff Permissions
-          </button>
-        </form>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
+                <UserCog className="w-5 h-5 text-[#00B8B0]" /> Institutional Staff Accounts ({staffAccounts.length})
+              </h2>
+              <p className="text-xs text-[#718096]">Role-based access control enforced on both backend PHP API and Msimamizi UI.</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                    <th className="py-3 px-4">Staff Member</th>
+                    <th className="py-3 px-4">Role</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Manage Access</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {staffAccounts.map((acc) => {
+                    const def = getRoleDefinition(acc.role);
+                    const isPrimarySuper = isSuperAdminEmail(acc.email);
+                    return (
+                      <tr key={acc.email} className="hover:bg-[#F5F8FC]">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${isPrimarySuper ? 'bg-[#071C2D] text-[#00B8B0]' : 'bg-teal-50 text-teal-800'
+                              }`}>
+                              {isPrimarySuper ? <Crown className="w-4 h-4" /> : (acc.name || acc.email).substring(0, 2).toUpperCase()}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="font-bold text-[#10243E] flex items-center gap-1.5">
+                                <span>{acc.name || acc.email.split('@')[0]}</span>
+                                {isPrimarySuper && (
+                                  <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[9px] font-black uppercase">
+                                    Primary
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[11px] font-mono text-[#718096]">{acc.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2.5 py-0.5 rounded-full border text-[10.5px] font-bold ${def.badgeColor}`}>
+                            {def.label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${acc.status === 'Suspended' ? 'bg-red-100 text-[#DC4545]' : 'bg-emerald-100 text-[#16A36A]'
+                            }`}>
+                            {acc.status || 'Active'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
+                            {isPrimarySuper ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10.5px] font-bold">
+                                <Lock className="w-3 h-3 text-[#00B8B0]" /> Protected Super Admin
+                              </span>
+                            ) : (
+                              <>
+                                <select
+                                  value={normalizeRole(acc.role)}
+                                  onChange={async (e) => {
+                                    const res = await msimamiziEnterpriseService.manageStaffAccount(
+                                      { email: acc.email, name: acc.name, role: e.target.value, status: acc.status || 'Active' },
+                                      currentUser
+                                    );
+                                    if (res.success) {
+                                      onDataChange();
+                                      showToast(`Updated ${acc.email} to ${e.target.value}.`);
+                                    }
+                                  }}
+                                  className="h-8 px-2 rounded-lg border border-slate-300 bg-white text-[11px] font-bold"
+                                >
+                                  {ROLE_CATALOG.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickResetPassword(acc)}
+                                  title="Set / Reset Password"
+                                  className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 cursor-pointer"
+                                >
+                                  <KeyRound className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const nextStatus = acc.status === 'Suspended' ? 'Active' : 'Suspended';
+                                    await msimamiziEnterpriseService.manageStaffAccount(
+                                      { email: acc.email, name: acc.name, role: acc.role, status: nextStatus },
+                                      currentUser
+                                    );
+                                    onDataChange();
+                                    showToast(`${acc.email} marked as ${nextStatus}.`);
+                                  }}
+                                  className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[10.5px] font-bold cursor-pointer"
+                                >
+                                  {acc.status === 'Suspended' ? 'Activate' : 'Suspend'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!window.confirm(`Remove staff account ${acc.email} from Msimamizi?`)) return;
+                                    const res = await msimamiziEnterpriseService.deleteStaffAccount(acc.email, currentUser);
+                                    if (res.success) {
+                                      onDataChange();
+                                      showToast(`Removed ${acc.email}.`);
+                                    } else {
+                                      alert(res.error);
+                                    }
+                                  }}
+                                  title="Remove Staff User"
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-[#DC4545] hover:bg-red-50 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Add New @ecasiafrica.org User Form */}
+          <form onSubmit={handleSaveStaff} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3.5 text-xs h-fit">
+            <div>
+              <h3 className="text-sm font-black text-[#10243E] flex items-center gap-1.5">
+                <UserPlus className="w-4 h-4 text-[#00B8B0]" /> Add @ecasiafrica.org User
+              </h3>
+              <p className="text-[11px] text-[#718096] mt-0.5">
+                Provision a new staff account using their institutional email.
+              </p>
+            </div>
+
+            <div>
+              <label className="block font-bold text-[#10243E] mb-1">Full Name *</label>
+              <div className="relative">
+                <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  required
+                  placeholder="e.g. Jane Wanjiku"
+                  value={staffForm.name}
+                  onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
+                  className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-300"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-[#10243E] mb-1">Institutional Email *</label>
+              <div className="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:border-[#00B8B0]">
+                <div className="relative flex-1">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    required
+                    type="text"
+                    placeholder="username"
+                    value={staffForm.email}
+                    onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                    className="w-full h-9 pl-9 pr-2 border-0 focus:outline-none text-xs"
+                  />
+                </div>
+                {!staffForm.email.includes('@') && (
+                  <span className="px-2.5 h-9 flex items-center bg-[#F5F8FC] border-l border-slate-200 text-[11px] font-mono font-bold text-[#071C2D]">
+                    @ecasiafrica.org
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-[#10243E] mb-1">Assigned Role &amp; Permissions</label>
+              <div className="relative">
+                <ShieldCheck className="w-4 h-4 text-[#00B8B0] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <select
+                  value={staffForm.role}
+                  onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
+                  className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-300 bg-white font-semibold"
+                >
+                  {ROLE_CATALOG.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-[#10243E] mb-1">
+                Initial Password <span className="font-normal text-[#718096]">(Optional, min 6 chars)</span>
+              </label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showStaffPass ? 'text' : 'password'}
+                  minLength={6}
+                  placeholder="Set password now or leave blank"
+                  value={staffForm.password}
+                  onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
+                  className="w-full h-9 pl-9 pr-9 rounded-xl border border-slate-300"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowStaffPass((s) => !s)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  {showStaffPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              <p className="text-[10.5px] text-[#718096] mt-1">
+                If left blank, the user can set their own password on first login via &ldquo;Create First Password&rdquo;.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-2.5 rounded-xl bg-[#00B8B0] hover:bg-[#009c95] text-white font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Add &amp; Authorize User</span>
+            </button>
+          </form>
+        </div>
       </div>
     );
   }

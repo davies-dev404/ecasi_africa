@@ -13,6 +13,9 @@ import {
   Download,
   ShieldAlert,
   Search,
+  Clock,
+  XCircle,
+  RotateCcw,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -246,19 +249,27 @@ export default function FinanceModule({
       {/* Finance Top KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
-          { label: 'Total Invoiced', val: `$${metrics.totalInvoiced.toLocaleString()}`, color: 'text-[#10243E]' },
-          { label: 'Total Collected', val: `$${metrics.totalCollected.toLocaleString()}`, color: 'text-[#16A36A]' },
-          { label: 'Outstanding', val: `$${metrics.outstanding.toLocaleString()}`, color: 'text-[#F0A020]' },
-          { label: 'Overdue Invoices', val: metrics.overdueCount, color: 'text-[#DC4545]' },
-          { label: 'Pending Tx', val: metrics.pendingCount, color: 'text-amber-700' },
-          { label: 'Failed Tx', val: metrics.failedCount, color: 'text-[#DC4545]' },
-          { label: 'Refunded Tx', val: metrics.refundedCount, color: 'text-slate-600' },
-        ].map((card) => (
-          <div key={card.label} className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#718096] truncate">{card.label}</p>
-            <p className={`text-lg font-black mt-1 truncate ${card.color}`}>{card.val}</p>
-          </div>
-        ))}
+          { label: 'Total Invoiced', val: `$${metrics.totalInvoiced.toLocaleString()}`, color: 'text-[#10243E]', icon: Receipt, iconBg: 'bg-slate-100 text-[#071C2D]' },
+          { label: 'Total Collected', val: `$${metrics.totalCollected.toLocaleString()}`, color: 'text-[#16A36A]', icon: CheckCircle2, iconBg: 'bg-emerald-50 text-[#16A36A]' },
+          { label: 'Outstanding', val: `$${metrics.outstanding.toLocaleString()}`, color: 'text-[#F0A020]', icon: Wallet, iconBg: 'bg-amber-50 text-[#F0A020]' },
+          { label: 'Overdue Invoices', val: metrics.overdueCount, color: 'text-[#DC4545]', icon: AlertTriangle, iconBg: 'bg-red-50 text-[#DC4545]' },
+          { label: 'Pending Tx', val: metrics.pendingCount, color: 'text-amber-700', icon: Clock, iconBg: 'bg-amber-50 text-amber-700' },
+          { label: 'Failed Tx', val: metrics.failedCount, color: 'text-[#DC4545]', icon: XCircle, iconBg: 'bg-red-50 text-[#DC4545]' },
+          { label: 'Refunded Tx', val: metrics.refundedCount, color: 'text-slate-600', icon: RotateCcw, iconBg: 'bg-slate-100 text-slate-600' },
+        ].map((card) => {
+          const CardIcon = card.icon;
+          return (
+            <div key={card.label} className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-sm">
+              <div className="flex items-center justify-between gap-1.5 mb-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#718096] truncate">{card.label}</p>
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${card.iconBg}`}>
+                  <CardIcon className="w-3.5 h-3.5" />
+                </span>
+              </div>
+              <p className={`text-lg font-black truncate ${card.color}`}>{card.val}</p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Action Header */}

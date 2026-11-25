@@ -28,8 +28,24 @@ export function normalizeAdminEmail(raw) {
   return clean;
 }
 
+export const SUPER_ADMIN_EMAILS = [
+  'jacob@ecasiafrica.org',
+  'acob@ecasiafrica.org',
+  'riobag@ecasiafrica.org',
+  'gift@ecasiafrica.org',
+];
+
+export function isSuperAdminEmail(email) {
+  return SUPER_ADMIN_EMAILS.includes(normalizeAdminEmail(email));
+}
+
+export function isValidInstitutionalEmail(email) {
+  const clean = normalizeAdminEmail(email);
+  return Boolean(clean && clean.endsWith('@ecasiafrica.org') && /^[^\s@]+@ecasiafrica\.org$/.test(clean));
+}
+
 // Non-reversible local digest so plaintext passwords are never stored in browser storage
-function computeCredentialDigest(email, password) {
+export function computeCredentialDigest(email, password) {
   const normEmail = normalizeAdminEmail(email);
   const input = `ecasi_msimamizi_v2:${normEmail}:${String(password).trim()}`;
   let h1 = 0xdeadbeef ^ input.length;
@@ -156,7 +172,7 @@ function sendKeepaliveLifecycle(action, explicitToken = '') {
       },
       body: payloadStr,
       keepalive: true,
-    }).catch(() => {});
+    }).catch(() => { });
   } catch {
     // ignore unload fetch failures
   }
@@ -580,7 +596,7 @@ class AdminRegistrationService {
       const existing = this.getRegistrations();
       const newId = `REG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       const newRef = regData.referenceNo || `ECAS-${regData.scheduleId || '400827'}-${Math.floor(1000 + Math.random() * 9000)}`;
-      
+
       const newRecord = {
         id: newId,
         referenceNo: newRef,
@@ -1094,17 +1110,14 @@ class AdminRegistrationService {
   }
 
   // Designated Authorized Administrator Emails for Msimamizi Portal
+  // Super Admins (Jacob Olonde & Gift Rioba) + any @ecasiafrica.org staff provisioned by them
   isAuthorizedAdminEmail(email) {
     const clean = normalizeAdminEmail(email);
     if (!clean) return false;
-    const authorized = [
-      'riobag@ecasiafrica.org',
-      'acob@ecasiafrica.org',
-      'jacob@ecasiafrica.org',
-      'info@ecasiafrica.org',
-      'admin@ecasiafrica.org',
-    ];
-    return authorized.includes(clean) || clean.endsWith('@ecasiafrica.org');
+    if (isSuperAdminEmail(clean)) return true;
+    if (!isValidInstitutionalEmail(clean)) return false;
+    const accounts = this.getAdminAccounts();
+    return accounts.some((a) => normalizeAdminEmail(a.email) === clean);
   }
 
   // Retrieve dynamic administrator accounts from persistent storage (digests only, never plaintext)
@@ -1115,15 +1128,24 @@ class AdminRegistrationService {
       if (data) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Sanitize any legacy plaintext field if present
-          return parsed.map((a) => {
+          // Sanitize any legacy plaintext field & ensure Jacob & Gift always remain Super Admins
+          const sanitized = parsed.map((a) => {
             const copy = { ...a };
             if (copy.password && !copy.credentialDigest) {
               copy.credentialDigest = computeCredentialDigest(copy.email, copy.password);
             }
             delete copy.password;
+            const norm = normalizeAdminEmail(copy.email);
+            if (isSuperAdminEmail(norm)) {
+              copy.role = 'SUPER_ADMIN';
+              copy.status = 'Active';
+              if (!copy.name) {
+                copy.name = norm.includes('jacob') || norm.includes('acob') ? 'Jacob Olonde' : 'Gift Rioba';
+              }
+            }
             return copy;
           });
+          return sanitized;
         }
       }
     } catch (e) {
@@ -1132,21 +1154,19 @@ class AdminRegistrationService {
 
     const defaultAccounts = [
       {
-        email: 'riobag@ecasiafrica.org',
-        credentialDigest: computeCredentialDigest('riobag@ecasiafrica.org', 'msimamizi2026'),
-        role: 'Executive Director',
-        createdAt: '2026-01-01T00:00:00.000Z',
-      },
-      {
-        email: 'acob@ecasiafrica.org',
-        credentialDigest: computeCredentialDigest('acob@ecasiafrica.org', 'msimamizi2026'),
-        role: 'Administrator',
-        createdAt: '2026-01-01T00:00:00.000Z',
-      },
-      {
         email: 'jacob@ecasiafrica.org',
+        name: 'Jacob Olonde',
         credentialDigest: computeCredentialDigest('jacob@ecasiafrica.org', 'msimamizi2026'),
-        role: 'Administrator',
+        role: 'SUPER_ADMIN',
+        status: 'Active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        email: 'riobag@ecasiafrica.org',
+        name: 'Gift Rioba',
+        credentialDigest: computeCredentialDigest('riobag@ecasiafrica.org', 'msimamizi2026'),
+        role: 'SUPER_ADMIN',
+        status: 'Active',
         createdAt: '2026-01-01T00:00:00.000Z',
       },
     ];

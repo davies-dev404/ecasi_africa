@@ -5,6 +5,13 @@ import {
   FileSpreadsheet,
   Printer,
   Calendar,
+  Users,
+  TrendingUp,
+  DollarSign,
+  Briefcase,
+  Receipt,
+  CreditCard,
+  BookOpen,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -80,30 +87,35 @@ export default function ReportsModule({
   const exportSets = [
     {
       name: 'Admissions & Enrolments Dataset',
+      icon: Users,
       count: fRegs.length,
       headers: ['Ref No', 'Applicant', 'Email', 'Course', 'Destination', 'Stage', 'Payment', 'Fee'],
       rows: fRegs.map((r) => [r.referenceNo, `${r.firstName || ''} ${r.lastName || ''}`.trim(), r.officialEmail || r.personalEmail || '', r.eventTitle, r.venue, getEffectiveRegistrationStage(r), r.paymentStatus, r.totalFee]),
     },
     {
       name: 'Financial Invoices & Collections',
+      icon: Receipt,
       count: fInvs.length,
       headers: ['Invoice No', 'Applicant', 'Course', 'Currency', 'Net Amount', 'Paid', 'Balance', 'Status'],
       rows: fInvs.map((i) => [i.invoiceNo, i.applicantName, i.courseTitle, i.currency, i.netAmount, i.paidAmount, i.balance, i.status]),
     },
     {
       name: 'Verified Payment Transactions',
+      icon: CreditCard,
       count: fPays.length,
       headers: ['Reference', 'Invoice No', 'Applicant', 'Currency', 'Amount', 'Method', 'Date', 'Status', 'Reconciliation'],
       rows: fPays.map((p) => [p.reference, p.invoiceNo, p.applicantName, p.currency, p.amount, p.method, p.transactionDate, p.status, p.reconciliationStatus]),
     },
     {
       name: 'Course Catalog & Demand Report',
+      icon: BookOpen,
       count: courses.length,
       headers: ['Slug', 'Course Title', 'Category', 'Duration', 'Fee USD', 'Enrolments'],
       rows: courses.map((c) => [c.slug, c.title, c.category || '', c.duration || '5 Days', c.feeUsd || 1200, fRegs.filter((r) => r.courseSlug === c.slug || r.eventTitle === c.title).length]),
     },
     {
       name: 'Recruitment & Candidate CVs Report',
+      icon: Briefcase,
       count: fApps.length,
       headers: ['Ref', 'Candidate', 'Email', 'Vacancy', 'Stage', 'CV File', 'Date'],
       rows: fApps.map((a) => [a.referenceNo, a.fullName, a.email, a.jobTitle, normalizeCandidateStage(a.status), a.cvFileName, a.displayDate]),
@@ -146,25 +158,45 @@ export default function ReportsModule({
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <p className="text-[10px] font-bold uppercase text-[#718096]">Registrations (Period)</p>
-          <p className="text-xl font-black text-[#10243E] mt-1">{fRegs.length}</p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase text-[#718096]">Registrations (Period)</p>
+            <p className="text-xl font-black text-[#10243E] mt-1">{fRegs.length}</p>
+          </div>
+          <span className="w-10 h-10 rounded-xl bg-slate-100 text-[#071C2D] flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5" />
+          </span>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <p className="text-[10px] font-bold uppercase text-[#718096]">Lead Conversion Rate</p>
-          <p className="text-xl font-black text-[#00B8B0] mt-1">{conversionRate}</p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase text-[#718096]">Lead Conversion Rate</p>
+            <p className="text-xl font-black text-[#00B8B0] mt-1">{conversionRate}</p>
+          </div>
+          <span className="w-10 h-10 rounded-xl bg-teal-50 text-[#00B8B0] flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5" />
+          </span>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <p className="text-[10px] font-bold uppercase text-[#718096]">Verified Collections</p>
-          <p className="text-xl font-black text-[#16A36A] mt-1">
-            ${fPays.filter((p) => p.status === 'Verified').reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString()}
-          </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase text-[#718096]">Verified Collections</p>
+            <p className="text-xl font-black text-[#16A36A] mt-1">
+              ${fPays.filter((p) => p.status === 'Verified').reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString()}
+            </p>
+          </div>
+          <span className="w-10 h-10 rounded-xl bg-emerald-50 text-[#16A36A] flex items-center justify-center shrink-0">
+            <DollarSign className="w-5 h-5" />
+          </span>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <p className="text-[10px] font-bold uppercase text-[#718096]">Shortlisted / Total CVs</p>
-          <p className="text-xl font-black text-[#10243E] mt-1">
-            {fApps.filter((a) => ['Shortlisted', 'Interview', 'Selected'].includes(normalizeCandidateStage(a.status))).length} / {fApps.length}
-          </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase text-[#718096]">Shortlisted / Total CVs</p>
+            <p className="text-xl font-black text-[#10243E] mt-1">
+              {fApps.filter((a) => ['Shortlisted', 'Interview', 'Selected'].includes(normalizeCandidateStage(a.status))).length} / {fApps.length}
+            </p>
+          </div>
+          <span className="w-10 h-10 rounded-xl bg-amber-50 text-[#F0A020] flex items-center justify-center shrink-0">
+            <Briefcase className="w-5 h-5" />
+          </span>
         </div>
       </div>
 
@@ -221,12 +253,19 @@ export default function ReportsModule({
           <h3 className="text-sm font-extrabold text-[#10243E]">Exportable Institutional Reports (CSV, Excel &amp; Printable PDF)</h3>
         </div>
         <div className="divide-y divide-slate-100">
-          {exportSets.map((set) => (
-            <div key={set.name} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div>
-                <p className="font-bold text-[#10243E]">{set.name}</p>
-                <p className="text-[11px] text-[#718096]">{set.count} verified record{set.count === 1 ? '' : 's'} matching filter</p>
-              </div>
+          {exportSets.map((set) => {
+            const SetIcon = set.icon || Download;
+            return (
+              <div key={set.name} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-xl bg-[#F5F8FC] border border-slate-200 text-[#00B8B0] flex items-center justify-center shrink-0">
+                    <SetIcon className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <p className="font-bold text-[#10243E]">{set.name}</p>
+                    <p className="text-[11px] text-[#718096]">{set.count} verified record{set.count === 1 ? '' : 's'} matching filter</p>
+                  </div>
+                </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -254,7 +293,8 @@ export default function ReportsModule({
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

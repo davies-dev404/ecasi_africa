@@ -7,6 +7,9 @@ import {
   getStoredAdminToken,
   getSyncUrl,
   normalizeAdminEmail,
+  isSuperAdminEmail,
+  isValidInstitutionalEmail,
+  computeCredentialDigest,
 } from '@/services/adminRegistrationService';
 
 export const ENTERPRISE_KEYS = {
@@ -745,10 +748,10 @@ export const msimamiziEnterpriseService = {
     const cleanEmail = (lead.email || '').trim().toLowerCase();
     const duplicate = cleanEmail
       ? existingRegs.find(
-          (r) =>
-            ((r.officialEmail || '').toLowerCase() === cleanEmail || (r.personalEmail || '').toLowerCase() === cleanEmail) &&
-            (r.eventTitle || '').toLowerCase() === (lead.courseTitle || '').toLowerCase()
-        )
+        (r) =>
+          ((r.officialEmail || '').toLowerCase() === cleanEmail || (r.personalEmail || '').toLowerCase() === cleanEmail) &&
+          (r.eventTitle || '').toLowerCase() === (lead.courseTitle || '').toLowerCase()
+      )
       : null;
 
     if (duplicate) {
@@ -1047,14 +1050,24 @@ export const msimamiziEnterpriseService = {
     return merged;
   },
 
-  // ─── Staff Account & Role Management (Super Admin) ──────────────────────────
-  async manageStaffAccount({ email, name, role, status }, actor) {
-    const cleanEmail = normalizeAdminEmail(email);
-    if (!cleanEmail || !adminRegistrationService.isAuthorizedAdminEmail(cleanEmail)) {
-      return { success: false, error: 'Staff email must end with @ecasiafrica.org.' };
+  // ─── Staff Account & Role Management (Super Admin: Jacob Olonde & Gift Rioba) ─
+  async manageStaffAccount({ email, name, role, status, password = '' }, actor) {
+    if (!hasPermission(actor, 'admin.manage')) {
+      return { success: false, error: 'Only Super Admins (Jacob Olonde & Gift Rioba) can add or manage staff accounts.' };
     }
-    const normRole = normalizeRole(role);
-    const cleanStatus = status === 'Suspended' ? 'Suspended' : 'Active';
+    const cleanEmail = normalizeAdminEmail(email);
+    if (!isValidInstitutionalEmail(cleanEmail)) {
+      return { success: false, error: 'Staff email must be a valid @ecasiafrica.org address (e.g. name@ecasiafrica.org).' };
+    }
+    const cleanPassword = String(password || '').trim();
+    if (cleanPassword && cleanPassword.length < 6) {
+      return { success: false, error: 'Initial password must be at least 6 characters long.' };
+    }
+
+    const isProtectedSuper = isSuperAdminEmail(cleanEmail);
+    const normRole = isProtectedSuper ? 'SUPER_ADMIN' : normalizeRole(role);
+    const cleanStatus = isProtectedSuper ? 'Active' : (status === 'Suspended' ? 'Suspended' : 'Active');
+    const digest = cleanPassword ? computeCredentialDigest(cleanEmail, cleanPassword) : '';
 
     const accounts = adminRegistrationService.getAdminAccounts();
     const idx = accounts.findIndex((a) => normalizeAdminEmail(a.email) === cleanEmail);
@@ -1067,14 +1080,17 @@ export const msimamiziEnterpriseService = {
         name: name || updatedAccounts[idx].name || '',
         role: normRole,
         status: cleanStatus,
+        ...(digest ? { credentialDigest: digest } : {}),
         updatedAt: new Date().toISOString(),
       };
     } else {
       updatedAccounts.push({
         email: cleanEmail,
-        name: name || '',
+        name: name || cleanEmail.split('@')[0],
         role: normRole,
         status: cleanStatus,
+        ...(digest ? { credentialDigest: digest } : {}),
+        addedBy: actor?.email || 'super_admin',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -1087,11 +1103,44 @@ export const msimamiziEnterpriseService = {
       name: name || '',
       role: normRole,
       status: cleanStatus,
+      ...(cleanPassword ? { password: cleanPassword, credentialDigest: digest } : {}),
     });
     if (!serverRes.unreachable && !serverRes.ok) {
       return { success: false, error: serverRes.data?.error || 'Server rejected staff permission update.' };
     }
-    this.logAudit(actor, 'MANAGE_STAFF_PERMISSION', 'StaffAccount', cleanEmail, prevRole, `${normRole} (${cleanStatus})`, false);
+    this.logAudit(
+      actor,
+      idx >= 0 ? 'UPDATE_STAFF_USER' : 'ADD_STAFF_USER',
+      'StaffAccount',
+      cleanEmail,
+      prevRole,
+      `${normRole} (${cleanStatus})${cleanPassword ? ' [Password Set]' : ''}`,
+      false
+    );
+    notifyEnterpriseUpdate('staff');
+    return { success: true, accounts: updatedAccounts, isNew: idx < 0 };
+  },
+
+  async deleteStaffAccount(email, actor) {
+    if (!hasPermission(actor, 'admin.manage')) {
+      return { success: false, error: 'Only Super Admins (Jacob Olonde & Gift Rioba) can remove staff accounts.' };
+    }
+    const cleanEmail = normalizeAdminEmail(email);
+    if (isSuperAdminEmail(cleanEmail)) {
+      return { success: false, error: 'Primary Super Admin accounts (Jacob Olonde & Gift Rioba) cannot be deleted.' };
+    }
+    const accounts = adminRegistrationService.getAdminAccounts();
+    const updatedAccounts = accounts.filter((a) => normalizeAdminEmail(a.email) !== cleanEmail);
+    writeJson('ecasi_msimamizi_accounts', updatedAccounts);
+
+    const serverRes = await postEnterpriseAction({
+      action: 'delete_staff_account',
+      email: cleanEmail,
+    });
+    if (!serverRes.unreachable && !serverRes.ok) {
+      return { success: false, error: serverRes.data?.error || 'Server rejected account removal.' };
+    }
+    this.logAudit(actor, 'REMOVE_STAFF_USER', 'StaffAccount', cleanEmail, 'Active', 'Removed', false);
     notifyEnterpriseUpdate('staff');
     return { success: true, accounts: updatedAccounts };
   },

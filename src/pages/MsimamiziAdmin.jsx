@@ -2029,8 +2029,11 @@ export default function MsimamiziAdmin() {
               {isSidebarCollapsed && <span className="text-[11px] font-semibold">Menu</span>}
             </button>
 
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F5F8FC] border border-slate-200/80 text-[#10243E] text-xs font-bold truncate">
-              <span className="w-2 h-2 rounded-full bg-[#00B8B0] shrink-0" />
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#F5F8FC] border border-slate-200/80 text-[#10243E] text-xs font-bold truncate">
+              {(() => {
+                const ActiveIcon = activeNavMeta?.icon || LayoutGrid;
+                return <ActiveIcon className="w-3.5 h-3.5 text-[#00B8B0] shrink-0" />;
+              })()}
               <span className="truncate">
                 {activeDetailView === 'edit-course' && 'Edit Course & Pricing'}
                 {activeDetailView === 'new-course' && 'Upload New Course'}
@@ -2108,17 +2111,21 @@ export default function MsimamiziAdmin() {
                     <button type="button" onClick={() => setIsNotifOpen(false)} className="cursor-pointer"><X className="w-3.5 h-3.5" /></button>
                   </div>
                   <div className="divide-y divide-slate-100">
-                    <button type="button" onClick={() => { setActiveTab('registrations'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex justify-between cursor-pointer">
-                      <span>Pending Registrations</span><span className="font-black text-[#F0A020]">{registrations.filter((r) => getEffectiveRegistrationStage(r) === 'Application Received').length}</span>
+                    <button type="button" onClick={() => { setActiveTab('registrations'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-[#F0A020]" /> Pending Registrations</span>
+                      <span className="font-black text-[#F0A020]">{registrations.filter((r) => getEffectiveRegistrationStage(r) === 'Application Received').length}</span>
                     </button>
-                    <button type="button" onClick={() => { setActiveTab('inquiries'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex justify-between cursor-pointer">
-                      <span>New Unread Inquiries</span><span className="font-black text-[#DC4545]">{inquiries.filter((i) => normalizeLeadStatus(i.status) === 'New Lead').length}</span>
+                    <button type="button" onClick={() => { setActiveTab('inquiries'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="flex items-center gap-2"><MessageSquare className="w-3.5 h-3.5 text-[#DC4545]" /> New Unread Inquiries</span>
+                      <span className="font-black text-[#DC4545]">{inquiries.filter((i) => normalizeLeadStatus(i.status) === 'New Lead').length}</span>
                     </button>
-                    <button type="button" onClick={() => { setActiveTab('outstanding-balances'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex justify-between cursor-pointer">
-                      <span>Unpaid / Overdue Invoices</span><span className="font-black text-[#DC4545]">{sidebarBadges.outstandingInvoices}</span>
+                    <button type="button" onClick={() => { setActiveTab('outstanding-balances'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="flex items-center gap-2"><DollarSign className="w-3.5 h-3.5 text-[#DC4545]" /> Unpaid / Overdue Invoices</span>
+                      <span className="font-black text-[#DC4545]">{sidebarBadges.outstandingInvoices}</span>
                     </button>
-                    <button type="button" onClick={() => { setActiveTab('candidate-cvs'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex justify-between cursor-pointer">
-                      <span>New Candidate CVs</span><span className="font-black text-[#00B8B0]">{applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length}</span>
+                    <button type="button" onClick={() => { setActiveTab('candidate-cvs'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-[#00B8B0]" /> New Candidate CVs</span>
+                      <span className="font-black text-[#00B8B0]">{applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length}</span>
                     </button>
                   </div>
                 </div>

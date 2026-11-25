@@ -21,6 +21,11 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Calendar,
+  Mail,
+  FileSearch,
+  CalendarClock,
+  MessageCircle,
+  UserPlus,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -180,17 +185,17 @@ export default function OverviewDashboard({
     ).length;
 
     return [
-      { label: 'Pending Registrations', count: pendingRegs, severity: pendingRegs > 0 ? 'warning' : 'ok', target: 'registrations' },
-      { label: 'Applications Awaiting Review', count: reviewRegs, severity: reviewRegs > 0 ? 'warning' : 'ok', target: 'applicants' },
-      { label: 'Unread Inquiries', count: unreadInq, severity: unreadInq > 0 ? 'danger' : 'ok', target: 'inquiries' },
-      { label: 'Unanswered WhatsApp Leads', count: unansweredWhatsApp, severity: unansweredWhatsApp > 0 ? 'warning' : 'ok', target: 'inquiries' },
-      { label: 'Unanswered Email Inquiries', count: unansweredEmail, severity: unansweredEmail > 0 ? 'warning' : 'ok', target: 'inquiries' },
-      { label: 'Pending Invoice Payments', count: pendingInvoices, severity: pendingInvoices > 0 ? 'warning' : 'ok', target: 'outstanding-balances' },
-      { label: 'Overdue Invoices', count: overdueInvoices, severity: overdueInvoices > 0 ? 'danger' : 'ok', target: 'outstanding-balances' },
-      { label: 'Upcoming Cohort Deadlines (14d)', count: upcomingCohorts, severity: upcomingCohorts > 0 ? 'info' : 'ok', target: 'cohorts-intakes' },
-      { label: 'New CV Submissions', count: newCvs, severity: newCvs > 0 ? 'info' : 'ok', target: 'candidate-cvs' },
-      { label: 'Vacancies Approaching Expiry', count: expiringVacancies, severity: expiringVacancies > 0 ? 'warning' : 'ok', target: 'vacancies' },
-      { label: 'Courses Requiring Updates', count: coursesNeedingUpdates, severity: coursesNeedingUpdates > 0 ? 'info' : 'ok', target: 'courses' },
+      { label: 'Pending Registrations', count: pendingRegs, severity: pendingRegs > 0 ? 'warning' : 'ok', target: 'registrations', icon: Clock },
+      { label: 'Applications Awaiting Review', count: reviewRegs, severity: reviewRegs > 0 ? 'warning' : 'ok', target: 'applicants', icon: FileSearch },
+      { label: 'Unread Inquiries', count: unreadInq, severity: unreadInq > 0 ? 'danger' : 'ok', target: 'inquiries', icon: MessageSquare },
+      { label: 'Unanswered WhatsApp Leads', count: unansweredWhatsApp, severity: unansweredWhatsApp > 0 ? 'warning' : 'ok', target: 'inquiries', icon: MessageCircle },
+      { label: 'Unanswered Email Inquiries', count: unansweredEmail, severity: unansweredEmail > 0 ? 'warning' : 'ok', target: 'inquiries', icon: Mail },
+      { label: 'Pending Invoice Payments', count: pendingInvoices, severity: pendingInvoices > 0 ? 'warning' : 'ok', target: 'outstanding-balances', icon: Receipt },
+      { label: 'Overdue Invoices', count: overdueInvoices, severity: overdueInvoices > 0 ? 'danger' : 'ok', target: 'outstanding-balances', icon: AlertTriangle },
+      { label: 'Upcoming Cohort Deadlines (14d)', count: upcomingCohorts, severity: upcomingCohorts > 0 ? 'info' : 'ok', target: 'cohorts-intakes', icon: CalendarClock },
+      { label: 'New CV Submissions', count: newCvs, severity: newCvs > 0 ? 'info' : 'ok', target: 'candidate-cvs', icon: FileUser },
+      { label: 'Vacancies Approaching Expiry', count: expiringVacancies, severity: expiringVacancies > 0 ? 'warning' : 'ok', target: 'vacancies', icon: Briefcase },
+      { label: 'Courses Requiring Updates', count: coursesNeedingUpdates, severity: coursesNeedingUpdates > 0 ? 'info' : 'ok', target: 'courses', icon: BookOpen },
     ];
   }, [registrations, inquiries, invoices, cohorts, applications, vacancies, courses]);
 
@@ -418,6 +423,15 @@ export default function OverviewDashboard({
               <Megaphone className="w-3.5 h-3.5 text-indigo-600" /> Send Announcement
             </button>
           )}
+          {hasPermission(currentUser, 'admin.manage') && (
+            <button
+              type="button"
+              onClick={() => onNavigate('staff-accounts')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#071C2D] hover:bg-[#102D49] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+            >
+              <UserPlus className="w-3.5 h-3.5 text-[#00B8B0]" /> Add Staff User
+            </button>
+          )}
           {hasPermission(currentUser, 'reports.export') && (
             <button
               type="button"
@@ -471,27 +485,30 @@ export default function OverviewDashboard({
         </div>
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
           {alerts.map((alert) => {
-            const dotClass =
+            const AlertIcon = alert.icon || AlertCircle;
+            const iconBoxClass =
               alert.count === 0
-                ? 'bg-[#16A36A]'
+                ? 'bg-emerald-50 text-[#16A36A]'
                 : alert.severity === 'danger'
-                ? 'bg-[#DC4545]'
+                ? 'bg-red-50 text-[#DC4545]'
                 : alert.severity === 'warning'
-                ? 'bg-[#F0A020]'
-                : 'bg-[#00B8B0]';
+                ? 'bg-amber-50 text-[#F0A020]'
+                : 'bg-teal-50 text-[#00B8B0]';
             return (
               <button
                 key={alert.label}
                 type="button"
                 onClick={() => onNavigate(alert.target)}
-                className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border text-left transition cursor-pointer ${
+                className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-left transition cursor-pointer ${
                   alert.count > 0
                     ? 'bg-[#F5F8FC] hover:bg-slate-100 border-slate-200'
-                    : 'bg-white hover:bg-slate-50 border-slate-100 opacity-75'
+                    : 'bg-white hover:bg-slate-50 border-slate-100 opacity-80'
                 }`}
               >
-                <span className="flex items-center gap-2 min-w-0">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconBoxClass}`}>
+                    <AlertIcon className="w-3.5 h-3.5" />
+                  </span>
                   <span className="text-xs font-semibold text-[#10243E] truncate">{alert.label}</span>
                 </span>
                 <span

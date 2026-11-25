@@ -112,6 +112,7 @@ export default function MasterSidebar({
           {visibleGroups.map((group) => {
             const isAlwaysOpen = group.id === 'dashboard_group';
             const isGroupCollapsed = !isAlwaysOpen && Boolean(collapsedGroups[group.id]);
+            const GroupIcon = group.icon;
 
             return (
               <div key={group.id} className="px-0">
@@ -119,9 +120,12 @@ export default function MasterSidebar({
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.id)}
-                    className="w-full flex items-center justify-between px-4 py-1.5 text-[10px] font-extrabold tracking-widest text-slate-400/80 hover:text-white uppercase transition cursor-pointer"
+                    className="w-full flex items-center justify-between px-4 py-1.5 text-[10px] font-extrabold tracking-widest text-slate-400/90 hover:text-white uppercase transition cursor-pointer"
                   >
-                    <span className="truncate">{group.label}</span>
+                    <span className="flex items-center gap-2 min-w-0">
+                      {GroupIcon && <GroupIcon className="w-3.5 h-3.5 text-[#00B8B0]/80 shrink-0" />}
+                      <span className="truncate">{group.label}</span>
+                    </span>
                     {isGroupCollapsed ? (
                       <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-70" />
                     ) : (
@@ -152,11 +156,15 @@ export default function MasterSidebar({
                           }`}
                         >
                           <span className="flex items-center gap-3 min-w-0">
-                            <Icon
-                              className={`w-4 h-4 shrink-0 ${
-                                isActive ? 'text-[#00B8B0]' : 'text-slate-400 group-hover:text-white'
+                            <span
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition ${
+                                isActive
+                                  ? 'bg-[#00B8B0]/20 text-[#00B8B0]'
+                                  : 'bg-white/5 text-slate-400 group-hover:bg-white/10 group-hover:text-white'
                               }`}
-                            />
+                            >
+                              <Icon className="w-4 h-4" />
+                            </span>
                             <span className="text-[13px] truncate">{item.label}</span>
                           </span>
                           {typeof badgeVal === 'number' && badgeVal > 0 && (
