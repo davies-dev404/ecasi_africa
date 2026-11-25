@@ -5,6 +5,7 @@ import {
   GraduationCap, BookOpen, ArrowUpRight, Compass
 } from "lucide-react";
 import { dataService } from "@/lib/dataService";
+import { adminRegistrationService } from "@/services/adminRegistrationService";
 
 /* ── Horizontal Card-Box Data (Matching Screenshot 1 Devimpact Style) ── */
 const aboutBoxCards = [
@@ -474,6 +475,7 @@ const Header = () => {
             <div className="bg-ecasi-blue sm:bg-transparent py-1.5 px-3 sm:py-2.5 lg:pl-16 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-white flex-grow sm:flex-grow-0">
               <a
                 href="tel:+254708060223"
+                onClick={() => adminRegistrationService.trackOutboundChannel('Telephone', 'Top Bar Phone Call')}
                 className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Phone size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />
@@ -481,6 +483,7 @@ const Header = () => {
               </a>
               <a
                 href="mailto:info@ecasiafrica.org"
+                onClick={() => adminRegistrationService.trackOutboundChannel('Email', 'Top Bar Email Link')}
                 className="flex items-center text-white hover:text-white/80 transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Mail size={13} className="mr-1.5 md:mr-2 stroke-[2.5]" />

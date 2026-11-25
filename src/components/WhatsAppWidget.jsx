@@ -1,8 +1,6 @@
 import React from "react";
 import { adminRegistrationService } from "@/services/adminRegistrationService";
 
-const WIDGET_LOG_COOLDOWN_KEY = "ecasi_wa_widget_logged_at";
-
 const WhatsAppWidget = () => {
   const phoneNumber = "254708060223";
   const defaultMessage = encodeURIComponent(
@@ -11,24 +9,11 @@ const WhatsAppWidget = () => {
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${defaultMessage}`;
 
   const handleWidgetClick = () => {
-    try {
-      const lastLogged = Number(sessionStorage.getItem(WIDGET_LOG_COOLDOWN_KEY) || 0);
-      const now = Date.now();
-      if (now - lastLogged < 10 * 60 * 1000) return;
-      sessionStorage.setItem(WIDGET_LOG_COOLDOWN_KEY, String(now));
-      const pagePath = typeof window !== "undefined" ? window.location.pathname : "/";
-      adminRegistrationService.addInquiry({
-        channel: "WhatsApp",
-        leadSource: "WhatsApp",
-        inquiryType: "WhatsApp Quick Inquiry",
-        fullName: "Website Visitor (WhatsApp)",
-        courseTitle: "Executive Training Programme Inquiry",
-        venue: "Nairobi / Online",
-        message: `Visitor clicked "Inquire Now" WhatsApp widget from ${pagePath}.`,
-      });
-    } catch {
-      // ignore storage/tracking failures so WhatsApp still opens cleanly
-    }
+    adminRegistrationService.trackOutboundChannel("WhatsApp", "Floating WhatsApp Widget", {
+      inquiryType: "WhatsApp Quick Inquiry",
+      fullName: "Website Visitor (WhatsApp)",
+      courseTitle: "Executive Training Programme Inquiry",
+    });
   };
 
   return (

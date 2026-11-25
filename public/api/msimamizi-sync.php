@@ -204,14 +204,19 @@ function ensureProtectedDataDir(string $dir): bool {
     return true;
 }
 
-function resolveWritableDataDir(): string {
+function getStoreCandidateDirs(): array {
     $homeDir = getenv('HOME') ?: '/home/ecasorke';
-    $candidates = array_values(array_unique(array_filter([
+    return array_values(array_unique(array_filter([
         $homeDir . '/.msimamizi_store',
         dirname(__DIR__, 2) . '/.msimamizi_store',
+        dirname(__DIR__, 1) . '/.msimamizi_store',
         __DIR__ . '/.msimamizi_store',
         rtrim(sys_get_temp_dir(), '/\\') . '/ecasi_msimamizi_store',
     ])));
+}
+
+function resolveWritableDataDir(): string {
+    $candidates = getStoreCandidateDirs();
 
     // 1. Prefer an existing database file if its directory is writable (preserves all existing passwords & records)
     $existingReadOnlyFile = null;
@@ -247,6 +252,146 @@ function resolveWritableDataDir(): string {
 $dataDir = resolveWritableDataDir();
 $storeFile = $dataDir . '/msimamizi_db.json';
 $auditLogFile = $dataDir . '/audit.log';
+$storeLockHandle = null;
+
+function acquireStoreLock(string $dir) {
+    ensureProtectedDataDir($dir);
+    $lockPath = $dir . '/.store.lock';
+    $fp = @fopen($lockPath, 'c+');
+    if ($fp === false) {
+        return null;
+    }
+    @chmod($lockPath, 0600);
+    if (!@flock($fp, LOCK_EX)) {
+        @fclose($fp);
+        return null;
+    }
+    return $fp;
+}
+
+register_shutdown_function(function () use (&$storeLockHandle) {
+    if (is_resource($storeLockHandle)) {
+        @flock($storeLockHandle, LOCK_UN);
+        @fclose($storeLockHandle);
+        $storeLockHandle = null;
+    }
+});
+
+function recoverSiblingStoresData(string $primaryStoreFile, array &$store): bool {
+    $candidates = getStoreCandidateDirs();
+    $mergedMtimes = is_array($store['mergedSiblingMtimes'] ?? null) ? $store['mergedSiblingMtimes'] : [];
+    $deletedIds = is_array($store['deletedInquiryIds'] ?? null) ? $store['deletedInquiryIds'] : [];
+    $changed = false;
+
+    $seenInq = [];
+    foreach (($store['inquiries'] ?? []) as $item) {
+        if (!empty($item['id'])) $seenInq['id:' . $item['id']] = true;
+        if (!empty($item['referenceNo'])) $seenInq['ref:' . $item['referenceNo']] = true;
+    }
+    $seenReg = [];
+    foreach (($store['registrations'] ?? []) as $item) {
+        if (!empty($item['id'])) $seenReg['id:' . $item['id']] = true;
+        if (!empty($item['referenceNo'])) $seenReg['ref:' . $item['referenceNo']] = true;
+    }
+    $seenApp = [];
+    foreach (($store['applications'] ?? []) as $item) {
+        if (!empty($item['id'])) $seenApp['id:' . $item['id']] = true;
+        if (!empty($item['referenceNo'])) $seenApp['ref:' . $item['referenceNo']] = true;
+    }
+    $seenAcc = [];
+    foreach (($store['accounts'] ?? []) as $acc) {
+        $em = normalizeAdminEmail($acc['email'] ?? '');
+        if ($em !== '') $seenAcc[$em] = true;
+    }
+
+    foreach ($candidates as $dir) {
+        $sibFile = $dir . '/msimamizi_db.json';
+        if ($sibFile === $primaryStoreFile || !is_file($sibFile) || !is_readable($sibFile)) {
+            continue;
+        }
+        $mtime = (int)@filemtime($sibFile);
+        if (isset($mergedMtimes[$sibFile]) && (int)$mergedMtimes[$sibFile] >= $mtime) {
+            continue;
+        }
+        $raw = @file_get_contents($sibFile);
+        if (!$raw) {
+            $mergedMtimes[$sibFile] = $mtime;
+            continue;
+        }
+        $sib = json_decode($raw, true);
+        if (!is_array($sib)) {
+            $mergedMtimes[$sibFile] = $mtime;
+            continue;
+        }
+
+        $sibInqAdded = false;
+        foreach (($sib['inquiries'] ?? []) as $inq) {
+            if (!is_array($inq)) continue;
+            $iid = (string)($inq['id'] ?? '');
+            $iref = (string)($inq['referenceNo'] ?? '');
+            if ($iid !== '' && in_array($iid, $deletedIds, true)) continue;
+            if (($iid !== '' && isset($seenInq['id:' . $iid])) || ($iref !== '' && isset($seenInq['ref:' . $iref]))) {
+                continue;
+            }
+            $store['inquiries'][] = $inq;
+            if ($iid !== '') $seenInq['id:' . $iid] = true;
+            if ($iref !== '') $seenInq['ref:' . $iref] = true;
+            $sibInqAdded = true;
+            $changed = true;
+        }
+        if ($sibInqAdded) {
+            usort($store['inquiries'], fn($a, $b) => strcmp((string)($b['createdAt'] ?? ''), (string)($a['createdAt'] ?? '')));
+            $store['inquiries'] = array_slice($store['inquiries'], 0, 5000);
+        }
+
+        $sibRegAdded = false;
+        foreach (($sib['registrations'] ?? []) as $reg) {
+            if (!is_array($reg)) continue;
+            $rid = (string)($reg['id'] ?? '');
+            $rref = (string)($reg['referenceNo'] ?? '');
+            if (($rid !== '' && isset($seenReg['id:' . $rid])) || ($rref !== '' && isset($seenReg['ref:' . $rref]))) {
+                continue;
+            }
+            $store['registrations'][] = $reg;
+            if ($rid !== '') $seenReg['id:' . $rid] = true;
+            if ($rref !== '') $seenReg['ref:' . $rref] = true;
+            $sibRegAdded = true;
+            $changed = true;
+        }
+        if ($sibRegAdded) {
+            usort($store['registrations'], fn($a, $b) => strcmp((string)($b['submittedAt'] ?? ''), (string)($a['submittedAt'] ?? '')));
+            $store['registrations'] = array_slice($store['registrations'], 0, 5000);
+        }
+
+        foreach (($sib['applications'] ?? []) as $app) {
+            if (!is_array($app)) continue;
+            $aid = (string)($app['id'] ?? '');
+            $aref = (string)($app['referenceNo'] ?? '');
+            if (($aid !== '' && isset($seenApp['id:' . $aid])) || ($aref !== '' && isset($seenApp['ref:' . $aref]))) {
+                continue;
+            }
+            $store['applications'][] = $app;
+            if ($aid !== '') $seenApp['id:' . $aid] = true;
+            if ($aref !== '') $seenApp['ref:' . $aref] = true;
+            $changed = true;
+        }
+
+        foreach (($sib['accounts'] ?? []) as $acc) {
+            if (!is_array($acc)) continue;
+            $em = normalizeAdminEmail($acc['email'] ?? '');
+            if ($em === '' || isset($seenAcc[$em])) continue;
+            $store['accounts'][] = $acc;
+            $seenAcc[$em] = true;
+            $changed = true;
+        }
+
+        $mergedMtimes[$sibFile] = $mtime;
+        $changed = true;
+    }
+
+    $store['mergedSiblingMtimes'] = $mergedMtimes;
+    return $changed;
+}
 
 function getClientIp(): string {
     $ip = $_SERVER['HTTP_CF_CONNECTING_IP']
@@ -337,11 +482,27 @@ const ADMIN_IDLE_TIMEOUT_SECONDS = 600; // Silent 10-minute idle timeout
 const ADMIN_HEARTBEAT_TTL_SECONDS = 90; // Prune un-heartbeated crashed/closed sessions cleanly
 
 function getBearerToken(): string {
-    $header = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $header = $_SERVER['HTTP_X_ADMIN_TOKEN']
+        ?? $_SERVER['REDIRECT_HTTP_X_ADMIN_TOKEN']
+        ?? $_SERVER['HTTP_AUTHORIZATION']
+        ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+        ?? '';
+    if ($header === '' && function_exists('getallheaders')) {
+        $allHeaders = @getallheaders();
+        if (is_array($allHeaders)) {
+            foreach ($allHeaders as $k => $v) {
+                $lk = strtolower((string)$k);
+                if ($lk === 'x-admin-token' || $lk === 'authorization') {
+                    $header = (string)$v;
+                    break;
+                }
+            }
+        }
+    }
     if (stripos($header, 'Bearer ') === 0) {
         return trim(substr($header, 7));
     }
-    return trim($header);
+    return trim((string)$header);
 }
 
 function pruneExpiredSessions(array &$store, int $now): void {
@@ -518,7 +679,7 @@ function sanitizeRegistration(array $reg): array {
 }
 
 function sanitizeInquiry(array $inq): array {
-    $validChannels = ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration', 'In-House Proposal', 'Calendar Download', 'Web Inquiry'];
+    $validChannels = ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration', 'In-House Proposal', 'Calendar Download', 'Web Inquiry', 'Direct Inquiry', 'Newsletter'];
     $channel = sanitizeText($inq['channel'] ?? 'WhatsApp', 40);
     if (!in_array($channel, $validChannels, true)) {
         $channel = 'WhatsApp';
@@ -963,7 +1124,15 @@ function sanitizeCoursesMap(array $courses): array {
     return $cleanMap;
 }
 
+$needsStoreLock = ($_SERVER['REQUEST_METHOD'] === 'POST')
+    || ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['scope'] ?? 'public') === 'admin');
+if ($needsStoreLock) {
+    $storeLockHandle = acquireStoreLock($dataDir);
+}
 $store = readStore($storeFile);
+if ($needsStoreLock && recoverSiblingStoresData($storeFile, $store)) {
+    writeStore($storeFile, $store);
+}
 
 // ─── GET REQUESTS ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -1147,10 +1316,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $cleanReg = sanitizeRegistration($regInput);
-        $existing = is_array($store['registrations']) ? $store['registrations'] : [];
-        array_unshift($existing, $cleanReg);
-        $store['registrations'] = array_slice($existing, 0, 5000);
-        writeStore($storeFile, $store);
+        $existing = is_array($store['registrations'] ?? null) ? $store['registrations'] : [];
+        $alreadyExists = false;
+        foreach ($existing as $item) {
+            if (
+                (!empty($cleanReg['id']) && ($item['id'] ?? '') === $cleanReg['id']) ||
+                (!empty($cleanReg['referenceNo']) && ($item['referenceNo'] ?? '') === $cleanReg['referenceNo'])
+            ) {
+                $alreadyExists = true;
+                break;
+            }
+        }
+        if (!$alreadyExists) {
+            array_unshift($existing, $cleanReg);
+            $store['registrations'] = array_slice($existing, 0, 5000);
+            if (!writeStore($storeFile, $store)) {
+                writeAuditLog($auditLogFile, 'add_registration', 'system', 'FAILED_STORAGE_WRITE', "dir={$dataDir}");
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Unable to persist registration to storage.']);
+                exit;
+            }
+        }
 
         $actorEmail = $cleanReg['officialEmail'] ?: ($cleanReg['personalEmail'] ?: 'public_delegate');
         writeAuditLog($auditLogFile, 'add_registration', $actorEmail, 'SUCCESS', 'ref=' . $cleanReg['referenceNo']);
@@ -1158,6 +1344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => true,
             'referenceNo' => $cleanReg['referenceNo'],
+            'id' => $cleanReg['id'],
         ]);
         exit;
     }
@@ -1619,7 +1806,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return strcmp((string)($b['createdAt'] ?? ''), (string)($a['createdAt'] ?? ''));
             });
             $store['inquiries'] = array_slice($existingInq, 0, 5000);
-            writeStore($storeFile, $store);
+            if (!writeStore($storeFile, $store)) {
+                writeAuditLog($auditLogFile, 'merge_inquiries', $adminEmail, 'FAILED_STORAGE_WRITE', "dir={$dataDir}");
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Unable to persist merged inquiries to storage.']);
+                exit;
+            }
             writeAuditLog($auditLogFile, 'merge_inquiries', $adminEmail, 'SUCCESS', "added={$addedCount} total=" . count($store['inquiries']));
         }
         echo json_encode([

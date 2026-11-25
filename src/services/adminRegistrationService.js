@@ -4,6 +4,8 @@
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const INQUIRIES_KEY = 'ecasi_course_inquiries_live';
 const DELETED_INQUIRIES_KEY = 'ecasi_deleted_inquiries_v1';
+const PENDING_INQUIRIES_KEY = 'ecasi_pending_inquiry_sync_v1';
+const PENDING_REGS_KEY = 'ecasi_pending_reg_sync_v1';
 const APPLICATIONS_KEY = 'ecasi_vacancy_applications_live';
 const VACANCIES_KEY = 'ecasi_vacancies';
 const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
@@ -221,6 +223,61 @@ if (typeof window !== 'undefined') {
   }
 }
 
+function readPendingSyncIds(storageKey) {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string' && id) : [];
+  } catch {
+    return [];
+  }
+}
+
+function enqueuePendingSyncId(storageKey, id) {
+  if (typeof window === 'undefined' || !id) return;
+  try {
+    const ids = readPendingSyncIds(storageKey);
+    if (!ids.includes(id)) {
+      ids.unshift(id);
+      localStorage.setItem(storageKey, JSON.stringify(ids.slice(0, 200)));
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function dequeuePendingSyncId(storageKey, id) {
+  if (typeof window === 'undefined' || !id) return;
+  try {
+    const ids = readPendingSyncIds(storageKey);
+    const next = ids.filter((item) => item !== id);
+    if (next.length !== ids.length) {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function trySendBeacon(payloadStr) {
+  if (
+    payloadStr.length >= 60000 ||
+    typeof navigator === 'undefined' ||
+    typeof navigator.sendBeacon !== 'function'
+  ) {
+    return false;
+  }
+  try {
+    return navigator.sendBeacon(
+      getSyncUrl(),
+      new Blob([payloadStr], { type: 'text/plain;charset=UTF-8' })
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function pushToServerWithStatus(payload, options = {}) {
   if (typeof window === 'undefined') return { unreachable: true, status: 0, data: null };
   const host = window.location.hostname;
@@ -234,6 +291,9 @@ async function pushToServerWithStatus(payload, options = {}) {
     return { unreachable: true, status: 0, data: null };
   }
   const canKeepalive = payloadStr.length < 60000;
+  if (options.beaconFirst && trySendBeacon(payloadStr)) {
+    return { unreachable: false, status: 202, ok: true, beaconQueued: true, data: { success: true } };
+  }
   try {
     const token = getStoredAdminToken();
     const headers = { 'Content-Type': 'application/json' };
@@ -248,25 +308,19 @@ async function pushToServerWithStatus(payload, options = {}) {
     });
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
+      if (options.beaconFallback) {
+        trySendBeacon(payloadStr);
+      }
       return { unreachable: true, status: res.status, data: null };
     }
     const data = await res.json();
+    if (!res.ok && options.beaconFallback) {
+      trySendBeacon(payloadStr);
+    }
     return { unreachable: false, status: res.status, ok: res.ok, data };
   } catch {
-    if (
-      options.beaconFallback &&
-      canKeepalive &&
-      typeof navigator !== 'undefined' &&
-      typeof navigator.sendBeacon === 'function'
-    ) {
-      try {
-        navigator.sendBeacon(
-          getSyncUrl(),
-          new Blob([payloadStr], { type: 'text/plain;charset=UTF-8' })
-        );
-      } catch {
-        // ignore beacon errors
-      }
+    if (options.beaconFallback) {
+      trySendBeacon(payloadStr);
     }
     return { unreachable: true, status: 0, data: null };
   }
@@ -458,17 +512,66 @@ class AdminRegistrationService {
     }
   }
 
+  async _flushPendingPublicWrites() {
+    if (typeof window === 'undefined') return;
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return;
+
+    const pendingInqIds = readPendingSyncIds(PENDING_INQUIRIES_KEY);
+    if (pendingInqIds.length > 0) {
+      const localInq = this.getInquiries();
+      for (const id of pendingInqIds) {
+        const item = localInq.find((inq) => inq.id === id);
+        if (!item) {
+          dequeuePendingSyncId(PENDING_INQUIRIES_KEY, id);
+          continue;
+        }
+        const res = await pushToServerWithStatus({ action: 'add_inquiry', inquiry: item });
+        if (res?.ok && res.data?.success) {
+          dequeuePendingSyncId(PENDING_INQUIRIES_KEY, id);
+        }
+      }
+    }
+
+    const pendingRegIds = readPendingSyncIds(PENDING_REGS_KEY);
+    if (pendingRegIds.length > 0) {
+      const localRegs = this.getRegistrations();
+      for (const id of pendingRegIds) {
+        const item = localRegs.find((reg) => reg.id === id);
+        if (!item) {
+          dequeuePendingSyncId(PENDING_REGS_KEY, id);
+          continue;
+        }
+        const res = await pushToServerWithStatus({ action: 'add_registration', registration: item });
+        if (res?.ok && res.data?.success) {
+          dequeuePendingSyncId(PENDING_REGS_KEY, id);
+        }
+      }
+    }
+  }
+
   async syncFromServer() {
     if (typeof window === 'undefined') return;
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') return;
 
+    const requestedScope = this.isAuthenticated() && getStoredAdminToken() ? 'admin' : 'public';
     if (this._activeSyncPromise) {
-      return this._activeSyncPromise;
+      if (this._activeSyncScope === requestedScope || requestedScope === 'public') {
+        return this._activeSyncPromise;
+      }
+      try {
+        await this._activeSyncPromise;
+      } catch {
+        // Proceed with authenticated admin sync after public sync settles
+      }
     }
 
-    this._activeSyncPromise = (async () => {
+    let currentPromise = null;
+    this._activeSyncScope = requestedScope;
+    currentPromise = (async () => {
       try {
+        await this._flushPendingPublicWrites();
         const isAuth = this.isAuthenticated();
         const token = getStoredAdminToken();
         const scope = isAuth && token ? 'admin' : 'public';
@@ -643,11 +746,15 @@ class AdminRegistrationService {
       } catch {
         // Ignore network sync errors
       } finally {
-        this._activeSyncPromise = null;
+        if (this._activeSyncPromise === currentPromise) {
+          this._activeSyncPromise = null;
+          this._activeSyncScope = null;
+        }
       }
     })();
 
-    return this._activeSyncPromise;
+    this._activeSyncPromise = currentPromise;
+    return currentPromise;
   }
 
   // Retrieve all real registrations (no fake mock seeds)
@@ -684,7 +791,12 @@ class AdminRegistrationService {
 
       const updated = [newRecord, ...existing];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'add_registration', registration: newRecord });
+      enqueuePendingSyncId(PENDING_REGS_KEY, newRecord.id);
+      pushToServerWithStatus({ action: 'add_registration', registration: newRecord }, { beaconFallback: true }).then((res) => {
+        if (res?.ok && res.data?.success) {
+          dequeuePendingSyncId(PENDING_REGS_KEY, newRecord.id);
+        }
+      });
 
       // Notify any listening admin tabs/components
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated', { detail: newRecord }));
@@ -837,7 +949,7 @@ class AdminRegistrationService {
     }
   }
 
-  addInquiry(inqData) {
+  addInquiry(inqData, options = {}) {
     if (typeof window === 'undefined') return null;
     try {
       const existing = this.getInquiries();
@@ -852,10 +964,15 @@ class AdminRegistrationService {
         minute: '2-digit',
       });
 
+      const resolvedChannel = inqData.channel || 'WhatsApp';
+      const standardSources = ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration'];
+      const resolvedSource = inqData.leadSource || (standardSources.includes(resolvedChannel) ? resolvedChannel : 'Website');
+
       const newInquiry = {
         id: newId,
         referenceNo: newRef,
-        channel: inqData.channel || 'WhatsApp',
+        channel: resolvedChannel,
+        leadSource: resolvedSource,
         inquiryType: inqData.inquiryType || 'Course Inquiry',
         fullName: inqData.fullName || 'Prospective Delegate',
         email: inqData.email || '',
@@ -877,11 +994,45 @@ class AdminRegistrationService {
 
       const updated = [newInquiry, ...existing];
       localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'add_inquiry', inquiry: newInquiry }, { beaconFallback: true });
+      enqueuePendingSyncId(PENDING_INQUIRIES_KEY, newInquiry.id);
+      pushToServerWithStatus(
+        { action: 'add_inquiry', inquiry: newInquiry },
+        { beaconFallback: true, beaconFirst: Boolean(options.beaconFirst) }
+      ).then((res) => {
+        if (res?.ok && res.data?.success) {
+          dequeuePendingSyncId(PENDING_INQUIRIES_KEY, newInquiry.id);
+        }
+      });
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated', { detail: newInquiry }));
       return newInquiry;
     } catch (e) {
       console.error('Failed to record inquiry:', e);
+      return null;
+    }
+  }
+
+  trackOutboundChannel(channel, label, extra = {}) {
+    if (typeof window === 'undefined') return null;
+    try {
+      const pagePath = window.location.pathname || '/';
+      const cooldownKey = `ecasi_track_${channel}_${extra.courseTitle || pagePath}`;
+      const last = Number(sessionStorage.getItem(cooldownKey) || 0);
+      const now = Date.now();
+      if (now - last < 5 * 60 * 1000) return null;
+      sessionStorage.setItem(cooldownKey, String(now));
+      return this.addInquiry(
+        {
+          channel,
+          leadSource: ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media'].includes(channel) ? channel : 'Website',
+          inquiryType: extra.inquiryType || `${label} Inquiry`,
+          fullName: extra.fullName || `Website Visitor (${label})`,
+          courseTitle: extra.courseTitle || 'General Institutional Inquiry',
+          venue: extra.venue || 'Nairobi / Online',
+          message: extra.message || `Visitor initiated ${label} from ${pagePath}.`,
+        },
+        { beaconFirst: true }
+      );
+    } catch {
       return null;
     }
   }

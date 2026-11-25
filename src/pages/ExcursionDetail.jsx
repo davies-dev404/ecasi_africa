@@ -792,13 +792,31 @@ const ExcursionDetail = () => {
                   <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col gap-2 text-xs text-slate-500">
                     <div className="flex items-center gap-2">
                       <Mail size={13} className="text-[#008000]" />
-                      <a href="mailto:info@ecasiafrica.org" className="hover:underline">
+                      <a
+                        href="mailto:info@ecasiafrica.org"
+                        onClick={() =>
+                          adminRegistrationService.trackOutboundChannel("Email", "Excursion Email Link", {
+                            courseTitle: `Beyond the Classroom: ${currentExcursion.title}`,
+                            inquiryType: "Excursion Direct Email Click",
+                          })
+                        }
+                        className="hover:underline"
+                      >
                         info@ecasiafrica.org
                       </a>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone size={13} className="text-[#008000]" />
-                      <a href="tel:+254708060223" className="hover:underline">
+                      <a
+                        href="tel:+254708060223"
+                        onClick={() =>
+                          adminRegistrationService.trackOutboundChannel("Telephone", "Excursion Phone Link", {
+                            courseTitle: `Beyond the Classroom: ${currentExcursion.title}`,
+                            inquiryType: "Excursion Direct Phone Click",
+                          })
+                        }
+                        className="hover:underline"
+                      >
                         +254 708 060 223 / Admissions Desk
                       </a>
                     </div>

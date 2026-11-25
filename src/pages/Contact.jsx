@@ -40,23 +40,12 @@ const Contact = () => {
   };
 
   const trackDirectChannelClick = (channel, label) => {
-    try {
-      const key = `ecasi_contact_click_${channel}`;
-      const last = Number(sessionStorage.getItem(key) || 0);
-      if (Date.now() - last < 5 * 60 * 1000) return;
-      sessionStorage.setItem(key, String(Date.now()));
-      adminRegistrationService.addInquiry({
-        channel,
-        leadSource: channel,
-        inquiryType: `Contact Page ${label}`,
-        fullName: `Website Visitor (${label})`,
-        courseTitle: 'General Institutional Inquiry',
-        venue: 'Nairobi / Online',
-        message: `Visitor clicked ${label} link on the Contact Us page.`,
-      });
-    } catch {
-      // ignore tracking errors
-    }
+    adminRegistrationService.trackOutboundChannel(channel, label, {
+      inquiryType: `Contact Page ${label}`,
+      fullName: `Website Visitor (${label})`,
+      courseTitle: 'General Institutional Inquiry',
+      message: `Visitor clicked ${label} link on the Contact Us page.`,
+    });
   };
 
   return (

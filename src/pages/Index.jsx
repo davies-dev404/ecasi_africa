@@ -9,6 +9,7 @@ import {
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ScrollAnimation from '@/components/ScrollAnimation';
+import { adminRegistrationService } from '@/services/adminRegistrationService';
 import beryleImg from '@/assets/beryle.png';
 import yasukoImg from '@/assets/yasuko.png';
 
@@ -557,7 +558,25 @@ const Index = () => {
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
-    if (newsletterEmail.trim()) {
+    const cleanEmail = newsletterEmail.trim();
+    if (cleanEmail) {
+      adminRegistrationService.addInquiry({
+        channel: 'Website',
+        leadSource: 'Website',
+        inquiryType: 'Newsletter & Updates Subscription',
+        fullName: cleanEmail.split('@')[0] || 'Website Subscriber',
+        email: cleanEmail,
+        courseTitle: '2026 Executive Training & Policy Updates',
+        venue: 'Online / Newsletter',
+        message: 'Visitor subscribed to ECAS Institute 2026 cohort and policy updates from homepage.',
+      });
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        fetch('/api/subscribe.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cleanEmail }),
+        }).catch(() => { });
+      }
       setNewsletterSubmitted(true);
       setNewsletterEmail("");
       setTimeout(() => setNewsletterSubmitted(false), 5000);
