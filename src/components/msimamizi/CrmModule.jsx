@@ -219,7 +219,7 @@ export default function CrmModule({
               <div key={item.id} className="p-4 hover:bg-[#F5F8FC] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-teal-800 font-bold text-[10px]">{item.channel}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[#008000] font-bold text-[10px]">{item.channel}</span>
                     <span className="font-bold text-[#032e42]">{item.contact}</span>
                     <span className="text-[10px] text-[#718096]">by {item.by}</span>
                   </div>
@@ -279,7 +279,7 @@ export default function CrmModule({
                 >
                   <div className="flex items-center justify-between">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      isOverdue ? 'bg-red-100 text-[#DC4545]' : isToday ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-teal-800'
+                      isOverdue ? 'bg-red-100 text-[#DC4545]' : isToday ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-[#008000]'
                     }`}>
                       {isOverdue ? `Overdue (${lead.nextFollowUp})` : isToday ? 'Due Today' : `Due ${lead.nextFollowUp}`}
                     </span>

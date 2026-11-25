@@ -1470,7 +1470,7 @@ function MsimamiziAdminInner() {
                 <img src="/logo.png" alt="ECAS Institute" className="w-full h-full object-contain" />
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                ECAS Msimamizi
+                ECASI Msimamizi
               </h1>
               <p className="text-xs text-white/80 mt-1 uppercase tracking-widest font-semibold">
                 Administrative Portal

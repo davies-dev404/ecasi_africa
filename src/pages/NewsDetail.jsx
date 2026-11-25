@@ -17,6 +17,7 @@ const NewsDetail = () => {
 
   if (!article) {
     return <Navigate to="/newsroom" replace />;
+ 
   }
 
   return (

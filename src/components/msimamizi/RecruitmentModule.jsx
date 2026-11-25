@@ -187,7 +187,7 @@ export default function RecruitmentModule({
                         </td>
                         <td className="py-3 px-4">
                           {app.cvDataUrl ? (
-                            <a href={app.cvDataUrl} download={app.cvFileName || 'CV.pdf'} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-teal-800 border border-emerald-200 font-bold text-[11px]">
+                            <a href={app.cvDataUrl} download={app.cvFileName || 'CV.pdf'} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-[#008000] border border-emerald-200 font-bold text-[11px]">
                               <Download className="w-3 h-3" /> {app.cvFileName || 'Download CV'}
                             </a>
                           ) : (
