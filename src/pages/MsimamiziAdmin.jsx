@@ -52,6 +52,7 @@ import { printRegistrationVoucher } from '@/utils/printRegistrationVoucher';
 import CourseRegistrationForm from '@/components/CourseRegistrationForm';
 import SEO from '@/components/SEO';
 import MasterSidebar from '@/components/msimamizi/MasterSidebar';
+import MsimamiziErrorBoundary from '@/components/msimamizi/MsimamiziErrorBoundary';
 import { ALL_NAV_ITEMS, getNavItemMeta } from '@/components/msimamizi/navigationConfig';
 import {
   msimamiziEnterpriseService,
@@ -86,7 +87,7 @@ const ModuleSkeleton = () => (
   </div>
 );
 
-export default function MsimamiziAdmin() {
+function MsimamiziAdminInner() {
 
   // Authentication & Dynamic Credentials State
   const [isAuthenticated, setIsAuthenticated] = useState(() => adminRegistrationService.isAuthenticated());
@@ -960,15 +961,42 @@ export default function MsimamiziAdmin() {
     }
   };
 
-  // Handle Logout & Session Expiry
+  // Handle Logout & Session Expiry — cleanly resets all portal state & URL tab so login screen always renders cleanly
   const handleLogout = (expiredByIdle = false) => {
     adminRegistrationService.logout();
     setIsAuthenticated(false);
     setAuthPassword('');
     setTurnstileVerified(false);
     setTurnstileToken('');
+    setActiveTabState('dashboard');
+    setEditingCourse(null);
+    setIsNewCourseModalOpen(false);
+    setSelectedReg(null);
+    setIsNewModalOpen(false);
+    setSelectedApplication(null);
+    setIsVacancyFormOpen(false);
+    setIsMobileMenuOpen(false);
+    setIsNotifOpen(false);
+    setPosterPreviewModal(null);
+    setGlobalSearch('');
+    try {
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = '';
+      }
+      localStorage.removeItem('msimamizi_active_tab');
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('tab');
+        window.history.replaceState(null, '', url.toString());
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    } catch {
+      // ignore storage/history errors
+    }
     if (expiredByIdle) {
       setAuthError('Your session has ended. Please sign in again to continue.');
+    } else {
+      setAuthError('');
     }
   };
 
@@ -1888,7 +1916,9 @@ export default function MsimamiziAdmin() {
           registrations={registrations}
           cohorts={cohorts}
           settings={platformSettings}
-          onEditCourse={openEditCourseModal}
+          publicSiteUrl={publicSiteUrl}
+          onEditCourse={(course) => openEditCourse(course, false)}
+          onOpenUploadCourse={openNewCoursePage}
         />
       );
     }
@@ -2167,14 +2197,20 @@ export default function MsimamiziAdmin() {
         <main className="p-4 sm:p-6 lg:px-8 lg:py-6 space-y-5 flex-1 max-w-[1320px] w-full mx-auto">
           {!activeDetailView && (
             <>
-              <Suspense fallback={<ModuleSkeleton />}>
-                {renderEnterpriseModule()}
-              </Suspense>
+              <MsimamiziErrorBoundary
+                resetKey={activeTab}
+                sectionLabel={activeNavMeta?.label || 'Module'}
+                onRecoverDashboard={() => setActiveTab('dashboard')}
+              >
+                <Suspense fallback={<ModuleSkeleton />}>
+                  {renderEnterpriseModule()}
+                </Suspense>
+              </MsimamiziErrorBoundary>
 
           {/* ════════════════════════════════════════════════════════════
             TAB 2: REGISTRATIONS MANAGER TABLE
         ════════════════════════════════════════════════════════════ */}
-          {false && activeTab === 'registrations' && (
+          {activeTab === '__legacy_registrations__' && (
             <div className="space-y-4">
               {/* Filter Bar */}
               <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
@@ -2456,7 +2492,7 @@ export default function MsimamiziAdmin() {
                   </button>
 
                   <a
-                    href="/institute-overview"
+                    href={`${publicSiteUrl === '/' ? '' : publicSiteUrl}/institute-overview`}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold transition shadow-sm"
@@ -2950,7 +2986,7 @@ export default function MsimamiziAdmin() {
 
                           <div className="flex items-center gap-1">
                             <a
-                              href={`/executive-training/${c.slug}`}
+                              href={`${publicSiteUrl === '/' ? '' : publicSiteUrl}/executive-training/${c.slug}`}
                               target="_blank"
                               rel="noreferrer"
                               className="p-1.5 rounded-lg text-slate-500 hover:text-[#008000] hover:bg-emerald-50 transition"
@@ -3033,7 +3069,7 @@ export default function MsimamiziAdmin() {
           {/* ───────────────────────────────────────────────────────────
               TAB 4: WHATSAPP & EMAIL INQUIRIES LOG
           ─────────────────────────────────────────────────────────── */}
-          {false && activeTab === 'inquiries' && (
+          {activeTab === '__legacy_inquiries__' && (
             <div className="space-y-6">
               {/* Filter & Export Bar */}
               <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
@@ -5200,6 +5236,14 @@ export default function MsimamiziAdmin() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MsimamiziAdmin() {
+  return (
+    <MsimamiziErrorBoundary fullScreen>
+      <MsimamiziAdminInner />
+    </MsimamiziErrorBoundary>
   );
 }
 

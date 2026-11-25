@@ -2366,13 +2366,24 @@ export default function ExecutiveTraining() {
 
   // If administrator updated custom cohorts or discounts via MsimamiziAdmin, reflect them dynamically
   const classroomCohorts = (Array.isArray(courseInfo.customCohorts) && courseInfo.customCohorts.length > 0)
-    ? courseInfo.customCohorts.map((dateStr, idx) => ({
-        scheduleNo: 400820 + idx,
-        dates: dateStr,
-        venue: defaultSchedules.classroomCohorts[idx % defaultSchedules.classroomCohorts.length]?.venue || 'Nairobi, Kenya',
-        fee: courseInfo.discountPrice ? `$${courseInfo.discountPrice}` : (courseInfo.fee || '$1,200'),
-        format: 'Classroom'
-      }))
+    ? courseInfo.customCohorts.map((dateStr, idx) => {
+        const numericFeeUsd = Number(courseInfo.discountPrice) || Number(courseInfo.feeUsd) || Number(String(courseInfo.fee || '').replace(/[^0-9]/g, '')) || 1200;
+        const formattedFeeUsd = `$${numericFeeUsd.toLocaleString()}`;
+        const formattedFeeKes = courseInfo.feeKes
+          ? `KES ${Number(courseInfo.feeKes).toLocaleString()}`
+          : `KES ${Math.round(numericFeeUsd * 130).toLocaleString()}`;
+        return {
+          id: `custom-cls-${idx + 1}`,
+          scheduleNo: String(400820 + idx),
+          dates: dateStr,
+          duration: courseInfo.duration || '5 Days',
+          venue: defaultSchedules.classroomCohorts[idx % defaultSchedules.classroomCohorts.length]?.venue || 'Nairobi, Kenya',
+          fee: formattedFeeUsd,
+          feeUsd: formattedFeeUsd,
+          feeKes: formattedFeeKes,
+          format: 'Classroom',
+        };
+      })
     : defaultSchedules.classroomCohorts;
 
   const onlineCohorts = defaultSchedules.onlineCohorts;
@@ -2662,7 +2673,7 @@ export default function ExecutiveTraining() {
                       </td>
                       <td className="whitespace-nowrap">
                         <Link
-                          to={`/register?schedule=${c.scheduleNo || 400827}&course=${encodeURIComponent(courseInfo.slug)}&title=${encodeURIComponent(courseInfo.title)}&venue=${encodeURIComponent(c.venue)}&fee=${encodeURIComponent(c.feeUsd.replace(/[^0-9]/g, '') || '1200')}`}
+                          to={`/register?schedule=${c.scheduleNo || 400827}&course=${encodeURIComponent(courseInfo.slug)}&title=${encodeURIComponent(courseInfo.title)}&venue=${encodeURIComponent(c.venue || 'Nairobi, Kenya')}&fee=${encodeURIComponent(String(c.feeUsd || c.fee || '1200').replace(/[^0-9]/g, '') || '1200')}`}
                           className="btn"
                           style={{ backgroundColor: '#008000', borderColor: '#008000' }}
                         >
