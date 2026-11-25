@@ -66,6 +66,92 @@ function isAuthorizedAdmin(string $email): bool {
     return str_ends_with($norm, '@ecasiafrica.org');
 }
 
+// 2b. Role-Based Access Control (RBAC) Matrix (Server-side enforcement)
+function normalizeAdminRole(?string $role): string {
+    $r = strtoupper(trim((string)$role));
+    $map = [
+        'SUPER_ADMIN' => 'SUPER_ADMIN',
+        'SUPER ADMIN' => 'SUPER_ADMIN',
+        'EXECUTIVE DIRECTOR' => 'SUPER_ADMIN',
+        'ADMINISTRATOR' => 'SUPER_ADMIN',
+        'ADMIN' => 'SUPER_ADMIN',
+        'ADMISSIONS_OFFICER' => 'ADMISSIONS_OFFICER',
+        'ADMISSIONS OFFICER' => 'ADMISSIONS_OFFICER',
+        'FINANCE_OFFICER' => 'FINANCE_OFFICER',
+        'FINANCE OFFICER' => 'FINANCE_OFFICER',
+        'COURSE_MANAGER' => 'COURSE_MANAGER',
+        'COURSE MANAGER' => 'COURSE_MANAGER',
+        'RECRUITMENT_OFFICER' => 'RECRUITMENT_OFFICER',
+        'RECRUITMENT OFFICER' => 'RECRUITMENT_OFFICER',
+        'SUPPORT_OFFICER' => 'SUPPORT_OFFICER',
+        'SUPPORT OFFICER' => 'SUPPORT_OFFICER',
+        'REPORTS_VIEWER' => 'REPORTS_VIEWER',
+        'REPORTS VIEWER' => 'REPORTS_VIEWER',
+    ];
+    return $map[$r] ?? 'SUPER_ADMIN';
+}
+
+function getRolePermissions(string $role): array {
+    $norm = normalizeAdminRole($role);
+    $matrix = [
+        'SUPER_ADMIN' => ['*'],
+        'ADMISSIONS_OFFICER' => ['dashboard.view', 'admissions.view', 'admissions.write', 'crm.view', 'crm.write', 'courses.view', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
+        'FINANCE_OFFICER' => ['dashboard.view', 'admissions.view', 'finance.view', 'finance.write', 'courses.view', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
+        'COURSE_MANAGER' => ['dashboard.view', 'courses.view', 'courses.write', 'cms.view', 'cms.write', 'reports.view', 'reports.export'],
+        'RECRUITMENT_OFFICER' => ['dashboard.view', 'recruitment.view', 'recruitment.write', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
+        'SUPPORT_OFFICER' => ['dashboard.view', 'admissions.view', 'crm.view', 'crm.write', 'communications.view', 'communications.write', 'reports.view'],
+        'REPORTS_VIEWER' => ['dashboard.view', 'admissions.view', 'crm.view', 'courses.view', 'finance.view', 'recruitment.view', 'reports.view', 'reports.export'],
+    ];
+    return $matrix[$norm] ?? $matrix['REPORTS_VIEWER'];
+}
+
+function roleHasPermission(string $role, string $permission): bool {
+    $perms = getRolePermissions($role);
+    return in_array('*', $perms, true) || in_array($permission, $perms, true);
+}
+
+function getAdminRoleFromStore(array $store, string $email): string {
+    $norm = normalizeAdminEmail($email);
+    $accounts = is_array($store['accounts'] ?? null) ? $store['accounts'] : [];
+    foreach ($accounts as $acc) {
+        if (normalizeAdminEmail($acc['email'] ?? '') === $norm) {
+            return normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN');
+        }
+    }
+    return 'SUPER_ADMIN';
+}
+
+function appendAuditEvent(
+    array &$store,
+    string $actor,
+    string $role,
+    string $action,
+    string $entityType,
+    string $affectedRecord = '',
+    string $previousValue = '',
+    string $newValue = ''
+): void {
+    if (!isset($store['auditEvents']) || !is_array($store['auditEvents'])) {
+        $store['auditEvents'] = [];
+    }
+    $event = [
+        'id' => 'AUD-' . gmdate('YmdHis') . '-' . bin2hex(random_bytes(3)),
+        'administrator' => sanitizeText($actor ?: 'system', 160),
+        'role' => normalizeAdminRole($role),
+        'action' => sanitizeText($action, 100),
+        'entityType' => sanitizeText($entityType, 64),
+        'affectedRecord' => sanitizeText($affectedRecord, 200),
+        'previousValue' => sanitizeText($previousValue, 500),
+        'newValue' => sanitizeText($newValue, 500),
+        'ip' => getClientIp(),
+        'timestamp' => gmdate('c'),
+    ];
+    array_unshift($store['auditEvents'], $event);
+    if (count($store['auditEvents']) > 5000) {
+        $store['auditEvents'] = array_slice($store['auditEvents'], 0, 5000);
+    }
+}
+
 // 3. Private Storage Directory (Outside public_html)
 $homeDir = getenv('HOME') ?: '/home/ecasorke';
 $dataDir = (is_dir($homeDir) && is_writable($homeDir))
@@ -116,6 +202,15 @@ function readStore(string $file): array {
         'courses' => [],
         'vacancies' => [],
         'applications' => [],
+        'invoices' => [],
+        'payments' => [],
+        'cohorts' => [],
+        'communications' => [],
+        'templates' => [],
+        'announcements' => [],
+        'cmsContent' => [],
+        'settings' => [],
+        'auditEvents' => [],
         'accounts' => [],
         'sessions' => [],
         'updatedAt' => gmdate('c'),
@@ -227,6 +322,45 @@ function issueAdminToken(array &$store, string $email, string $browserProfileId 
 }
 
 function sanitizeRegistration(array $reg): array {
+    $validStages = [
+        'Application Received', 'Under Review', 'Documents Required', 'Approved',
+        'Invoice Issued', 'Payment Pending', 'Payment Confirmed', 'Enrolment Confirmed',
+        'Training In Progress', 'Completed', 'Rejected', 'Withdrawn',
+        'Pending', 'Confirmed', 'Cancelled'
+    ];
+    $workflowStage = sanitizeText($reg['workflowStage'] ?? '', 48);
+    if (!in_array($workflowStage, $validStages, true)) {
+        $workflowStage = '';
+    }
+    $statusHistory = [];
+    if (isset($reg['statusHistory']) && is_array($reg['statusHistory'])) {
+        foreach (array_slice($reg['statusHistory'], 0, 50) as $h) {
+            if (!is_array($h)) continue;
+            $statusHistory[] = [
+                'stage' => sanitizeText($h['stage'] ?? '', 64),
+                'status' => sanitizeText($h['status'] ?? '', 48),
+                'by' => sanitizeText($h['by'] ?? '', 160),
+                'note' => sanitizeText($h['note'] ?? '', 400),
+                'at' => sanitizeText($h['at'] ?? gmdate('c'), 64),
+            ];
+        }
+    }
+    $documents = [];
+    if (isset($reg['documents']) && is_array($reg['documents'])) {
+        foreach (array_slice($reg['documents'], 0, 15) as $doc) {
+            if (!is_array($doc)) continue;
+            $documents[] = [
+                'id' => sanitizeText($doc['id'] ?? ('DOC-' . random_int(1000, 9999)), 64),
+                'name' => sanitizeText($doc['name'] ?? '', 200),
+                'type' => sanitizeText($doc['type'] ?? 'Supporting Document', 80),
+                'verified' => !empty($doc['verified']),
+                'verifiedBy' => sanitizeText($doc['verifiedBy'] ?? '', 160),
+                'verifiedAt' => sanitizeText($doc['verifiedAt'] ?? '', 64),
+                'uploadedAt' => sanitizeText($doc['uploadedAt'] ?? gmdate('c'), 64),
+                'dataUrl' => sanitizeAttachmentDataUrl($doc['dataUrl'] ?? ''),
+            ];
+        }
+    }
     return [
         'id' => sanitizeText($reg['id'] ?? ('REG-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
         'referenceNo' => sanitizeText($reg['referenceNo'] ?? ('ECAS-' . random_int(100000, 999999)), 64),
@@ -236,6 +370,7 @@ function sanitizeRegistration(array $reg): array {
         'lastName' => sanitizeText($reg['lastName'] ?? '', 120),
         'jobTitle' => sanitizeText($reg['jobTitle'] ?? '', 180),
         'organisation' => sanitizeText($reg['organisation'] ?? '', 200),
+        'academicBackground' => sanitizeText($reg['academicBackground'] ?? '', 300),
         'country' => sanitizeText($reg['country'] ?? 'Kenya', 100),
         'dialCode' => sanitizeText($reg['dialCode'] ?? '+254', 16),
         'phoneNumber' => sanitizeText($reg['phoneNumber'] ?? '', 40),
@@ -244,11 +379,14 @@ function sanitizeRegistration(array $reg): array {
         'eventTitle' => sanitizeText($reg['eventTitle'] ?? '', 300),
         'courseSlug' => sanitizeText($reg['courseSlug'] ?? '', 200),
         'scheduleId' => sanitizeText($reg['scheduleId'] ?? '', 64),
+        'cohortName' => sanitizeText($reg['cohortName'] ?? '', 120),
         'venue' => sanitizeText($reg['venue'] ?? 'Nairobi, Kenya', 120),
         'format' => sanitizeText($reg['format'] ?? 'Classroom', 64),
         'durationText' => sanitizeText($reg['durationText'] ?? '', 160),
         'participantsCount' => max(1, min(500, (int)($reg['participantsCount'] ?? 1))),
         'totalFee' => max(0, (float)($reg['totalFee'] ?? 0)),
+        'currency' => sanitizeText($reg['currency'] ?? 'USD', 12),
+        'discountAmount' => max(0, (float)($reg['discountAmount'] ?? 0)),
         'invoiceTo' => sanitizeText($reg['invoiceTo'] ?? 'Self', 64),
         'approvingAuthorityName' => sanitizeText($reg['approvingAuthorityName'] ?? '', 160),
         'approvingAuthorityEmail' => filter_var(trim((string)($reg['approvingAuthorityEmail'] ?? '')), FILTER_SANITIZE_EMAIL),
@@ -259,13 +397,18 @@ function sanitizeRegistration(array $reg): array {
         'needAccommodation' => sanitizeText($reg['needAccommodation'] ?? 'No', 160),
         'needAirportTransfer' => sanitizeText($reg['needAirportTransfer'] ?? 'No', 120),
         'needSafariTour' => sanitizeText($reg['needSafariTour'] ?? 'No', 120),
-        'status' => in_array($reg['status'] ?? 'Pending', ['Pending', 'Approved', 'Confirmed', 'Completed', 'Cancelled'], true)
+        'status' => in_array($reg['status'] ?? 'Pending', ['Pending', 'Under Review', 'Documents Required', 'Approved', 'Confirmed', 'Training In Progress', 'Completed', 'Rejected', 'Withdrawn', 'Cancelled'], true)
             ? $reg['status']
             : 'Pending',
-        'paymentStatus' => in_array($reg['paymentStatus'] ?? 'Unpaid', ['Unpaid', 'Invoiced', 'Paid', 'Refunded'], true)
+        'workflowStage' => $workflowStage,
+        'paymentStatus' => in_array($reg['paymentStatus'] ?? 'Unpaid', ['Unpaid', 'Invoiced', 'Partially Paid', 'Paid', 'Refunded'], true)
             ? $reg['paymentStatus']
             : 'Unpaid',
-        'adminNotes' => sanitizeText($reg['adminNotes'] ?? '', 1000),
+        'assignedOfficer' => sanitizeText($reg['assignedOfficer'] ?? '', 160),
+        'linkedLeadId' => sanitizeText($reg['linkedLeadId'] ?? '', 64),
+        'documents' => $documents,
+        'statusHistory' => $statusHistory,
+        'adminNotes' => sanitizeText($reg['adminNotes'] ?? '', 1500),
         'submittedAt' => sanitizeText($reg['submittedAt'] ?? gmdate('c'), 64),
         'displayDate' => sanitizeText($reg['displayDate'] ?? gmdate('j F Y'), 64),
         'updatedAt' => gmdate('c'),
@@ -273,20 +416,34 @@ function sanitizeRegistration(array $reg): array {
 }
 
 function sanitizeInquiry(array $inq): array {
-    $validChannels = ['WhatsApp', 'Email', 'In-House Proposal', 'Calendar Download', 'Web Inquiry'];
+    $validChannels = ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration', 'In-House Proposal', 'Calendar Download', 'Web Inquiry'];
     $channel = sanitizeText($inq['channel'] ?? 'WhatsApp', 40);
     if (!in_array($channel, $validChannels, true)) {
         $channel = 'WhatsApp';
     }
-    $validStatuses = ['New', 'Contacted', 'Converted', 'Archived'];
+    $validStatuses = ['New', 'New Lead', 'Contacted', 'Interested', 'Follow-up', 'Application Started', 'Converted', 'Closed', 'Archived'];
     $status = sanitizeText($inq['status'] ?? 'New', 32);
     if (!in_array($status, $validStatuses, true)) {
         $status = 'New';
+    }
+    $commLogs = [];
+    if (isset($inq['communicationLog']) && is_array($inq['communicationLog'])) {
+        foreach (array_slice($inq['communicationLog'], 0, 50) as $log) {
+            if (!is_array($log)) continue;
+            $commLogs[] = [
+                'id' => sanitizeText($log['id'] ?? ('LOG-' . random_int(1000, 9999)), 64),
+                'type' => sanitizeText($log['type'] ?? 'Note', 32),
+                'summary' => sanitizeText($log['summary'] ?? '', 1000),
+                'by' => sanitizeText($log['by'] ?? '', 160),
+                'at' => sanitizeText($log['at'] ?? gmdate('c'), 64),
+            ];
+        }
     }
     return [
         'id' => sanitizeText($inq['id'] ?? ('INQ-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
         'referenceNo' => sanitizeText($inq['referenceNo'] ?? ('INQ-' . random_int(100000, 999999)), 64),
         'channel' => $channel,
+        'leadSource' => sanitizeText($inq['leadSource'] ?? $channel, 48),
         'inquiryType' => sanitizeText($inq['inquiryType'] ?? 'Course Inquiry', 64),
         'fullName' => sanitizeText($inq['fullName'] ?? ($inq['senderName'] ?? 'Prospective Delegate'), 160),
         'email' => filter_var(trim((string)($inq['email'] ?? ($inq['senderEmail'] ?? ''))), FILTER_SANITIZE_EMAIL),
@@ -300,7 +457,13 @@ function sanitizeInquiry(array $inq): array {
         'fee' => sanitizeText($inq['fee'] ?? '', 64),
         'message' => sanitizeText($inq['message'] ?? '', 1500),
         'status' => $status,
-        'adminNotes' => sanitizeText($inq['adminNotes'] ?? '', 1000),
+        'assignedOfficer' => sanitizeText($inq['assignedOfficer'] ?? '', 160),
+        'lastContactDate' => sanitizeText($inq['lastContactDate'] ?? '', 64),
+        'nextFollowUp' => sanitizeText($inq['nextFollowUp'] ?? '', 64),
+        'priority' => sanitizeText($inq['priority'] ?? 'Normal', 24),
+        'linkedRegistrationId' => sanitizeText($inq['linkedRegistrationId'] ?? '', 64),
+        'communicationLog' => $commLogs,
+        'adminNotes' => sanitizeText($inq['adminNotes'] ?? '', 1500),
         'createdAt' => sanitizeText($inq['createdAt'] ?? gmdate('c'), 64),
         'displayDate' => sanitizeText($inq['displayDate'] ?? gmdate('j F Y, H:i'), 64),
         'updatedAt' => gmdate('c'),
@@ -341,7 +504,7 @@ function sanitizeAttachmentDataUrl($raw): string {
 }
 
 function sanitizeApplication(array $app): array {
-    $validStatuses = ['New', 'Shortlisted', 'Interview', 'Hired', 'Archived'];
+    $validStatuses = ['New', 'Application Received', 'Screening', 'Shortlisted', 'Interview', 'Selected', 'Hired', 'Rejected', 'Archived'];
     $status = sanitizeText($app['status'] ?? 'New', 32);
     if (!in_array($status, $validStatuses, true)) {
         $status = 'New';
@@ -446,9 +609,193 @@ function sanitizeApplication(array $app): array {
         'certDataUrl' => sanitizeAttachmentDataUrl($app['certDataUrl'] ?? ''),
         'declarationAccepted' => !empty($app['declarationAccepted']),
         'status' => $status,
-        'adminNotes' => sanitizeText($app['adminNotes'] ?? '', 1000),
+        'interviewDate' => sanitizeText($app['interviewDate'] ?? '', 64),
+        'interviewOutcome' => sanitizeText($app['interviewOutcome'] ?? '', 240),
+        'assignedOfficer' => sanitizeText($app['assignedOfficer'] ?? '', 160),
+        'adminNotes' => sanitizeText($app['adminNotes'] ?? '', 1500),
         'createdAt' => sanitizeText($app['createdAt'] ?? gmdate('c'), 64),
         'displayDate' => sanitizeText($app['displayDate'] ?? gmdate('j F Y, H:i'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function sanitizeInvoice(array $inv): array {
+    $validStatuses = ['Draft', 'Issued', 'Partially Paid', 'Paid', 'Overdue', 'Cancelled', 'Refunded'];
+    $status = sanitizeText($inv['status'] ?? 'Issued', 32);
+    if (!in_array($status, $validStatuses, true)) $status = 'Issued';
+    $amount = max(0, (float)($inv['amount'] ?? 0));
+    $discount = max(0, (float)($inv['discount'] ?? 0));
+    $additionalCharges = max(0, (float)($inv['additionalCharges'] ?? 0));
+    $netAmount = max(0, isset($inv['netAmount']) ? (float)$inv['netAmount'] : ($amount + $additionalCharges - $discount));
+    $paidAmount = max(0, (float)($inv['paidAmount'] ?? 0));
+    return [
+        'id' => sanitizeText($inv['id'] ?? ('INV-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
+        'invoiceNo' => sanitizeText($inv['invoiceNo'] ?? ('ECAS-INV-' . random_int(10000, 99999)), 64),
+        'registrationId' => sanitizeText($inv['registrationId'] ?? '', 64),
+        'applicantName' => sanitizeText($inv['applicantName'] ?? '', 180),
+        'applicantEmail' => filter_var(trim((string)($inv['applicantEmail'] ?? '')), FILTER_SANITIZE_EMAIL),
+        'organisation' => sanitizeText($inv['organisation'] ?? '', 200),
+        'courseTitle' => sanitizeText($inv['courseTitle'] ?? '', 300),
+        'courseSlug' => sanitizeText($inv['courseSlug'] ?? '', 200),
+        'cohortName' => sanitizeText($inv['cohortName'] ?? '', 140),
+        'destination' => sanitizeText($inv['destination'] ?? 'Nairobi, Kenya', 120),
+        'currency' => sanitizeText($inv['currency'] ?? 'USD', 12),
+        'amount' => $amount,
+        'additionalCharges' => $additionalCharges,
+        'discount' => $discount,
+        'netAmount' => $netAmount,
+        'paidAmount' => $paidAmount,
+        'balance' => max(0, $netAmount - $paidAmount),
+        'paymentPlan' => sanitizeText($inv['paymentPlan'] ?? 'Full Payment', 64),
+        'dueDate' => sanitizeText($inv['dueDate'] ?? '', 32),
+        'status' => $status,
+        'notes' => sanitizeText($inv['notes'] ?? '', 1000),
+        'issuedBy' => sanitizeText($inv['issuedBy'] ?? '', 160),
+        'createdAt' => sanitizeText($inv['createdAt'] ?? gmdate('c'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function sanitizePayment(array $pay): array {
+    $validStatuses = ['Pending', 'Verified', 'Failed', 'Refunded'];
+    $status = sanitizeText($pay['status'] ?? 'Verified', 32);
+    if (!in_array($status, $validStatuses, true)) $status = 'Pending';
+    $validRecon = ['Unmatched', 'Matched', 'Reconciled', 'Discrepancy', 'Duplicate'];
+    $recon = sanitizeText($pay['reconciliationStatus'] ?? 'Matched', 32);
+    if (!in_array($recon, $validRecon, true)) $recon = 'Unmatched';
+    return [
+        'id' => sanitizeText($pay['id'] ?? ('PAY-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
+        'reference' => sanitizeText($pay['reference'] ?? '', 120),
+        'invoiceId' => sanitizeText($pay['invoiceId'] ?? '', 64),
+        'invoiceNo' => sanitizeText($pay['invoiceNo'] ?? '', 64),
+        'registrationId' => sanitizeText($pay['registrationId'] ?? '', 64),
+        'applicantName' => sanitizeText($pay['applicantName'] ?? '', 180),
+        'amount' => max(0, (float)($pay['amount'] ?? 0)),
+        'currency' => sanitizeText($pay['currency'] ?? 'USD', 12),
+        'method' => sanitizeText($pay['method'] ?? 'Bank Transfer', 64),
+        'transactionDate' => sanitizeText($pay['transactionDate'] ?? gmdate('Y-m-d'), 32),
+        'status' => $status,
+        'reconciliationStatus' => $recon,
+        'supportingNote' => sanitizeText($pay['supportingNote'] ?? '', 600),
+        'verifiedBy' => sanitizeText($pay['verifiedBy'] ?? '', 160),
+        'createdAt' => sanitizeText($pay['createdAt'] ?? gmdate('c'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function sanitizeCohort(array $coh): array {
+    return [
+        'id' => sanitizeText($coh['id'] ?? ('COH-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
+        'name' => sanitizeText($coh['name'] ?? '', 180),
+        'courseSlug' => sanitizeText($coh['courseSlug'] ?? '', 200),
+        'courseTitle' => sanitizeText($coh['courseTitle'] ?? '', 300),
+        'intakeYear' => sanitizeText($coh['intakeYear'] ?? gmdate('Y'), 16),
+        'destination' => sanitizeText($coh['destination'] ?? 'Nairobi, Kenya', 140),
+        'startDate' => sanitizeText($coh['startDate'] ?? '', 32),
+        'endDate' => sanitizeText($coh['endDate'] ?? '', 32),
+        'applicationDeadline' => sanitizeText($coh['applicationDeadline'] ?? '', 32),
+        'availableSlots' => max(1, min(1000, (int)($coh['availableSlots'] ?? 30))),
+        'enrolmentStatus' => sanitizeText($coh['enrolmentStatus'] ?? 'Open', 32),
+        'scheduleNotes' => sanitizeText($coh['scheduleNotes'] ?? '', 600),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function sanitizeCommunication(array $c): array {
+    return [
+        'id' => sanitizeText($c['id'] ?? ('MSG-' . gmdate('Y') . '-' . random_int(1000, 9999)), 64),
+        'channel' => sanitizeText($c['channel'] ?? 'Email', 32),
+        'category' => sanitizeText($c['category'] ?? 'General', 48),
+        'recipientName' => sanitizeText($c['recipientName'] ?? '', 160),
+        'recipientContact' => sanitizeText($c['recipientContact'] ?? '', 200),
+        'subject' => sanitizeText($c['subject'] ?? '', 260),
+        'body' => sanitizeText($c['body'] ?? '', 4000),
+        'templateName' => sanitizeText($c['templateName'] ?? '', 120),
+        'deliveryStatus' => sanitizeText($c['deliveryStatus'] ?? 'Logged', 32),
+        'linkedEntityId' => sanitizeText($c['linkedEntityId'] ?? '', 64),
+        'sentBy' => sanitizeText($c['sentBy'] ?? '', 160),
+        'sentAt' => sanitizeText($c['sentAt'] ?? gmdate('c'), 64),
+    ];
+}
+
+function sanitizeTemplate(array $t): array {
+    return [
+        'id' => sanitizeText($t['id'] ?? ('TPL-' . random_int(1000, 9999)), 64),
+        'name' => sanitizeText($t['name'] ?? '', 140),
+        'channel' => sanitizeText($t['channel'] ?? 'Email', 32),
+        'category' => sanitizeText($t['category'] ?? 'Admissions', 64),
+        'subject' => sanitizeText($t['subject'] ?? '', 240),
+        'body' => sanitizeText($t['body'] ?? '', 4000),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function sanitizeAnnouncement(array $a): array {
+    return [
+        'id' => sanitizeText($a['id'] ?? ('ANN-' . random_int(1000, 9999)), 64),
+        'title' => sanitizeText($a['title'] ?? '', 240),
+        'body' => sanitizeText($a['body'] ?? '', 3000),
+        'audience' => sanitizeText($a['audience'] ?? 'All Visitors', 64),
+        'status' => in_array($a['status'] ?? 'Draft', ['Draft', 'Published', 'Archived'], true) ? $a['status'] : 'Draft',
+        'publishedAt' => sanitizeText($a['publishedAt'] ?? '', 64),
+        'createdBy' => sanitizeText($a['createdBy'] ?? '', 160),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function sanitizeCmsContent(array $cms): array {
+    $clean = [];
+    foreach (array_slice($cms, 0, 50) as $key => $section) {
+        if (!is_array($section)) continue;
+        $k = preg_replace('/[^a-zA-Z0-9_\-]/', '', (string)$key);
+        if ($k === '') continue;
+        $revisions = [];
+        if (isset($section['revisions']) && is_array($section['revisions'])) {
+            foreach (array_slice($section['revisions'], 0, 20) as $rev) {
+                if (!is_array($rev)) continue;
+                $revisions[] = [
+                    'at' => sanitizeText($rev['at'] ?? gmdate('c'), 64),
+                    'by' => sanitizeText($rev['by'] ?? '', 160),
+                    'note' => sanitizeText($rev['note'] ?? '', 240),
+                    'status' => sanitizeText($rev['status'] ?? 'Draft', 32),
+                ];
+            }
+        }
+        $clean[$k] = [
+            'title' => sanitizeText($section['title'] ?? '', 240),
+            'subtitle' => sanitizeText($section['subtitle'] ?? '', 600),
+            'body' => sanitizeText($section['body'] ?? '', 8000),
+            'ctaLabel' => sanitizeText($section['ctaLabel'] ?? '', 100),
+            'ctaUrl' => sanitizeText($section['ctaUrl'] ?? '', 300),
+            'status' => in_array($section['status'] ?? 'Draft', ['Draft', 'Published'], true) ? $section['status'] : 'Draft',
+            'items' => is_array($section['items'] ?? null) ? array_slice($section['items'], 0, 40) : [],
+            'revisions' => $revisions,
+            'updatedBy' => sanitizeText($section['updatedBy'] ?? '', 160),
+            'updatedAt' => gmdate('c'),
+        ];
+    }
+    return $clean;
+}
+
+function sanitizeSettings(array $s): array {
+    return [
+        'institutionName' => sanitizeText($s['institutionName'] ?? 'ECAS Institute (ECASIAFRICA)', 200),
+        'shortName' => sanitizeText($s['shortName'] ?? 'ECAS Institute', 80),
+        'tagline' => sanitizeText($s['tagline'] ?? 'Environment | Energy | Climate Action', 240),
+        'officialEmail' => filter_var(trim((string)($s['officialEmail'] ?? 'info@ecasiafrica.org')), FILTER_SANITIZE_EMAIL),
+        'admissionsEmail' => filter_var(trim((string)($s['admissionsEmail'] ?? 'admissions@ecasiafrica.org')), FILTER_SANITIZE_EMAIL),
+        'financeEmail' => filter_var(trim((string)($s['financeEmail'] ?? 'finance@ecasiafrica.org')), FILTER_SANITIZE_EMAIL),
+        'whatsappNumber' => sanitizeText($s['whatsappNumber'] ?? '+254722000000', 40),
+        'phone' => sanitizeText($s['phone'] ?? '+254-722-000-000', 60),
+        'address' => sanitizeText($s['address'] ?? 'Nairobi, Kenya', 260),
+        'defaultCurrency' => sanitizeText($s['defaultCurrency'] ?? 'USD', 12),
+        'usdToKesRate' => max(1, (float)($s['usdToKesRate'] ?? 130)),
+        'invoicePaymentTermsDays' => max(1, min(90, (int)($s['invoicePaymentTermsDays'] ?? 14))),
+        'bankDetails' => sanitizeText($s['bankDetails'] ?? '', 1000),
+        'mpesaPaybill' => sanitizeText($s['mpesaPaybill'] ?? '', 120),
+        'emailNotificationsEnabled' => !empty($s['emailNotificationsEnabled']),
+        'whatsappNotificationsEnabled' => !empty($s['whatsappNotificationsEnabled']),
+        'autoInvoiceOnApproval' => !empty($s['autoInvoiceOnApproval']),
         'updatedAt' => gmdate('c'),
     ];
 }
@@ -523,22 +870,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $token = getBearerToken();
     $adminEmail = validateAdminToken($store, $token, !$isVerify);
 
+    // System Health Diagnostics (Authenticated administrators only — never exposes secrets)
+    if ($scope === 'health' && $adminEmail !== null) {
+        $adminRole = getAdminRoleFromStore($store, $adminEmail);
+        $storeExists = file_exists($storeFile);
+        $storeSize = $storeExists ? (int)@filesize($storeFile) : 0;
+        $auditSize = file_exists($auditLogFile) ? (int)@filesize($auditLogFile) : 0;
+        $diskFree = @disk_free_space($dataDir);
+        $diskTotal = @disk_total_space($dataDir);
+        $dbConnected = false;
+        $dbNote = 'JSON Secure Store Active';
+        if (getenv('DB_NAME') && getenv('DB_USER')) {
+            $testConn = @new mysqli(getenv('DB_HOST') ?: 'localhost', getenv('DB_USER'), getenv('DB_PASS') ?: '', getenv('DB_NAME'));
+            if ($testConn && !$testConn->connect_error) {
+                $dbConnected = true;
+                $dbNote = 'MySQL Connected + JSON Secure Store';
+                $testConn->close();
+            } else {
+                $dbNote = 'JSON Secure Store Active (MySQL optional/unconfigured)';
+            }
+        }
+        echo json_encode([
+            'success' => true,
+            'health' => [
+                'apiStatus' => 'Operational',
+                'phpVersion' => PHP_VERSION,
+                'serverTime' => gmdate('c'),
+                'storageWritable' => is_writable($dataDir),
+                'storeFileSizeBytes' => $storeSize,
+                'auditLogSizeBytes' => $auditSize,
+                'diskFreeBytes' => $diskFree !== false ? (int)$diskFree : null,
+                'diskTotalBytes' => $diskTotal !== false ? (int)$diskTotal : null,
+                'mysqlConfigured' => (bool)(getenv('DB_NAME') && getenv('DB_USER')),
+                'mysqlConnected' => $dbConnected,
+                'databaseStatus' => $dbNote,
+                'mailFunctionAvailable' => function_exists('mail'),
+                'turnstileConfigured' => (bool)getenv('TURNSTILE_SECRET_KEY'),
+                'activeSessionsCount' => is_array($store['sessions'] ?? null) ? count($store['sessions']) : 0,
+                'counts' => [
+                    'registrations' => count($store['registrations'] ?? []),
+                    'inquiries' => count($store['inquiries'] ?? []),
+                    'courses' => count($store['courses'] ?? []),
+                    'vacancies' => count($store['vacancies'] ?? []),
+                    'applications' => count($store['applications'] ?? []),
+                    'invoices' => count($store['invoices'] ?? []),
+                    'payments' => count($store['payments'] ?? []),
+                    'cohorts' => count($store['cohorts'] ?? []),
+                    'communications' => count($store['communications'] ?? []),
+                    'auditEvents' => count($store['auditEvents'] ?? []),
+                ],
+                'actorRole' => $adminRole,
+            ],
+        ]);
+        exit;
+    }
+
     // Only authenticated administrators receive registrations & inquiries (PII)
     if ($scope === 'admin' && $adminEmail !== null) {
         writeStore($storeFile, $store); // Persist session resume / sliding idle activity window
+        $adminRole = getAdminRoleFromStore($store, $adminEmail);
         if ($isVerify) {
             echo json_encode([
                 'success' => true,
                 'authenticated' => true,
                 'email' => $adminEmail,
+                'role' => $adminRole,
+                'permissions' => getRolePermissions($adminRole),
             ]);
             exit;
         }
         $publicAccounts = array_map(function ($acc) {
             return [
                 'email' => $acc['email'] ?? '',
+                'name' => $acc['name'] ?? '',
                 'credentialDigest' => $acc['credentialDigest'] ?? '',
-                'role' => $acc['role'] ?? 'Administrator',
+                'role' => normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN'),
+                'status' => $acc['status'] ?? 'Active',
+                'createdAt' => $acc['createdAt'] ?? null,
                 'updatedAt' => $acc['updatedAt'] ?? null,
             ];
         }, is_array($store['accounts']) ? $store['accounts'] : []);
@@ -546,12 +954,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         echo json_encode([
             'success' => true,
             'authenticated' => true,
+            'role' => $adminRole,
+            'permissions' => getRolePermissions($adminRole),
             'data' => [
                 'registrations' => $store['registrations'] ?? [],
                 'inquiries' => $store['inquiries'] ?? [],
                 'courses' => (object)($store['courses'] ?? []),
                 'vacancies' => $store['vacancies'] ?? [],
                 'applications' => $store['applications'] ?? [],
+                'invoices' => $store['invoices'] ?? [],
+                'payments' => $store['payments'] ?? [],
+                'cohorts' => $store['cohorts'] ?? [],
+                'communications' => $store['communications'] ?? [],
+                'templates' => $store['templates'] ?? [],
+                'announcements' => $store['announcements'] ?? [],
+                'cmsContent' => (object)($store['cmsContent'] ?? []),
+                'settings' => (object)($store['settings'] ?? []),
+                'auditEvents' => $store['auditEvents'] ?? [],
                 'accounts' => $publicAccounts,
                 'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
             ],
@@ -570,15 +989,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Unauthenticated / public callers receive non-sensitive catalog updates, open vacancies & non-reversible account digests
+    // Unauthenticated / public callers receive non-sensitive catalog updates, open vacancies, published CMS & announcements
     $digestAccounts = array_map(function ($acc) {
         return [
             'email' => $acc['email'] ?? '',
             'credentialDigest' => $acc['credentialDigest'] ?? '',
-            'role' => $acc['role'] ?? 'Administrator',
+            'role' => normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN'),
+            'status' => $acc['status'] ?? 'Active',
             'updatedAt' => $acc['updatedAt'] ?? null,
         ];
     }, is_array($store['accounts']) ? $store['accounts'] : []);
+
+    $publishedCms = [];
+    foreach (($store['cmsContent'] ?? []) as $k => $sec) {
+        if (is_array($sec) && ($sec['status'] ?? 'Draft') === 'Published') {
+            $publishedCms[$k] = $sec;
+        }
+    }
+    $publishedAnnouncements = array_values(array_filter($store['announcements'] ?? [], function ($a) {
+        return is_array($a) && ($a['status'] ?? 'Draft') === 'Published';
+    }));
 
     echo json_encode([
         'success' => true,
@@ -586,6 +1016,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         'data' => [
             'courses' => (object)($store['courses'] ?? []),
             'vacancies' => $store['vacancies'] ?? [],
+            'cohorts' => $store['cohorts'] ?? [],
+            'cmsContent' => (object)$publishedCms,
+            'announcements' => $publishedAnnouncements,
             'accounts' => $digestAccounts,
             'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
         ],
@@ -721,7 +1154,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $verified = true;
         }
 
+        if ($matched && ($matched['status'] ?? 'Active') === 'Suspended') {
+            appendAuditEvent($store, $email, $matched['role'] ?? 'SUPPORT_OFFICER', 'LOGIN_BLOCKED_SUSPENDED', 'Auth', $email, '', 'Account suspended');
+            writeStore($storeFile, $store);
+            writeAuditLog($auditLogFile, 'admin_login', $email, 'DENIED_SUSPENDED');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'This staff account has been suspended. Please contact a Super Admin.']);
+            exit;
+        }
+
         if (!$verified) {
+            appendAuditEvent($store, $email, $matched['role'] ?? 'UNKNOWN', 'LOGIN_FAILED', 'Auth', $email, '', 'Invalid password');
+            writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'admin_login', $email, 'FAILED_BAD_PASSWORD');
             http_response_code(401);
             echo json_encode(['success' => false, 'error' => 'Invalid administrative credentials.']);
@@ -743,7 +1187,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        $resolvedRole = normalizeAdminRole($matched['role'] ?? 'SUPER_ADMIN');
         $token = issueAdminToken($store, $email, $browserProfileId);
+        appendAuditEvent($store, $email, $resolvedRole, 'ADMIN_LOGIN', 'Auth', $email, '', 'Authenticated session started');
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'admin_login', $email, 'SUCCESS');
 
@@ -752,7 +1198,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'token' => $token,
             'user' => [
                 'email' => $email,
-                'role' => $matched['role'] ?? 'Administrator',
+                'name' => $matched['name'] ?? '',
+                'role' => $resolvedRole,
+                'permissions' => getRolePermissions($resolvedRole),
             ],
         ]);
         exit;
@@ -882,20 +1330,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    $adminRole = getAdminRoleFromStore($store, $adminEmail);
+    $enforcePermission = function (string $perm) use ($adminRole, $adminEmail, $action, $auditLogFile) {
+        if (!roleHasPermission($adminRole, $perm)) {
+            writeAuditLog($auditLogFile, $action, $adminEmail, 'FORBIDDEN_RBAC', "required={$perm} role={$adminRole}");
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => "Access denied. Your role ({$adminRole}) does not have permission: {$perm}."]);
+            exit;
+        }
+    };
+
     if ($action === 'touch_activity') {
         writeStore($storeFile, $store);
-        echo json_encode(['success' => true, 'email' => $adminEmail]);
+        echo json_encode(['success' => true, 'email' => $adminEmail, 'role' => $adminRole]);
         exit;
     }
 
     if ($action === 'set_registrations' && isset($payload['registrations']) && is_array($payload['registrations'])) {
+        $enforcePermission('admissions.write');
         $cleanList = [];
         foreach (array_slice($payload['registrations'], 0, 5000) as $r) {
             if (is_array($r)) {
                 $cleanList[] = sanitizeRegistration($r);
             }
         }
+        $prevCount = count($store['registrations'] ?? []);
         $store['registrations'] = $cleanList;
+        $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
+        appendAuditEvent(
+            $store,
+            $adminEmail,
+            $adminRole,
+            sanitizeText($auditMeta['action'] ?? 'UPDATE_REGISTRATIONS', 80),
+            'Registration',
+            sanitizeText($auditMeta['record'] ?? ('Total: ' . count($cleanList)), 180),
+            sanitizeText($auditMeta['previousValue'] ?? "count={$prevCount}", 400),
+            sanitizeText($auditMeta['newValue'] ?? ('count=' . count($cleanList)), 400)
+        );
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'set_registrations', $adminEmail, 'SUCCESS', 'count=' . count($cleanList));
 
@@ -904,6 +1375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'set_inquiries' && isset($payload['inquiries']) && is_array($payload['inquiries'])) {
+        $enforcePermission('crm.write');
         $cleanInqList = [];
         foreach (array_slice($payload['inquiries'], 0, 5000) as $inq) {
             if (is_array($inq)) {
@@ -911,6 +1383,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $store['inquiries'] = $cleanInqList;
+        $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
+        appendAuditEvent(
+            $store,
+            $adminEmail,
+            $adminRole,
+            sanitizeText($auditMeta['action'] ?? 'UPDATE_LEADS', 80),
+            'Lead',
+            sanitizeText($auditMeta['record'] ?? ('Total: ' . count($cleanInqList)), 180),
+            sanitizeText($auditMeta['previousValue'] ?? '', 400),
+            sanitizeText($auditMeta['newValue'] ?? ('count=' . count($cleanInqList)), 400)
+        );
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'set_inquiries', $adminEmail, 'SUCCESS', 'count=' . count($cleanInqList));
 
@@ -919,7 +1402,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'set_courses' && isset($payload['courses']) && is_array($payload['courses'])) {
+        $enforcePermission('courses.write');
         $store['courses'] = sanitizeCoursesMap($payload['courses']);
+        $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
+        appendAuditEvent(
+            $store,
+            $adminEmail,
+            $adminRole,
+            sanitizeText($auditMeta['action'] ?? 'UPDATE_COURSES', 80),
+            'Course',
+            sanitizeText($auditMeta['record'] ?? ('Catalog overrides: ' . count($store['courses'])), 180),
+            sanitizeText($auditMeta['previousValue'] ?? '', 400),
+            sanitizeText($auditMeta['newValue'] ?? '', 400)
+        );
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'set_courses', $adminEmail, 'SUCCESS', 'count=' . count($store['courses']));
 
@@ -928,6 +1423,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'set_vacancies' && isset($payload['vacancies']) && is_array($payload['vacancies'])) {
+        $enforcePermission('recruitment.write');
         $cleanVacList = [];
         foreach (array_slice($payload['vacancies'], 0, 500) as $vac) {
             if (is_array($vac) && !empty($vac['title'])) {
@@ -935,6 +1431,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $store['vacancies'] = $cleanVacList;
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_VACANCIES', 'Vacancy', 'Total: ' . count($cleanVacList), '', 'Synced to website');
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'set_vacancies', $adminEmail, 'SUCCESS', 'count=' . count($cleanVacList));
 
@@ -943,6 +1440,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'set_applications' && isset($payload['applications']) && is_array($payload['applications'])) {
+        $enforcePermission('recruitment.write');
         $cleanAppList = [];
         foreach (array_slice($payload['applications'], 0, 1000) as $app) {
             if (is_array($app)) {
@@ -950,10 +1448,236 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $store['applications'] = $cleanAppList;
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_CANDIDATES', 'Candidate', 'Total: ' . count($cleanAppList), '', 'Status/notes updated');
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'set_applications', $adminEmail, 'SUCCESS', 'count=' . count($cleanAppList));
 
         echo json_encode(['success' => true, 'count' => count($cleanAppList)]);
+        exit;
+    }
+
+    // ─── NEW ENTERPRISE MODULE ENDPOINTS ──────────────────────────────────────
+
+    if ($action === 'set_invoices' && isset($payload['invoices']) && is_array($payload['invoices'])) {
+        $enforcePermission('finance.write');
+        $clean = [];
+        foreach (array_slice($payload['invoices'], 0, 5000) as $inv) {
+            if (is_array($inv)) $clean[] = sanitizeInvoice($inv);
+        }
+        $store['invoices'] = $clean;
+        $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
+        appendAuditEvent(
+            $store,
+            $adminEmail,
+            $adminRole,
+            sanitizeText($auditMeta['action'] ?? 'UPDATE_INVOICES', 80),
+            'Invoice',
+            sanitizeText($auditMeta['record'] ?? ('Total: ' . count($clean)), 180),
+            sanitizeText($auditMeta['previousValue'] ?? '', 400),
+            sanitizeText($auditMeta['newValue'] ?? '', 400)
+        );
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_invoices', $adminEmail, 'SUCCESS', 'count=' . count($clean));
+        echo json_encode(['success' => true, 'count' => count($clean)]);
+        exit;
+    }
+
+    if ($action === 'set_payments' && isset($payload['payments']) && is_array($payload['payments'])) {
+        $enforcePermission('finance.write');
+        $clean = [];
+        foreach (array_slice($payload['payments'], 0, 5000) as $pay) {
+            if (is_array($pay)) $clean[] = sanitizePayment($pay);
+        }
+        $store['payments'] = $clean;
+        $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
+        appendAuditEvent(
+            $store,
+            $adminEmail,
+            $adminRole,
+            sanitizeText($auditMeta['action'] ?? 'RECORD_PAYMENT', 80),
+            'Payment',
+            sanitizeText($auditMeta['record'] ?? ('Total: ' . count($clean)), 180),
+            sanitizeText($auditMeta['previousValue'] ?? '', 400),
+            sanitizeText($auditMeta['newValue'] ?? '', 400)
+        );
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_payments', $adminEmail, 'SUCCESS', 'count=' . count($clean));
+        echo json_encode(['success' => true, 'count' => count($clean)]);
+        exit;
+    }
+
+    if ($action === 'set_cohorts' && isset($payload['cohorts']) && is_array($payload['cohorts'])) {
+        $enforcePermission('courses.write');
+        $clean = [];
+        foreach (array_slice($payload['cohorts'], 0, 1000) as $coh) {
+            if (is_array($coh)) $clean[] = sanitizeCohort($coh);
+        }
+        $store['cohorts'] = $clean;
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_COHORTS', 'Cohort', 'Total: ' . count($clean), '', 'Cohort schedules updated');
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_cohorts', $adminEmail, 'SUCCESS', 'count=' . count($clean));
+        echo json_encode(['success' => true, 'count' => count($clean)]);
+        exit;
+    }
+
+    if ($action === 'set_communications' && isset($payload['communications']) && is_array($payload['communications'])) {
+        $enforcePermission('communications.write');
+        $clean = [];
+        foreach (array_slice($payload['communications'], 0, 3000) as $msg) {
+            if (is_array($msg)) $clean[] = sanitizeCommunication($msg);
+        }
+        $store['communications'] = $clean;
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_communications', $adminEmail, 'SUCCESS', 'count=' . count($clean));
+        echo json_encode(['success' => true, 'count' => count($clean)]);
+        exit;
+    }
+
+    if ($action === 'send_email') {
+        $enforcePermission('communications.write');
+        $to = filter_var(trim((string)($payload['to'] ?? '')), FILTER_VALIDATE_EMAIL);
+        $subject = sanitizeText($payload['subject'] ?? '', 240);
+        $body = sanitizeText($payload['body'] ?? '', 4000);
+        if (!$to || $subject === '' || $body === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Valid recipient email, subject, and message body are required.']);
+            exit;
+        }
+        $fromEmail = filter_var($store['settings']['officialEmail'] ?? 'info@ecasiafrica.org', FILTER_VALIDATE_EMAIL) ?: 'info@ecasiafrica.org';
+        $headers = "From: ECAS Institute <{$fromEmail}>\r\nReply-To: {$fromEmail}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n";
+        $sent = function_exists('mail') ? @mail($to, $subject, $body, $headers) : false;
+        $status = $sent ? 'Sent' : 'Queued / Mailer Unconfigured';
+        $commRecord = sanitizeCommunication([
+            'channel' => 'Email',
+            'category' => $payload['category'] ?? 'Direct Email',
+            'recipientName' => $payload['recipientName'] ?? $to,
+            'recipientContact' => $to,
+            'subject' => $subject,
+            'body' => $body,
+            'templateName' => $payload['templateName'] ?? '',
+            'deliveryStatus' => $status,
+            'linkedEntityId' => $payload['linkedEntityId'] ?? '',
+            'sentBy' => $adminEmail,
+            'sentAt' => gmdate('c'),
+        ]);
+        $existingComms = is_array($store['communications'] ?? null) ? $store['communications'] : [];
+        array_unshift($existingComms, $commRecord);
+        $store['communications'] = array_slice($existingComms, 0, 3000);
+        appendAuditEvent($store, $adminEmail, $adminRole, 'SEND_EMAIL', 'Communication', $to, '', "{$subject} ({$status})");
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'send_email', $adminEmail, $sent ? 'SENT' : 'LOGGED_ONLY', "to={$to}");
+        echo json_encode(['success' => true, 'delivered' => $sent, 'deliveryStatus' => $status, 'record' => $commRecord]);
+        exit;
+    }
+
+    if ($action === 'set_templates' && isset($payload['templates']) && is_array($payload['templates'])) {
+        $enforcePermission('communications.write');
+        $clean = [];
+        foreach (array_slice($payload['templates'], 0, 200) as $tpl) {
+            if (is_array($tpl)) $clean[] = sanitizeTemplate($tpl);
+        }
+        $store['templates'] = $clean;
+        writeStore($storeFile, $store);
+        echo json_encode(['success' => true, 'count' => count($clean)]);
+        exit;
+    }
+
+    if ($action === 'set_announcements' && isset($payload['announcements']) && is_array($payload['announcements'])) {
+        $enforcePermission('communications.write');
+        $clean = [];
+        foreach (array_slice($payload['announcements'], 0, 200) as $ann) {
+            if (is_array($ann)) $clean[] = sanitizeAnnouncement($ann);
+        }
+        $store['announcements'] = $clean;
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_ANNOUNCEMENTS', 'Announcement', 'Total: ' . count($clean), '', 'Announcements updated');
+        writeStore($storeFile, $store);
+        echo json_encode(['success' => true, 'count' => count($clean)]);
+        exit;
+    }
+
+    if ($action === 'set_cms_content' && isset($payload['cmsContent']) && is_array($payload['cmsContent'])) {
+        $enforcePermission('cms.write');
+        $store['cmsContent'] = sanitizeCmsContent($payload['cmsContent']);
+        $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
+        appendAuditEvent(
+            $store,
+            $adminEmail,
+            $adminRole,
+            sanitizeText($auditMeta['action'] ?? 'UPDATE_CMS', 80),
+            'WebsiteCMS',
+            sanitizeText($auditMeta['record'] ?? 'Website Content', 180),
+            sanitizeText($auditMeta['previousValue'] ?? '', 400),
+            sanitizeText($auditMeta['newValue'] ?? '', 400)
+        );
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_cms_content', $adminEmail, 'SUCCESS', 'sections=' . count($store['cmsContent']));
+        echo json_encode(['success' => true, 'count' => count($store['cmsContent'])]);
+        exit;
+    }
+
+    if ($action === 'set_settings' && isset($payload['settings']) && is_array($payload['settings'])) {
+        $enforcePermission('admin.manage');
+        $store['settings'] = sanitizeSettings($payload['settings']);
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_PLATFORM_SETTINGS', 'Settings', 'Platform Settings', '', 'Configuration updated');
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'set_settings', $adminEmail, 'SUCCESS');
+        echo json_encode(['success' => true, 'settings' => $store['settings']]);
+        exit;
+    }
+
+    if ($action === 'manage_staff_account') {
+        $enforcePermission('admin.manage');
+        $targetEmail = normalizeAdminEmail((string)($payload['email'] ?? ''));
+        if (!isAuthorizedAdmin($targetEmail)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Staff account must use an official @ecasiafrica.org email address.']);
+            exit;
+        }
+        $newRole = normalizeAdminRole($payload['role'] ?? 'SUPPORT_OFFICER');
+        $newStatus = in_array($payload['status'] ?? 'Active', ['Active', 'Suspended'], true) ? $payload['status'] : 'Active';
+        $newName = sanitizeText($payload['name'] ?? '', 140);
+        $accounts = is_array($store['accounts'] ?? null) ? $store['accounts'] : [];
+        $idx = -1;
+        foreach ($accounts as $i => $acc) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $targetEmail) {
+                $idx = $i;
+                break;
+            }
+        }
+        $prevRole = $idx >= 0 ? ($accounts[$idx]['role'] ?? 'SUPER_ADMIN') : 'None';
+        if ($idx >= 0) {
+            $accounts[$idx]['role'] = $newRole;
+            $accounts[$idx]['status'] = $newStatus;
+            if ($newName !== '') $accounts[$idx]['name'] = $newName;
+            $accounts[$idx]['updatedAt'] = gmdate('c');
+        } else {
+            $accounts[] = [
+                'email' => $targetEmail,
+                'name' => $newName,
+                'role' => $newRole,
+                'status' => $newStatus,
+                'createdAt' => gmdate('c'),
+                'updatedAt' => gmdate('c'),
+            ];
+        }
+        $store['accounts'] = $accounts;
+        appendAuditEvent($store, $adminEmail, $adminRole, 'MANAGE_STAFF_PERMISSION', 'StaffAccount', $targetEmail, "role={$prevRole}", "role={$newRole}, status={$newStatus}");
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'manage_staff_account', $adminEmail, 'SUCCESS', "target={$targetEmail} role={$newRole} status={$newStatus}");
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($action === 'log_audit_event') {
+        $evAction = sanitizeText($payload['eventAction'] ?? 'DATA_EXPORT', 80);
+        $entityType = sanitizeText($payload['entityType'] ?? 'Report', 64);
+        $record = sanitizeText($payload['affectedRecord'] ?? '', 200);
+        $prevVal = sanitizeText($payload['previousValue'] ?? '', 400);
+        $newVal = sanitizeText($payload['newValue'] ?? '', 400);
+        appendAuditEvent($store, $adminEmail, $adminRole, $evAction, $entityType, $record, $prevVal, $newVal);
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, $evAction, $adminEmail, 'SUCCESS', $record);
+        echo json_encode(['success' => true]);
         exit;
     }
 

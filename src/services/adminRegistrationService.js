@@ -442,7 +442,42 @@ class AdminRegistrationService {
       }
       if (!json?.success || !json?.data) return;
 
-      const { registrations, inquiries, courses, vacancies, applications, accounts } = json.data;
+      const {
+        registrations,
+        inquiries,
+        courses,
+        vacancies,
+        applications,
+        accounts,
+        invoices,
+        payments,
+        cohorts,
+        communications,
+        templates,
+        announcements,
+        cmsContent,
+        settings,
+        auditEvents,
+      } = json.data;
+
+      try {
+        if (Array.isArray(invoices)) localStorage.setItem('ecasi_msimamizi_invoices_v1', JSON.stringify(invoices));
+        if (Array.isArray(payments)) localStorage.setItem('ecasi_msimamizi_payments_v1', JSON.stringify(payments));
+        if (Array.isArray(cohorts)) localStorage.setItem('ecasi_msimamizi_cohorts_v1', JSON.stringify(cohorts));
+        if (Array.isArray(communications)) localStorage.setItem('ecasi_msimamizi_communications_v1', JSON.stringify(communications));
+        if (Array.isArray(templates) && templates.length > 0) localStorage.setItem('ecasi_msimamizi_templates_v1', JSON.stringify(templates));
+        if (Array.isArray(announcements)) localStorage.setItem('ecasi_msimamizi_announcements_v1', JSON.stringify(announcements));
+        if (cmsContent && typeof cmsContent === 'object' && Object.keys(cmsContent).length > 0) {
+          localStorage.setItem('ecasi_msimamizi_cms_v1', JSON.stringify(cmsContent));
+        }
+        if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
+          localStorage.setItem('ecasi_msimamizi_settings_v1', JSON.stringify(settings));
+        }
+        if (Array.isArray(auditEvents)) localStorage.setItem('ecasi_msimamizi_audit_events_v1', JSON.stringify(auditEvents));
+        window.dispatchEvent(new CustomEvent('ecasi_enterprise_updated', { detail: { topic: 'server_sync' } }));
+      } catch {
+        // ignore storage quota errors on secondary cache
+      }
 
       if (Array.isArray(registrations) && registrations.length > 0) {
         const localRegs = this.getRegistrations();

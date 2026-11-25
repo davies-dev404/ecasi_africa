@@ -1,0 +1,162 @@
+import {
+  LayoutGrid,
+  Users,
+  UserCheck,
+  GraduationCap,
+  FileCheck2,
+  MessageSquare,
+  GitBranch,
+  CalendarClock,
+  History,
+  BookOpen,
+  FolderTree,
+  MapPin,
+  CalendarRange,
+  BadgeDollarSign,
+  Wallet,
+  Receipt,
+  CreditCard,
+  AlertTriangle,
+  Scale,
+  Briefcase,
+  FileUser,
+  ClipboardList,
+  Star,
+  Workflow,
+  BarChart3,
+  FileBarChart2,
+  TrendingUp,
+  Award,
+  UserSearch,
+  Download,
+  Mail,
+  Bell,
+  Megaphone,
+  FileCode2,
+  Globe,
+  Layers,
+  Info,
+  HelpCircle,
+  CheckSquare,
+  UserCog,
+  ShieldCheck,
+  ScrollText,
+  Settings,
+  Activity,
+} from 'lucide-react';
+
+export const MASTER_NAV_GROUPS = [
+  {
+    id: 'dashboard_group',
+    label: 'DASHBOARD',
+    items: [
+      { id: 'dashboard', label: 'Overview', icon: LayoutGrid, permission: 'dashboard.view' },
+    ],
+  },
+  {
+    id: 'admissions_group',
+    label: 'ADMISSIONS MANAGEMENT',
+    items: [
+      { id: 'registrations', label: 'Registrations', icon: Users, permission: 'admissions.view', badgeKey: 'registrations' },
+      { id: 'applicants', label: 'Applicants', icon: UserCheck, permission: 'admissions.view' },
+      { id: 'enrolments', label: 'Enrolments', icon: GraduationCap, permission: 'admissions.view', badgeKey: 'enrolments' },
+      { id: 'application-documents', label: 'Application Documents', icon: FileCheck2, permission: 'admissions.view' },
+    ],
+  },
+  {
+    id: 'crm_group',
+    label: 'CLIENT RELATIONSHIP MANAGEMENT',
+    items: [
+      { id: 'inquiries', label: 'Inquiries & Leads', icon: MessageSquare, permission: 'crm.view', badgeKey: 'inquiries' },
+      { id: 'lead-pipeline', label: 'Lead Pipeline', icon: GitBranch, permission: 'crm.view' },
+      { id: 'follow-ups', label: 'Follow-ups', icon: CalendarClock, permission: 'crm.view', badgeKey: 'overdueFollowups' },
+      { id: 'communication-history', label: 'Communication History', icon: History, permission: 'crm.view' },
+    ],
+  },
+  {
+    id: 'academic_group',
+    label: 'ACADEMIC MANAGEMENT',
+    items: [
+      { id: 'courses', label: 'Courses & Programmes', icon: BookOpen, permission: 'courses.view', badgeKey: 'courses' },
+      { id: 'course-categories', label: 'Course Categories', icon: FolderTree, permission: 'courses.view' },
+      { id: 'training-destinations', label: 'Training Destinations', icon: MapPin, permission: 'courses.view' },
+      { id: 'cohorts-intakes', label: 'Cohorts & Intakes', icon: CalendarRange, permission: 'courses.view', badgeKey: 'cohorts' },
+      { id: 'fees-pricing', label: 'Fees & Pricing', icon: BadgeDollarSign, permission: 'courses.view' },
+    ],
+  },
+  {
+    id: 'finance_group',
+    label: 'FINANCE MANAGEMENT',
+    items: [
+      { id: 'finance-overview', label: 'Financial Overview', icon: Wallet, permission: 'finance.view' },
+      { id: 'invoices', label: 'Invoices', icon: Receipt, permission: 'finance.view', badgeKey: 'invoices' },
+      { id: 'payments', label: 'Payments', icon: CreditCard, permission: 'finance.view', badgeKey: 'payments' },
+      { id: 'outstanding-balances', label: 'Outstanding Balances', icon: AlertTriangle, permission: 'finance.view', badgeKey: 'outstandingInvoices' },
+      { id: 'payment-reconciliation', label: 'Payment Reconciliation', icon: Scale, permission: 'finance.view' },
+    ],
+  },
+  {
+    id: 'recruitment_group',
+    label: 'CAREERS & RECRUITMENT',
+    items: [
+      { id: 'vacancies', label: 'Vacancies', icon: Briefcase, permission: 'recruitment.view', badgeKey: 'vacancies' },
+      { id: 'candidate-cvs', label: 'Candidate CVs', icon: FileUser, permission: 'recruitment.view', badgeKey: 'applications' },
+      { id: 'recruitment-applications', label: 'Applications', icon: ClipboardList, permission: 'recruitment.view' },
+      { id: 'shortlisted-candidates', label: 'Shortlisted Candidates', icon: Star, permission: 'recruitment.view', badgeKey: 'shortlisted' },
+      { id: 'recruitment-pipeline', label: 'Recruitment Pipeline', icon: Workflow, permission: 'recruitment.view' },
+    ],
+  },
+  {
+    id: 'reports_group',
+    label: 'REPORTING & ANALYTICS',
+    items: [
+      { id: 'institutional-analytics', label: 'Institutional Analytics', icon: BarChart3, permission: 'reports.view' },
+      { id: 'admissions-reports', label: 'Admissions Reports', icon: FileBarChart2, permission: 'reports.view' },
+      { id: 'financial-reports', label: 'Financial Reports', icon: TrendingUp, permission: 'reports.view' },
+      { id: 'course-reports', label: 'Course Reports', icon: Award, permission: 'reports.view' },
+      { id: 'recruitment-reports', label: 'Recruitment Reports', icon: UserSearch, permission: 'reports.view' },
+      { id: 'data-exports', label: 'Data Exports', icon: Download, permission: 'reports.export' },
+    ],
+  },
+  {
+    id: 'communications_group',
+    label: 'COMMUNICATIONS',
+    items: [
+      { id: 'email-centre', label: 'Email Centre', icon: Mail, permission: 'communications.view' },
+      { id: 'notifications', label: 'Notifications', icon: Bell, permission: 'communications.view' },
+      { id: 'announcements', label: 'Announcements', icon: Megaphone, permission: 'communications.view' },
+      { id: 'message-templates', label: 'Message Templates', icon: FileCode2, permission: 'communications.view' },
+    ],
+  },
+  {
+    id: 'website_group',
+    label: 'WEBSITE MANAGEMENT',
+    items: [
+      { id: 'cms-homepage', label: 'Homepage Content', icon: Globe, permission: 'cms.view' },
+      { id: 'cms-programmes', label: 'Programme Content', icon: Layers, permission: 'cms.view' },
+      { id: 'cms-course-info', label: 'Course Information', icon: Info, permission: 'cms.view' },
+      { id: 'cms-announcements', label: 'Website Announcements', icon: Megaphone, permission: 'cms.view' },
+      { id: 'cms-faqs', label: 'FAQs', icon: HelpCircle, permission: 'cms.view' },
+      { id: 'cms-vacancies', label: 'Published Vacancies', icon: CheckSquare, permission: 'cms.view' },
+    ],
+  },
+  {
+    id: 'admin_group',
+    label: 'ADMINISTRATION',
+    items: [
+      { id: 'staff-accounts', label: 'Staff Accounts', icon: UserCog, permission: 'admin.manage' },
+      { id: 'roles-permissions', label: 'Roles & Permissions', icon: ShieldCheck, permission: 'admin.manage' },
+      { id: 'audit-logs', label: 'Audit Logs', icon: ScrollText, permission: 'admin.manage' },
+      { id: 'platform-settings', label: 'Platform Settings', icon: Settings, permission: 'admin.manage' },
+      { id: 'system-health', label: 'System Health', icon: Activity, permission: 'admin.manage' },
+    ],
+  },
+];
+
+export const ALL_NAV_ITEMS = MASTER_NAV_GROUPS.flatMap((g) =>
+  g.items.map((item) => ({ ...item, groupId: g.id, groupLabel: g.label }))
+);
+
+export function getNavItemMeta(tabId) {
+  return ALL_NAV_ITEMS.find((i) => i.id === tabId) || ALL_NAV_ITEMS[0];
+}

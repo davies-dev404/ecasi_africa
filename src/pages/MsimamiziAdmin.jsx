@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   Users,
   GraduationCap,
@@ -44,20 +44,6 @@ import {
   Bell,
   Activity,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-} from 'recharts';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
 import TurnstileWidget from '@/components/TurnstileWidget';
@@ -65,6 +51,40 @@ import { verifyTurnstile } from '@/services/turnstileService';
 import { printRegistrationVoucher } from '@/utils/printRegistrationVoucher';
 import CourseRegistrationForm from '@/components/CourseRegistrationForm';
 import SEO from '@/components/SEO';
+import MasterSidebar from '@/components/msimamizi/MasterSidebar';
+import { ALL_NAV_ITEMS, getNavItemMeta } from '@/components/msimamizi/navigationConfig';
+import {
+  msimamiziEnterpriseService,
+  hasPermission,
+  getRoleDefinition,
+  getEffectiveRegistrationStage,
+  normalizeLeadStatus,
+  normalizeCandidateStage,
+} from '@/services/msimamiziEnterpriseService';
+
+// Code-split enterprise modules for fast initial load & smooth switching
+const OverviewDashboard = lazy(() => import('@/components/msimamizi/OverviewDashboard'));
+const AdmissionsModule = lazy(() => import('@/components/msimamizi/AdmissionsModule'));
+const CrmModule = lazy(() => import('@/components/msimamizi/CrmModule'));
+const AcademicModule = lazy(() => import('@/components/msimamizi/AcademicModule'));
+const FinanceModule = lazy(() => import('@/components/msimamizi/FinanceModule'));
+const RecruitmentModule = lazy(() => import('@/components/msimamizi/RecruitmentModule'));
+const ReportsModule = lazy(() => import('@/components/msimamizi/ReportsModule'));
+const CommunicationsModule = lazy(() => import('@/components/msimamizi/CommunicationsModule'));
+const WebsiteCmsModule = lazy(() => import('@/components/msimamizi/WebsiteCmsModule'));
+const AdministrationModule = lazy(() => import('@/components/msimamizi/AdministrationModule'));
+
+const ModuleSkeleton = () => (
+  <div className="space-y-4 animate-pulse">
+    <div className="h-24 bg-white rounded-2xl border border-slate-200" />
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-24 bg-white rounded-2xl border border-slate-200" />
+      ))}
+    </div>
+    <div className="h-72 bg-white rounded-2xl border border-slate-200" />
+  </div>
+);
 
 export default function MsimamiziAdmin() {
 
@@ -133,22 +153,18 @@ export default function MsimamiziAdmin() {
     }
   };
 
-  // Active Tab: 'dashboard' | 'registrations' | 'inquiries' | 'courses' | 'vacancies' (Persisted across refreshes & URL synced)
+  // Active Tab across all 41 Master Navigation modules (Persisted across refreshes & URL synced)
+  const validTabIds = useMemo(() => ALL_NAV_ITEMS.map((i) => i.id), []);
   const getInitialTab = () => {
     try {
+      const validIds = ALL_NAV_ITEMS.map((i) => i.id);
       const urlParams = new URLSearchParams(window.location.search);
       const urlTab = urlParams.get('tab');
-      if (urlTab && ['dashboard', 'registrations', 'inquiries', 'courses', 'vacancies'].includes(urlTab)) {
-        return urlTab;
-      }
+      if (urlTab && validIds.includes(urlTab)) return urlTab;
       const hashTab = window.location.hash.replace('#', '');
-      if (hashTab && ['dashboard', 'registrations', 'inquiries', 'courses', 'vacancies'].includes(hashTab)) {
-        return hashTab;
-      }
+      if (hashTab && validIds.includes(hashTab)) return hashTab;
       const savedTab = localStorage.getItem('msimamizi_active_tab');
-      if (savedTab && ['dashboard', 'registrations', 'inquiries', 'courses', 'vacancies'].includes(savedTab)) {
-        return savedTab;
-      }
+      if (savedTab && validIds.includes(savedTab)) return savedTab;
     } catch {
       // Fallback
     }
@@ -525,7 +541,21 @@ export default function MsimamiziAdmin() {
     setIsAuthenticated(adminRegistrationService.isAuthenticated());
   }, []);
 
-  // Load registrations, inquiries, vacancies, applications & listen for real-time updates
+  // Enterprise Collections State
+  const [invoices, setInvoices] = useState(() => msimamiziEnterpriseService.getInvoices());
+  const [payments, setPayments] = useState(() => msimamiziEnterpriseService.getPayments());
+  const [cohorts, setCohorts] = useState(() => msimamiziEnterpriseService.getCohorts());
+  const [communications, setCommunications] = useState(() => msimamiziEnterpriseService.getCommunications());
+  const [templates, setTemplates] = useState(() => msimamiziEnterpriseService.getTemplates());
+  const [announcements, setAnnouncements] = useState(() => msimamiziEnterpriseService.getAnnouncements());
+  const [cmsContent, setCmsContent] = useState(() => msimamiziEnterpriseService.getCmsContent());
+  const [platformSettings, setPlatformSettings] = useState(() => msimamiziEnterpriseService.getSettings());
+  const [auditEvents, setAuditEvents] = useState(() => msimamiziEnterpriseService.getAuditEvents());
+  const [staffAccounts, setStaffAccounts] = useState(() => adminRegistrationService.getAdminAccounts());
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+  // Load registrations, inquiries, vacancies, applications & enterprise modules
   const loadData = () => {
     const list = adminRegistrationService.getRegistrations();
     const inqList = adminRegistrationService.getInquiries();
@@ -536,6 +566,17 @@ export default function MsimamiziAdmin() {
     setVacancies(Array.isArray(vacList) ? vacList : []);
     setApplications(Array.isArray(appList) ? appList : []);
     setKpis(adminRegistrationService.getKPIs());
+    setInvoices(msimamiziEnterpriseService.getInvoices());
+    setPayments(msimamiziEnterpriseService.getPayments());
+    setCohorts(msimamiziEnterpriseService.getCohorts());
+    setCommunications(msimamiziEnterpriseService.getCommunications());
+    setTemplates(msimamiziEnterpriseService.getTemplates());
+    setAnnouncements(msimamiziEnterpriseService.getAnnouncements());
+    setCmsContent(msimamiziEnterpriseService.getCmsContent());
+    setPlatformSettings(msimamiziEnterpriseService.getSettings());
+    setAuditEvents(msimamiziEnterpriseService.getAuditEvents());
+    setStaffAccounts(adminRegistrationService.getAdminAccounts());
+    setCourses(dataService.getCoursesList());
   };
 
   useEffect(() => {
@@ -545,11 +586,13 @@ export default function MsimamiziAdmin() {
     window.addEventListener('ecasi_inquiry_updated', handleUpdate);
     window.addEventListener('ecasi_vacancies_updated', handleUpdate);
     window.addEventListener('ecasi_applications_updated', handleUpdate);
+    window.addEventListener('ecasi_enterprise_updated', handleUpdate);
     return () => {
       window.removeEventListener('ecasi_registration_updated', handleUpdate);
       window.removeEventListener('ecasi_inquiry_updated', handleUpdate);
       window.removeEventListener('ecasi_vacancies_updated', handleUpdate);
       window.removeEventListener('ecasi_applications_updated', handleUpdate);
+      window.removeEventListener('ecasi_enterprise_updated', handleUpdate);
     };
   }, []);
 
@@ -1695,286 +1738,299 @@ export default function MsimamiziAdmin() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 2. MAIN MSIMAMIZI ADMIN PORTAL INTERFACE (MAKAZIFLOW-INSPIRED LAYOUT)
+  // 2. MAIN ECASIAFRICA MSIMAMIZI ENTERPRISE INSTITUTIONAL MANAGEMENT SHELL
   // ─────────────────────────────────────────────────────────────────────────────
   const openVacanciesCount = vacancies.filter((v) => v.status !== 'Closed').length;
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const sidebarBadges = {
+    registrations: registrations.length,
+    enrolments: registrations.filter((r) =>
+      ['Payment Confirmed', 'Enrolment Confirmed', 'Training In Progress', 'Completed'].includes(getEffectiveRegistrationStage(r))
+    ).length,
+    inquiries: inquiries.length,
+    overdueFollowups: inquiries.filter(
+      (i) => i.nextFollowUp && i.nextFollowUp < todayStr && !['Converted', 'Closed'].includes(normalizeLeadStatus(i.status))
+    ).length,
+    courses: courses.length,
+    cohorts: cohorts.length,
+    invoices: invoices.length,
+    payments: payments.length,
+    outstandingInvoices: invoices.filter(
+      (i) => i.status !== 'Paid' && i.status !== 'Cancelled' && i.status !== 'Draft' && Number(i.balance) > 0
+    ).length,
+    vacancies: openVacanciesCount,
+    applications: applications.length,
+    shortlisted: applications.filter((a) => ['Shortlisted', 'Interview', 'Selected'].includes(normalizeCandidateStage(a.status))).length,
+  };
+
   const attentionTotalCount =
-    (kpis.pendingCount || 0) +
-    (kpis.newInquiriesCount || 0) +
-    (kpis.newApplicationsCount || 0);
+    registrations.filter((r) => getEffectiveRegistrationStage(r) === 'Application Received').length +
+    inquiries.filter((i) => normalizeLeadStatus(i.status) === 'New Lead').length +
+    sidebarBadges.outstandingInvoices +
+    applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length;
+
+  // Global Search across all major institutional entities
+  const globalSearchResults = (() => {
+    const q = globalSearch.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const results = [];
+    registrations.forEach((r) => {
+      const name = [r.firstName, r.lastName].filter(Boolean).join(' ');
+      if (`${r.referenceNo} ${name} ${r.officialEmail} ${r.eventTitle}`.toLowerCase().includes(q)) {
+        results.push({ type: 'Registration', title: `${name || 'Applicant'} (${r.referenceNo})`, sub: r.eventTitle, tab: 'registrations' });
+      }
+    });
+    inquiries.forEach((i) => {
+      if (`${i.fullName} ${i.email} ${i.courseTitle}`.toLowerCase().includes(q)) {
+        results.push({ type: 'CRM Lead', title: i.fullName, sub: i.courseTitle, tab: 'inquiries' });
+      }
+    });
+    courses.forEach((c) => {
+      if (`${c.title} ${c.category}`.toLowerCase().includes(q)) {
+        results.push({ type: 'Course', title: c.title, sub: c.category || 'Executive Training', tab: 'courses' });
+      }
+    });
+    invoices.forEach((inv) => {
+      if (`${inv.invoiceNo} ${inv.applicantName} ${inv.courseTitle}`.toLowerCase().includes(q)) {
+        results.push({ type: 'Invoice', title: `${inv.invoiceNo} — ${inv.applicantName}`, sub: `${inv.currency} ${inv.netAmount} (${inv.status})`, tab: 'invoices' });
+      }
+    });
+    vacancies.forEach((v) => {
+      if (`${v.title} ${v.department}`.toLowerCase().includes(q)) {
+        results.push({ type: 'Vacancy', title: v.title, sub: `${v.department} (${v.status})`, tab: 'vacancies' });
+      }
+    });
+    applications.forEach((a) => {
+      if (`${a.fullName} ${a.email} ${a.jobTitle}`.toLowerCase().includes(q)) {
+        results.push({ type: 'Candidate', title: a.fullName, sub: a.jobTitle, tab: 'candidate-cvs' });
+      }
+    });
+    return results.slice(0, 10);
+  })();
+
+  const activeNavMeta = getNavItemMeta(activeTab);
+  const currentUserRoleDef = getRoleDefinition(currentUser?.role);
+
+  const renderEnterpriseModule = () => {
+    if (!hasPermission(currentUser, activeNavMeta?.permission)) {
+      return (
+        <div className="bg-white rounded-2xl border border-red-200 p-10 text-center space-y-2">
+          <ShieldCheck className="w-10 h-10 text-[#DC4545] mx-auto" />
+          <h3 className="text-base font-black text-[#10243E]">Access Restricted by Role Permissions</h3>
+          <p className="text-xs text-[#718096] max-w-md mx-auto">
+            Your current role ({currentUserRoleDef.label}) does not have permission to access {activeNavMeta?.label}. Contact a Super Admin if you need access.
+          </p>
+        </div>
+      );
+    }
+
+    const commonProps = {
+      currentUser,
+      onDataChange: loadData,
+      onNavigate: setActiveTab,
+      showToast,
+    };
+
+    if (activeTab === 'dashboard') {
+      return (
+        <OverviewDashboard
+          {...commonProps}
+          registrations={registrations}
+          inquiries={inquiries}
+          courses={courses}
+          vacancies={vacancies}
+          applications={applications}
+          invoices={invoices}
+          payments={payments}
+          cohorts={cohorts}
+          onOpenNewRegistration={openNewRegistrationPage}
+          onOpenUploadCourse={openNewCoursePage}
+          onOpenPostVacancy={openCreateVacancy}
+        />
+      );
+    }
+
+    if (['registrations', 'applicants', 'enrolments', 'application-documents'].includes(activeTab)) {
+      return (
+        <AdmissionsModule
+          {...commonProps}
+          activeTab={activeTab}
+          registrations={registrations}
+          invoices={invoices}
+          payments={payments}
+          communications={communications}
+          staffAccounts={staffAccounts}
+          onOpenNewRegistration={openNewRegistrationPage}
+        />
+      );
+    }
+
+    if (['inquiries', 'lead-pipeline', 'follow-ups', 'communication-history'].includes(activeTab)) {
+      return (
+        <CrmModule
+          {...commonProps}
+          activeTab={activeTab}
+          inquiries={inquiries}
+          courses={courses}
+          communications={communications}
+          staffAccounts={staffAccounts}
+        />
+      );
+    }
+
+    if (['course-categories', 'training-destinations', 'cohorts-intakes', 'fees-pricing'].includes(activeTab)) {
+      return (
+        <AcademicModule
+          {...commonProps}
+          activeTab={activeTab}
+          courses={courses}
+          registrations={registrations}
+          cohorts={cohorts}
+          settings={platformSettings}
+          onEditCourse={openEditCourseModal}
+        />
+      );
+    }
+
+    if (['finance-overview', 'invoices', 'payments', 'outstanding-balances', 'payment-reconciliation'].includes(activeTab)) {
+      return (
+        <FinanceModule
+          {...commonProps}
+          activeTab={activeTab}
+          registrations={registrations}
+          courses={courses}
+          invoices={invoices}
+          payments={payments}
+        />
+      );
+    }
+
+    if (['candidate-cvs', 'recruitment-applications', 'shortlisted-candidates', 'recruitment-pipeline'].includes(activeTab)) {
+      return (
+        <RecruitmentModule
+          {...commonProps}
+          activeTab={activeTab}
+          applications={applications}
+          vacancies={vacancies}
+          onSelectApplication={openApplicationDossierPage}
+          onOpenPostVacancy={openCreateVacancy}
+        />
+      );
+    }
+
+    if (['institutional-analytics', 'admissions-reports', 'financial-reports', 'course-reports', 'recruitment-reports', 'data-exports'].includes(activeTab)) {
+      return (
+        <ReportsModule
+          {...commonProps}
+          activeTab={activeTab}
+          registrations={registrations}
+          inquiries={inquiries}
+          courses={courses}
+          vacancies={vacancies}
+          applications={applications}
+          invoices={invoices}
+          payments={payments}
+        />
+      );
+    }
+
+    if (['email-centre', 'notifications', 'announcements', 'message-templates'].includes(activeTab)) {
+      return (
+        <CommunicationsModule
+          {...commonProps}
+          activeTab={activeTab}
+          communications={communications}
+          templates={templates}
+          announcements={announcements}
+          registrations={registrations}
+          inquiries={inquiries}
+        />
+      );
+    }
+
+    if (['cms-homepage', 'cms-programmes', 'cms-course-info', 'cms-announcements', 'cms-faqs', 'cms-vacancies'].includes(activeTab)) {
+      return (
+        <WebsiteCmsModule
+          {...commonProps}
+          activeTab={activeTab}
+          cmsContent={cmsContent}
+          courses={courses}
+          vacancies={vacancies}
+          announcements={announcements}
+        />
+      );
+    }
+
+    if (['staff-accounts', 'roles-permissions', 'audit-logs', 'platform-settings', 'system-health'].includes(activeTab)) {
+      return (
+        <AdministrationModule
+          {...commonProps}
+          activeTab={activeTab}
+          staffAccounts={staffAccounts}
+          auditEvents={auditEvents}
+          settings={platformSettings}
+        />
+      );
+    }
+
+    return null;
+  };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0d2240] font-['Inter',sans-serif] selection:bg-[#00a99d] selection:text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#F5F8FC] text-[#10243E] font-['Inter',sans-serif] selection:bg-[#00B8B0] selection:text-white flex flex-col md:flex-row">
       {initialLoaderOverlay}
       <SEO
-        title="ECAS Msimamizi Admin Portal"
-        description="ECAS Institute administrative portal."
+        title="ECASIAFRICA Msimamizi — Institutional Management System"
+        description="ECAS Institute enterprise institutional administration platform."
         noIndex
       />
-      {/* ─────────────────────────────────────────────────────────────
-          MOBILE SLIDE-OVER BACKDROP & DRAWER (MAKAZIFLOW LAYOUT & STYLE)
-      ───────────────────────────────────────────────────────────── */}
-      {/* Backdrop overlay for mobile drawer */}
-      <div
-        onClick={() => setIsMobileMenuOpen(false)}
-        className={`fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden ${
-          isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        aria-hidden="true"
+
+      {/* Master Grouped RBAC Sidebar (Responsive Desktop Rail + Mobile Slide-Over Drawer) */}
+      <MasterSidebar
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        currentUser={currentUser}
+        badges={sidebarBadges}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        isSidebarCollapsed={isSidebarCollapsed}
+        setIsSidebarCollapsed={setIsSidebarCollapsed}
+        publicSiteUrl={publicSiteUrl}
+        onLogout={() => handleLogout(false)}
       />
-
-      {/* ─────────────────────────────────────────────────────────────
-          SIDEBAR NAVIGATION (OFF-CANVAS DRAWER ON MOBILE, RAIL ON DESKTOP)
-      ───────────────────────────────────────────────────────────── */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 z-50 w-[290px] max-w-[85vw] bg-[#071728] text-white flex flex-col justify-between border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out
-          md:static md:w-60 md:h-screen md:sticky md:top-0 md:z-30 md:shadow-none md:translate-x-0
-          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          ${isSidebarCollapsed ? 'md:hidden' : 'md:flex'}
-        `}
-      >
-        {/* Top Header & Brand */}
-        <div className="flex flex-col">
-          <div className="relative border-b border-white/10 px-5 pt-6 pb-5 flex flex-col items-center text-center bg-[#071728]">
-            {/* Desktop Minimize-to-Hamburger Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setIsSidebarCollapsed(true)}
-              className="hidden md:flex absolute top-3.5 right-3.5 p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer"
-              title="Minimize navigation to hamburger"
-              aria-label="Minimize navigation to hamburger"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
-
-            {/* Mobile Close Button (MakaziFlow style: rounded cyan outline button with X) */}
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden absolute top-3.5 right-3.5 p-1.5 rounded-lg border border-cyan-400/60 bg-[#002b40]/60 text-cyan-400 hover:bg-cyan-900/40 hover:text-white transition cursor-pointer"
-              aria-label="Close navigation menu"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Brand Logo & Title */}
-            <div className="flex flex-col items-center justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-white p-1 shadow-sm flex items-center justify-center shrink-0">
-                  <img src="/logo.png" alt="ECAS Logo" className="w-full h-full object-contain" />
-                </div>
-                <div className="font-['Outfit',sans-serif] font-bold text-lg tracking-tight text-white">
-                  ECAS<span className="text-cyan-400">.Msimamizi</span>
-                </div>
-              </div>
-
-              {/* MakaziFlow Pill Badge */}
-              <div className="mt-1 px-4 py-0.5 rounded-full border border-cyan-400/50 bg-[#002b40] text-cyan-400 text-[10.5px] font-bold tracking-widest uppercase shadow-sm">
-                MSIMAMIZI
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation Items (MakaziFlow Vertical Rail Style) */}
-          <nav className="py-2 overflow-y-auto max-h-[calc(100vh-230px)] space-y-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('dashboard');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
-                activeTab === 'dashboard'
-                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
-              }`}
-            >
-              <span className="flex items-center gap-3.5">
-                <LayoutGrid className={`w-5 h-5 shrink-0 ${activeTab === 'dashboard' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
-                <span className="text-[14px]">Overview</span>
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('registrations');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
-                activeTab === 'registrations'
-                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
-              }`}
-            >
-              <span className="flex items-center gap-3.5">
-                <Users className={`w-5 h-5 shrink-0 ${activeTab === 'registrations' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
-                <span className="text-[14px]">Registrations</span>
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
-                activeTab === 'registrations'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
-                  : 'bg-white/10 text-white/70'
-              }`}>
-                {registrations.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('inquiries');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
-                activeTab === 'inquiries'
-                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
-              }`}
-            >
-              <span className="flex items-center gap-3.5">
-                <MessageSquare className={`w-5 h-5 shrink-0 ${activeTab === 'inquiries' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
-                <span className="text-[14px]">Inquiries &amp; Leads</span>
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
-                activeTab === 'inquiries'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
-                  : 'bg-white/10 text-white/70'
-              }`}>
-                {inquiries.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('courses');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
-                activeTab === 'courses'
-                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
-              }`}
-            >
-              <span className="flex items-center gap-3.5">
-                <GraduationCap className={`w-5 h-5 shrink-0 ${activeTab === 'courses' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
-                <span className="text-[14px]">Courses &amp; Fees</span>
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
-                activeTab === 'courses'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
-                  : 'bg-white/10 text-white/70'
-              }`}>
-                {courses.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('vacancies');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors duration-150 cursor-pointer group ${
-                activeTab === 'vacancies'
-                  ? 'bg-[#0c2a4a] text-white font-bold border-l-4 border-cyan-400'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium border-l-4 border-transparent'
-              }`}
-            >
-              <span className="flex items-center gap-3.5">
-                <Briefcase className={`w-5 h-5 shrink-0 ${activeTab === 'vacancies' ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
-                <span className="text-[14px]">Vacancies &amp; CVs</span>
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
-                activeTab === 'vacancies'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
-                  : 'bg-white/10 text-white/70'
-              }`}>
-                {applications.length}
-              </span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Bottom Sidebar Footer (MakaziFlow Style) */}
-        <div className="border-t border-white/10 bg-[#061424] px-4 py-3.5 space-y-3">
-          <a
-            href={publicSiteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white/80 hover:text-white transition cursor-pointer"
-          >
-            <span className="flex items-center gap-2">
-              <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
-              <span>ecasiafrica.org</span>
-            </span>
-            <ArrowUpRight className="w-3.5 h-3.5 text-white/40" />
-          </a>
-
-          <div className="flex items-center justify-between gap-2 pt-0.5">
-            <div className="flex items-center gap-2.5 min-w-0" title={`${currentUser?.role || 'Administrator'} (${currentUser?.email || 'admin@ecasiafrica.org'})`}>
-              <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold text-xs shrink-0 uppercase">
-                {currentUser?.email ? currentUser.email.substring(0, 2) : 'AD'}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{currentUser?.role || 'Administrator'}</p>
-                <p className="text-[10.5px] text-white/50 truncate font-mono">{currentUser?.email || 'admin@ecasiafrica.org'}</p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleLogout(false)}
-              title="Logout from Msimamizi"
-              className="p-1.5 rounded-lg text-red-300 hover:text-white hover:bg-red-900/40 transition cursor-pointer shrink-0"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* MakaziFlow Domain Signature Bar (as seen in Image 1) */}
-          <div className="pt-2 border-t border-white/5 flex items-center gap-2 text-[11.5px] text-cyan-400/90 font-mono">
-            <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span className="truncate">msimamizi.ecasiafrica.org</span>
-          </div>
-        </div>
-      </aside>
 
       {/* ─────────────────────────────────────────────────────────────
           RIGHT MAIN CONTENT AREA
       ───────────────────────────────────────────────────────────── */}
       <div ref={mainScrollRef} className="flex-1 flex flex-col min-w-0 overflow-y-auto min-h-screen">
-        {/* Top White Utility Bar */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+        {/* Top White Enterprise Utility Bar */}
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Mobile Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden inline-flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-[#0d2240] hover:bg-slate-50 cursor-pointer"
+              className="md:hidden inline-flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-[#10243E] hover:bg-slate-50 cursor-pointer"
               aria-label="Toggle navigation menu"
             >
               {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
 
-            {/* Desktop Hamburger Toggle (Minimize / Expand Sidebar) */}
+            {/* Desktop Sidebar Collapse Toggle */}
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden md:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[#0d2240] hover:bg-slate-50 transition cursor-pointer"
-              title={isSidebarCollapsed ? "Open navigation menu" : "Minimize navigation to hamburger"}
-              aria-label={isSidebarCollapsed ? "Open navigation menu" : "Minimize navigation to hamburger"}
+              className="hidden md:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[#10243E] hover:bg-slate-50 transition cursor-pointer"
+              title={isSidebarCollapsed ? 'Open navigation menu' : 'Minimize navigation'}
+              aria-label={isSidebarCollapsed ? 'Open navigation menu' : 'Minimize navigation'}
             >
               <Menu className="w-4 h-4" />
-              {isSidebarCollapsed && (
-                <span className="text-[11px] font-semibold">Menu</span>
-              )}
+              {isSidebarCollapsed && <span className="text-[11px] font-semibold">Menu</span>}
             </button>
 
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100/90 border border-slate-200/70 text-[#0d2240] text-xs font-semibold truncate">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00a99d] shrink-0" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F5F8FC] border border-slate-200/80 text-[#10243E] text-xs font-bold truncate">
+              <span className="w-2 h-2 rounded-full bg-[#00B8B0] shrink-0" />
               <span className="truncate">
                 {activeDetailView === 'edit-course' && 'Edit Course & Pricing'}
                 {activeDetailView === 'new-course' && 'Upload New Course'}
@@ -1982,26 +2038,104 @@ export default function MsimamiziAdmin() {
                 {activeDetailView === 'new-registration' && 'Course Registration Form'}
                 {activeDetailView === 'application-dossier' && 'Candidate Dossier'}
                 {activeDetailView === 'vacancy-form' && (editingVacancy ? 'Edit Job Vacancy' : 'Publish Job Vacancy')}
-                {!activeDetailView && activeTab === 'dashboard' && 'Overview'}
-                {!activeDetailView && activeTab === 'registrations' && 'Registrations'}
-                {!activeDetailView && activeTab === 'inquiries' && 'Inquiries & Leads'}
-                {!activeDetailView && activeTab === 'courses' && 'Courses & Fees'}
-                {!activeDetailView && activeTab === 'vacancies' && 'Vacancies & CVs'}
+                {!activeDetailView && (activeNavMeta?.label || 'Overview')}
               </span>
             </div>
           </div>
 
+          {/* Global Institutional Search */}
+          <div className="relative hidden lg:block flex-1 max-w-sm">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              placeholder="Global search: applicants, leads, courses, invoices..."
+              className="w-full h-9 pl-8 pr-7 rounded-xl border border-slate-200 bg-[#F5F8FC] text-xs focus:bg-white focus:outline-none focus:border-[#00B8B0] transition"
+            />
+            {globalSearch && (
+              <button
+                type="button"
+                onClick={() => setGlobalSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {globalSearchResults.length > 0 && (
+              <div className="absolute left-0 right-0 top-10 bg-white rounded-xl border border-slate-200 shadow-2xl overflow-hidden z-50 divide-y divide-slate-100">
+                {globalSearchResults.map((res, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(res.tab);
+                      setGlobalSearch('');
+                    }}
+                    className="w-full px-3.5 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 text-xs cursor-pointer"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-bold text-[#10243E] truncate">{res.title}</p>
+                      <p className="text-[10.5px] text-[#718096] truncate">{res.sub}</p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-teal-50 text-[#00B8B0] text-[10px] font-bold shrink-0">{res.type}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#00a99d]" />
-              <span>{currentUser?.role || 'Administrator'}</span>
+            {/* Notification Centre Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsNotifOpen((o) => !o)}
+                className="relative p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[#10243E] cursor-pointer"
+                title="Institutional Notification Centre"
+              >
+                <Bell className="w-4 h-4" />
+                {attentionTotalCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#DC4545] text-white text-[9px] font-black flex items-center justify-center">
+                    {attentionTotalCount > 99 ? '99+' : attentionTotalCount}
+                  </span>
+                )}
+              </button>
+              {isNotifOpen && (
+                <div className="absolute right-0 top-11 w-72 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden text-xs">
+                  <div className="bg-[#071C2D] text-white px-4 py-3 flex items-center justify-between">
+                    <span className="font-bold">Notification Centre</span>
+                    <button type="button" onClick={() => setIsNotifOpen(false)} className="cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    <button type="button" onClick={() => { setActiveTab('registrations'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex justify-between cursor-pointer">
+                      <span>Pending Registrations</span><span className="font-black text-[#F0A020]">{registrations.filter((r) => getEffectiveRegistrationStage(r) === 'Application Received').length}</span>
+                    </button>
+                    <button type="button" onClick={() => { setActiveTab('inquiries'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex justify-between cursor-pointer">
+                      <span>New Unread Inquiries</span><span className="font-black text-[#DC4545]">{inquiries.filter((i) => normalizeLeadStatus(i.status) === 'New Lead').length}</span>
+                    </button>
+                    <button type="button" onClick={() => { setActiveTab('outstanding-balances'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex justify-between cursor-pointer">
+                      <span>Unpaid / Overdue Invoices</span><span className="font-black text-[#DC4545]">{sidebarBadges.outstandingInvoices}</span>
+                    </button>
+                    <button type="button" onClick={() => { setActiveTab('candidate-cvs'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex justify-between cursor-pointer">
+                      <span>New Candidate CVs</span><span className="font-black text-[#00B8B0]">{applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <span className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold ${currentUserRoleDef.badgeColor}`}>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{currentUserRoleDef.label}</span>
             </span>
 
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
+                await adminRegistrationService.syncFromServer();
                 loadData();
-                setToastMessage('Data refreshed from live database.');
+                showToast('Synced & refreshed from live institutional database.');
               }}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition cursor-pointer"
               title="Sync / Refresh Data"
@@ -2023,604 +2157,17 @@ export default function MsimamiziAdmin() {
         </header>
 
         {/* Centered SaaS Content Body */}
-        <main className="p-4 sm:p-6 lg:px-8 lg:py-6 space-y-5 flex-1 max-w-[1180px] w-full mx-auto">
+        <main className="p-4 sm:p-6 lg:px-8 lg:py-6 space-y-5 flex-1 max-w-[1320px] w-full mx-auto">
           {!activeDetailView && (
             <>
-          {/* ════════════════════════════════════════════════════════════
-            TAB 1: PLATFORM OVERVIEW DASHBOARD (MAKAZIFLOW LAYOUT)
-        ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'dashboard' && (
-            <div className="space-y-5">
-              {/* Row 1: Dashboard Heading + Quick Action Strip */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div>
-                  <h1 className="font-['Outfit',sans-serif] text-xl sm:text-2xl font-bold text-[#0d2240] tracking-tight">
-                    Platform Overview Dashboard
-                  </h1>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Real-time visibility across ECAS registrations, catalog programmes, client inquiries, and career vacancies.
-                  </p>
-                </div>
-
-                {/* Dashboard Quick Actions */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={openNewRegistrationPage}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00a99d] hover:bg-[#008e84] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>New Registration</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openNewCoursePage}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d2240] hover:bg-[#163460] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Upload Course</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openCreateVacancy}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[#0d2240] text-xs font-semibold transition cursor-pointer"
-                  >
-                    <Briefcase className="w-3.5 h-3.5 text-[#00a99d]" />
-                    <span>Post Vacancy</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => adminRegistrationService.downloadCSV()}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Export CSV</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Row 2: Attention Needed Alert Box */}
-              <div className="bg-amber-50/75 border border-amber-200/90 rounded-xl p-4">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#0d2240]">
-                    <Bell className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>Attention Needed ({attentionTotalCount})</span>
-                  </div>
-                  <span className="text-[11px] font-medium text-amber-800/80">
-                    Quick operational alerts
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFilterStatus('Pending');
-                      setActiveTab('registrations');
-                    }}
-                    className="text-left bg-white hover:bg-amber-50/40 border border-amber-200/80 rounded-lg px-3.5 py-2.5 transition cursor-pointer flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-[#0d2240] truncate">
-                        {kpis.pendingCount} Pending Registration{kpis.pendingCount === 1 ? '' : 's'}
-                      </p>
-                      <p className="text-[11px] text-slate-500 truncate">
-                        Require proforma invoice dispatch or admission confirmation
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('inquiries')}
-                    className="text-left bg-white hover:bg-amber-50/40 border border-amber-200/80 rounded-lg px-3.5 py-2.5 transition cursor-pointer flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-[#0d2240] truncate">
-                        {kpis.newInquiriesCount || 0} Unread Course Inquir{(kpis.newInquiriesCount || 0) === 1 ? 'y' : 'ies'}
-                      </p>
-                      <p className="text-[11px] text-slate-500 truncate">
-                        WhatsApp &amp; Email follow-ups logged from website forms
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('vacancies')}
-                    className="text-left bg-white hover:bg-amber-50/40 border border-amber-200/80 rounded-lg px-3.5 py-2.5 transition cursor-pointer flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-[#0d2240] truncate">
-                        {kpis.newApplicationsCount || 0} New Candidate CV{(kpis.newApplicationsCount || 0) === 1 ? '' : 's'} Received
-                      </p>
-                      <p className="text-[11px] text-slate-500 truncate">
-                        {openVacanciesCount} active job openings synced live to website
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('courses')}
-                    className="text-left bg-white hover:bg-amber-50/40 border border-amber-200/80 rounded-lg px-3.5 py-2.5 transition cursor-pointer flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-[#0d2240] truncate">
-                        {courses.length} Accredited Courses Synchronized
-                      </p>
-                      <p className="text-[11px] text-slate-500 truncate">
-                        Manage 2026 cohort dates, fees, and course cover imagery
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Row 3: 8 Crisp KPI Metric Cards (2 Rows × 4 Columns) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Total Registrations
-                    </span>
-                    <span className="w-7 h-7 rounded-lg bg-[#0d2240]/5 text-[#0d2240] flex items-center justify-center shrink-0">
-                      <Users className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
-                    {kpis.totalRegistrations}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    {kpis.totalDelegates} total delegates booked
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Confirmed Enrolments
-                    </span>
-                    <span className="w-7 h-7 rounded-lg bg-[#00a99d]/10 text-[#00a99d] flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
-                    {kpis.confirmedCount}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    {kpis.approvedCount} approved / invoiced
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Pending Review
-                    </span>
-                    <span className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                      <Clock className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
-                    {kpis.pendingCount}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Awaiting LPO or confirmation
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Enrolment Value (USD)
-                    </span>
-                    <span className="w-7 h-7 rounded-lg bg-emerald-50 text-[#008000] flex items-center justify-center shrink-0">
-                      <DollarSign className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
-                    ${kpis.totalRevenueUSD.toLocaleString()}
-                  </p>
-                  <p className="text-[11px] text-[#00a99d] font-medium mt-1">
-                    Paid: ${(kpis.paidRevenueUSD || 0).toLocaleString()} USD
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Catalog Courses
-                    </span>
-                    <span className="w-7 h-7 rounded-lg bg-[#0d2240]/5 text-[#0d2240] flex items-center justify-center shrink-0">
-                      <GraduationCap className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
-                    {courses.length}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Active training programmes
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Inquiries &amp; Leads
-                    </span>
-                    <span className="w-7 h-7 rounded-lg bg-[#00a99d]/10 text-[#00a99d] flex items-center justify-center shrink-0">
-                      <MessageSquare className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
-                    {kpis.totalInquiries || 0}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    WA: {kpis.whatsappInquiriesCount || 0} • Email: {kpis.emailInquiriesCount || 0}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Active Vacancies
-                    </span>
-                    <span className="w-7 h-7 rounded-lg bg-slate-100 text-[#0d2240] flex items-center justify-center shrink-0">
-                      <Briefcase className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
-                    {openVacanciesCount}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    {vacancies.length} total posted positions
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] hover:border-[#00a99d]/40 transition">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Candidate CVs
-                    </span>
-                    <span className="w-7 h-7 rounded-lg bg-emerald-50 text-[#008000] flex items-center justify-center shrink-0">
-                      <FileText className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <p className="font-['Outfit',sans-serif] text-2xl font-bold text-[#0d2240] mt-2">
-                    {applications.length}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    {kpis.shortlistedApplicationsCount || 0} shortlisted for interview
-                  </p>
-                </div>
-              </div>
-
-              {/* Row 4: 2-Column Analytics Charts (Venue Bar Chart + Status Donut Chart) */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Bar Chart */}
-                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 p-5 shadow-[0_1px_2px_rgba(13,34,64,0.03)]">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                    <div>
-                      <h3 className="font-['Outfit',sans-serif] text-sm font-bold text-[#0d2240]">
-                        Enrolment Value Analytics (By Venue)
-                      </h3>
-                      <p className="text-[11px] text-slate-500">
-                        Total registration value across training destinations (USD)
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00a99d]">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-[#00a99d]" />
-                      <span>Fee Value (USD)</span>
-                    </span>
-                  </div>
-
-                  <div className="h-[220px] w-full">
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                      <BarChart data={venueAnalyticsData} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                        <Tooltip
-                          contentStyle={{
-                            borderRadius: '10px',
-                            border: '1px solid #e2e8f0',
-                            fontSize: '12px',
-                            boxShadow: '0 4px 12px rgba(13,34,64,0.08)',
-                          }}
-                          formatter={(val) => [`$${Number(val).toLocaleString()} USD`, 'Total Value']}
-                        />
-                        <Bar dataKey="revenueUSD" fill="#00a99d" radius={[6, 6, 0, 0]} maxBarSize={44} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Donut Chart */}
-                <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-[0_1px_2px_rgba(13,34,64,0.03)] flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-['Outfit',sans-serif] text-sm font-bold text-[#0d2240]">
-                      Admission Status Mix
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Current distribution across all bookings
-                    </p>
-                  </div>
-
-                  {statusDistributionData.length === 0 ? (
-                    <div className="h-[200px] flex flex-col items-center justify-center text-slate-400">
-                      <div className="w-24 h-24 rounded-full border-[12px] border-slate-100 mb-2" />
-                      <p className="text-xs font-medium text-slate-500">No registration statuses yet</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="h-[180px] w-full">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                          <PieChart>
-                            <Pie
-                              data={statusDistributionData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={48}
-                              outerRadius={72}
-                              paddingAngle={3}
-                              dataKey="value"
-                            >
-                              {statusDistributionData.map((entry) => (
-                                <Cell key={entry.name} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              contentStyle={{
-                                borderRadius: '10px',
-                                border: '1px solid #e2e8f0',
-                                fontSize: '12px',
-                              }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-                        {statusDistributionData.map((entry) => (
-                          <span key={entry.name} className="inline-flex items-center gap-1.5 text-[11px] text-slate-600 font-medium">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                            <span>{entry.name} ({entry.value})</span>
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Row 5: Full-Width Platform Activity Trend Chart */}
-              <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-[0_1px_2px_rgba(13,34,64,0.03)]">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                  <div>
-                    <h3 className="font-['Outfit',sans-serif] text-sm font-bold text-[#0d2240] flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-[#00a99d]" />
-                      <span>Enrolment &amp; Inquiry Growth (Last 6 Months)</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Monthly intake volume across registrations, website inquiries, and job applications
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4 text-[11px] font-medium text-slate-500">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#00a99d]" />
-                      <span>Registrations</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#0d2240]" />
-                      <span>Inquiries</span>
-                    </span>
-                  </div>
-                </div>
-
-                <div className="h-[200px] w-full">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                    <AreaChart data={monthlyActivityData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="ecasiTealFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#00a99d" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#00a99d" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: '10px',
-                          border: '1px solid #e2e8f0',
-                          fontSize: '12px',
-                          boxShadow: '0 4px 12px rgba(13,34,64,0.08)',
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="registrations"
-                        name="Registrations"
-                        stroke="#00a99d"
-                        strokeWidth={2}
-                        fill="url(#ecasiTealFill)"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="inquiries"
-                        name="Inquiries"
-                        stroke="#0d2240"
-                        strokeWidth={2}
-                        fill="none"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Row 6: 3-Column Bottom Feeds (Inquiries | Registrations | Candidate CVs) */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Feed 1: Recent Inquiries */}
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] flex flex-col">
-                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                    <h3 className="font-['Outfit',sans-serif] text-xs font-bold uppercase tracking-wider text-[#0d2240] flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5 text-[#00a99d]" />
-                      <span>Recent Inquiries</span>
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('inquiries')}
-                      className="text-[11px] font-semibold text-[#00a99d] hover:underline cursor-pointer"
-                    >
-                      View All
-                    </button>
-                  </div>
-
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 mt-1">
-                    {inquiries.length === 0 ? (
-                      <div className="py-8 text-center text-slate-400 text-xs">
-                        No WhatsApp or Email inquiries yet.
-                      </div>
-                    ) : (
-                      inquiries.slice(0, 6).map((inq) => (
-                        <div
-                          key={inq.id}
-                          onClick={() => setActiveTab('inquiries')}
-                          className="py-2.5 flex items-start justify-between gap-2 hover:bg-slate-50 px-1.5 rounded-lg transition cursor-pointer"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-[#0d2240] truncate">
-                              {inq.fullName || inq.senderName || 'Prospective Delegate'}
-                            </p>
-                            <p className="text-[11px] text-slate-500 truncate">
-                              {inq.courseTitle || inq.inquiryType}
-                            </p>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                            inq.channel === 'WhatsApp'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-blue-50 text-blue-700 border border-blue-200'
-                          }`}>
-                            {inq.channel || 'Inquiry'}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Feed 2: Recent Registrations */}
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] flex flex-col">
-                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                    <h3 className="font-['Outfit',sans-serif] text-xs font-bold uppercase tracking-wider text-[#0d2240] flex items-center gap-1.5">
-                      <DollarSign className="w-3.5 h-3.5 text-[#00a99d]" />
-                      <span>Recent Registrations</span>
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('registrations')}
-                      className="text-[11px] font-semibold text-[#00a99d] hover:underline cursor-pointer"
-                    >
-                      View All
-                    </button>
-                  </div>
-
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 mt-1">
-                    {registrations.length === 0 ? (
-                      <div className="py-8 text-center text-slate-400 text-xs">
-                        No course registrations received yet.
-                      </div>
-                    ) : (
-                      registrations.slice(0, 6).map((reg) => (
-                        <div
-                          key={reg.id}
-                          onClick={() => openRegistrationDossierPage(reg)}
-                          className="py-2.5 flex items-start justify-between gap-2 hover:bg-slate-50 px-1.5 rounded-lg transition cursor-pointer"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-[#0d2240] truncate">
-                              {reg.title} {reg.firstName} {reg.lastName}
-                            </p>
-                            <p className="text-[11px] text-slate-500 truncate">
-                              {reg.eventTitle}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-[11px] font-bold text-[#0d2240]">
-                              ${(reg.totalFee || 0).toLocaleString()}
-                            </p>
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                              reg.status === 'Confirmed'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : reg.status === 'Approved'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {reg.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Feed 3: New Candidate CVs */}
-                <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_2px_rgba(13,34,64,0.03)] flex flex-col">
-                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                    <h3 className="font-['Outfit',sans-serif] text-xs font-bold uppercase tracking-wider text-[#0d2240] flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-[#00a99d]" />
-                      <span>Career Submissions</span>
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('vacancies')}
-                      className="text-[11px] font-semibold text-[#00a99d] hover:underline cursor-pointer"
-                    >
-                      View All
-                    </button>
-                  </div>
-
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 mt-1">
-                    {applications.length === 0 ? (
-                      <div className="py-8 text-center text-slate-400 text-xs">
-                        No candidate CVs submitted yet.
-                      </div>
-                    ) : (
-                      applications.slice(0, 6).map((app) => (
-                        <div
-                          key={app.id}
-                          onClick={() => openApplicationDossierPage(app)}
-                          className="py-2.5 flex items-start justify-between gap-2 hover:bg-slate-50 px-1.5 rounded-lg transition cursor-pointer"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-[#0d2240] truncate">
-                              {app.fullName || 'Candidate'}
-                            </p>
-                            <p className="text-[11px] text-slate-500 truncate">
-                              {app.jobTitle || 'Role Application'}
-                            </p>
-                          </div>
-                          <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[#0d2240] text-[10px] font-semibold shrink-0">
-                            {app.status || 'New'}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+              <Suspense fallback={<ModuleSkeleton />}>
+                {renderEnterpriseModule()}
+              </Suspense>
 
           {/* ════════════════════════════════════════════════════════════
             TAB 2: REGISTRATIONS MANAGER TABLE
         ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'registrations' && (
+          {false && activeTab === 'registrations' && (
             <div className="space-y-4">
               {/* Filter Bar */}
               <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
@@ -3479,7 +3026,7 @@ export default function MsimamiziAdmin() {
           {/* ───────────────────────────────────────────────────────────
               TAB 4: WHATSAPP & EMAIL INQUIRIES LOG
           ─────────────────────────────────────────────────────────── */}
-          {activeTab === 'inquiries' && (
+          {false && activeTab === 'inquiries' && (
             <div className="space-y-6">
               {/* Filter & Export Bar */}
               <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
