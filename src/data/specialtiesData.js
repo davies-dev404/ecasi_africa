@@ -3,7 +3,7 @@ import {
   Bone, Pill, Scan, Smile, TestTube, Ambulance, Activity,
   Microscope, UserPlus, Clock, Shield, Monitor,
   Zap, Wind, Droplet, Dna, Anchor, Briefcase, 
-  Coffee, Globe, Star, Speaker, Users, User, UserCheck,
+  Coffee, Globe, Speaker, Users, User, UserCheck,
   Leaf, Target, BookOpen, TrendingUp, Truck, Recycle, TreePine, Wheat, FlaskConical
 } from 'lucide-react';
 
@@ -242,10 +242,10 @@ export const specialtiesData = [
     shortDescription: "Advanced skin care and treatment.",
     fullDescription: "<p>Our Dermatology clinic offers comprehensive diagnosis and treatment for all skin, hair, and nail diseases. From acne treatment to skin cancer screening, we provide personalized care.</p>",
     image: "https://images.unsplash.com/photo-1616391182219-e080b4d1043a?auto=format&fit=crop&q=80&w=1200",
-    icon: Star,
+    icon: Smile,
     benefits: [
       { icon: Shield, title: "Skin Cancer Screening", description: "Early detection saves lives." },
-      { icon: Star, title: "Cosmetic procedures", description: "Anti-aging and aesthetic treatments." },
+      { icon: Smile, title: "Cosmetic procedures", description: "Anti-aging and aesthetic treatments." },
       { icon: Activity, title: "Acne Management", description: "Effective long-term solutions." },
       { icon: User, title: "Pediatric Dermatology", description: "Gentle care for children's skin." }
     ]
@@ -395,7 +395,7 @@ export const specialtiesData = [
     icon: Scissors,
     benefits: [
       { icon: Shield, title: "Reconstructive", description: "Restoring form after injury." },
-      { icon: Star, title: "Cosmetic", description: "Aesthetic enhancements." },
+      { icon: Smile, title: "Cosmetic", description: "Aesthetic enhancements." },
       { icon: Activity, title: "Hand Surgery", description: "Specialized care for hand injuries." },
       { icon: UserPlus, title: "Burn Care", description: "Advanced treatment for burn victims." }
     ]

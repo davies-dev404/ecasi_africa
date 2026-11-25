@@ -11,6 +11,7 @@ import {
   isValidInstitutionalEmail,
   computeCredentialDigest,
 } from '@/services/adminRegistrationService';
+import { realtimeService } from '@/services/realtimeService';
 
 export const ENTERPRISE_KEYS = {
   INVOICES: 'ecasi_msimamizi_invoices_v1',
@@ -258,10 +259,6 @@ function writeJson(key, value) {
 
 async function postEnterpriseAction(payload) {
   if (typeof window === 'undefined') return { unreachable: true };
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return { unreachable: true, localDev: true };
-  }
   try {
     const token = getStoredAdminToken();
     const headers = { 'Content-Type': 'application/json' };
@@ -271,6 +268,7 @@ async function postEnterpriseAction(payload) {
       headers,
       body: JSON.stringify(payload),
     });
+    if ([502, 503, 504].includes(res.status)) return { unreachable: true, status: res.status };
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('application/json')) return { unreachable: true, status: res.status };
     const data = await res.json();
@@ -283,6 +281,7 @@ async function postEnterpriseAction(payload) {
 function notifyEnterpriseUpdate(topic) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('ecasi_enterprise_updated', { detail: { topic } }));
+    realtimeService.publish(topic || 'sync');
   }
 }
 

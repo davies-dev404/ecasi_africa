@@ -4,7 +4,7 @@ import SEO from '@/components/SEO';
 import {
   ArrowUpRight, ArrowRight, Search, Landmark, Wallet, CloudSun, Cpu,
   FolderKanban, Briefcase, Award, Users, Globe, FileText,
-  ChevronLeft, ChevronRight, Star, CheckCircle2, MapPin, Clock, X, Sparkles, ChevronDown
+  ChevronLeft, ChevronRight, CheckCircle2, MapPin, Clock, X, ChevronDown
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -366,7 +366,7 @@ const trainingTestimonials = [
   {
     name: "Yasuko Inoue",
     role: "Projects Expert, JICA",
-    quote: "I really thank the organizers of this training that is NETFUND and ECAS. There’s a lot of people who are interested in carbon markets and we are learning with each other, as we interact with various people who are very passionate.",
+    quote: "I really thank the organizers of this training that is NETFUND and ECASI. There’s a lot of people who are interested in carbon markets and we are learning with each other, as we interact with various people who are very passionate.",
     image: yasukoImg
   },
   {
@@ -1177,8 +1177,8 @@ const Index = () => {
           <div className="max-w-[1380px] w-full mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-9 gap-4">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-[#008000] bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full mb-2">
-                  <Sparkles size={13} /> 2026 Executive Cohorts Now Open
+                <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#008000] bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full mb-2">
+                  <span className="w-2 h-2 rounded-full bg-[#008000]" aria-hidden="true" /> 2026 Executive Cohorts Now Open
                 </span>
                 <h2
                   className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[33px]"
@@ -1542,21 +1542,15 @@ const Index = () => {
                         }}
                       >
                         <div>
-                          {/* Stars + Verified Badge */}
+                          {/* Verified Badge */}
                           <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, sIdx) => (
-                                <Star
-                                  key={sIdx}
-                                  size={16}
-                                  className="fill-[#fbbc04] text-[#fbbc04]"
-                                />
-                              ))}
+                            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#008000] bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                               <CheckCircle2
-                                size={15}
-                                className="text-[#1e73be] ml-1"
+                                size={13}
+                                className="text-[#008000]"
                                 title="Verified Training Participant"
                               />
+                              <span>Verified Participant</span>
                             </div>
                             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                               Verified Review

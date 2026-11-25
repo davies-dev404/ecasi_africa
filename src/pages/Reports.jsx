@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -8,11 +8,18 @@ import { Link } from 'react-router-dom';
 import { dataService } from '@/lib/dataService';
 
 const Reports = () => {
-  const reports = dataService.getReports();
+  const [reports, setReports] = useState(() => dataService.getReports());
   const [expandedId, setExpandedId] = useState(null);
   const [selectedType, setSelectedType] = useState('All');
 
-  const types = ['All', ...new Set(reports.map(r => r.type))];
+  useEffect(() => {
+    const reload = () => setReports(dataService.getReports());
+    window.addEventListener('ecasi_resources_updated', reload);
+    dataService.refreshPublicData?.();
+    return () => window.removeEventListener('ecasi_resources_updated', reload);
+  }, []);
+
+  const types = ['All', ...new Set(reports.map(r => r.type).filter(Boolean))];
   const filtered = selectedType === 'All' ? reports : reports.filter(r => r.type === selectedType);
 
   const handleView = (url) => {
@@ -105,7 +112,7 @@ const Reports = () => {
                     )}
                     
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {item.tags.map(tag => (
+                      {(item.tags || []).map(tag => (
                         <span key={tag} className="inline-flex items-center gap-1 text-xs bg-ecasi-section text-ecasi-navy px-2.5 py-1 rounded-full font-medium">
                           <Tag size={10} />
                           {tag}

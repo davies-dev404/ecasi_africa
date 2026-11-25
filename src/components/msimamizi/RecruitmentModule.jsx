@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   FileUser,
-  Star,
+  UserCheck,
   Workflow,
   ClipboardList,
   Download,
@@ -71,7 +71,7 @@ export default function RecruitmentModule({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
-              {activeTab === 'shortlisted-candidates' ? <Star className="w-5 h-5 text-[#F0A020]" /> :
+              {activeTab === 'shortlisted-candidates' ? <UserCheck className="w-5 h-5 text-[#F0A020]" /> :
                activeTab === 'recruitment-pipeline' ? <Workflow className="w-5 h-5 text-[#008000]" /> :
                activeTab === 'recruitment-applications' ? <ClipboardList className="w-5 h-5 text-[#008000]" /> :
                <FileUser className="w-5 h-5 text-[#008000]" />}

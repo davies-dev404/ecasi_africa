@@ -7,7 +7,7 @@ import {
   BarChart3, Search, FileText, Scale, ShieldCheck,
   Target, Database, GitCompareArrows, TrendingUp, CheckCircle2,
   Lightbulb, ArrowRight, Users, Globe, BookOpen,
-  ClipboardCheck, ChevronRight, Sparkles, LayoutDashboard
+  ClipboardCheck, ChevronRight, LayoutDashboard
 } from 'lucide-react';
 
 /* ── Framer Motion Variants ── */
@@ -125,7 +125,7 @@ const benefits = [
     statLabel: 'Effectiveness',
   },
   {
-    icon: Sparkles,
+    icon: TrendingUp,
     title: 'Increased Efficiency',
     description: 'By identifying the most effective and efficient policy options, policy analysis can help reduce costs and maximize benefits.',
     stat: '40%',
@@ -442,7 +442,7 @@ const PolicyAnalysis = () => {
             className="text-center mb-14"
           >
             <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 px-4 py-2 rounded-full mb-4 border border-emerald-400/20">
-              <Sparkles className="h-3.5 w-3.5" />
+              <Target className="h-3.5 w-3.5" />
               Why Policy Analysis
             </span>
             <h2

@@ -385,6 +385,24 @@ function recoverSiblingStoresData(string $primaryStoreFile, array &$store): bool
             $changed = true;
         }
 
+        if (empty($store['galleryCustomized']) && !empty($sib['galleryCustomized']) && isset($sib['gallery']) && is_array($sib['gallery'])) {
+            $store['gallery'] = $sib['gallery'];
+            $store['galleryCustomized'] = true;
+            $changed = true;
+        }
+
+        if (!empty($sib['resources']) && is_array($sib['resources'])) {
+            if (!isset($store['resources']) || !is_array($store['resources'])) $store['resources'] = [];
+            if (!isset($store['resourcesCustomized']) || !is_array($store['resourcesCustomized'])) $store['resourcesCustomized'] = [];
+            foreach ($sib['resources'] as $resType => $resList) {
+                if (empty($store['resourcesCustomized'][$resType]) && !empty($sib['resourcesCustomized'][$resType]) && is_array($resList)) {
+                    $store['resources'][$resType] = $resList;
+                    $store['resourcesCustomized'][$resType] = true;
+                    $changed = true;
+                }
+            }
+        }
+
         $mergedMtimes[$sibFile] = $mtime;
         $changed = true;
     }
@@ -435,10 +453,16 @@ function readStore(string $file): array {
         'templates' => [],
         'announcements' => [],
         'cmsContent' => [],
+        'gallery' => null,
+        'galleryCustomized' => false,
+        'resources' => [],
+        'resourcesCustomized' => [],
         'settings' => [],
         'auditEvents' => [],
         'accounts' => [],
         'sessions' => [],
+        'syncVersion' => 1,
+        'lastSyncTopic' => 'init',
         'updatedAt' => gmdate('c'),
     ];
     if (!file_exists($file)) {
@@ -452,6 +476,7 @@ function readStore(string $file): array {
 }
 
 function writeStore(string $file, array $data): bool {
+    $data['syncVersion'] = max(1, (int)($data['syncVersion'] ?? 0) + 1);
     $data['updatedAt'] = gmdate('c');
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     if ($json === false) {
@@ -679,7 +704,7 @@ function sanitizeRegistration(array $reg): array {
 }
 
 function sanitizeInquiry(array $inq): array {
-    $validChannels = ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration', 'In-House Proposal', 'Calendar Download', 'Web Inquiry', 'Direct Inquiry', 'Newsletter'];
+    $validChannels = ['Website', 'Website Inquiry', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration', 'In-House Proposal', 'Calendar Download', 'Web Inquiry', 'Direct Inquiry', 'Newsletter'];
     $channel = sanitizeText($inq['channel'] ?? 'WhatsApp', 40);
     if (!in_array($channel, $validChannels, true)) {
         $channel = 'WhatsApp';
@@ -1124,6 +1149,70 @@ function sanitizeCoursesMap(array $courses): array {
     return $cleanMap;
 }
 
+function sanitizeMediaUrl($raw, int $maxDataBytes = 4194304): string {
+    if (!is_string($raw)) return '';
+    $val = trim($raw);
+    if ($val === '') return '';
+    if (preg_match('/^(data:image\/(?:png|jpeg|jpg|webp|gif);base64,|data:application\/pdf;base64,)/i', $val)) {
+        return strlen($val) <= $maxDataBytes ? $val : '';
+    }
+    if (preg_match('/^(?:\/|https?:\/\/)/i', $val)) {
+        return sanitizeText($val, 1500);
+    }
+    if ($val === '#') return '#';
+    return '';
+}
+
+function sanitizeGalleryImage(array $img): array {
+    $validCats = ['events', 'fieldwork', 'training', 'community', 'all'];
+    $cat = strtolower(sanitizeText($img['category'] ?? 'training', 32));
+    if (!in_array($cat, $validCats, true)) {
+        $cat = 'training';
+    }
+    return [
+        'id' => sanitizeText($img['id'] ?? ('gal-' . gmdate('Ymd') . '-' . random_int(1000, 9999)), 64),
+        'src' => sanitizeMediaUrl($img['src'] ?? '', 3145728),
+        'category' => $cat,
+        'title' => sanitizeText($img['title'] ?? 'ECAS Institute Activity', 240),
+        'description' => sanitizeText($img['description'] ?? '', 800),
+        'createdAt' => sanitizeText($img['createdAt'] ?? gmdate('c'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function sanitizeResourceItem(array $item, string $resourceType): array {
+    $tags = [];
+    if (isset($item['tags']) && is_array($item['tags'])) {
+        foreach (array_slice($item['tags'], 0, 15) as $t) {
+            $ts = sanitizeText($t, 48);
+            if ($ts !== '') $tags[] = $ts;
+        }
+    }
+    $cleanDocUrl = sanitizeMediaUrl($item['downloadUrl'] ?? ($item['url'] ?? ''), 5242880);
+    $cleanImage = sanitizeMediaUrl($item['image'] ?? '', 2097152);
+    return [
+        'id' => sanitizeText($item['id'] ?? (substr($resourceType, 0, 3) . '-' . gmdate('Ymd') . '-' . random_int(1000, 9999)), 64),
+        'title' => sanitizeText($item['title'] ?? '', 300),
+        'type' => sanitizeText($item['type'] ?? 'Resource', 120),
+        'issue' => sanitizeText($item['issue'] ?? '', 80),
+        'date' => sanitizeText($item['date'] ?? gmdate('Y'), 64),
+        'pages' => sanitizeText($item['pages'] ?? 'PDF Document', 64),
+        'authors' => sanitizeText($item['authors'] ?? ($item['author'] ?? 'ECAS Institute'), 200),
+        'author' => sanitizeText($item['author'] ?? ($item['authors'] ?? 'ECAS Institute'), 200),
+        'country' => sanitizeText($item['country'] ?? 'Africa / Global', 120),
+        'abstract' => sanitizeText($item['abstract'] ?? ($item['summary'] ?? ''), 2500),
+        'summary' => sanitizeText($item['summary'] ?? ($item['abstract'] ?? ''), 2500),
+        'description' => sanitizeText($item['description'] ?? ($item['summary'] ?? ''), 1500),
+        'image' => $cleanImage,
+        'downloadUrl' => $cleanDocUrl,
+        'url' => sanitizeMediaUrl($item['url'] ?? ($item['downloadUrl'] ?? ''), 5242880),
+        'tags' => $tags,
+        'isSensitive' => !empty($item['isSensitive']),
+        'createdAt' => sanitizeText($item['createdAt'] ?? gmdate('c'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
 $needsStoreLock = ($_SERVER['REQUEST_METHOD'] === 'POST')
     || ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['scope'] ?? 'public') === 'admin');
 if ($needsStoreLock) {
@@ -1137,6 +1226,48 @@ if ($needsStoreLock && recoverSiblingStoresData($storeFile, $store)) {
 // ─── GET REQUESTS ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $scope = $_GET['scope'] ?? 'public';
+
+    // Real-time Server-Sent Events (SSE) push stream for shared PHP/cPanel hosts
+    if ($scope === 'stream') {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
+        @set_time_limit(30);
+        header('Content-Type: text/event-stream; charset=utf-8');
+        header('Cache-Control: no-cache, no-transform');
+        header('X-Accel-Buffering: no');
+        while (ob_get_level() > 0) {
+            @ob_end_flush();
+        }
+        $lastMtime = file_exists($storeFile) ? (int)@filemtime($storeFile) : 0;
+        $curVer = (int)($store['syncVersion'] ?? 1);
+        $curTopic = (string)($store['lastSyncTopic'] ?? 'init');
+        echo "event: connected\n";
+        echo 'data: ' . json_encode(['version' => $curVer, 'topic' => $curTopic, 'updatedAt' => $store['updatedAt'] ?? gmdate('c')]) . "\n\n";
+        @flush();
+
+        $startedAt = time();
+        while ((time() - $startedAt) < 22 && !connection_aborted()) {
+            usleep(800000);
+            clearstatcache(true, $storeFile);
+            $newMtime = file_exists($storeFile) ? (int)@filemtime($storeFile) : 0;
+            if ($newMtime > $lastMtime) {
+                $lastMtime = $newMtime;
+                $fresh = readStore($storeFile);
+                $newVer = (int)($fresh['syncVersion'] ?? ($curVer + 1));
+                if ($newVer !== $curVer) {
+                    $curVer = $newVer;
+                    $curTopic = (string)($fresh['lastSyncTopic'] ?? 'sync');
+                    echo "event: sync_update\n";
+                    echo "id: {$curVer}\n";
+                    echo 'data: ' . json_encode(['version' => $curVer, 'topic' => $curTopic, 'updatedAt' => $fresh['updatedAt'] ?? gmdate('c')]) . "\n\n";
+                    @flush();
+                }
+            }
+        }
+        exit;
+    }
+
     $isVerify = ($_GET['verify'] ?? '') === '1';
     $token = getBearerToken();
     $adminEmail = validateAdminToken($store, $token, !$isVerify);
@@ -1241,9 +1372,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'templates' => $store['templates'] ?? [],
                 'announcements' => $store['announcements'] ?? [],
                 'cmsContent' => (object)($store['cmsContent'] ?? []),
+                'gallery' => !empty($store['galleryCustomized']) ? (is_array($store['gallery'] ?? null) ? $store['gallery'] : []) : null,
+                'galleryCustomized' => !empty($store['galleryCustomized']),
+                'resources' => (object)($store['resources'] ?? []),
+                'resourcesCustomized' => (object)($store['resourcesCustomized'] ?? []),
                 'settings' => (object)($store['settings'] ?? []),
                 'auditEvents' => $store['auditEvents'] ?? [],
                 'accounts' => $publicAccounts,
+                'syncVersion' => (int)($store['syncVersion'] ?? 1),
                 'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
             ],
         ]);
@@ -1282,6 +1418,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'cohorts' => $store['cohorts'] ?? [],
             'cmsContent' => (object)$publishedCms,
             'announcements' => $publishedAnnouncements,
+            'gallery' => !empty($store['galleryCustomized']) ? (is_array($store['gallery'] ?? null) ? $store['gallery'] : []) : null,
+            'galleryCustomized' => !empty($store['galleryCustomized']),
+            'resources' => (object)($store['resources'] ?? []),
+            'resourcesCustomized' => (object)($store['resourcesCustomized'] ?? []),
+            'syncVersion' => (int)($store['syncVersion'] ?? 1),
             'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
         ],
     ]);
@@ -2047,6 +2188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'set_cms_content' && isset($payload['cmsContent']) && is_array($payload['cmsContent'])) {
         $enforcePermission('cms.write');
         $store['cmsContent'] = sanitizeCmsContent($payload['cmsContent']);
+        $store['lastSyncTopic'] = 'cms';
         $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
         appendAuditEvent(
             $store,
@@ -2061,6 +2203,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'set_cms_content', $adminEmail, 'SUCCESS', 'sections=' . count($store['cmsContent']));
         echo json_encode(['success' => true, 'count' => count($store['cmsContent'])]);
+        exit;
+    }
+
+    if ($action === 'set_gallery' && isset($payload['gallery']) && is_array($payload['gallery'])) {
+        $enforcePermission('cms.write');
+        $cleanGallery = [];
+        foreach (array_slice($payload['gallery'], 0, 500) as $img) {
+            if (!is_array($img)) continue;
+            $cleanItem = sanitizeGalleryImage($img);
+            if ($cleanItem['src'] !== '') {
+                $cleanGallery[] = $cleanItem;
+            }
+        }
+        $store['gallery'] = $cleanGallery;
+        $store['galleryCustomized'] = true;
+        $store['lastSyncTopic'] = 'gallery';
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_GALLERY', 'Gallery', 'Photos: ' . count($cleanGallery), '', 'Synced to website');
+        if (!writeStore($storeFile, $store)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Unable to save gallery changes to server storage.']);
+            exit;
+        }
+        writeAuditLog($auditLogFile, 'set_gallery', $adminEmail, 'SUCCESS', 'count=' . count($cleanGallery));
+        echo json_encode([
+            'success' => true,
+            'count' => count($cleanGallery),
+            'gallery' => $cleanGallery,
+            'syncVersion' => $store['syncVersion'],
+        ]);
+        exit;
+    }
+
+    if ($action === 'set_resources' && isset($payload['resourceType']) && isset($payload['items']) && is_array($payload['items'])) {
+        $enforcePermission('cms.write');
+        $resourceType = sanitizeText($payload['resourceType'], 40);
+        $validResourceTypes = ['publications', 'reports', 'policies', 'videos', 'books', 'policyBriefs'];
+        if (!in_array($resourceType, $validResourceTypes, true)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Unsupported resource category.']);
+            exit;
+        }
+        $cleanItems = [];
+        foreach (array_slice($payload['items'], 0, 500) as $item) {
+            if (!is_array($item)) continue;
+            $cleanItem = sanitizeResourceItem($item, $resourceType);
+            if ($cleanItem['title'] !== '') {
+                $cleanItems[] = $cleanItem;
+            }
+        }
+        if (!isset($store['resources']) || !is_array($store['resources'])) $store['resources'] = [];
+        if (!isset($store['resourcesCustomized']) || !is_array($store['resourcesCustomized'])) $store['resourcesCustomized'] = [];
+        $store['resources'][$resourceType] = $cleanItems;
+        $store['resourcesCustomized'][$resourceType] = true;
+        $store['lastSyncTopic'] = 'resources';
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_RESOURCES', 'Resource', "{$resourceType}: " . count($cleanItems) . ' items', '', 'Synced to website');
+        if (!writeStore($storeFile, $store)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Unable to save resource changes to server storage.']);
+            exit;
+        }
+        writeAuditLog($auditLogFile, 'set_resources', $adminEmail, 'SUCCESS', "type={$resourceType} count=" . count($cleanItems));
+        echo json_encode([
+            'success' => true,
+            'resourceType' => $resourceType,
+            'count' => count($cleanItems),
+            'items' => $cleanItems,
+            'syncVersion' => $store['syncVersion'],
+        ]);
         exit;
     }
 

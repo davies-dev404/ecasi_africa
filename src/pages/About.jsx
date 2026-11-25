@@ -1,4 +1,4 @@
-import { Heart, Globe2, BookOpen, Lightbulb, Users, Leaf, Zap, ShieldCheck, Star, Compass, GraduationCap, ArrowRight, Target } from 'lucide-react';
+import { Heart, Globe2, BookOpen, Lightbulb, Users, Leaf, Zap, ShieldCheck, Award, Compass, GraduationCap, ArrowRight, Target } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -26,7 +26,7 @@ const values = [
     description: "Our commitment to professionalism is unwavering. We maintain rigorous research integrity and treat every stakeholder with respect.",
   },
   {
-    icon: Star,
+    icon: Award,
     title: "Excellence",
     color: "bg-purple-50 text-purple-600 border-purple-100",
     description: "Excellence is not just a goal — it is our standard. We relentlessly pursue quality in research, policy advisory, and technical assistance.",

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -8,7 +8,14 @@ import { Link } from 'react-router-dom';
 import { dataService } from '@/lib/dataService';
 
 const Books = () => {
-  const dummyData = dataService.getBooks();
+  const [dummyData, setDummyData] = useState(() => dataService.getBooks());
+
+  useEffect(() => {
+    const reload = () => setDummyData(dataService.getBooks());
+    window.addEventListener('ecasi_resources_updated', reload);
+    dataService.refreshPublicData?.();
+    return () => window.removeEventListener('ecasi_resources_updated', reload);
+  }, []);
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <SEO
@@ -56,13 +63,40 @@ const Books = () => {
                       {item.title}
                     </h3>
                     <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                      <button className="flex items-center text-sm font-semibold text-ecasi-green hover:text-ecasi-navy transition-colors">
-                        <Eye size={16} className="mr-1.5" />
-                        Preview
-                      </button>
-                      <button className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-semibold text-ecasi-navy hover:bg-ecasi-green hover:text-white transition-colors">
-                        Get Copy
-                      </button>
+                      {(item.downloadUrl || item.url) ? (
+                        <>
+                          <a
+                            href={item.downloadUrl || item.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center text-sm font-semibold text-ecasi-green hover:text-ecasi-navy transition-colors"
+                          >
+                            <Eye size={16} className="mr-1.5" />
+                            Preview
+                          </a>
+                          <a
+                            href={item.downloadUrl || item.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-semibold text-ecasi-navy hover:bg-ecasi-green hover:text-white transition-colors"
+                          >
+                            Get Copy
+                          </a>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex items-center text-sm font-semibold text-gray-400">
+                            <Eye size={16} className="mr-1.5" />
+                            Catalog Entry
+                          </span>
+                          <Link
+                            to="/contact"
+                            className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-semibold text-ecasi-navy hover:bg-ecasi-green hover:text-white transition-colors"
+                          >
+                            Inquire
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

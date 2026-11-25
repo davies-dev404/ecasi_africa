@@ -472,8 +472,12 @@
   .ecasi-footer {
     background: #032e42;
     border-top: 4px solid #008000;
-    color: rgba(255,255,255,0.88);
+    color: rgba(255,255,255,0.9);
     font-size: 14.5px;
+  }
+
+  .ecasi-footer p {
+    color: rgba(255,255,255,0.9);
   }
 
   .ecasi-footer h3,

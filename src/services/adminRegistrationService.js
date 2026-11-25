@@ -1,6 +1,9 @@
 // ECAS Institute - Msimamizi Administrative Service
 // Real-time persistent data service for Course Registrations, Corporate Quotes & Portal Analytics
 
+import { dataService } from '@/lib/dataService';
+import { realtimeService } from '@/services/realtimeService';
+
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const INQUIRIES_KEY = 'ecasi_course_inquiries_live';
 const DELETED_INQUIRIES_KEY = 'ecasi_deleted_inquiries_v1';
@@ -145,8 +148,17 @@ function clearLegacyPersistentAuth() {
 export function getSyncUrl() {
   if (typeof window === 'undefined') return '/api/msimamizi-sync.php';
   const host = window.location.hostname;
-  // Both ecasiafrica.org and msimamizi.ecasiafrica.org share the /public_html Document Root
-  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('ecasiafrica.org')) {
+  const port = String(window.location.port || '');
+  // Both ecasiafrica.org and msimamizi.ecasiafrica.org share the /public_html Document Root;
+  // local Vite dev proxies /api/msimamizi-sync.php to server/realtime.js
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('ecasiafrica.org') ||
+    port === '5173' ||
+    port === '4173' ||
+    port === '8080'
+  ) {
     return '/api/msimamizi-sync.php';
   }
   return 'https://ecasiafrica.org/api/msimamizi-sync.php';
@@ -154,8 +166,6 @@ export function getSyncUrl() {
 
 function sendKeepaliveLifecycle(action, explicitToken = '') {
   if (typeof window === 'undefined') return;
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return;
   const token = explicitToken || getStoredAdminToken();
   if (!token) return;
   const payloadStr = JSON.stringify({ action, token });
@@ -280,10 +290,6 @@ function trySendBeacon(payloadStr) {
 
 async function pushToServerWithStatus(payload, options = {}) {
   if (typeof window === 'undefined') return { unreachable: true, status: 0, data: null };
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return { unreachable: true, status: 0, data: null };
-  }
   let payloadStr = '';
   try {
     payloadStr = JSON.stringify(payload);
@@ -306,6 +312,9 @@ async function pushToServerWithStatus(payload, options = {}) {
       body: payloadStr,
       ...(canKeepalive ? { keepalive: true } : {}),
     });
+    if ([502, 503, 504].includes(res.status)) {
+      return { unreachable: true, status: res.status, data: null };
+    }
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       if (options.beaconFallback) {
@@ -514,8 +523,6 @@ class AdminRegistrationService {
 
   async _flushPendingPublicWrites() {
     if (typeof window === 'undefined') return;
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return;
 
     const pendingInqIds = readPendingSyncIds(PENDING_INQUIRIES_KEY);
     if (pendingInqIds.length > 0) {
@@ -551,9 +558,7 @@ class AdminRegistrationService {
   }
 
   async syncFromServer() {
-    if (typeof window === 'undefined') return;
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return;
+    if (typeof window === 'undefined') return { ok: false, error: 'SSR' };
 
     const requestedScope = this.isAuthenticated() && getStoredAdminToken() ? 'admin' : 'public';
     if (this._activeSyncPromise) {
@@ -585,14 +590,22 @@ class AdminRegistrationService {
           headers,
           cache: 'no-store',
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          return { ok: false, scope, status: res.status, error: `Server returned HTTP ${res.status}` };
+        }
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          return { ok: false, scope, error: 'Sync endpoint returned non-JSON response' };
+        }
         const json = await res.json();
         if (scope === 'admin' && json?.authenticated === false) {
           this.logout();
           window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
-          return;
+          return { ok: false, scope, authenticated: false, error: 'Administrator session expired' };
         }
-        if (!json?.success || !json?.data) return;
+        if (!json?.success || !json?.data) {
+          return { ok: false, scope, error: json?.error || 'Invalid sync payload' };
+        }
 
         const {
           registrations,
@@ -609,9 +622,19 @@ class AdminRegistrationService {
           templates,
           announcements,
           cmsContent,
+          gallery,
+          galleryCustomized,
+          resources,
+          resourcesCustomized,
           settings,
           auditEvents,
         } = json.data;
+
+        try {
+          dataService.applyServerMediaSnapshot({ gallery, galleryCustomized, resources, resourcesCustomized });
+        } catch {
+          // ignore
+        }
 
         try {
           if (Array.isArray(invoices)) localStorage.setItem('ecasi_msimamizi_invoices_v1', JSON.stringify(invoices));
@@ -671,18 +694,28 @@ class AdminRegistrationService {
           });
 
           const localInq = this.getInquiries();
-          const unsyncedLocal = localInq.filter((inq) => {
-            if (!inq || (inq.id && deletedSet.has(inq.id))) return false;
-            const hasId = inq.id && serverKeys.has(`id:${inq.id}`);
-            const hasRef = inq.referenceNo && serverKeys.has(`ref:${inq.referenceNo}`);
-            return !hasId && !hasRef;
-          });
+          const unsyncedLocal = localInq
+            .filter((inq) => {
+              if (!inq || (inq.id && deletedSet.has(inq.id))) return false;
+              const hasId = inq.id && serverKeys.has(`id:${inq.id}`);
+              const hasRef = inq.referenceNo && serverKeys.has(`ref:${inq.referenceNo}`);
+              return !hasId && !hasRef;
+            })
+            .map((inq) => ({
+              ...inq,
+              id: inq.id || (inq.referenceNo ? `INQ-${String(inq.referenceNo).replace(/[^a-zA-Z0-9_-]/g, '')}` : `INQ-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`),
+            }));
 
+          let mergedAdded = 0;
           let finalInquiries = inquiries.filter((inq) => !inq?.id || !deletedSet.has(inq.id));
           if (unsyncedLocal.length > 0) {
             const mergeRes = await pushToServer({ action: 'merge_inquiries', inquiries: unsyncedLocal });
             if (mergeRes?.success && Array.isArray(mergeRes.inquiries)) {
               finalInquiries = mergeRes.inquiries;
+              mergedAdded = Number(mergeRes.added || 0);
+              if (mergedAdded > 0) {
+                realtimeService.publish('inquiries', { action: 'merge_inquiries', added: mergedAdded });
+              }
             } else {
               finalInquiries = [...unsyncedLocal, ...finalInquiries];
             }
@@ -690,6 +723,19 @@ class AdminRegistrationService {
 
           localStorage.setItem(INQUIRIES_KEY, JSON.stringify(finalInquiries));
           window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+          this._lastSyncStats = {
+            scope,
+            inquiriesCount: finalInquiries.length,
+            mergedAdded,
+            registrationsCount: Array.isArray(registrations) ? registrations.length : this.getRegistrations().length,
+          };
+        } else {
+          this._lastSyncStats = {
+            scope,
+            inquiriesCount: this.getInquiries().length,
+            mergedAdded: 0,
+            registrationsCount: Array.isArray(registrations) ? registrations.length : this.getRegistrations().length,
+          };
         }
 
         if (Array.isArray(vacancies)) {
@@ -743,8 +789,9 @@ class AdminRegistrationService {
           localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(Array.from(accountMap.values())));
           window.dispatchEvent(new CustomEvent('ecasi_accounts_updated'));
         }
-      } catch {
-        // Ignore network sync errors
+        return { ok: true, ...(this._lastSyncStats || { scope }) };
+      } catch (err) {
+        return { ok: false, error: err?.message || 'Network sync error' };
       } finally {
         if (this._activeSyncPromise === currentPromise) {
           this._activeSyncPromise = null;
@@ -796,6 +843,7 @@ class AdminRegistrationService {
         if (res?.ok && res.data?.success) {
           dequeuePendingSyncId(PENDING_REGS_KEY, newRecord.id);
         }
+        realtimeService.publish('registrations', { action: 'add_registration', id: newRecord.id });
       });
 
       // Notify any listening admin tabs/components
@@ -814,7 +862,7 @@ class AdminRegistrationService {
       const existing = this.getRegistrations();
       const updated = existing.map((r) => (r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_registrations', registrations: updated });
+      pushToServer({ action: 'set_registrations', registrations: updated }).then(() => realtimeService.publish('registrations'));
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       return true;
     } catch (e) {
@@ -830,7 +878,7 @@ class AdminRegistrationService {
       const existing = this.getRegistrations();
       const updated = existing.filter((r) => r.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_registrations', registrations: updated });
+      pushToServer({ action: 'set_registrations', registrations: updated }).then(() => realtimeService.publish('registrations'));
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       return true;
     } catch (e) {
@@ -1002,7 +1050,9 @@ class AdminRegistrationService {
         if (res?.ok && res.data?.success) {
           dequeuePendingSyncId(PENDING_INQUIRIES_KEY, newInquiry.id);
         }
+        realtimeService.publish('inquiries', { action: 'add_inquiry', id: newInquiry.id });
       });
+      realtimeService.publish('inquiries', { action: 'add_inquiry', id: newInquiry.id });
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated', { detail: newInquiry }));
       return newInquiry;
     } catch (e) {
@@ -1051,7 +1101,7 @@ class AdminRegistrationService {
         id,
         updates,
         ...(target ? { inquiry: target } : {}),
-      }, { beaconFallback: true });
+      }, { beaconFallback: true }).then(() => realtimeService.publish('inquiries', { action: 'update_inquiry', id }));
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
       return true;
     } catch (e) {
@@ -1076,7 +1126,7 @@ class AdminRegistrationService {
       } catch {
         // ignore tombstone write failure
       }
-      pushToServer({ action: 'delete_inquiry', id }, { beaconFallback: true });
+      pushToServer({ action: 'delete_inquiry', id }, { beaconFallback: true }).then(() => realtimeService.publish('inquiries', { action: 'delete_inquiry', id }));
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
       return true;
     } catch (e) {
@@ -1555,8 +1605,7 @@ class AdminRegistrationService {
     } catch {
       // ignore
     }
-    const host = window.location.hostname;
-    if (host !== 'localhost' && host !== '127.0.0.1' && now - (this._lastServerTouchAt || 0) >= 45000) {
+    if (now - (this._lastServerTouchAt || 0) >= 45000 && getStoredAdminToken()) {
       this._lastServerTouchAt = now;
       pushToServerWithStatus({ action: 'touch_activity' }).then((res) => {
         if (!res.unreachable && res.status === 401) {
@@ -1569,12 +1618,14 @@ class AdminRegistrationService {
 
   async verifyServerSession() {
     if (typeof window === 'undefined') return true;
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return this.isAuthenticated();
-    }
     const token = getStoredAdminToken();
-    if (!token) return false;
+    if (!token) {
+      const host = window.location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1') {
+        return this.isAuthenticated();
+      }
+      return false;
+    }
     const res = await pushToServerWithStatus({ action: 'heartbeat' });
     if (!res.unreachable && res.status === 401) {
       this.logout();

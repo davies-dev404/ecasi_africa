@@ -19,7 +19,6 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Calendar,
 } from 'lucide-react';
 import { dataService } from '@/lib/dataService';
@@ -1032,7 +1031,7 @@ export default function AcademicModule({
           <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-black text-[#032e42] flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#008000]" /> Standard 2026 Institutional Intake Calendar
+                <CalendarRange className="w-4 h-4 text-[#008000]" /> Standard 2026 Institutional Intake Calendar
               </h3>
               <p className="text-[11px] text-[#718096] mt-0.5">
                 Live published 2026 dates available across ECAS Institute&apos;s {courses.length} executive courses. Activate any window to track delegate seats.

@@ -40,9 +40,11 @@ import {
   Paperclip,
   Eye,
   Bell,
+  Wifi,
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
+import { realtimeService } from '@/services/realtimeService';
 import TurnstileWidget from '@/components/TurnstileWidget';
 import { verifyTurnstile } from '@/services/turnstileService';
 import { printRegistrationVoucher } from '@/utils/printRegistrationVoucher';
@@ -536,26 +538,48 @@ function MsimamiziAdminInner() {
     setIsAuthenticated(adminRegistrationService.isAuthenticated());
   }, []);
 
-  // Automatically sync live data (including new website inquiries) whenever logged in + periodic 30s refresh
+  const [realtimeTransport, setRealtimeTransport] = useState(() => realtimeService.getTransportState());
+
+  // Automatically sync live data (including new website inquiries) whenever logged in + Socket.IO/SSE real-time push + 30s fallback
   useEffect(() => {
+    const updateTransport = () => setRealtimeTransport(realtimeService.getTransportState());
+    updateTransport();
     if (!isAuthenticated) return;
     let cancelled = false;
+    let syncDebounce = null;
     const performSync = async () => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      await adminRegistrationService.syncFromServer();
+      const res = await adminRegistrationService.syncFromServer();
       if (!cancelled) {
         loadData();
+        updateTransport();
+        if (res?.mergedAdded > 0) {
+          showToast(`Synced ${res.mergedAdded} new local inquiry lead(s) to server.`);
+        }
       }
     };
     performSync();
     const syncTimer = window.setInterval(performSync, 30000);
+    const unsubscribeRealtime = realtimeService.subscribe((evt) => {
+      updateTransport();
+      if (
+        ['inquiries', 'registrations', 'applications', 'gallery', 'resources', 'courses', 'vacancies', 'cms', 'announcements', 'finance', 'cohorts', 'sync'].includes(evt?.topic)
+      ) {
+        window.clearTimeout(syncDebounce);
+        syncDebounce = window.setTimeout(() => {
+          performSync();
+        }, 180);
+      }
+    });
     const onFocusSync = () => {
       performSync();
     };
     window.addEventListener('focus', onFocusSync);
     return () => {
       cancelled = true;
+      window.clearTimeout(syncDebounce);
       window.clearInterval(syncTimer);
+      unsubscribeRealtime();
       window.removeEventListener('focus', onFocusSync);
     };
   }, [isAuthenticated]);
@@ -605,12 +629,16 @@ function MsimamiziAdminInner() {
     window.addEventListener('ecasi_vacancies_updated', handleUpdate);
     window.addEventListener('ecasi_applications_updated', handleUpdate);
     window.addEventListener('ecasi_enterprise_updated', handleUpdate);
+    window.addEventListener('ecasi_gallery_updated', handleUpdate);
+    window.addEventListener('ecasi_resources_updated', handleUpdate);
     return () => {
       window.removeEventListener('ecasi_registration_updated', handleUpdate);
       window.removeEventListener('ecasi_inquiry_updated', handleUpdate);
       window.removeEventListener('ecasi_vacancies_updated', handleUpdate);
       window.removeEventListener('ecasi_applications_updated', handleUpdate);
       window.removeEventListener('ecasi_enterprise_updated', handleUpdate);
+      window.removeEventListener('ecasi_gallery_updated', handleUpdate);
+      window.removeEventListener('ecasi_resources_updated', handleUpdate);
     };
   }, []);
 
@@ -1934,7 +1962,7 @@ function MsimamiziAdminInner() {
       );
     }
 
-    if (['cms-homepage', 'cms-programmes', 'cms-course-info', 'cms-announcements', 'cms-faqs', 'cms-vacancies'].includes(activeTab)) {
+    if (['cms-homepage', 'cms-programmes', 'cms-course-info', 'cms-announcements', 'cms-faqs', 'cms-vacancies', 'cms-gallery', 'cms-resources'].includes(activeTab)) {
       return (
         <WebsiteCmsModule
           {...commonProps}
@@ -2116,6 +2144,11 @@ function MsimamiziAdminInner() {
               )}
             </div>
 
+            <span className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10.5px] font-bold text-[#008000]">
+              <Wifi className="w-3 h-3" />
+              <span>{realtimeTransport === 'socket.io' ? 'Live Socket.IO' : realtimeTransport === 'sse' ? 'Live Push' : 'Live Sync'}</span>
+            </span>
+
             <span className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold ${currentUserRoleDef.badgeColor}`}>
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>{currentUserRoleDef.label}</span>
@@ -2124,9 +2157,15 @@ function MsimamiziAdminInner() {
             <button
               type="button"
               onClick={async () => {
-                await adminRegistrationService.syncFromServer();
+                const res = await adminRegistrationService.syncFromServer();
                 loadData();
-                showToast('Synced & refreshed from live institutional database.');
+                if (res?.ok === false) {
+                  showToast(`Sync issue: ${res.error || 'Could not reach live institutional database.'}`);
+                } else if (res?.mergedAdded > 0) {
+                  showToast(`Synced ${res.inquiriesCount ?? 0} inquiries (${res.mergedAdded} uploaded to server).`);
+                } else {
+                  showToast(`Synced live database (${res?.inquiriesCount ?? 0} inquiries, ${res?.registrationsCount ?? 0} registrations).`);
+                }
               }}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition cursor-pointer"
               title="Sync / Refresh Data"

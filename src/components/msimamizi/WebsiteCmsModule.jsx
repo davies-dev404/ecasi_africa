@@ -11,6 +11,7 @@ import {
   hasPermission,
   msimamiziEnterpriseService,
 } from '@/services/msimamiziEnterpriseService';
+import MediaResourcesManager from '@/components/msimamizi/MediaResourcesManager';
 
 const TAB_TO_SECTION = {
   'cms-homepage': { key: 'homepage', label: 'Homepage Hero & Banner Content', publicPath: '/' },
@@ -51,6 +52,17 @@ export default function WebsiteCmsModule({
     setRevisionNote('');
     setShowPreview(false);
   }, [activeTab, cmsContent]);
+
+  if (activeTab === 'cms-gallery' || activeTab === 'cms-resources') {
+    return (
+      <MediaResourcesManager
+        activeTab={activeTab}
+        currentUser={currentUser}
+        showToast={showToast}
+        onDataChange={onDataChange}
+      />
+    );
+  }
 
   // Website Announcements sub-view delegates to announcements overview + quick link
   if (activeTab === 'cms-announcements') {

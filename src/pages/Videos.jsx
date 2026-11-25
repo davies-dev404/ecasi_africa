@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -8,8 +8,15 @@ import { Link } from 'react-router-dom';
 import { dataService } from '@/lib/dataService';
 
 const Videos = () => {
-  const dummyData = dataService.getVideos();
+  const [dummyData, setDummyData] = useState(() => dataService.getVideos());
   const [activeVideo, setActiveVideo] = useState(null);
+
+  useEffect(() => {
+    const reload = () => setDummyData(dataService.getVideos());
+    window.addEventListener('ecasi_resources_updated', reload);
+    dataService.refreshPublicData?.();
+    return () => window.removeEventListener('ecasi_resources_updated', reload);
+  }, []);
 
   // Helper to parse YouTube video IDs and return autoplay embed URL
   const getYoutubeEmbedUrl = (url) => {
