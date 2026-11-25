@@ -31,7 +31,7 @@ const contributions = [
     name: "Data",
     description: "Refers to a variety and types of data and data sets that enable evidence-based climate action and policymaking.",
     icon: Database,
-    color: "bg-teal-50 text-teal-600 border-teal-100",
+    color: "bg-emerald-50 text-[#008000] border-emerald-200",
   },
   {
     name: "Skills",
@@ -81,7 +81,7 @@ const geoLevels = [
     level: "Local Governments",
     description: "Activities address local-level data gaps and community needs, strengthening grassroots environmental capacity and implementation.",
     icon: Users,
-    color: "bg-teal-50 text-teal-600 border-teal-100",
+    color: "bg-emerald-50 text-[#008000] border-emerald-200",
   },
   {
     level: "National",

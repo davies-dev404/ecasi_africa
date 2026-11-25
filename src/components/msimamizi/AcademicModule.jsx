@@ -377,45 +377,45 @@ export default function AcademicModule({
   const cohortModal = isCohortModalOpen ? (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
       <form onSubmit={handleSaveCohort} className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden text-xs">
-        <div className="bg-[#071C2D] text-white px-5 py-4 flex items-center justify-between">
+        <div className="bg-[#032e42] text-white px-5 py-4 flex items-center justify-between">
           <h3 className="font-bold text-sm">{editingCohort ? 'Edit Cohort' : 'Schedule New Cohort / Intake'}</h3>
           <button type="button" onClick={() => setIsCohortModalOpen(false)} className="cursor-pointer"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div className="sm:col-span-2">
-            <label className="block font-bold text-[#10243E] mb-1">Cohort Name *</label>
+            <label className="block font-bold text-[#032e42] mb-1">Cohort Name *</label>
             <input required value={cohortForm.name} onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })} placeholder="e.g. Q3 2026 Climate Finance Nairobi Cohort" className="w-full h-9 px-3 rounded-xl border border-slate-300" />
           </div>
           <div className="sm:col-span-2">
-            <label className="block font-bold text-[#10243E] mb-1">Course Programme</label>
+            <label className="block font-bold text-[#032e42] mb-1">Course Programme</label>
             <select value={cohortForm.courseSlug} onChange={(e) => setCohortForm({ ...cohortForm, courseSlug: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
               {courses.map((c) => <option key={c.slug} value={c.slug}>{c.title}</option>)}
             </select>
           </div>
           <div>
-            <label className="block font-bold text-[#10243E] mb-1">Destination</label>
+            <label className="block font-bold text-[#032e42] mb-1">Destination</label>
             <select value={cohortForm.destination} onChange={(e) => setCohortForm({ ...cohortForm, destination: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
               {DEFAULT_DESTINATIONS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>
-            <label className="block font-bold text-[#10243E] mb-1">Available Slots</label>
+            <label className="block font-bold text-[#032e42] mb-1">Available Slots</label>
             <input type="number" min={1} value={cohortForm.availableSlots} onChange={(e) => setCohortForm({ ...cohortForm, availableSlots: Number(e.target.value) })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
           </div>
           <div>
-            <label className="block font-bold text-[#10243E] mb-1">Start Date</label>
+            <label className="block font-bold text-[#032e42] mb-1">Start Date</label>
             <input type="date" value={cohortForm.startDate} onChange={(e) => setCohortForm({ ...cohortForm, startDate: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
           </div>
           <div>
-            <label className="block font-bold text-[#10243E] mb-1">End Date</label>
+            <label className="block font-bold text-[#032e42] mb-1">End Date</label>
             <input type="date" value={cohortForm.endDate} onChange={(e) => setCohortForm({ ...cohortForm, endDate: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
           </div>
           <div>
-            <label className="block font-bold text-[#10243E] mb-1">Application Deadline</label>
+            <label className="block font-bold text-[#032e42] mb-1">Application Deadline</label>
             <input type="date" value={cohortForm.applicationDeadline} onChange={(e) => setCohortForm({ ...cohortForm, applicationDeadline: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
           </div>
           <div>
-            <label className="block font-bold text-[#10243E] mb-1">Status</label>
+            <label className="block font-bold text-[#032e42] mb-1">Status</label>
             <select value={cohortForm.enrolmentStatus} onChange={(e) => setCohortForm({ ...cohortForm, enrolmentStatus: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
               <option value="Open">Open</option>
               <option value="Filling Fast">Filling Fast</option>
@@ -426,7 +426,7 @@ export default function AcademicModule({
         </div>
         <div className="px-5 py-3.5 bg-[#F5F8FC] border-t border-slate-100 flex justify-end gap-2">
           <button type="button" onClick={() => setIsCohortModalOpen(false)} className="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold cursor-pointer">Cancel</button>
-          <button type="submit" className="px-5 py-2 rounded-xl bg-[#00B8B0] text-white font-bold cursor-pointer">Save Cohort</button>
+          <button type="submit" className="px-5 py-2 rounded-xl bg-[#008000] text-white font-bold cursor-pointer">Save Cohort</button>
         </div>
       </form>
     </div>
@@ -452,8 +452,8 @@ export default function AcademicModule({
         {/* Header */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-              <FolderTree className="w-5 h-5 text-[#00B8B0]" /> Course Categories &amp; Academic Faculties ({categories.length})
+            <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+              <FolderTree className="w-5 h-5 text-[#008000]" /> Course Categories &amp; Academic Faculties ({categories.length})
             </h2>
             <p className="text-xs text-[#718096] mt-0.5">
               Select any faculty card below to inspect, edit fees, or preview all {courses.length} accredited institutional programmes.
@@ -464,7 +464,7 @@ export default function AcademicModule({
               <button
                 type="button"
                 onClick={onOpenUploadCourse}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] hover:bg-teal-600 text-white text-xs font-bold cursor-pointer transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold cursor-pointer transition"
               >
                 <Plus className="w-3.5 h-3.5" /> Upload New Course
               </button>
@@ -472,7 +472,7 @@ export default function AcademicModule({
             <button
               type="button"
               onClick={() => onNavigate('courses')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#071C2D] hover:bg-[#102D49] text-white text-xs font-bold cursor-pointer transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] hover:bg-[#06405c] text-white text-xs font-bold cursor-pointer transition"
             >
               <BookOpen className="w-3.5 h-3.5" /> Open Full Course Catalog
             </button>
@@ -483,15 +483,15 @@ export default function AcademicModule({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Academic Faculties</p>
-            <p className="text-2xl font-black text-[#10243E] mt-1">{categories.length}</p>
+            <p className="text-2xl font-black text-[#032e42] mt-1">{categories.length}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Accredited Courses</p>
-            <p className="text-2xl font-black text-[#00B8B0] mt-1">{courses.length}</p>
+            <p className="text-2xl font-black text-[#008000] mt-1">{courses.length}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Avg Tuition Fee</p>
-            <p className="text-2xl font-black text-[#10243E] mt-1">USD {totalAvgFee.toLocaleString()}</p>
+            <p className="text-2xl font-black text-[#032e42] mt-1">USD {totalAvgFee.toLocaleString()}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Active Enrolments</p>
@@ -514,19 +514,19 @@ export default function AcademicModule({
                 }}
                 className={`text-left rounded-2xl border p-5 shadow-sm transition space-y-3 cursor-pointer ${
                   isSelected
-                    ? 'bg-[#071C2D] text-white border-[#00B8B0] ring-2 ring-[#00B8B0]/30'
-                    : 'bg-white text-[#10243E] border-slate-200 hover:border-[#00B8B0]'
+                    ? 'bg-[#032e42] text-white border-[#008000] ring-2 ring-[#008000]/30'
+                    : 'bg-white text-[#032e42] border-slate-200 hover:border-[#008000]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className={`text-sm font-extrabold leading-snug ${isSelected ? 'text-white' : 'text-[#10243E]'}`}>
+                  <h3 className={`text-sm font-extrabold leading-snug ${isSelected ? 'text-white' : 'text-[#032e42]'}`}>
                     {cat.name}
                   </h3>
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-xs font-black shrink-0 ${
                       isSelected
-                        ? 'bg-[#00B8B0] text-[#071C2D]'
-                        : 'bg-teal-50 text-[#00B8B0] border border-teal-200'
+                        ? 'bg-[#008000] text-white border border-[#4ade80]/50'
+                        : 'bg-emerald-50 text-[#008000] border border-emerald-200'
                     }`}
                   >
                     {cat.count}
@@ -536,7 +536,7 @@ export default function AcademicModule({
                 {/* Progress Bar of Catalog Share */}
                 <div className="w-full h-1.5 rounded-full bg-slate-200/40 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#00B8B0]"
+                    className="h-full rounded-full bg-[#008000]"
                     style={{ width: `${Math.max(4, sharePct)}%` }}
                   />
                 </div>
@@ -565,8 +565,8 @@ export default function AcademicModule({
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-black text-[#10243E] flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#00B8B0]" />
+                <h3 className="text-sm font-black text-[#032e42] flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#008000]" />
                   Programmes in {activeCatObj.name} ({visibleCatCourses.length})
                 </h3>
                 <p className="text-[11px] text-[#718096] mt-0.5">
@@ -587,7 +587,7 @@ export default function AcademicModule({
             <div className="overflow-x-auto max-h-[460px]">
               <table className="w-full text-left border-collapse text-xs">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-[#071C2D] text-white text-[11px] uppercase tracking-wider">
+                  <tr className="bg-[#032e42] text-white text-[11px] uppercase tracking-wider">
                     <th className="py-3 px-4">Course Title</th>
                     <th className="py-3 px-4">Duration</th>
                     <th className="py-3 px-4">Fee (USD)</th>
@@ -607,16 +607,16 @@ export default function AcademicModule({
                       const feeUsd = parseCourseUsd(c);
                       return (
                         <tr key={c.slug} className="hover:bg-[#F5F8FC]">
-                          <td className="py-3 px-4 font-bold text-[#10243E] max-w-[360px]">
+                          <td className="py-3 px-4 font-bold text-[#032e42] max-w-[360px]">
                             <span className="block truncate">{c.title}</span>
                             <span className="text-[10px] text-[#718096] font-mono">{c.slug}</span>
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap text-slate-600">
                             <span className="inline-flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-[#00B8B0]" /> {c.duration || '5 Days'}
+                              <Clock className="w-3 h-3 text-[#008000]" /> {c.duration || '5 Days'}
                             </span>
                           </td>
-                          <td className="py-3 px-4 font-bold text-[#10243E] whitespace-nowrap">
+                          <td className="py-3 px-4 font-bold text-[#032e42] whitespace-nowrap">
                             USD {feeUsd.toLocaleString()}
                             {Number(c.discountPercent) > 0 && (
                               <span className="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-100 text-[#16A36A] text-[10px] font-bold">
@@ -632,7 +632,7 @@ export default function AcademicModule({
                               <button
                                 type="button"
                                 onClick={() => safeEditCourse(c)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#071C2D] hover:bg-[#00B8B0] text-white text-[11px] font-bold cursor-pointer transition"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white text-[11px] font-bold cursor-pointer transition"
                               >
                                 <Edit className="w-3 h-3" /> Edit
                               </button>
@@ -640,7 +640,7 @@ export default function AcademicModule({
                                 href={`${publicBase}/executive-training/${c.slug}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#00B8B0] transition"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-[#008000] transition"
                                 title="Preview on public website"
                               >
                                 <ExternalLink className="w-3.5 h-3.5" />
@@ -672,8 +672,8 @@ export default function AcademicModule({
       <div className="space-y-5">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-[#00B8B0]" /> Training Destinations &amp; Delivery Hubs ({destinations.length})
+            <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-[#008000]" /> Training Destinations &amp; Delivery Hubs ({destinations.length})
             </h2>
             <p className="text-xs text-[#718096] mt-0.5">
               Active East Africa, Middle East, Asia-Pacific &amp; Virtual delivery hubs with live enrolment metrics and 2026 schedules.
@@ -683,7 +683,7 @@ export default function AcademicModule({
             <button
               type="button"
               onClick={() => openNewCohortModal({ destination: activeHub?.name || 'Nairobi, Kenya' })}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] hover:bg-teal-600 text-white text-xs font-bold cursor-pointer transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold cursor-pointer transition"
             >
               <Plus className="w-4 h-4" /> Schedule Cohort in Hub
             </button>
@@ -694,15 +694,15 @@ export default function AcademicModule({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Delivery Hubs</p>
-            <p className="text-2xl font-black text-[#10243E] mt-1">{destinations.length}</p>
+            <p className="text-2xl font-black text-[#032e42] mt-1">{destinations.length}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Tracked Cohorts</p>
-            <p className="text-2xl font-black text-[#00B8B0] mt-1">{cohorts.length}</p>
+            <p className="text-2xl font-black text-[#008000] mt-1">{cohorts.length}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Total Delegates</p>
-            <p className="text-2xl font-black text-[#10243E] mt-1">{totalHubDelegates}</p>
+            <p className="text-2xl font-black text-[#032e42] mt-1">{totalHubDelegates}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Hub Revenue (USD)</p>
@@ -721,20 +721,20 @@ export default function AcademicModule({
                 onClick={() => setSelectedDestination(dest.name)}
                 className={`text-left rounded-2xl border p-4 shadow-sm space-y-3 transition cursor-pointer ${
                   isSelected
-                    ? 'bg-[#071C2D] text-white border-[#00B8B0] ring-2 ring-[#00B8B0]/30'
-                    : 'bg-white text-[#10243E] border-slate-200 hover:border-[#00B8B0]'
+                    ? 'bg-[#032e42] text-white border-[#008000] ring-2 ring-[#008000]/30'
+                    : 'bg-white text-[#032e42] border-slate-200 hover:border-[#008000]'
                 }`}
               >
                 <div className="flex items-start gap-2.5">
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      isSelected ? 'bg-[#00B8B0]/20 text-[#00B8B0]' : 'bg-teal-50 text-[#00B8B0]'
+                      isSelected ? 'bg-[#008000]/30 text-[#4ade80]' : 'bg-emerald-50 text-[#008000]'
                     }`}
                   >
                     {dest.name.toLowerCase().includes('online') ? <Globe className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
                   </div>
                   <div className="min-w-0">
-                    <h3 className={`text-xs font-extrabold leading-tight ${isSelected ? 'text-white' : 'text-[#10243E]'}`}>
+                    <h3 className={`text-xs font-extrabold leading-tight ${isSelected ? 'text-white' : 'text-[#032e42]'}`}>
                       {dest.name}
                     </h3>
                     <p className={`text-[10px] mt-0.5 ${isSelected ? 'text-slate-300' : 'text-[#718096]'}`}>
@@ -749,7 +749,7 @@ export default function AcademicModule({
                   </div>
                   <div>
                     <p className={`text-[9.5px] uppercase font-bold ${isSelected ? 'text-slate-300' : 'text-[#718096]'}`}>Delegates</p>
-                    <p className="text-xs font-black text-[#00B8B0]">{dest.enrolments}</p>
+                    <p className="text-xs font-black text-[#008000]">{dest.enrolments}</p>
                   </div>
                   <div>
                     <p className={`text-[9.5px] uppercase font-bold ${isSelected ? 'text-slate-300' : 'text-[#718096]'}`}>Fee</p>
@@ -769,12 +769,12 @@ export default function AcademicModule({
             <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-[#00B8B0] border border-teal-200 text-[10px] font-bold uppercase">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#008000] border border-emerald-200 text-[10px] font-bold uppercase">
                     {activeHub.type}
                   </span>
                   <span className="text-[11px] font-semibold text-[#718096]">{activeHub.region}</span>
                 </div>
-                <h3 className="text-base font-black text-[#10243E] mt-1">{activeHub.name}</h3>
+                <h3 className="text-base font-black text-[#032e42] mt-1">{activeHub.name}</h3>
                 <p className="text-xs text-[#718096] max-w-2xl mt-0.5">{activeHub.description}</p>
               </div>
               {canWrite && (
@@ -786,7 +786,7 @@ export default function AcademicModule({
                       name: `${new Date().getFullYear()} ${activeHub.name.split(',')[0]} Executive Cohort`,
                     })
                   }
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#071C2D] hover:bg-[#00B8B0] text-white text-xs font-bold cursor-pointer transition"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold cursor-pointer transition"
                 >
                   <Plus className="w-3.5 h-3.5" /> Schedule Cohort Here
                 </button>
@@ -795,15 +795,15 @@ export default function AcademicModule({
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
               <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/80 p-4 space-y-2.5">
-                <h4 className="font-black text-[#10243E] flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-[#00B8B0]" /> Standard 2026 Delivery Windows
+                <h4 className="font-black text-[#032e42] flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-[#008000]" /> Standard 2026 Delivery Windows
                 </h4>
                 {activeHub.nextWindows && activeHub.nextWindows.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {activeHub.nextWindows.map((win) => (
                       <span
                         key={win}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 font-semibold text-[#10243E]"
+                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 font-semibold text-[#032e42]"
                       >
                         {win}
                       </span>
@@ -813,21 +813,21 @@ export default function AcademicModule({
                   <p className="text-[#718096]">Available on request for custom &amp; in-house cohorts.</p>
                 )}
                 <p className="text-[11px] text-[#718096] pt-1">
-                  Standard tuition benchmark: <strong className="text-[#10243E]">USD {(activeHub.typicalFeeUsd || 1200).toLocaleString()}</strong> /{' '}
-                  <strong className="text-[#10243E]">KES {Math.round((activeHub.typicalFeeUsd || 1200) * usdToKes).toLocaleString()}</strong> per delegate.
+                  Standard tuition benchmark: <strong className="text-[#032e42]">USD {(activeHub.typicalFeeUsd || 1200).toLocaleString()}</strong> /{' '}
+                  <strong className="text-[#032e42]">KES {Math.round((activeHub.typicalFeeUsd || 1200) * usdToKes).toLocaleString()}</strong> per delegate.
                 </p>
               </div>
 
               <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/80 p-4 space-y-2.5">
-                <h4 className="font-black text-[#10243E] flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-[#00B8B0]" /> Tracked Cohorts &amp; Bookings ({activeHub.cohortRecords.length} Cohorts • {activeHub.enrolments} Delegates)
+                <h4 className="font-black text-[#032e42] flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-[#008000]" /> Tracked Cohorts &amp; Bookings ({activeHub.cohortRecords.length} Cohorts • {activeHub.enrolments} Delegates)
                 </h4>
                 {activeHub.cohortRecords.length > 0 ? (
                   <div className="space-y-2">
                     {activeHub.cohortRecords.map((coh) => (
                       <div key={coh.id} className="p-2.5 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-bold text-[#10243E] truncate">{coh.name}</p>
+                          <p className="font-bold text-[#032e42] truncate">{coh.name}</p>
                           <p className="text-[10.5px] text-[#718096] truncate">{coh.courseTitle} • {coh.startDate || 'TBD'}</p>
                         </div>
                         <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#16A36A] text-[10px] font-bold shrink-0">
@@ -873,8 +873,8 @@ export default function AcademicModule({
       <div className="space-y-5">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-              <CalendarRange className="w-5 h-5 text-[#00B8B0]" /> Cohorts &amp; Intakes ({cohorts.length} Tracked • {STANDARD_2026_INTAKES.length} Standard 2026 Windows)
+            <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+              <CalendarRange className="w-5 h-5 text-[#008000]" /> Cohorts &amp; Intakes ({cohorts.length} Tracked • {STANDARD_2026_INTAKES.length} Standard 2026 Windows)
             </h2>
             <p className="text-xs text-[#718096] mt-0.5">
               Schedule upcoming intakes, monitor seat capacities, set application deadlines, and convert standard 2026 calendar intakes into tracked cohorts.
@@ -884,7 +884,7 @@ export default function AcademicModule({
             <button
               type="button"
               onClick={() => openNewCohortModal()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] hover:bg-teal-600 text-white text-xs font-bold cursor-pointer transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold cursor-pointer transition"
             >
               <Plus className="w-4 h-4" /> Create Cohort
             </button>
@@ -895,7 +895,7 @@ export default function AcademicModule({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Tracked Cohorts</p>
-            <p className="text-2xl font-black text-[#10243E] mt-1">{cohorts.length}</p>
+            <p className="text-2xl font-black text-[#032e42] mt-1">{cohorts.length}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Open for Enrolment</p>
@@ -903,18 +903,18 @@ export default function AcademicModule({
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">Total Capacity Slots</p>
-            <p className="text-2xl font-black text-[#00B8B0] mt-1">{totalSlots}</p>
+            <p className="text-2xl font-black text-[#008000] mt-1">{totalSlots}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <p className="text-[10.5px] font-bold uppercase text-[#718096]">2026 Standard Windows</p>
-            <p className="text-2xl font-black text-[#10243E] mt-1">{STANDARD_2026_INTAKES.length}</p>
+            <p className="text-2xl font-black text-[#032e42] mt-1">{STANDARD_2026_INTAKES.length}</p>
           </div>
         </div>
 
         {/* Tracked Cohorts Table */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-black text-[#10243E]">Custom Tracked Cohorts</h3>
+            <h3 className="text-sm font-black text-[#032e42]">Custom Tracked Cohorts</h3>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -943,7 +943,7 @@ export default function AcademicModule({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#071C2D] text-white text-[11px] uppercase tracking-wider">
+                <tr className="bg-[#032e42] text-white text-[11px] uppercase tracking-wider">
                   <th className="py-3 px-4">Cohort / Year</th>
                   <th className="py-3 px-4">Course Programme</th>
                   <th className="py-3 px-4">Destination</th>
@@ -967,7 +967,7 @@ export default function AcademicModule({
                     ).length;
                     return (
                       <tr key={coh.id} className="hover:bg-[#F5F8FC]">
-                        <td className="py-3 px-4 font-bold text-[#10243E]">
+                        <td className="py-3 px-4 font-bold text-[#032e42]">
                           {coh.name}
                           <span className="block text-[10px] text-[#718096] font-normal">Intake {coh.intakeYear}</span>
                         </td>
@@ -1031,8 +1031,8 @@ export default function AcademicModule({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-black text-[#10243E] flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#00B8B0]" /> Standard 2026 Institutional Intake Calendar
+              <h3 className="text-sm font-black text-[#032e42] flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#008000]" /> Standard 2026 Institutional Intake Calendar
               </h3>
               <p className="text-[11px] text-[#718096] mt-0.5">
                 Live published 2026 dates available across ECAS Institute&apos;s {courses.length} executive courses. Activate any window to track delegate seats.
@@ -1044,14 +1044,14 @@ export default function AcademicModule({
               <div key={win.id} className="rounded-xl border border-slate-200 bg-[#F5F8FC] p-4 flex flex-col justify-between gap-3">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="px-2 py-0.5 rounded-full bg-teal-50 text-[#00B8B0] border border-teal-200 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[#008000] border border-emerald-200 text-[10px] font-bold">
                       {win.format}
                     </span>
                     <span className="text-[11px] font-black text-[#16A36A]">USD {win.feeUsd.toLocaleString()}</span>
                   </div>
-                  <h4 className="text-xs font-extrabold text-[#10243E] leading-snug">{win.name}</h4>
+                  <h4 className="text-xs font-extrabold text-[#032e42] leading-snug">{win.name}</h4>
                   <p className="text-[11px] text-[#718096] flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-[#00B8B0]" /> {win.destination}
+                    <MapPin className="w-3 h-3 text-[#008000]" /> {win.destination}
                   </p>
                   <p className="text-[11px] text-slate-600 font-medium">
                     {win.startDate} → {win.endDate}
@@ -1071,7 +1071,7 @@ export default function AcademicModule({
                         availableSlots: 25,
                       })
                     }
-                    className="w-full py-2 rounded-lg bg-[#071C2D] hover:bg-[#00B8B0] text-white text-[11px] font-bold transition cursor-pointer"
+                    className="w-full py-2 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white text-[11px] font-bold transition cursor-pointer"
                   >
                     Activate Tracked Cohort
                   </button>
@@ -1117,8 +1117,8 @@ export default function AcademicModule({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-              <BadgeDollarSign className="w-5 h-5 text-[#00B8B0]" /> Fees &amp; Multi-Currency Pricing ({courses.length} Courses)
+            <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+              <BadgeDollarSign className="w-5 h-5 text-[#008000]" /> Fees &amp; Multi-Currency Pricing ({courses.length} Courses)
             </h2>
             <p className="text-xs text-[#718096]">
               Configured FX rate: 1 USD = {usdToKes} KES. Fee edits are logged in Audit Logs and never silently alter previously issued invoices.
@@ -1126,7 +1126,7 @@ export default function AcademicModule({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {canWrite && (
-              <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#00B8B0] hover:bg-teal-600 text-white text-xs font-bold cursor-pointer transition">
+              <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold cursor-pointer transition">
                 <Upload className="w-3.5 h-3.5" /> Bulk Import CSV
                 <input
                   type="file"
@@ -1149,7 +1149,7 @@ export default function AcademicModule({
                 });
                 msimamiziEnterpriseService.exportCSV(headers, rows, `ECAS_Course_Fees_${new Date().toISOString().slice(0, 10)}.csv`, currentUser);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] border border-slate-200 hover:bg-slate-100 text-xs font-bold text-[#10243E] cursor-pointer transition"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] border border-slate-200 hover:bg-slate-100 text-xs font-bold text-[#032e42] cursor-pointer transition"
             >
               <Download className="w-3.5 h-3.5" /> Export Fee Sheet
             </button>
@@ -1160,15 +1160,15 @@ export default function AcademicModule({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/70 p-3">
             <span className="text-[10px] font-bold uppercase text-[#718096] block">Total Priced Courses</span>
-            <span className="text-lg font-black text-[#10243E]">{courses.length}</span>
+            <span className="text-lg font-black text-[#032e42]">{courses.length}</span>
           </div>
           <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/70 p-3">
             <span className="text-[10px] font-bold uppercase text-[#718096] block">Avg Tuition (USD)</span>
-            <span className="text-lg font-black text-[#00B8B0]">USD {avgFeeUsdAll.toLocaleString()}</span>
+            <span className="text-lg font-black text-[#008000]">USD {avgFeeUsdAll.toLocaleString()}</span>
           </div>
           <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/70 p-3">
             <span className="text-[10px] font-bold uppercase text-[#718096] block">Avg Tuition (KES)</span>
-            <span className="text-lg font-black text-[#10243E]">KES {Math.round(avgFeeUsdAll * usdToKes).toLocaleString()}</span>
+            <span className="text-lg font-black text-[#032e42]">KES {Math.round(avgFeeUsdAll * usdToKes).toLocaleString()}</span>
           </div>
           <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/70 p-3">
             <span className="text-[10px] font-bold uppercase text-[#718096] block">Promotional Discounts</span>
@@ -1197,7 +1197,7 @@ export default function AcademicModule({
               setFeeCategoryFilter(e.target.value);
               setFeePage(1);
             }}
-            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#10243E]"
+            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#032e42]"
           >
             <option value="All">All Faculties ({courses.length})</option>
             {categories.map((cat) => (
@@ -1213,7 +1213,7 @@ export default function AcademicModule({
         <div className="overflow-x-auto max-h-[600px]">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-[#071C2D] text-white text-[11px] uppercase tracking-wider">
+              <tr className="bg-[#032e42] text-white text-[11px] uppercase tracking-wider">
                 <th className="py-3 px-4">Course Name</th>
                 <th className="py-3 px-4">Category</th>
                 <th className="py-3 px-4">Fee (USD)</th>
@@ -1237,7 +1237,7 @@ export default function AcademicModule({
                   const curDisc = edit?.discountPercent !== undefined ? edit.discountPercent : (course.discountPercent || 0);
                   return (
                     <tr key={course.slug} className="hover:bg-[#F5F8FC]">
-                      <td className="py-2.5 px-4 font-bold text-[#10243E] max-w-[280px] truncate">{course.title}</td>
+                      <td className="py-2.5 px-4 font-bold text-[#032e42] max-w-[280px] truncate">{course.title}</td>
                       <td className="py-2.5 px-4 text-[#718096] max-w-[180px] truncate">{course.category || 'Executive'}</td>
                       <td className="py-2.5 px-4">
                         <input
@@ -1305,7 +1305,7 @@ export default function AcademicModule({
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Prev
               </button>
-              <span className="px-2 font-bold text-[#10243E]">
+              <span className="px-2 font-bold text-[#032e42]">
                 Page {safeFeePage} / {totalFeePages}
               </span>
               <button

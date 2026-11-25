@@ -1423,10 +1423,10 @@ function MsimamiziAdminInner() {
 
   const initialLoaderOverlay = showInitialLoader ? (
     <div className="fixed inset-0 z-[99999] bg-white flex items-center justify-center font-['Inter',sans-serif] text-[13px] transition-opacity duration-300">
-      <div className="min-w-[260px] text-[#212529] text-center border border-slate-200 rounded-xl shadow-lg bg-white overflow-hidden">
+      <div className="min-w-[260px] text-[#032e42] text-center border border-slate-200 rounded-2xl shadow-lg bg-white overflow-hidden">
         <div className="flex justify-between items-center px-4 py-3 gap-6">
-          <div className="font-['Outfit',sans-serif] text-[24px] font-bold text-[#0d2240] tracking-tight flex items-center">
-            ECAS<span className="text-[#00a99d]">.Msimamizi</span>
+          <div className="font-['Outfit',sans-serif] text-[24px] font-bold text-[#032e42] tracking-tight flex items-center">
+            ECAS<span className="text-[#008000]">.Msimamizi</span>
           </div>
           <svg
             className="animate-spin w-7 h-7"
@@ -1438,7 +1438,7 @@ function MsimamiziAdminInner() {
               d="M20.201,5.169c-8.254,0-14.946,6.692-14.946,14.946c0,8.255,6.692,14.946,14.946,14.946s14.946-6.691,14.946-14.946C35.146,11.861,28.455,5.169,20.201,5.169z M20.201,31.749c-6.425,0-11.634-5.208-11.634-11.634c0-6.425,5.209-11.634,11.634-11.634c6.425,0,11.633,5.209,11.633,11.634C31.834,26.541,26.626,31.749,20.201,31.749z"
             />
             <path
-              fill="#00a99d"
+              fill="#008000"
               d="M26.013,10.047l1.654-2.866c-2.198-1.272-4.743-2.012-7.466-2.012h0v3.312h0C22.32,8.481,24.301,9.057,26.013,10.047z"
             />
           </svg>
@@ -1455,7 +1455,7 @@ function MsimamiziAdminInner() {
   // ─────────────────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#08172e] flex items-center justify-center p-4 font-['Inter',sans-serif] selection:bg-[#00a99d] selection:text-white">
+      <div className="min-h-screen bg-[#032e42] flex items-center justify-center p-4 font-['Inter',sans-serif] selection:bg-[#008000] selection:text-white">
         {initialLoaderOverlay}
         <SEO
           title="Portal"
@@ -1800,7 +1800,7 @@ function MsimamiziAdminInner() {
       return (
         <div className="bg-white rounded-2xl border border-red-200 p-10 text-center space-y-2">
           <ShieldCheck className="w-10 h-10 text-[#DC4545] mx-auto" />
-          <h3 className="text-base font-black text-[#10243E]">Access Restricted by Role Permissions</h3>
+          <h3 className="text-base font-black text-[#032e42]">Access Restricted by Role Permissions</h3>
           <p className="text-xs text-[#718096] max-w-md mx-auto">
             Your current role ({currentUserRoleDef.label}) does not have permission to access {activeNavMeta?.label}. Contact a Super Admin if you need access.
           </p>
@@ -1963,7 +1963,7 @@ function MsimamiziAdminInner() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F8FC] text-[#10243E] font-['Inter',sans-serif] selection:bg-[#00B8B0] selection:text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#F5F8FC] text-[#032e42] font-['Inter',sans-serif] selection:bg-[#008000] selection:text-white flex flex-col md:flex-row">
       {initialLoaderOverlay}
       <SEO
         title="Portal"
@@ -1995,7 +1995,7 @@ function MsimamiziAdminInner() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden inline-flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-[#10243E] hover:bg-slate-50 cursor-pointer"
+              className="md:hidden inline-flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-[#032e42] hover:bg-slate-50 cursor-pointer"
               aria-label="Toggle navigation menu"
             >
               {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -2005,7 +2005,7 @@ function MsimamiziAdminInner() {
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden md:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[#10243E] hover:bg-slate-50 transition cursor-pointer"
+              className="hidden md:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[#032e42] hover:bg-slate-50 transition cursor-pointer"
               title={isSidebarCollapsed ? 'Open navigation menu' : 'Minimize navigation'}
               aria-label={isSidebarCollapsed ? 'Open navigation menu' : 'Minimize navigation'}
             >
@@ -2013,10 +2013,10 @@ function MsimamiziAdminInner() {
               {isSidebarCollapsed && <span className="text-[11px] font-semibold">Menu</span>}
             </button>
 
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#F5F8FC] border border-slate-200/80 text-[#10243E] text-xs font-bold truncate">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#F5F8FC] border border-slate-200/80 text-[#032e42] text-xs font-bold truncate">
               {(() => {
                 const ActiveIcon = activeNavMeta?.icon || LayoutGrid;
-                return <ActiveIcon className="w-3.5 h-3.5 text-[#00B8B0] shrink-0" />;
+                return <ActiveIcon className="w-3.5 h-3.5 text-[#008000] shrink-0" />;
               })()}
               <span className="truncate">
                 {activeDetailView === 'edit-course' && 'Edit Course & Pricing'}
@@ -2038,7 +2038,7 @@ function MsimamiziAdminInner() {
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               placeholder="Global search: applicants, leads, courses, invoices..."
-              className="w-full h-9 pl-8 pr-7 rounded-xl border border-slate-200 bg-[#F5F8FC] text-xs focus:bg-white focus:outline-none focus:border-[#00B8B0] transition"
+              className="w-full h-9 pl-8 pr-7 rounded-xl border border-slate-200 bg-[#F5F8FC] text-xs focus:bg-white focus:outline-none focus:border-[#008000] transition"
             />
             {globalSearch && (
               <button
@@ -2062,10 +2062,10 @@ function MsimamiziAdminInner() {
                     className="w-full px-3.5 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 text-xs cursor-pointer"
                   >
                     <div className="min-w-0">
-                      <p className="font-bold text-[#10243E] truncate">{res.title}</p>
+                      <p className="font-bold text-[#032e42] truncate">{res.title}</p>
                       <p className="text-[10.5px] text-[#718096] truncate">{res.sub}</p>
                     </div>
-                    <span className="px-2 py-0.5 rounded bg-teal-50 text-[#00B8B0] text-[10px] font-bold shrink-0">{res.type}</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-50 text-[#008000] text-[10px] font-bold shrink-0">{res.type}</span>
                   </button>
                 ))}
               </div>
@@ -2078,7 +2078,7 @@ function MsimamiziAdminInner() {
               <button
                 type="button"
                 onClick={() => setIsNotifOpen((o) => !o)}
-                className="relative p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[#10243E] cursor-pointer"
+                className="relative p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[#032e42] cursor-pointer"
                 title="Institutional Notification Centre"
               >
                 <Bell className="w-4 h-4" />
@@ -2090,7 +2090,7 @@ function MsimamiziAdminInner() {
               </button>
               {isNotifOpen && (
                 <div className="absolute right-0 top-11 w-72 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden text-xs">
-                  <div className="bg-[#071C2D] text-white px-4 py-3 flex items-center justify-between">
+                  <div className="bg-[#032e42] text-white px-4 py-3 flex items-center justify-between">
                     <span className="font-bold">Notification Centre</span>
                     <button type="button" onClick={() => setIsNotifOpen(false)} className="cursor-pointer"><X className="w-3.5 h-3.5" /></button>
                   </div>
@@ -2108,8 +2108,8 @@ function MsimamiziAdminInner() {
                       <span className="font-black text-[#DC4545]">{sidebarBadges.outstandingInvoices}</span>
                     </button>
                     <button type="button" onClick={() => { setActiveTab('candidate-cvs'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
-                      <span className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-[#00B8B0]" /> New Candidate CVs</span>
-                      <span className="font-black text-[#00B8B0]">{applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length}</span>
+                      <span className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-[#008000]" /> New Candidate CVs</span>
+                      <span className="font-black text-[#008000]">{applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length}</span>
                     </button>
                   </div>
                 </div>

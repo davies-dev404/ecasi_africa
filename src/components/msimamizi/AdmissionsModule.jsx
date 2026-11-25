@@ -245,7 +245,7 @@ export default function AdmissionsModule({
           <button
             type="button"
             onClick={() => setSelectedProfile(null)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold text-[#10243E] cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold text-[#032e42] cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" /> Back to {titleMap[activeTab] || 'Registrations'}
           </button>
@@ -254,7 +254,7 @@ export default function AdmissionsModule({
               <button
                 type="button"
                 onClick={() => handleGenerateInvoice(activeProfile)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] hover:bg-[#009c95] text-white text-xs font-bold shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm cursor-pointer"
               >
                 <Receipt className="w-3.5 h-3.5" /> Generate Invoice
               </button>
@@ -274,18 +274,18 @@ export default function AdmissionsModule({
                 `;
                 msimamiziEnterpriseService.printInstitutionalDocument(`Applicant Profile - ${activeProfile.referenceNo}`, html, currentUser);
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#071C2D] text-white text-xs font-bold cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] text-white text-xs font-bold cursor-pointer"
             >
-              <Printer className="w-3.5 h-3.5 text-[#00B8B0]" /> Print Profile
+              <Printer className="w-3.5 h-3.5 text-[#4ade80]" /> Print Profile
             </button>
           </div>
         </div>
 
         {/* Profile Header Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-[#071C2D] text-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-[#032e42] text-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <span className="text-[11px] font-mono font-bold text-[#00B8B0] uppercase tracking-wider">
+              <span className="text-[11px] font-mono font-bold text-[#4ade80] uppercase tracking-wider">
                 {activeProfile.referenceNo} • {activeProfile.country || 'Kenya'}
               </span>
               <h2 className="text-xl font-black mt-1">{fullName || 'Applicant'}</h2>
@@ -309,14 +309,14 @@ export default function AdmissionsModule({
             <div className="lg:col-span-2 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="p-4 rounded-xl bg-[#F5F8FC] border border-slate-200/80 space-y-1.5">
-                  <h4 className="font-extrabold text-[#10243E] uppercase text-[10px] tracking-wider">Contact &amp; Personal</h4>
+                  <h4 className="font-extrabold text-[#032e42] uppercase text-[10px] tracking-wider">Contact &amp; Personal</h4>
                   <p><strong>Official Email:</strong> {activeProfile.officialEmail || '—'}</p>
                   <p><strong>Personal Email:</strong> {activeProfile.personalEmail || '—'}</p>
                   <p><strong>Phone:</strong> {activeProfile.dialCode || ''} {activeProfile.phoneNumber || '—'}</p>
                   <p><strong>Academic Background:</strong> {activeProfile.academicBackground || 'Not specified'}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-[#F5F8FC] border border-slate-200/80 space-y-1.5">
-                  <h4 className="font-extrabold text-[#10243E] uppercase text-[10px] tracking-wider">Programme &amp; Cohort</h4>
+                  <h4 className="font-extrabold text-[#032e42] uppercase text-[10px] tracking-wider">Programme &amp; Cohort</h4>
                   <p><strong>Course:</strong> {activeProfile.eventTitle}</p>
                   <p><strong>Destination:</strong> {activeProfile.venue || 'Nairobi, Kenya'}</p>
                   <p><strong>Cohort / Schedule:</strong> {activeProfile.cohortName || activeProfile.durationText || 'Standard Intake'}</p>
@@ -327,8 +327,8 @@ export default function AdmissionsModule({
               {/* Uploaded Documents & Verification */}
               <div className="rounded-xl border border-slate-200 p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-xs font-extrabold text-[#10243E] uppercase tracking-wider flex items-center gap-1.5">
-                    <FileCheck2 className="w-4 h-4 text-[#00B8B0]" /> Uploaded Documents &amp; Verification
+                  <h4 className="text-xs font-extrabold text-[#032e42] uppercase tracking-wider flex items-center gap-1.5">
+                    <FileCheck2 className="w-4 h-4 text-[#008000]" /> Uploaded Documents &amp; Verification
                   </h4>
                   {canWrite && (
                     <div className="flex items-center gap-2">
@@ -343,8 +343,8 @@ export default function AdmissionsModule({
                         <option>LPO / Sponsorship Letter</option>
                         <option>Payment Proof / Slip</option>
                       </select>
-                      <label className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#071C2D] text-white text-[11px] font-bold cursor-pointer">
-                        <Upload className="w-3 h-3 text-[#00B8B0]" /> Attach File
+                      <label className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer">
+                        <Upload className="w-3 h-3 text-[#4ade80]" /> Attach File
                         <input
                           type="file"
                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -366,14 +366,14 @@ export default function AdmissionsModule({
                     {activeProfile.documents.map((doc) => (
                       <div key={doc.id} className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-[#F5F8FC] border border-slate-200 text-xs">
                         <div className="min-w-0">
-                          <p className="font-bold text-[#10243E] truncate">{doc.name}</p>
+                          <p className="font-bold text-[#032e42] truncate">{doc.name}</p>
                           <p className="text-[11px] text-[#718096]">
                             {doc.type} • {doc.verified ? `Verified by ${doc.verifiedBy}` : 'Pending Verification'}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {doc.dataUrl && (
-                            <a href={doc.dataUrl} download={doc.name} className="px-2 py-1 rounded bg-white border border-slate-200 text-[11px] font-bold text-[#10243E]">
+                            <a href={doc.dataUrl} download={doc.name} className="px-2 py-1 rounded bg-white border border-slate-200 text-[11px] font-bold text-[#032e42]">
                               Download
                             </a>
                           )}
@@ -398,24 +398,24 @@ export default function AdmissionsModule({
               {/* Linked Invoices & Payments */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="rounded-xl border border-slate-200 p-4 space-y-2">
-                  <h4 className="text-xs font-extrabold text-[#10243E] uppercase tracking-wider">Invoice History ({linkedInvoices.length})</h4>
+                  <h4 className="text-xs font-extrabold text-[#032e42] uppercase tracking-wider">Invoice History ({linkedInvoices.length})</h4>
                   {linkedInvoices.length === 0 ? (
                     <p className="text-xs text-[#718096]">No invoices generated yet.</p>
                   ) : (
                     linkedInvoices.map((inv) => (
                       <div key={inv.id} className="p-2.5 rounded-lg bg-[#F5F8FC] text-xs flex justify-between items-center">
                         <div>
-                          <p className="font-bold text-[#10243E]">{inv.invoiceNo}</p>
+                          <p className="font-bold text-[#032e42]">{inv.invoiceNo}</p>
                           <p className="text-[11px] text-[#718096]">Due: {inv.dueDate || '—'} • {inv.status}</p>
                         </div>
-                        <span className="font-black text-[#10243E]">{inv.currency} {Number(inv.netAmount || 0).toLocaleString()}</span>
+                        <span className="font-black text-[#032e42]">{inv.currency} {Number(inv.netAmount || 0).toLocaleString()}</span>
                       </div>
                     ))
                   )}
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-4 space-y-2">
-                  <h4 className="text-xs font-extrabold text-[#10243E] uppercase tracking-wider">Payment History ({linkedPayments.length})</h4>
+                  <h4 className="text-xs font-extrabold text-[#032e42] uppercase tracking-wider">Payment History ({linkedPayments.length})</h4>
                   {linkedPayments.length === 0 ? (
                     <p className="text-xs text-[#718096]">No verified payments recorded yet.</p>
                   ) : (
@@ -434,8 +434,8 @@ export default function AdmissionsModule({
 
               {/* Communication History */}
               <div className="rounded-xl border border-slate-200 p-4 space-y-2">
-                <h4 className="text-xs font-extrabold text-[#10243E] uppercase tracking-wider flex items-center gap-1.5">
-                  <MessageSquare className="w-4 h-4 text-[#00B8B0]" /> Communication History ({linkedComms.length})
+                <h4 className="text-xs font-extrabold text-[#032e42] uppercase tracking-wider flex items-center gap-1.5">
+                  <MessageSquare className="w-4 h-4 text-[#008000]" /> Communication History ({linkedComms.length})
                 </h4>
                 {linkedComms.length === 0 ? (
                   <p className="text-xs text-[#718096]">No direct communications logged for this applicant yet.</p>
@@ -443,7 +443,7 @@ export default function AdmissionsModule({
                   linkedComms.slice(0, 6).map((c) => (
                     <div key={c.id} className="p-2.5 rounded-lg bg-[#F5F8FC] text-xs">
                       <div className="flex justify-between">
-                        <span className="font-bold text-[#10243E]">[{c.channel}] {c.subject}</span>
+                        <span className="font-bold text-[#032e42]">[{c.channel}] {c.subject}</span>
                         <span className="text-[10px] text-[#718096]">{new Date(c.sentAt).toLocaleString()}</span>
                       </div>
                       <p className="text-[11px] text-[#718096] mt-0.5 line-clamp-2">{c.body}</p>
@@ -456,7 +456,7 @@ export default function AdmissionsModule({
             {/* Column 3: 12-Stage Workflow Control & Audit Timeline */}
             <div className="space-y-5">
               <div className="rounded-xl border border-slate-200 p-4 bg-[#F5F8FC] space-y-3">
-                <h4 className="text-xs font-extrabold text-[#10243E] uppercase tracking-wider">12-Stage Admissions Workflow</h4>
+                <h4 className="text-xs font-extrabold text-[#032e42] uppercase tracking-wider">12-Stage Admissions Workflow</h4>
                 <div>
                   <label className="block text-[11px] font-bold text-[#718096] mb-1">Decision / Stage Note</label>
                   <input
@@ -473,7 +473,7 @@ export default function AdmissionsModule({
                     disabled={!canWrite}
                     value={stage}
                     onChange={(e) => handleStageUpdate(activeProfile, e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-xs font-bold text-[#10243E]"
+                    className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-xs font-bold text-[#032e42]"
                   >
                     {ADMISSION_STAGES.map((st) => (
                       <option key={st} value={st}>{st}</option>
@@ -513,16 +513,16 @@ export default function AdmissionsModule({
               </div>
 
               <div className="rounded-xl border border-slate-200 p-4 space-y-2.5">
-                <h4 className="text-xs font-extrabold text-[#10243E] uppercase tracking-wider flex items-center gap-1.5">
-                  <History className="w-4 h-4 text-[#00B8B0]" /> Timestamped Application History
+                <h4 className="text-xs font-extrabold text-[#032e42] uppercase tracking-wider flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-[#008000]" /> Timestamped Application History
                 </h4>
                 {(!activeProfile.statusHistory || activeProfile.statusHistory.length === 0) ? (
                   <p className="text-xs text-[#718096]">Initial submission recorded on {activeProfile.submittedAt ? new Date(activeProfile.submittedAt).toLocaleString() : 'N/A'}.</p>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {activeProfile.statusHistory.map((h, idx) => (
-                      <div key={idx} className="p-2.5 rounded-lg bg-[#F5F8FC] border-l-2 border-[#00B8B0] text-[11px]">
-                        <p className="font-bold text-[#10243E]">{h.stage}</p>
+                      <div key={idx} className="p-2.5 rounded-lg bg-[#F5F8FC] border-l-2 border-[#008000] text-[11px]">
+                        <p className="font-bold text-[#032e42]">{h.stage}</p>
                         <p className="text-[#718096]">{h.note}</p>
                         <p className="text-[10px] text-slate-400 mt-1 font-mono">
                           {h.by} • {new Date(h.at).toLocaleString()}
@@ -545,10 +545,10 @@ export default function AdmissionsModule({
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-[#00B8B0]" />
+            <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+              <UserCheck className="w-5 h-5 text-[#008000]" />
               {titleMap[activeTab] || 'Registration Directory'}
-              <span className="px-2.5 py-0.5 rounded-full bg-[#F5F8FC] border border-slate-200 text-xs font-bold text-[#10243E]">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#F5F8FC] border border-slate-200 text-xs font-bold text-[#032e42]">
                 {scopedList.length}
               </span>
             </h2>
@@ -562,7 +562,7 @@ export default function AdmissionsModule({
               <button
                 type="button"
                 onClick={onOpenNewRegistration}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] hover:bg-[#009c95] text-white text-xs font-bold shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> New Registration
               </button>
@@ -573,7 +573,7 @@ export default function AdmissionsModule({
                 const { headers, rows } = exportRows();
                 msimamiziEnterpriseService.exportCSV(headers, rows, `ECAS_Admissions_${new Date().toISOString().slice(0, 10)}.csv`, currentUser);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 border border-slate-200 text-xs font-bold text-[#10243E] cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 border border-slate-200 text-xs font-bold text-[#032e42] cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" /> CSV
             </button>
@@ -583,7 +583,7 @@ export default function AdmissionsModule({
                 const { headers, rows } = exportRows();
                 msimamiziEnterpriseService.exportExcel(headers, rows, `ECAS_Admissions_${new Date().toISOString().slice(0, 10)}.xls`, 'ECAS Admissions Directory', currentUser);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 border border-slate-200 text-xs font-bold text-[#10243E] cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 border border-slate-200 text-xs font-bold text-[#032e42] cursor-pointer"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-[#16A36A]" /> Excel
             </button>
@@ -594,9 +594,9 @@ export default function AdmissionsModule({
                 const html = `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
                 msimamiziEnterpriseService.printInstitutionalDocument('ECAS Admissions Directory Report', html, currentUser);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#071C2D] text-white text-xs font-bold cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#032e42] text-white text-xs font-bold cursor-pointer"
             >
-              <Printer className="w-3.5 h-3.5 text-[#00B8B0]" /> PDF
+              <Printer className="w-3.5 h-3.5 text-[#4ade80]" /> PDF
             </button>
           </div>
         </div>
@@ -610,13 +610,13 @@ export default function AdmissionsModule({
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search name, ref, email, course..."
-              className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#00B8B0]"
+              className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#008000]"
             />
           </div>
           <select
             value={stageFilter}
             onChange={(e) => { setStageFilter(e.target.value); setPage(1); }}
-            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#10243E]"
+            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#032e42]"
           >
             <option value="All">All Workflow Stages</option>
             {ADMISSION_STAGES.map((st) => <option key={st} value={st}>{st}</option>)}
@@ -624,7 +624,7 @@ export default function AdmissionsModule({
           <select
             value={paymentFilter}
             onChange={(e) => { setPaymentFilter(e.target.value); setPage(1); }}
-            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#10243E]"
+            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#032e42]"
           >
             <option value="All">All Payment Statuses</option>
             <option value="Unpaid">Unpaid</option>
@@ -636,7 +636,7 @@ export default function AdmissionsModule({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#10243E]"
+            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#032e42]"
           >
             <option value="newest">Sort: Newest First</option>
             <option value="oldest">Sort: Oldest First</option>
@@ -651,7 +651,7 @@ export default function AdmissionsModule({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-[#071C2D] text-white text-[11px] uppercase tracking-wider">
+              <tr className="bg-[#032e42] text-white text-[11px] uppercase tracking-wider">
                 <th className="py-3 px-4">Reg No / Date</th>
                 <th className="py-3 px-4">Applicant &amp; Contact</th>
                 <th className="py-3 px-4">Course &amp; Destination</th>
@@ -665,7 +665,7 @@ export default function AdmissionsModule({
               {pagedList.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[#718096]">
-                    <p className="font-bold text-[#10243E]">No matching records in {titleMap[activeTab] || 'Registrations'}.</p>
+                    <p className="font-bold text-[#032e42]">No matching records in {titleMap[activeTab] || 'Registrations'}.</p>
                     <p className="text-[11px] mt-1">Adjust filters or click &ldquo;New Registration&rdquo; to enrol a delegate.</p>
                   </td>
                 </tr>
@@ -676,16 +676,16 @@ export default function AdmissionsModule({
                   return (
                     <tr key={reg.id} className="hover:bg-[#F5F8FC]/80 transition">
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <p className="font-mono font-bold text-[#10243E]">{reg.referenceNo || reg.id}</p>
+                        <p className="font-mono font-bold text-[#032e42]">{reg.referenceNo || reg.id}</p>
                         <p className="text-[10.5px] text-[#718096]">{reg.submittedAt ? new Date(reg.submittedAt).toLocaleDateString() : '—'}</p>
                       </td>
                       <td className="py-3 px-4">
-                        <p className="font-bold text-[#10243E]">{fullName}</p>
+                        <p className="font-bold text-[#032e42]">{fullName}</p>
                         <p className="text-[11px] text-[#718096]">{reg.officialEmail || reg.personalEmail || '—'}</p>
                         <p className="text-[10.5px] text-slate-400">{reg.country || 'Kenya'} • {reg.organisation || 'Individual'}</p>
                       </td>
                       <td className="py-3 px-4 max-w-[240px]">
-                        <p className="font-semibold text-[#10243E] truncate" title={reg.eventTitle}>{reg.eventTitle}</p>
+                        <p className="font-semibold text-[#032e42] truncate" title={reg.eventTitle}>{reg.eventTitle}</p>
                         <p className="text-[11px] text-[#718096] truncate">{reg.venue || 'Nairobi'} • {reg.cohortName || reg.durationText || 'Standard'}</p>
                       </td>
                       <td className="py-3 px-4">
@@ -699,7 +699,7 @@ export default function AdmissionsModule({
                         </select>
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <p className="font-black text-[#10243E]">{reg.currency || 'USD'} {Number(reg.totalFee || 0).toLocaleString()}</p>
+                        <p className="font-black text-[#032e42]">{reg.currency || 'USD'} {Number(reg.totalFee || 0).toLocaleString()}</p>
                         <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           reg.paymentStatus === 'Paid' ? 'bg-emerald-100 text-[#16A36A]' :
                           reg.paymentStatus === 'Invoiced' ? 'bg-blue-100 text-blue-700' :
@@ -716,16 +716,16 @@ export default function AdmissionsModule({
                           <button
                             type="button"
                             onClick={() => setSelectedProfile(reg)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#071C2D] hover:bg-[#102D49] text-white text-[11px] font-bold cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#06405c] text-white text-[11px] font-bold cursor-pointer"
                           >
-                            <Eye className="w-3 h-3 text-[#00B8B0]" /> Profile
+                            <Eye className="w-3 h-3 text-[#008000]" /> Profile
                           </button>
                           {canFinance && (
                             <button
                               type="button"
                               onClick={() => handleGenerateInvoice(reg)}
                               title="Generate Invoice"
-                              className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 cursor-pointer"
+                              className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#008000] cursor-pointer"
                             >
                               <Receipt className="w-3.5 h-3.5" />
                             </button>
@@ -769,7 +769,7 @@ export default function AdmissionsModule({
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="font-bold text-[#10243E] px-2">Page {page} / {totalPages}</span>
+              <span className="font-bold text-[#032e42] px-2">Page {page} / {totalPages}</span>
               <button
                 type="button"
                 disabled={page >= totalPages}

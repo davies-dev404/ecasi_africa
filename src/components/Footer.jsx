@@ -155,7 +155,7 @@ const Footer = () => {
               Our Profiles
             </h4>
             <div className="space-y-4">
-              <a href="/ECASI_Training_Profile.pdf" target="_blank" rel="noopener noreferrer" className="block bg-white/10 rounded p-3 hover:bg-white/15 transition-colors cursor-pointer">
+              <a href="/ECASI_Training_Profile.pdf" target="_blank" rel="noopener noreferrer" className="block bg-white/10 rounded-2xl border border-white/15 hover:border-[#4ade80]/50 p-3.5 hover:bg-white/15 transition-all cursor-pointer">
                 <p className="text-white text-sm font-semibold leading-snug" style={{ fontFamily: "'Roboto', sans-serif" }}>
                   Download Training Profile
                 </p>

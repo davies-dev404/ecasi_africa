@@ -249,7 +249,7 @@ export default function FinanceModule({
       {/* Finance Top KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
-          { label: 'Total Invoiced', val: `$${metrics.totalInvoiced.toLocaleString()}`, color: 'text-[#10243E]', icon: Receipt, iconBg: 'bg-slate-100 text-[#071C2D]' },
+          { label: 'Total Invoiced', val: `$${metrics.totalInvoiced.toLocaleString()}`, color: 'text-[#032e42]', icon: Receipt, iconBg: 'bg-slate-100 text-[#032e42]' },
           { label: 'Total Collected', val: `$${metrics.totalCollected.toLocaleString()}`, color: 'text-[#16A36A]', icon: CheckCircle2, iconBg: 'bg-emerald-50 text-[#16A36A]' },
           { label: 'Outstanding', val: `$${metrics.outstanding.toLocaleString()}`, color: 'text-[#F0A020]', icon: Wallet, iconBg: 'bg-amber-50 text-[#F0A020]' },
           { label: 'Overdue Invoices', val: metrics.overdueCount, color: 'text-[#DC4545]', icon: AlertTriangle, iconBg: 'bg-red-50 text-[#DC4545]' },
@@ -275,11 +275,11 @@ export default function FinanceModule({
       {/* Action Header */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-            {activeTab === 'payment-reconciliation' ? <Scale className="w-5 h-5 text-[#00B8B0]" /> :
-             activeTab === 'payments' ? <CreditCard className="w-5 h-5 text-[#00B8B0]" /> :
+          <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+            {activeTab === 'payment-reconciliation' ? <Scale className="w-5 h-5 text-[#008000]" /> :
+             activeTab === 'payments' ? <CreditCard className="w-5 h-5 text-[#008000]" /> :
              activeTab === 'outstanding-balances' ? <AlertTriangle className="w-5 h-5 text-[#DC4545]" /> :
-             <Wallet className="w-5 h-5 text-[#00B8B0]" />}
+             <Wallet className="w-5 h-5 text-[#008000]" />}
             {activeTab === 'finance-overview' && 'Financial Overview'}
             {activeTab === 'invoices' && 'Invoice Management'}
             {activeTab === 'payments' && 'Payment Records & Verification'}
@@ -295,7 +295,7 @@ export default function FinanceModule({
               <button
                 type="button"
                 onClick={() => setIsInvoiceModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] text-white text-xs font-bold shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] text-white text-xs font-bold shadow-sm cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Generate Invoice
               </button>
@@ -315,7 +315,7 @@ export default function FinanceModule({
               const rows = invoices.map((i) => [i.invoiceNo, i.applicantName, i.courseTitle, i.currency, i.netAmount, i.paidAmount, i.balance, i.dueDate, i.status]);
               msimamiziEnterpriseService.exportCSV(headers, rows, `ECAS_Invoices_${todayStr}.csv`, currentUser);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] border border-slate-200 text-xs font-bold text-[#10243E] cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] border border-slate-200 text-xs font-bold text-[#032e42] cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
@@ -325,7 +325,7 @@ export default function FinanceModule({
       {/* Sub-view 1: Financial Overview Chart */}
       {activeTab === 'finance-overview' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <h3 className="text-sm font-extrabold text-[#10243E] mb-3">Monthly Collected Revenue (Verified Payments)</h3>
+          <h3 className="text-sm font-extrabold text-[#032e42] mb-3">Monthly Collected Revenue (Verified Payments)</h3>
           {monthlyRevenueChart.length === 0 ? (
             <div className="h-52 flex flex-col items-center justify-center bg-[#F5F8FC] rounded-xl border border-dashed border-slate-200 text-xs text-[#718096]">
               No verified payment transactions recorded yet. Record verified payments to view revenue trends.
@@ -352,7 +352,7 @@ export default function FinanceModule({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-4">
               <p className="text-[10px] font-bold uppercase text-[#718096]">Expected (Active Invoices)</p>
-              <p className="text-xl font-black text-[#10243E] mt-1">${reconciliation.totalExpected.toLocaleString()}</p>
+              <p className="text-xl font-black text-[#032e42] mt-1">${reconciliation.totalExpected.toLocaleString()}</p>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-4">
               <p className="text-[10px] font-bold uppercase text-[#718096]">Actual Verified Payments</p>
@@ -384,7 +384,7 @@ export default function FinanceModule({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                  <tr className="bg-[#032e42] text-white text-[11px] uppercase">
                     <th className="py-3 px-4">Reference</th>
                     <th className="py-3 px-4">Invoice / Applicant</th>
                     <th className="py-3 px-4">Amount</th>
@@ -399,9 +399,9 @@ export default function FinanceModule({
                   ) : (
                     payments.map((pay) => (
                       <tr key={pay.id} className="hover:bg-[#F5F8FC]">
-                        <td className="py-3 px-4 font-mono font-bold text-[#10243E]">{pay.reference}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-[#032e42]">{pay.reference}</td>
                         <td className="py-3 px-4">
-                          <p className="font-bold text-[#10243E]">{pay.invoiceNo || 'Unmatched Direct Payment'}</p>
+                          <p className="font-bold text-[#032e42]">{pay.invoiceNo || 'Unmatched Direct Payment'}</p>
                           <p className="text-[11px] text-[#718096]">{pay.applicantName || '—'}</p>
                         </td>
                         <td className="py-3 px-4 font-black text-[#16A36A]">{pay.currency} {Number(pay.amount).toLocaleString()}</td>
@@ -426,9 +426,9 @@ export default function FinanceModule({
                                 onDataChange();
                                 showToast(`Payment ${pay.reference} marked as Reconciled.`);
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#071C2D] text-white text-[11px] font-bold cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer"
                             >
-                              <CheckCircle2 className="w-3 h-3 text-[#00B8B0]" /> Mark Reconciled
+                              <CheckCircle2 className="w-3 h-3 text-[#4ade80]" /> Mark Reconciled
                             </button>
                           )}
                         </td>
@@ -448,7 +448,7 @@ export default function FinanceModule({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                <tr className="bg-[#032e42] text-white text-[11px] uppercase">
                   <th className="py-3 px-4">Payment Ref</th>
                   <th className="py-3 px-4">Applicant / Invoice</th>
                   <th className="py-3 px-4">Amount</th>
@@ -464,9 +464,9 @@ export default function FinanceModule({
                 ) : (
                   payments.map((pay) => (
                     <tr key={pay.id} className="hover:bg-[#F5F8FC]">
-                      <td className="py-3 px-4 font-mono font-bold text-[#10243E]">{pay.reference}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-[#032e42]">{pay.reference}</td>
                       <td className="py-3 px-4">
-                        <p className="font-bold text-[#10243E]">{pay.applicantName || '—'}</p>
+                        <p className="font-bold text-[#032e42]">{pay.applicantName || '—'}</p>
                         <p className="text-[11px] text-[#718096]">{pay.invoiceNo || 'Direct'}</p>
                       </td>
                       <td className="py-3 px-4 font-black text-[#16A36A]">{pay.currency} {Number(pay.amount).toLocaleString()}</td>
@@ -499,9 +499,9 @@ export default function FinanceModule({
                             `;
                             msimamiziEnterpriseService.printInstitutionalDocument(`Official Receipt - ${pay.reference}`, html, currentUser);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#071C2D] text-white text-[11px] font-bold cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer"
                         >
-                          <Printer className="w-3 h-3 text-[#00B8B0]" /> Receipt
+                          <Printer className="w-3 h-3 text-[#4ade80]" /> Receipt
                         </button>
                       </td>
                     </tr>
@@ -517,7 +517,7 @@ export default function FinanceModule({
       {(activeTab === 'invoices' || activeTab === 'outstanding-balances' || activeTab === 'finance-overview') && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-extrabold text-[#10243E]">
+            <h3 className="text-sm font-extrabold text-[#032e42]">
               {activeTab === 'outstanding-balances' ? 'Unpaid & Overdue Invoices' : 'Institutional Invoices'} ({filteredInvoices.length})
             </h3>
             <div className="relative w-64">
@@ -533,7 +533,7 @@ export default function FinanceModule({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                <tr className="bg-[#032e42] text-white text-[11px] uppercase">
                   <th className="py-3 px-4">Invoice No</th>
                   <th className="py-3 px-4">Applicant / Org</th>
                   <th className="py-3 px-4">Course Programme</th>
@@ -550,14 +550,14 @@ export default function FinanceModule({
                     const isOverdue = inv.status !== 'Paid' && inv.status !== 'Cancelled' && inv.dueDate && inv.dueDate < todayStr;
                     return (
                       <tr key={inv.id} className="hover:bg-[#F5F8FC]">
-                        <td className="py-3 px-4 font-mono font-bold text-[#10243E]">{inv.invoiceNo}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-[#032e42]">{inv.invoiceNo}</td>
                         <td className="py-3 px-4">
-                          <p className="font-bold text-[#10243E]">{inv.applicantName}</p>
+                          <p className="font-bold text-[#032e42]">{inv.applicantName}</p>
                           <p className="text-[11px] text-[#718096]">{inv.organisation || inv.applicantEmail || '—'}</p>
                         </td>
                         <td className="py-3 px-4 max-w-[220px] truncate font-medium">{inv.courseTitle}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <p className="font-black text-[#10243E]">{inv.currency} {Number(inv.netAmount).toLocaleString()}</p>
+                          <p className="font-black text-[#032e42]">{inv.currency} {Number(inv.netAmount).toLocaleString()}</p>
                           <p className="text-[10.5px] text-[#718096]">
                             Paid: <span className="text-[#16A36A] font-bold">{Number(inv.paidAmount || 0).toLocaleString()}</span> • Bal: <span className="text-[#DC4545] font-bold">{Number(inv.balance || 0).toLocaleString()}</span>
                           </p>
@@ -575,8 +575,8 @@ export default function FinanceModule({
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           <div className="inline-flex items-center gap-1.5">
-                            <button type="button" onClick={() => handlePrintInvoice(inv)} className="px-2.5 py-1.5 rounded-lg bg-[#071C2D] text-white text-[11px] font-bold cursor-pointer inline-flex items-center gap-1">
-                              <Printer className="w-3 h-3 text-[#00B8B0]" /> PDF
+                            <button type="button" onClick={() => handlePrintInvoice(inv)} className="px-2.5 py-1.5 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer inline-flex items-center gap-1">
+                              <Printer className="w-3 h-3 text-[#4ade80]" /> PDF
                             </button>
                             <button type="button" onClick={() => handleEmailInvoice(inv)} title="Email Invoice" className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer">
                               <Mail className="w-3.5 h-3.5" />
@@ -614,13 +614,13 @@ export default function FinanceModule({
       {isInvoiceModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <form onSubmit={handleCreateInvoice} className="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden text-xs">
-            <div className="bg-[#071C2D] text-white px-5 py-4 flex items-center justify-between">
-              <h3 className="font-bold text-sm flex items-center gap-2"><Receipt className="w-4 h-4 text-[#00B8B0]" /> Generate Official Invoice</h3>
+            <div className="bg-[#032e42] text-white px-5 py-4 flex items-center justify-between">
+              <h3 className="font-bold text-sm flex items-center gap-2"><Receipt className="w-4 h-4 text-[#4ade80]" /> Generate Official Invoice</h3>
               <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="cursor-pointer"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="sm:col-span-2">
-                <label className="block font-bold text-[#10243E] mb-1">Link to Registered Applicant (Optional)</label>
+                <label className="block font-bold text-[#032e42] mb-1">Link to Registered Applicant (Optional)</label>
                 <select value={invForm.registrationId} onChange={(e) => handleSelectRegistrationForInvoice(e.target.value)} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
                   <option value="">— Manual Invoice Entry —</option>
                   {registrations.map((r) => (
@@ -631,22 +631,22 @@ export default function FinanceModule({
                 </select>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Applicant / Client Name *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Applicant / Client Name *</label>
                 <input required value={invForm.applicantName} onChange={(e) => setInvForm({ ...invForm, applicantName: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Email</label>
+                <label className="block font-bold text-[#032e42] mb-1">Email</label>
                 <input type="email" value={invForm.applicantEmail} onChange={(e) => setInvForm({ ...invForm, applicantEmail: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block font-bold text-[#10243E] mb-1">Course / Programme *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Course / Programme *</label>
                 <input required list="fin-courses" value={invForm.courseTitle} onChange={(e) => setInvForm({ ...invForm, courseTitle: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
                 <datalist id="fin-courses">
                   {courses.slice(0, 100).map((c) => <option key={c.slug} value={c.title} />)}
                 </datalist>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Currency</label>
+                <label className="block font-bold text-[#032e42] mb-1">Currency</label>
                 <select value={invForm.currency} onChange={(e) => setInvForm({ ...invForm, currency: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
                   <option value="USD">USD</option>
                   <option value="KES">KES</option>
@@ -655,25 +655,25 @@ export default function FinanceModule({
                 </select>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Course Fee Amount *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Course Fee Amount *</label>
                 <input type="number" min={0} required value={invForm.amount} onChange={(e) => setInvForm({ ...invForm, amount: Number(e.target.value) })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Authorized Discount</label>
+                <label className="block font-bold text-[#032e42] mb-1">Authorized Discount</label>
                 <input type="number" min={0} value={invForm.discount} onChange={(e) => setInvForm({ ...invForm, discount: Number(e.target.value) })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Payment Due Date</label>
+                <label className="block font-bold text-[#032e42] mb-1">Payment Due Date</label>
                 <input type="date" value={invForm.dueDate} onChange={(e) => setInvForm({ ...invForm, dueDate: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
             </div>
             <div className="px-5 py-3.5 bg-[#F5F8FC] border-t border-slate-100 flex items-center justify-between">
-              <span className="font-extrabold text-[#10243E]">
+              <span className="font-extrabold text-[#032e42]">
                 Net Payable: {invForm.currency} {Math.max(0, (Number(invForm.amount) || 0) + (Number(invForm.additionalCharges) || 0) - (Number(invForm.discount) || 0)).toLocaleString()}
               </span>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-[#00B8B0] text-white font-bold cursor-pointer">Issue Invoice</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-[#008000] text-white font-bold cursor-pointer">Issue Invoice</button>
               </div>
             </div>
           </form>
@@ -684,13 +684,13 @@ export default function FinanceModule({
       {isPaymentModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <form onSubmit={handleRecordPayment} className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden text-xs">
-            <div className="bg-[#071C2D] text-white px-5 py-4 flex items-center justify-between">
-              <h3 className="font-bold text-sm flex items-center gap-2"><CreditCard className="w-4 h-4 text-[#00B8B0]" /> Record &amp; Verify Payment</h3>
+            <div className="bg-[#032e42] text-white px-5 py-4 flex items-center justify-between">
+              <h3 className="font-bold text-sm flex items-center gap-2"><CreditCard className="w-4 h-4 text-[#4ade80]" /> Record &amp; Verify Payment</h3>
               <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="cursor-pointer"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="sm:col-span-2">
-                <label className="block font-bold text-[#10243E] mb-1">Apply to Invoice</label>
+                <label className="block font-bold text-[#032e42] mb-1">Apply to Invoice</label>
                 <select
                   value={payForm.invoiceId}
                   onChange={(e) => {
@@ -713,25 +713,25 @@ export default function FinanceModule({
                 </select>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Bank / M-Pesa Reference *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Bank / M-Pesa Reference *</label>
                 <input required value={payForm.reference} onChange={(e) => setPayForm({ ...payForm, reference: e.target.value })} placeholder="e.g. MPESA-QWE8912 / SWIFT-8821" className="w-full h-9 px-3 rounded-xl border border-slate-300 font-mono" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Amount Received *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Amount Received *</label>
                 <input type="number" min={0.01} step="0.01" required value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 font-bold" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Payment Method</label>
+                <label className="block font-bold text-[#032e42] mb-1">Payment Method</label>
                 <select value={payForm.method} onChange={(e) => setPayForm({ ...payForm, method: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
                   {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Transaction Date</label>
+                <label className="block font-bold text-[#032e42] mb-1">Transaction Date</label>
                 <input type="date" value={payForm.transactionDate} onChange={(e) => setPayForm({ ...payForm, transactionDate: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block font-bold text-[#10243E] mb-1">Supporting Verification Note *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Supporting Verification Note *</label>
                 <input required value={payForm.supportingNote} onChange={(e) => setPayForm({ ...payForm, supportingNote: e.target.value })} placeholder="Confirm bank statement / remittance advice / receipt verification details..." className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
             </div>

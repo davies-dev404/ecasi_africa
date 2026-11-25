@@ -102,7 +102,7 @@ const Newsroom = () => {
               ECASI
             </span>
             <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 leading-tight tracking-tight">
-              Events & <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-emerald-200 drop-shadow-sm">Programs</span>
+              Events & <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4ade80] to-emerald-200 drop-shadow-sm">Programs</span>
             </h1>
             <p className="text-lg md:text-2xl text-white/90 font-light max-w-2xl mx-auto leading-relaxed">
               Discover our latest events, training programs, and initiatives across Africa.

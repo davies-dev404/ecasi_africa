@@ -71,14 +71,14 @@ const resourcesLinks = [
     path: '/resources/policy-briefs',
     icon: FileBadge,
     description: 'Concise summaries and recommendations for policymakers and stakeholders.',
-    color: 'bg-teal-50 text-teal-600',
-    hover: 'group-hover:bg-teal-600 group-hover:text-white',
+    color: 'bg-emerald-50 text-[#008000]',
+    hover: 'group-hover:bg-[#008000] group-hover:text-white',
   },
 ];
 
 const Resources = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F5F8FC] flex flex-col font-sans">
       <SEO
         title="Resources Hub"
         description="Access ECASI Africa's extensive collection of publications, policies, reports, videos, books, and policy briefs."

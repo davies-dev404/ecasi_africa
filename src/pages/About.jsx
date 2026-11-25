@@ -53,7 +53,7 @@ const programmes = [
   {
     icon: Users,
     title: "Consultancy & Business Advisory",
-    color: "bg-teal-50 text-teal-600 border-teal-100",
+    color: "bg-emerald-50 text-[#008000] border-emerald-200",
     description: "Integrated consultancy services for governments, development partners, the private sector, and civil society, covering sustainability, ESG, and development strategy.",
     path: "/research/consulting"
   },

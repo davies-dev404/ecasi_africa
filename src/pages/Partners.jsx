@@ -37,7 +37,7 @@ const partnersList = [
     type: "Financial Partner",
     icon: Globe2,
     description: "An initiative of Bloomberg Philanthropies, Clean Air Fund, and C40 Cities, collaborating with Nairobi City County to reduce air pollution and establish robust air quality standards.",
-    color: "bg-teal-50 text-teal-600 border-teal-100",
+    color: "bg-emerald-50 text-[#008000] border-emerald-200",
   },
 
   // Governance Partners

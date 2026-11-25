@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle, RotateCcw, LayoutGrid, LogOut } from 'lucide-react';
 
 /**
- * Resilient Error Boundary for ECASIAFRICA Msimamizi ERP.
+ * Resilient Error Boundary for ECASIAFRICA Msimamizi Administration Portal.
  * Prevents any module runtime error or stale production JS chunk mismatch from
  * rendering a blank white screen, and gives the administrator immediate recovery
  * controls (return to Overview Dashboard, hard reload, or safe sign-out).
@@ -111,7 +111,7 @@ export default class MsimamiziErrorBoundary extends React.Component {
       <div
         className={
           isFullScreen
-            ? 'min-h-screen bg-[#071C2D] flex items-center justify-center p-4 font-["Inter",sans-serif]'
+            ? 'min-h-screen bg-[#032e42] flex items-center justify-center p-4 font-["Inter",sans-serif]'
             : 'bg-white rounded-2xl border border-red-200 shadow-sm p-8 text-center space-y-4'
         }
       >
@@ -127,7 +127,7 @@ export default class MsimamiziErrorBoundary extends React.Component {
           </div>
 
           <div className="space-y-1.5">
-            <h2 className="text-base sm:text-lg font-black text-[#10243E]">
+            <h2 className="text-base sm:text-lg font-black text-[#032e42]">
               {this.props.sectionLabel
                 ? `Unable to load ${this.props.sectionLabel}`
                 : 'Msimamizi Portal Recovery'}
@@ -144,7 +144,7 @@ export default class MsimamiziErrorBoundary extends React.Component {
             <button
               type="button"
               onClick={this.handleReturnToDashboard}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00B8B0] hover:bg-teal-600 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm transition cursor-pointer"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
               <span>Return to Overview Dashboard</span>
@@ -153,7 +153,7 @@ export default class MsimamiziErrorBoundary extends React.Component {
             <button
               type="button"
               onClick={this.handleHardReload}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#071C2D] hover:bg-[#102D49] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#032e42] hover:bg-[#06405c] text-white text-xs font-bold shadow-sm transition cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reload Portal</span>

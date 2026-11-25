@@ -31,7 +31,7 @@ export const ROLE_CATALOG = [
     label: 'Super Admin',
     description: 'Full institutional access across admissions, finance, academic, recruitment, CMS, staff permissions, and system health.',
     permissions: ['*'],
-    badgeColor: 'bg-teal-100 text-teal-900 border-teal-200',
+    badgeColor: 'bg-emerald-100 text-[#032e42] border-emerald-300',
   },
   {
     id: 'ADMISSIONS_OFFICER',
@@ -1220,7 +1220,7 @@ export const msimamiziEnterpriseService = {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-    const headerRow = `<tr>${headers.map((h) => `<th style="background:#071C2D;color:#ffffff;font-weight:bold;padding:8px;border:1px solid #cbd5e1;">${escHtml(h)}</th>`).join('')}</tr>`;
+    const headerRow = `<tr>${headers.map((h) => `<th style="background:#032e42;color:#ffffff;font-weight:bold;padding:8px;border:1px solid #cbd5e1;">${escHtml(h)}</th>`).join('')}</tr>`;
     const bodyRows = rows
       .map((r) => `<tr>${r.map((c) => `<td style="padding:6px;border:1px solid #e2e8f0;">${escHtml(c)}</td>`).join('')}</tr>`)
       .join('');
@@ -1250,18 +1250,18 @@ export const msimamiziEnterpriseService = {
   <meta charset="UTF-8" />
   <title>${title}</title>
   <style>
-    body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #10243E; margin: 32px; font-size: 12px; line-height: 1.5; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #071C2D; padding-bottom: 14px; margin-bottom: 22px; }
-    .brand { font-size: 20px; font-weight: 800; color: #071C2D; }
-    .brand span { color: #00B8B0; }
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #032e42; margin: 32px; font-size: 12px; line-height: 1.5; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #032e42; padding-bottom: 14px; margin-bottom: 22px; }
+    .brand { font-size: 20px; font-weight: 800; color: #032e42; }
+    .brand span { color: #008000; }
     .meta { text-align: right; color: #718096; font-size: 11px; }
     table { width: 100%; border-collapse: collapse; margin: 14px 0; }
-    th { background: #071C2D; color: #fff; text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    th { background: #032e42; color: #fff; text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
     td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-    .kpi { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; }
+    .kpi { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #F5F8FC; }
     .kpi-label { font-size: 10px; text-transform: uppercase; color: #718096; font-weight: 700; }
-    .kpi-val { font-size: 18px; font-weight: 800; color: #071C2D; margin-top: 2px; }
+    .kpi-val { font-size: 18px; font-weight: 800; color: #032e42; margin-top: 2px; }
     .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #cbd5e1; font-size: 10px; color: #718096; display: flex; justify-content: space-between; }
     @media print { body { margin: 16px; } button { display: none !important; } }
   </style>

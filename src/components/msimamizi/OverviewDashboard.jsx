@@ -50,7 +50,7 @@ import {
   msimamiziEnterpriseService,
 } from '@/services/msimamiziEnterpriseService';
 
-const CHART_COLORS = ['#00B8B0', '#071C2D', '#16A36A', '#F0A020', '#3B82F6', '#DC4545', '#6366F1', '#0EA5E9'];
+const CHART_COLORS = ['#008000', '#032e42', '#1e73be', '#F0A020', '#20a020', '#DC4545', '#6366F1', '#0EA5E9'];
 
 export default function OverviewDashboard({
   registrations = [],
@@ -307,15 +307,15 @@ export default function OverviewDashboard({
   };
 
   const kpiCards = [
-    { label: 'Total Registrations', value: stats.totalRegistrations, icon: Users, accent: 'text-[#071C2D] bg-slate-100', target: 'registrations' },
+    { label: 'Total Registrations', value: stats.totalRegistrations, icon: Users, accent: 'text-[#032e42] bg-slate-100', target: 'registrations' },
     { label: 'Confirmed Enrolments', value: stats.confirmedEnrolments, icon: CheckCircle2, accent: 'text-[#16A36A] bg-emerald-50', target: 'enrolments' },
     { label: 'Pending Applications', value: stats.pendingApplications, icon: Clock, accent: 'text-[#F0A020] bg-amber-50', target: 'applicants' },
     { label: 'Approved Applications', value: stats.approvedApplications, icon: ShieldCheck, accent: 'text-blue-600 bg-blue-50', target: 'registrations' },
     { label: 'Total Revenue (USD)', value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, accent: 'text-[#16A36A] bg-emerald-50', target: 'finance-overview' },
     { label: 'Outstanding Fees', value: `$${stats.outstandingFees.toLocaleString()}`, icon: AlertTriangle, accent: 'text-[#DC4545] bg-red-50', target: 'outstanding-balances' },
-    { label: 'Active Courses', value: stats.activeCourses, icon: BookOpen, accent: 'text-[#00B8B0] bg-teal-50', target: 'courses' },
+    { label: 'Active Courses', value: stats.activeCourses, icon: BookOpen, accent: 'text-[#008000] bg-emerald-50', target: 'courses' },
     { label: 'Course Inquiries', value: stats.courseInquiries, icon: MessageSquare, accent: 'text-indigo-600 bg-indigo-50', target: 'inquiries' },
-    { label: 'Active Vacancies', value: stats.activeVacancies, icon: Briefcase, accent: 'text-[#102D49] bg-slate-100', target: 'vacancies' },
+    { label: 'Active Vacancies', value: stats.activeVacancies, icon: Briefcase, accent: 'text-[#06405c] bg-slate-100', target: 'vacancies' },
     { label: 'Candidate CVs', value: stats.candidateCvs, icon: FileUser, accent: 'text-cyan-700 bg-cyan-50', target: 'candidate-cvs' },
   ];
 
@@ -326,14 +326,14 @@ export default function OverviewDashboard({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-[#00B8B0]/10 text-[#00B8B0] border border-[#00B8B0]/30 text-[10px] font-extrabold uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#008000]/10 text-[#008000] border border-[#008000]/30 text-[10px] font-extrabold uppercase tracking-wider">
                 Command Centre
               </span>
               <span className="text-[11px] font-medium text-[#718096]">
                 ECAS Institute (ECASIAFRICA)
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#10243E] mt-1 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-[#032e42] mt-1 tracking-tight">
               Platform Overview Dashboard
             </h1>
             <p className="text-xs text-[#718096] mt-0.5">
@@ -347,7 +347,7 @@ export default function OverviewDashboard({
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
-                className="bg-transparent font-semibold text-[#10243E] focus:outline-none cursor-pointer"
+                className="bg-transparent font-semibold text-[#032e42] focus:outline-none cursor-pointer"
               >
                 <option value="all">All Time</option>
                 <option value="30d">Last 30 Days</option>
@@ -359,9 +359,9 @@ export default function OverviewDashboard({
             <button
               type="button"
               onClick={handleDownloadExecutiveBrief}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#071C2D] hover:bg-[#102D49] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] hover:bg-[#06405c] text-white text-xs font-bold shadow-sm transition cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 text-[#00B8B0]" />
+              <Download className="w-3.5 h-3.5 text-[#4ade80]" />
               <span>Export Executive Brief</span>
             </button>
           </div>
@@ -373,7 +373,7 @@ export default function OverviewDashboard({
             <button
               type="button"
               onClick={onOpenNewRegistration}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#00B8B0] hover:bg-[#009c95] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" /> New Registration
             </button>
@@ -382,16 +382,16 @@ export default function OverviewDashboard({
             <button
               type="button"
               onClick={onOpenUploadCourse}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#10243E] border border-slate-200 text-xs font-bold transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#032e42] border border-slate-200 text-xs font-bold transition cursor-pointer"
             >
-              <Upload className="w-3.5 h-3.5 text-[#00B8B0]" /> Upload Course
+              <Upload className="w-3.5 h-3.5 text-[#008000]" /> Upload Course
             </button>
           )}
           {hasPermission(currentUser, 'recruitment.write') && (
             <button
               type="button"
               onClick={onOpenPostVacancy}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#10243E] border border-slate-200 text-xs font-bold transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#032e42] border border-slate-200 text-xs font-bold transition cursor-pointer"
             >
               <Briefcase className="w-3.5 h-3.5 text-[#16A36A]" /> Post Vacancy
             </button>
@@ -400,7 +400,7 @@ export default function OverviewDashboard({
             <button
               type="button"
               onClick={() => onNavigate('invoices')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#10243E] border border-slate-200 text-xs font-bold transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#032e42] border border-slate-200 text-xs font-bold transition cursor-pointer"
             >
               <Receipt className="w-3.5 h-3.5 text-[#F0A020]" /> Create Invoice
             </button>
@@ -409,7 +409,7 @@ export default function OverviewDashboard({
             <button
               type="button"
               onClick={() => onNavigate('inquiries')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#10243E] border border-slate-200 text-xs font-bold transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#032e42] border border-slate-200 text-xs font-bold transition cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5 text-blue-600" /> Add New Lead
             </button>
@@ -418,7 +418,7 @@ export default function OverviewDashboard({
             <button
               type="button"
               onClick={() => onNavigate('announcements')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#10243E] border border-slate-200 text-xs font-bold transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#032e42] border border-slate-200 text-xs font-bold transition cursor-pointer"
             >
               <Megaphone className="w-3.5 h-3.5 text-indigo-600" /> Send Announcement
             </button>
@@ -427,16 +427,16 @@ export default function OverviewDashboard({
             <button
               type="button"
               onClick={() => onNavigate('staff-accounts')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#071C2D] hover:bg-[#102D49] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#032e42] hover:bg-[#06405c] text-white text-xs font-bold shadow-sm transition cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5 text-[#00B8B0]" /> Add Staff User
+              <UserPlus className="w-3.5 h-3.5 text-[#008000]" /> Add Staff User
             </button>
           )}
           {hasPermission(currentUser, 'reports.export') && (
             <button
               type="button"
               onClick={() => onNavigate('data-exports')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#10243E] border border-slate-200 text-xs font-bold transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] hover:bg-slate-200/70 text-[#032e42] border border-slate-200 text-xs font-bold transition cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-slate-600" /> Export Reports
             </button>
@@ -453,18 +453,18 @@ export default function OverviewDashboard({
               key={kpi.label}
               type="button"
               onClick={() => onNavigate(kpi.target)}
-              className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md hover:border-[#00B8B0] transition text-left cursor-pointer group"
+              className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm hover:shadow-md hover:border-[#008000] transition text-left cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-2.5">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${kpi.accent}`}>
                   <Icon className="w-4 h-4" />
                 </div>
-                <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#00B8B0] transition" />
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#008000] transition" />
               </div>
               <p className="text-[11px] font-semibold text-[#718096] uppercase tracking-wider truncate">
                 {kpi.label}
               </p>
-              <p className="text-xl font-black text-[#10243E] mt-1 truncate">{kpi.value}</p>
+              <p className="text-xl font-black text-[#032e42] mt-1 truncate">{kpi.value}</p>
             </button>
           );
         })}
@@ -472,14 +472,14 @@ export default function OverviewDashboard({
 
       {/* Operational Attention Needed Panel */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-100 bg-[#071C2D] text-white flex items-center justify-between">
+        <div className="px-5 py-3.5 border-b border-slate-100 bg-[#032e42] text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-[#F0A020]" />
             <h2 className="text-xs font-extrabold uppercase tracking-wider">
               Attention Needed — Operational Action Queue
             </h2>
           </div>
-          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white/10 text-[#00B8B0]">
+          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white/10 text-[#008000]">
             {alerts.filter((a) => a.count > 0).length} Active Alert{alerts.filter((a) => a.count > 0).length === 1 ? '' : 's'}
           </span>
         </div>
@@ -493,7 +493,7 @@ export default function OverviewDashboard({
                 ? 'bg-red-50 text-[#DC4545]'
                 : alert.severity === 'warning'
                 ? 'bg-amber-50 text-[#F0A020]'
-                : 'bg-teal-50 text-[#00B8B0]';
+                : 'bg-emerald-50 text-[#008000]';
             return (
               <button
                 key={alert.label}
@@ -509,7 +509,7 @@ export default function OverviewDashboard({
                   <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconBoxClass}`}>
                     <AlertIcon className="w-3.5 h-3.5" />
                   </span>
-                  <span className="text-xs font-semibold text-[#10243E] truncate">{alert.label}</span>
+                  <span className="text-xs font-semibold text-[#032e42] truncate">{alert.label}</span>
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
@@ -534,8 +534,8 @@ export default function OverviewDashboard({
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
-              <h3 className="text-sm font-extrabold text-[#10243E] flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-[#00B8B0]" />
+              <h3 className="text-sm font-extrabold text-[#032e42] flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-[#008000]" />
                 Registration Trends
               </h3>
               <p className="text-[11px] text-[#718096]">Actual submitted registrations over time</p>
@@ -547,7 +547,7 @@ export default function OverviewDashboard({
                   type="button"
                   onClick={() => setTrendGranularity(g)}
                   className={`px-2 py-1 rounded-md font-bold capitalize cursor-pointer transition ${
-                    trendGranularity === g ? 'bg-[#071C2D] text-white' : 'text-[#718096] hover:text-[#10243E]'
+                    trendGranularity === g ? 'bg-[#032e42] text-white' : 'text-[#718096] hover:text-[#032e42]'
                   }`}
                 >
                   {g}
@@ -559,7 +559,7 @@ export default function OverviewDashboard({
           {registrationTrendsData.length === 0 ? (
             <div className="h-56 flex flex-col items-center justify-center text-center bg-[#F5F8FC] rounded-xl border border-dashed border-slate-200 p-4">
               <TrendingUp className="w-7 h-7 text-slate-300 mb-2" />
-              <p className="text-xs font-bold text-[#10243E]">No Registration Records Yet</p>
+              <p className="text-xs font-bold text-[#032e42]">No Registration Records Yet</p>
               <p className="text-[11px] text-[#718096] mt-0.5">Live registration trends will chart automatically once delegates register.</p>
             </div>
           ) : (
@@ -568,15 +568,15 @@ export default function OverviewDashboard({
                 <AreaChart data={registrationTrendsData}>
                   <defs>
                     <linearGradient id="regGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00B8B0" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#00B8B0" stopOpacity={0.02} />
+                      <stop offset="5%" stopColor="#008000" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#008000" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="period" tick={{ fontSize: 11, fill: '#718096' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#718096' }} />
                   <Tooltip />
-                  <Area type="monotone" dataKey="registrations" name="Registrations" stroke="#00B8B0" strokeWidth={2.5} fill="url(#regGrad)" />
+                  <Area type="monotone" dataKey="registrations" name="Registrations" stroke="#008000" strokeWidth={2.5} fill="url(#regGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -587,8 +587,8 @@ export default function OverviewDashboard({
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-extrabold text-[#10243E] flex items-center gap-2">
-                <PieChartIcon className="w-4 h-4 text-[#00B8B0]" />
+              <h3 className="text-sm font-extrabold text-[#032e42] flex items-center gap-2">
+                <PieChartIcon className="w-4 h-4 text-[#008000]" />
                 Admission Status &amp; Financial Split
               </h3>
               <p className="text-[11px] text-[#718096]">Pipeline breakdown and collected vs outstanding fees</p>
@@ -599,7 +599,7 @@ export default function OverviewDashboard({
             <div className="h-56">
               {admissionStatusData.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center bg-[#F5F8FC] rounded-xl border border-dashed border-slate-200 p-3">
-                  <p className="text-xs font-bold text-[#10243E]">No Admission Data</p>
+                  <p className="text-xs font-bold text-[#032e42]">No Admission Data</p>
                   <p className="text-[10px] text-[#718096]">Status breakdown appears here.</p>
                 </div>
               ) : (
@@ -620,7 +620,7 @@ export default function OverviewDashboard({
             <div className="h-56">
               {paidVsOutstandingData.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center bg-[#F5F8FC] rounded-xl border border-dashed border-slate-200 p-3">
-                  <p className="text-xs font-bold text-[#10243E]">No Financial Balances</p>
+                  <p className="text-xs font-bold text-[#032e42]">No Financial Balances</p>
                   <p className="text-[10px] text-[#718096]">Paid vs outstanding chart appears once invoices/fees exist.</p>
                 </div>
               ) : (
@@ -642,8 +642,8 @@ export default function OverviewDashboard({
         {/* 3. Enrolments & Revenue by Destination */}
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5">
           <div className="mb-4">
-            <h3 className="text-sm font-extrabold text-[#10243E] flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-[#00B8B0]" />
+            <h3 className="text-sm font-extrabold text-[#032e42] flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-[#008000]" />
               Enrolments by Training Destination
             </h3>
             <p className="text-[11px] text-[#718096]">Delegate counts across Nairobi, Mombasa, Dubai, Kuala Lumpur &amp; Online</p>
@@ -651,7 +651,7 @@ export default function OverviewDashboard({
           {destinationPerformanceData.length === 0 ? (
             <div className="h-56 flex flex-col items-center justify-center text-center bg-[#F5F8FC] rounded-xl border border-dashed border-slate-200 p-4">
               <BarChart3 className="w-7 h-7 text-slate-300 mb-2" />
-              <p className="text-xs font-bold text-[#10243E]">No Destination Enrolments Yet</p>
+              <p className="text-xs font-bold text-[#032e42]">No Destination Enrolments Yet</p>
               <p className="text-[11px] text-[#718096] mt-0.5">Destination performance populates automatically from delegate registrations.</p>
             </div>
           ) : (
@@ -662,7 +662,7 @@ export default function OverviewDashboard({
                   <XAxis dataKey="destination" tick={{ fontSize: 11, fill: '#718096' }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#718096' }} />
                   <Tooltip />
-                  <Bar dataKey="enrolments" name="Delegates" fill="#071C2D" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="enrolments" name="Delegates" fill="#032e42" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -672,8 +672,8 @@ export default function OverviewDashboard({
         {/* 4. Recruitment Pipeline Performance */}
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5">
           <div className="mb-4">
-            <h3 className="text-sm font-extrabold text-[#10243E] flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-[#00B8B0]" />
+            <h3 className="text-sm font-extrabold text-[#032e42] flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-[#008000]" />
               Recruitment Performance Funnel
             </h3>
             <p className="text-[11px] text-[#718096]">Active vacancies, CV submissions, shortlisting, interviews &amp; hires</p>
@@ -683,9 +683,9 @@ export default function OverviewDashboard({
               <BarChart data={recruitmentFunnelData} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#718096' }} />
-                <YAxis type="category" dataKey="stage" width={105} tick={{ fontSize: 11, fill: '#10243E' }} />
+                <YAxis type="category" dataKey="stage" width={105} tick={{ fontSize: 11, fill: '#032e42' }} />
                 <Tooltip />
-                <Bar dataKey="count" name="Count" fill="#00B8B0" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="count" name="Count" fill="#008000" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -400,10 +400,7 @@ const Header = () => {
           {cards.map((card, idx) => (
             <div
               key={idx}
-              className="group bg-white rounded-[6px] border border-gray-200/90 hover:border-[#008000] p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5"
-              style={{
-                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.06)",
-              }}
+              className="group bg-white rounded-2xl border border-slate-200/90 hover:border-[#008000] hover:shadow-md p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 shadow-sm"
             >
               {/* Main Horizontal Card Box */}
               <Link
@@ -412,9 +409,9 @@ const Header = () => {
                 className="flex items-center gap-3.5"
               >
                 <div
-                  className={`w-[68px] h-[52px] rounded-[4px] overflow-hidden shrink-0 flex items-center justify-center ${
+                  className={`w-[68px] h-[52px] rounded-xl overflow-hidden shrink-0 flex items-center justify-center ${
                     card.isLogo
-                      ? "bg-white border border-gray-100 p-1"
+                      ? "bg-[#F5F8FC] border border-slate-200 p-1"
                       : "bg-[#032e42]"
                   }`}
                 >
@@ -877,7 +874,7 @@ const Header = () => {
                   <button
                     type="button"
                     onClick={() => toggleDropdown("m-training")}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-slate-50 rounded-lg"
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#032e42] bg-[#F5F8FC] border border-slate-200/80 rounded-xl"
                   >
                     <span>Executive Training</span>
                     <ChevronDown
@@ -888,18 +885,18 @@ const Header = () => {
                     />
                   </button>
                   {activeDropdown === "m-training" && (
-                    <div className="p-3 space-y-2 bg-white border border-slate-100 rounded-b-lg">
+                    <div className="p-3 space-y-2 bg-white border border-slate-200 rounded-b-xl">
                       <Link
                         to="/institute-overview"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="block py-2 px-3 rounded bg-[#008000] text-white text-xs font-bold text-center"
+                        className="block py-2 px-3 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold text-center transition"
                       >
                         Course Finder (All 200+ Courses)
                       </Link>
                       <Link
                         to="/beyond-the-classroom"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="block py-2 px-3 rounded bg-[#032e42] text-white text-xs font-bold text-center"
+                        className="block py-2 px-3 rounded-xl bg-[#032e42] hover:bg-[#06405c] text-white text-xs font-bold text-center transition"
                       >
                         Beyond the Classroom (Excursions)
                       </Link>

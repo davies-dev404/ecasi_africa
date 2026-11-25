@@ -342,14 +342,14 @@ export default function CourseRegistrationForm({
                   value={courseFilter}
                   onChange={(e) => setCourseFilter(e.target.value)}
                   placeholder="Filter courses by title or category..."
-                  className="w-full h-[34px] pl-8 pr-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[12.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                  className="w-full h-[34px] pl-8 pr-3 rounded-xl border border-slate-200 bg-white text-[12.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
                 />
               </div>
               <select
                 value={selectedSlug}
                 onChange={(e) => handleCourseSelectChange(e.target.value)}
                 required={selectedSlug !== "__custom__"}
-                className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               >
                 {filteredCourseOptions.map((c) => (
                   <option key={c.slug} value={c.slug}>
@@ -365,7 +365,7 @@ export default function CourseRegistrationForm({
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
                   placeholder="Enter custom course title"
-                  className="mt-1.5 w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                  className="mt-1.5 w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
                 />
               )}
             </div>
@@ -381,7 +381,7 @@ export default function CourseRegistrationForm({
                     setDatesText(e.target.value);
                   }
                 }}
-                className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               >
                 {availableCohortOptions.map((d) => (
                   <option key={d} value={d}>
@@ -395,7 +395,7 @@ export default function CourseRegistrationForm({
                 value={datesText}
                 onChange={(e) => setDatesText(e.target.value)}
                 placeholder="e.g. 16 - 27 March 2026"
-                className="mt-1.5 w-full h-[34px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[12.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="mt-1.5 w-full h-[34px] px-3 rounded-xl border border-slate-200 bg-white text-[12.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               />
             </div>
 
@@ -406,7 +406,7 @@ export default function CourseRegistrationForm({
               <select
                 value={venue}
                 onChange={(e) => setVenue(e.target.value)}
-                className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               >
                 <option value="Nairobi, Kenya">Nairobi, Kenya</option>
                 <option value="Mombasa, Kenya">Mombasa, Kenya</option>
@@ -426,7 +426,7 @@ export default function CourseRegistrationForm({
               <select
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
-                className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               >
                 <option value="Classroom">Classroom</option>
                 <option value="Online / Live Virtual">Online / Live Virtual</option>
@@ -444,7 +444,7 @@ export default function CourseRegistrationForm({
                 min={0}
                 value={unitFee}
                 onChange={(e) => setUnitFee(Math.max(0, Number(e.target.value) || 0))}
-                className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               />
             </div>
           </div>
@@ -461,7 +461,7 @@ export default function CourseRegistrationForm({
           required
           value={formData.title}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+          className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
         >
           <option value="">Select a Title</option>
           <option value="Mr.">Mr.</option>
@@ -488,7 +488,7 @@ export default function CourseRegistrationForm({
           placeholder="First Name"
           value={formData.firstName}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -503,7 +503,7 @@ export default function CourseRegistrationForm({
           placeholder="Middle Name"
           value={formData.middleName}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -519,7 +519,7 @@ export default function CourseRegistrationForm({
           placeholder="Last Name"
           value={formData.lastName}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -534,7 +534,7 @@ export default function CourseRegistrationForm({
           placeholder="Job Title"
           value={formData.jobTitle}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -550,7 +550,7 @@ export default function CourseRegistrationForm({
           placeholder="Organisation"
           value={formData.organisation}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -616,7 +616,7 @@ export default function CourseRegistrationForm({
             placeholder="Phone Number"
             value={formData.phoneNumber}
             onChange={handleFieldChange}
-            className="flex-1 h-[38px] px-3 rounded-r-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+            className="flex-1 h-[38px] px-3 rounded-r-[4px] border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
           />
         </div>
       </div>
@@ -633,7 +633,7 @@ export default function CourseRegistrationForm({
           placeholder="Personal Email"
           value={formData.personalEmail}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -648,7 +648,7 @@ export default function CourseRegistrationForm({
           placeholder="Official Email"
           value={formData.officialEmail}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -663,7 +663,7 @@ export default function CourseRegistrationForm({
           placeholder="Current Duties"
           value={formData.currentDuties}
           onChange={handleFieldChange}
-          className="w-full p-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full p-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -678,7 +678,7 @@ export default function CourseRegistrationForm({
           placeholder="Training Expectations"
           value={formData.trainingExpectations}
           onChange={handleFieldChange}
-          className="w-full p-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full p-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -693,7 +693,7 @@ export default function CourseRegistrationForm({
           placeholder="Tailor-Made Requirements"
           value={formData.tailorMadeRequirements}
           onChange={handleFieldChange}
-          className="w-full p-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full p-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -706,7 +706,7 @@ export default function CourseRegistrationForm({
           name="hearAboutUs"
           value={formData.hearAboutUs}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+          className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
         >
           <option value="">Select an option</option>
           <option value="Search Engine (Google, Bing)">
@@ -767,7 +767,7 @@ export default function CourseRegistrationForm({
           placeholder="Name Of Approving Authority"
           value={formData.approvingAuthorityName}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -782,7 +782,7 @@ export default function CourseRegistrationForm({
           placeholder="Email Of Approving Authority"
           value={formData.approvingAuthorityEmail}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -798,7 +798,7 @@ export default function CourseRegistrationForm({
           max={100}
           value={formData.participantsCount}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#1e293b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
         />
       </div>
 
@@ -811,7 +811,7 @@ export default function CourseRegistrationForm({
           name="needAccommodation"
           value={formData.needAccommodation}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+          className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
         >
           <option value="No">No</option>
           <option value="Yes - 4 Star Hotel">
@@ -833,7 +833,7 @@ export default function CourseRegistrationForm({
           name="needAirportTransfer"
           value={formData.needAirportTransfer}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+          className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
         >
           <option value="No">No</option>
           <option value="Yes - Round Trip (Airport Pickup & Drop-off)">
@@ -857,7 +857,7 @@ export default function CourseRegistrationForm({
           name="needSafariTour"
           value={formData.needSafariTour}
           onChange={handleFieldChange}
-          className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+          className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
         >
           <option value="No">No</option>
           <option value="Yes - Nairobi National Park Half-Day Game Drive">
@@ -895,7 +895,7 @@ export default function CourseRegistrationForm({
             type="text"
             readOnly
             value={totalTrainingFee}
-            className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#475569] cursor-default focus:outline-none"
+            className="w-full h-[38px] px-3 rounded-xl border border-transparent bg-[#F5F8FC] text-[13.5px] text-[#475569] cursor-default focus:outline-none"
           />
         </div>
 
@@ -916,7 +916,7 @@ export default function CourseRegistrationForm({
               <select
                 value={adminStatus}
                 onChange={(e) => setAdminStatus(e.target.value)}
-                className="w-full h-[36px] px-2.5 rounded-[4px] border border-[#cbd5e1] bg-white text-[13px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="w-full h-[36px] px-2.5 rounded-xl border border-slate-200 bg-white text-[13px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               >
                 <option value="Pending">Pending</option>
                 <option value="Approved">Approved</option>
@@ -930,7 +930,7 @@ export default function CourseRegistrationForm({
               <select
                 value={adminPaymentStatus}
                 onChange={(e) => setAdminPaymentStatus(e.target.value)}
-                className="w-full h-[36px] px-2.5 rounded-[4px] border border-[#cbd5e1] bg-white text-[13px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="w-full h-[36px] px-2.5 rounded-xl border border-slate-200 bg-white text-[13px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               >
                 <option value="Unpaid">Unpaid</option>
                 <option value="Invoiced">Invoiced</option>
@@ -946,7 +946,7 @@ export default function CourseRegistrationForm({
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 placeholder="e.g. Manually entered following LPO or telephone booking..."
-                className="w-full h-[36px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
+                className="w-full h-[36px] px-3 rounded-xl border border-slate-200 bg-white text-[13px] text-[#1e293b] focus:outline-none focus:border-[#008000]"
               />
             </div>
           </div>
@@ -991,7 +991,7 @@ export default function CourseRegistrationForm({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1 bg-[#1e73be] hover:bg-[#032e42] text-white text-[12px] font-semibold px-3 py-1.5 rounded-[3px] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 bg-[#1e73be] hover:bg-[#032e42] text-white text-[12px] font-semibold px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>{backLabel}</span>
@@ -1000,7 +1000,7 @@ export default function CourseRegistrationForm({
           <button
             type="submit"
             disabled={robotLoading}
-            className="inline-flex items-center justify-center bg-[#008000] hover:bg-[#006600] disabled:opacity-60 text-white text-[12px] font-semibold px-3.5 py-1.5 rounded-[3px] transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center bg-[#008000] hover:bg-[#006600] disabled:opacity-60 text-white text-[12px] font-semibold px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer"
           >
             {robotLoading ? "Verifying..." : submitLabel}
           </button>
@@ -1008,7 +1008,7 @@ export default function CourseRegistrationForm({
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-1 bg-[#1e73be] hover:bg-[#032e42] text-white text-[12px] font-semibold px-3 py-1.5 rounded-[3px] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 bg-[#1e73be] hover:bg-[#032e42] text-white text-[12px] font-semibold px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset</span>
