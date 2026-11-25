@@ -563,12 +563,16 @@ class AdminRegistrationService {
           const existing = accountMap.get(em) || { email: em, role: 'Administrator' };
           accountMap.set(em, {
             ...existing,
+            name: rem.name || existing.name || '',
             role: rem.role || existing.role || 'Administrator',
+            status: rem.status || existing.status || 'Active',
+            passwordInitialized: Boolean(rem.passwordInitialized || existing.passwordInitialized),
             credentialDigest: rem.credentialDigest || existing.credentialDigest,
             updatedAt: rem.updatedAt || existing.updatedAt,
           });
         });
         localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(Array.from(accountMap.values())));
+        window.dispatchEvent(new CustomEvent('ecasi_accounts_updated'));
       }
     } catch {
       // Ignore network sync errors
@@ -1178,7 +1182,15 @@ class AdminRegistrationService {
     return defaultAccounts;
   }
 
-  // Create first password / register new administrator using authorized email
+  isPasswordInitialized(email) {
+    const clean = normalizeAdminEmail(email);
+    if (!clean) return false;
+    const accounts = this.getAdminAccounts();
+    const matched = accounts.find((a) => normalizeAdminEmail(a.email) === clean);
+    return Boolean(matched?.passwordInitialized);
+  }
+
+  // One-time initial password creation (permanently locked once set; NEVER auto-logs in)
   async registerAdmin(email, password) {
     if (typeof window === 'undefined') return { success: false, message: 'Browser storage unavailable' };
 
@@ -1203,17 +1215,19 @@ class AdminRegistrationService {
       };
     }
 
-    const lockedInBrowser = await this._isAccountLockedInBrowser(cleanEmail);
-    if (lockedInBrowser) {
-      return {
-        success: false,
-        message: 'This account is already signed in on another active session. Only one active session is allowed per account.',
-      };
-    }
-
     try {
       const accounts = this.getAdminAccounts();
       const existingIdx = accounts.findIndex((a) => normalizeAdminEmail(a.email) === cleanEmail);
+
+      // Local fast-guard: if password is already known to be initialized, block immediately
+      if (existingIdx >= 0 && accounts[existingIdx].passwordInitialized) {
+        return {
+          success: false,
+          code: 'PASSWORD_ALREADY_SET',
+          message: 'Your password has already been created and is permanently locked. Please use Sign In with your existing password.',
+        };
+      }
+
       const digest = computeCredentialDigest(cleanEmail, cleanPass);
 
       const serverRes = await pushToServerWithStatus({
@@ -1225,24 +1239,45 @@ class AdminRegistrationService {
       });
 
       if (!serverRes.unreachable) {
-        if (serverRes.status === 409 || serverRes.data?.code === 'SESSION_ALREADY_ACTIVE') {
+        if (serverRes.status === 409 && serverRes.data?.code === 'PASSWORD_ALREADY_SET') {
+          if (existingIdx >= 0) {
+            accounts[existingIdx] = { ...accounts[existingIdx], passwordInitialized: true };
+          } else {
+            accounts.push({
+              email: cleanEmail,
+              role: isSuperAdminEmail(cleanEmail) ? 'SUPER_ADMIN' : 'SUPPORT_OFFICER',
+              status: 'Active',
+              passwordInitialized: true,
+              updatedAt: new Date().toISOString(),
+            });
+          }
+          localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
           return {
             success: false,
-            message: serverRes.data?.error || 'This account is already signed in on another active session. Concurrent sessions are not permitted.',
+            code: 'PASSWORD_ALREADY_SET',
+            message:
+              serverRes.data?.error ||
+              'Your password has already been created and is permanently locked. Please use Sign In with your existing password.',
           };
         }
         if (!serverRes.ok || !serverRes.data?.success) {
           return {
             success: false,
-            message: serverRes.data?.error || 'Unable to register administrator credentials.',
+            message: serverRes.data?.error || 'Unable to create administrator password. Please try again.',
           };
         }
       }
 
+      const resolvedRole =
+        serverRes.data?.user?.role ||
+        (isSuperAdminEmail(cleanEmail) ? 'SUPER_ADMIN' : accounts[existingIdx]?.role || 'SUPPORT_OFFICER');
+
       const userRecord = {
         email: cleanEmail,
         credentialDigest: digest,
-        role: serverRes.data?.user?.role || 'Administrator',
+        passwordInitialized: true,
+        role: resolvedRole,
+        status: 'Active',
         updatedAt: new Date().toISOString(),
       };
 
@@ -1254,17 +1289,16 @@ class AdminRegistrationService {
       }
 
       localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
+      window.dispatchEvent(new CustomEvent('ecasi_accounts_updated'));
 
-      if (serverRes.data?.token) {
-        this._storeToken(serverRes.data.token);
-      }
-      this._setAuthSession(cleanEmail, userRecord.role);
-      this.syncFromServer();
-
+      // SECURITY: Never auto-login after password creation. Require explicit Sign In.
       return {
         success: true,
-        message: existingIdx >= 0 ? 'Password updated successfully!' : 'Administrator password created successfully!',
-        user: { email: cleanEmail, role: userRecord.role },
+        requiresSignIn: true,
+        message:
+          serverRes.data?.message ||
+          'Your password has been securely created and permanently locked. Please sign in now using your new password.',
+        user: { email: cleanEmail, role: resolvedRole },
       };
     } catch (e) {
       console.error('Failed to save admin account:', e);
@@ -1397,20 +1431,31 @@ class AdminRegistrationService {
         };
       }
       if (!serverRes.ok || !serverRes.data?.success) {
+        if (serverRes.data?.passwordInitialized && matched) {
+          const updated = accounts.map((a) =>
+            normalizeAdminEmail(a.email) === inputUser ? { ...a, passwordInitialized: true } : a
+          );
+          try {
+            localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(updated));
+          } catch {
+            // ignore
+          }
+        }
         return {
           success: false,
           message:
             serverRes.data?.error ||
-            'Invalid administrative password. First time logging in? Click "Create First Password" above to set or reset your password.',
+            'Invalid email or password. Please verify your credentials and try again.',
         };
       }
 
-      const role = serverRes.data.user?.role || matched?.role || 'Administrator';
+      const role = serverRes.data.user?.role || matched?.role || (isSuperAdminEmail(inputUser) ? 'SUPER_ADMIN' : 'SUPPORT_OFFICER');
       const updatedAccounts = [...accounts];
       const idx = updatedAccounts.findIndex((a) => normalizeAdminEmail(a.email) === inputUser);
       const record = {
         email: inputUser,
         credentialDigest: candidateDigest,
+        passwordInitialized: true,
         role,
         updatedAt: new Date().toISOString(),
       };
@@ -1435,17 +1480,19 @@ class AdminRegistrationService {
 
     // 3. Offline / localhost fallback when PHP backend is unavailable
     const isMatchedDigest = matched && matched.credentialDigest === candidateDigest;
-    const isBootstrapPass = inputPass === 'msimamizi2026' || inputPass === '2026' || inputPass === 'ecasi2026!';
+    const isBootstrapPass =
+      !matched?.passwordInitialized &&
+      (inputPass === 'msimamizi2026' || inputPass === '2026' || inputPass === 'ecasi2026!');
 
     if (isMatchedDigest || isBootstrapPass) {
-      const role = matched?.role || 'Administrator';
+      const role = matched?.role || (isSuperAdminEmail(inputUser) ? 'SUPER_ADMIN' : 'SUPPORT_OFFICER');
       this._setAuthSession(inputUser, role);
       return { success: true, user: { email: inputUser, role } };
     }
 
     return {
       success: false,
-      message: 'Invalid administrative password. First time logging in? Click "Create First Password" above to set or reset your password.',
+      message: 'Invalid email or password. Please verify your credentials and try again.',
     };
   }
 

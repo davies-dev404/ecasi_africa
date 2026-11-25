@@ -99,6 +99,7 @@ function MsimamiziAdminInner() {
   const [createPassword, setCreatePassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
   const [turnstileVerified, setTurnstileVerified] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
 
@@ -889,6 +890,7 @@ function MsimamiziAdminInner() {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
+    setAuthSuccess('');
 
     const domToken = e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')?.value || '';
     const effectiveToken = turnstileToken || domToken;
@@ -920,10 +922,16 @@ function MsimamiziAdminInner() {
     }
   };
 
-  // Handle First-Time Administrator Password Creation
+  // Handle One-Time First-Time Administrator Password Creation (Permanently locked once set; NEVER auto-logs in)
   const handleCreatePasswordSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
+    setAuthSuccess('');
+
+    if (adminRegistrationService.isPasswordInitialized(createEmail)) {
+      setAuthError('Your password has already been created and is permanently locked. Please use Sign In with your existing password.');
+      return;
+    }
 
     if (createPassword !== confirmPassword) {
       setAuthError('Passwords do not match. Please verify both fields.');
@@ -952,12 +960,23 @@ function MsimamiziAdminInner() {
 
     const result = await adminRegistrationService.registerAdmin(createEmail, createPassword);
     if (result.success) {
-      setCurrentUser(result.user);
-      setIsAuthenticated(true);
-      loadData();
-      showToast('Administrator credentials created successfully! Welcome to Msimamizi.');
+      // Security: Never auto-login after setting a password — require explicit Sign In
+      setAuthEmail(createEmail);
+      setAuthPassword('');
+      setCreatePassword('');
+      setConfirmPassword('');
+      setTurnstileVerified(false);
+      setTurnstileToken('');
+      setAuthMode('login');
+      setAuthSuccess(
+        result.message ||
+          'Your password has been securely created and permanently locked. Please sign in below with your new password.'
+      );
     } else {
       setAuthError(result.message);
+      if (result.code === 'PASSWORD_ALREADY_SET') {
+        setAuthEmail(createEmail);
+      }
     }
   };
 
@@ -1529,6 +1548,8 @@ function MsimamiziAdminInner() {
               onClick={() => {
                 setAuthMode('login');
                 setAuthError('');
+                setTurnstileVerified(false);
+                setTurnstileToken('');
               }}
               className={`flex-1 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${authMode === 'login'
                   ? 'bg-white text-[#032e42] shadow-xs'
@@ -1543,14 +1564,17 @@ function MsimamiziAdminInner() {
               onClick={() => {
                 setAuthMode('create');
                 setAuthError('');
+                setAuthSuccess('');
+                setTurnstileVerified(false);
+                setTurnstileToken('');
               }}
               className={`flex-1 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${authMode === 'create'
                   ? 'bg-white text-[#008000] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
                 }`}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Create First Password</span>
+              <Lock className="w-3.5 h-3.5" />
+              <span>First-Time Setup</span>
             </button>
           </div>
 
@@ -1616,6 +1640,13 @@ function MsimamiziAdminInner() {
                 />
               </div>
 
+              {authSuccess && (
+                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-[#008000]" />
+                  <span>{authSuccess}</span>
+                </div>
+              )}
+
               {authError && (
                 <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1643,15 +1674,40 @@ function MsimamiziAdminInner() {
             </form>
           )}
 
-          {/* First-Time Administrator Password Creation Form */}
-          {authMode === 'create' && (
+          {/* One-Time First-Time Administrator Password Setup Form (Permanently locked once created) */}
+          {authMode === 'create' && (() => {
+            const isEmailAlreadyLocked = Boolean(createEmail.trim()) && adminRegistrationService.isPasswordInitialized(createEmail);
+            return (
             <form onSubmit={handleCreatePasswordSubmit} className="p-6 sm:p-8 space-y-4">
-              <div className="bg-emerald-50 border border-emerald-200/80 rounded-xl p-3 text-xs text-emerald-900 flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#008000] shrink-0 mt-0.5" />
+              <div className="bg-amber-50 border border-amber-200/90 rounded-xl p-3 text-xs text-amber-950 flex items-start gap-2">
+                <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                 <p>
-                  Create your personal administrative password using your authorized <strong>@ecasiafrica.org</strong> email address.
+                  <strong>One-Time Setup Only:</strong> Create your personal password once using your authorized <strong>@ecasiafrica.org</strong> email. Once created, your password is permanently locked and you will sign in normally on the Sign In tab.
                 </p>
               </div>
+
+              {isEmailAlreadyLocked && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                  <div>
+                    <p className="font-bold">Password Already Created &amp; Locked</p>
+                    <p className="mt-0.5">
+                      This account already has an active password. First-time setup is permanently disabled for this email.{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthEmail(createEmail);
+                          setAuthMode('login');
+                          setAuthError('');
+                        }}
+                        className="underline font-bold cursor-pointer"
+                      >
+                        Go to Sign In →
+                      </button>
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -1734,6 +1790,13 @@ function MsimamiziAdminInner() {
                 />
               </div>
 
+              {authSuccess && (
+                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-[#008000]" />
+                  <span>{authSuccess}</span>
+                </div>
+              )}
+
               {authError && (
                 <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1743,10 +1806,11 @@ function MsimamiziAdminInner() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
+                disabled={isEmailAlreadyLocked}
+                className="w-full h-11 bg-[#008000] hover:bg-[#006600] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
               >
-                <Plus className="w-4 h-4" />
-                <span>Create Password &amp; Enter Portal</span>
+                <Lock className="w-4 h-4" />
+                <span>Create &amp; Lock Password</span>
               </button>
 
               <div className="pt-2 text-center border-t border-slate-100">
@@ -1759,7 +1823,8 @@ function MsimamiziAdminInner() {
                 </a>
               </div>
             </form>
-          )}
+            );
+          })()}
         </div>
       </div>
     );

@@ -174,19 +174,76 @@ function appendAuditEvent(
     }
 }
 
-// 3. Private Storage Directory (Outside public_html)
-$homeDir = getenv('HOME') ?: '/home/ecasorke';
-$dataDir = (is_dir($homeDir) && is_writable($homeDir))
-    ? $homeDir . '/.msimamizi_store'
-    : dirname(__DIR__, 2) . '/.msimamizi_store';
+// 3. Resilient Private Storage Directory (Prefers outside public_html, falls back safely if open_basedir restricts parent)
+function ensureProtectedDataDir(string $dir): bool {
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0700, true) && !is_dir($dir)) {
+            return false;
+        }
+    }
+    if (!is_writable($dir)) {
+        return false;
+    }
+    // Verify real write capability (handles open_basedir / SELinux / mount restrictions cleanly)
+    $probe = $dir . '/.write_probe_' . getmypid();
+    if (@file_put_contents($probe, 'ok', LOCK_EX) === false) {
+        return false;
+    }
+    @unlink($probe);
 
-if (!is_dir($dataDir)) {
-    @mkdir($dataDir, 0700, true);
-}
-if (!file_exists($dataDir . '/.htaccess')) {
-    @file_put_contents($dataDir . '/.htaccess', "Order deny,allow\nDeny from all\n");
+    if (!file_exists($dir . '/.htaccess')) {
+        @file_put_contents(
+            $dir . '/.htaccess',
+            "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order deny,allow\n    Deny from all\n</IfModule>\n"
+        );
+    }
+    if (!file_exists($dir . '/index.php')) {
+        @file_put_contents($dir . '/index.php', "<?php http_response_code(403); exit('Forbidden');\n");
+    }
+    return true;
 }
 
+function resolveWritableDataDir(): string {
+    $homeDir = getenv('HOME') ?: '/home/ecasorke';
+    $candidates = array_values(array_unique(array_filter([
+        $homeDir . '/.msimamizi_store',
+        dirname(__DIR__, 2) . '/.msimamizi_store',
+        __DIR__ . '/.msimamizi_store',
+        rtrim(sys_get_temp_dir(), '/\\') . '/ecasi_msimamizi_store',
+    ])));
+
+    // 1. Prefer an existing database file if its directory is writable (preserves all existing passwords & records)
+    $existingReadOnlyFile = null;
+    foreach ($candidates as $dir) {
+        $dbPath = $dir . '/msimamizi_db.json';
+        if (file_exists($dbPath)) {
+            if (ensureProtectedDataDir($dir) && is_writable($dbPath)) {
+                return $dir;
+            }
+            if ($existingReadOnlyFile === null && is_readable($dbPath)) {
+                $existingReadOnlyFile = $dbPath;
+            }
+        }
+    }
+
+    // 2. Otherwise select the first genuinely writable protected directory (and migrate read-only data if found)
+    foreach ($candidates as $dir) {
+        if (ensureProtectedDataDir($dir)) {
+            if ($existingReadOnlyFile !== null && !file_exists($dir . '/msimamizi_db.json')) {
+                $raw = @file_get_contents($existingReadOnlyFile);
+                if ($raw) {
+                    @file_put_contents($dir . '/msimamizi_db.json', $raw, LOCK_EX);
+                    @chmod($dir . '/msimamizi_db.json', 0600);
+                }
+            }
+            return $dir;
+        }
+    }
+
+    return __DIR__ . '/.msimamizi_store';
+}
+
+$dataDir = resolveWritableDataDir();
 $storeFile = $dataDir . '/msimamizi_db.json';
 $auditLogFile = $dataDir . '/audit.log';
 
@@ -247,10 +304,31 @@ function readStore(string $file): array {
     return array_merge($default, $decoded);
 }
 
-function writeStore(string $file, array $data): void {
+function writeStore(string $file, array $data): bool {
     $data['updatedAt'] = gmdate('c');
-    @file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    if ($json === false) {
+        return false;
+    }
+    $dir = dirname($file);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0700, true);
+    }
+    $tmpFile = $file . '.tmp.' . getmypid();
+    if (@file_put_contents($tmpFile, $json, LOCK_EX) !== false) {
+        @chmod($tmpFile, 0600);
+        if (@rename($tmpFile, $file)) {
+            @chmod($file, 0600);
+            return true;
+        }
+        @unlink($tmpFile);
+    }
+    $written = @file_put_contents($file, $json, LOCK_EX);
+    if ($written === false) {
+        return false;
+    }
     @chmod($file, 0600);
+    return true;
 }
 
 const ADMIN_IDLE_TIMEOUT_SECONDS = 600; // Silent 10-minute idle timeout
@@ -965,7 +1043,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             return [
                 'email' => $acc['email'] ?? '',
                 'name' => $acc['name'] ?? '',
-                'credentialDigest' => $acc['credentialDigest'] ?? '',
+                'passwordInitialized' => !empty($acc['passwordHash']) || !empty($acc['passwordInitialized']),
                 'role' => normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN'),
                 'status' => $acc['status'] ?? 'Active',
                 'createdAt' => $acc['createdAt'] ?? null,
@@ -1012,10 +1090,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     // Unauthenticated / public callers receive non-sensitive catalog updates, open vacancies, published CMS & announcements
-    $digestAccounts = array_map(function ($acc) {
+    // Never expose credential digests or hashes to unauthenticated callers — only safe setup status
+    $publicAccountStatus = array_map(function ($acc) {
         return [
             'email' => $acc['email'] ?? '',
-            'credentialDigest' => $acc['credentialDigest'] ?? '',
+            'passwordInitialized' => !empty($acc['passwordHash']) || !empty($acc['passwordInitialized']),
             'role' => normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN'),
             'status' => $acc['status'] ?? 'Active',
             'updatedAt' => $acc['updatedAt'] ?? null,
@@ -1041,7 +1120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'cohorts' => $store['cohorts'] ?? [],
             'cmsContent' => (object)$publishedCms,
             'announcements' => $publishedAnnouncements,
-            'accounts' => $digestAccounts,
+            'accounts' => $publicAccountStatus,
             'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
         ],
     ]);
@@ -1157,22 +1236,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $accounts = is_array($store['accounts']) ? $store['accounts'] : [];
         $matched = null;
-        foreach ($accounts as $acc) {
+        $matchedIdx = -1;
+        foreach ($accounts as $idx => $acc) {
             if (normalizeAdminEmail($acc['email'] ?? '') === $email) {
                 $matched = $acc;
+                $matchedIdx = $idx;
                 break;
             }
         }
 
+        $hasPasswordSet = $matched && (!empty($matched['passwordHash']) || !empty($matched['passwordInitialized']));
         $verified = false;
         if ($matched && !empty($matched['passwordHash']) && $password !== '') {
             $verified = password_verify($password, $matched['passwordHash']);
         }
-        if (!$verified && $matched && !empty($matched['credentialDigest']) && $clientDigest !== '') {
+        if (!$verified && $matched && empty($matched['passwordHash']) && !empty($matched['credentialDigest']) && $clientDigest !== '') {
             $verified = hash_equals((string)$matched['credentialDigest'], $clientDigest);
+            if ($verified && $password !== '' && $matchedIdx >= 0) {
+                // Upgrade legacy digest record transparently to permanent bcrypt hash
+                $store['accounts'][$matchedIdx]['passwordHash'] = password_hash($password, PASSWORD_BCRYPT);
+                $store['accounts'][$matchedIdx]['passwordInitialized'] = true;
+                $store['accounts'][$matchedIdx]['passwordSetAt'] = $matched['passwordSetAt'] ?? gmdate('c');
+            }
         }
-        // Fallback to initial bootstrap password if custom hash not matched
-        if (!$verified && in_array($password, ['msimamizi2026', '2026', 'ecasi2026!'], true)) {
+        // Only allow initial bootstrap password BEFORE a personal password has been created.
+        // Once a user has created their password, bootstrap passwords are permanently disabled.
+        if (!$verified && !$hasPasswordSet && in_array($password, ['msimamizi2026', '2026', 'ecasi2026!'], true)) {
             $verified = true;
         }
 
@@ -1190,7 +1279,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'admin_login', $email, 'FAILED_BAD_PASSWORD');
             http_response_code(401);
-            echo json_encode(['success' => false, 'error' => 'Invalid administrative credentials.']);
+            $errMessage = $hasPasswordSet
+                ? 'Invalid email or password. Please enter the password you created for this account.'
+                : 'Invalid credentials. If this is your very first visit and you have not set a password yet, use First-Time Setup once.';
+            echo json_encode([
+                'success' => false,
+                'passwordInitialized' => $hasPasswordSet,
+                'error' => $errMessage,
+            ]);
             exit;
         }
 
@@ -1228,7 +1324,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // 3. Admin Action: Create / Update Administrator Password (Restricted to Allowlist)
+    // 3. Admin Action: One-Time First-Time Password Setup (Permanently locked once password is created; NEVER auto-logs in)
     if ($action === 'register_admin') {
         $email = normalizeAdminEmail((string)($payload['email'] ?? ''));
         $password = trim((string)($payload['password'] ?? ''));
@@ -1247,22 +1343,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $browserProfileId = sanitizeText($payload['browserProfileId'] ?? '', 80);
-        reclaimSameBrowserDeadSession($store, $email, $browserProfileId, time());
-
-        if (hasActiveSessionForEmail($store, $email, time())) {
-            writeStore($storeFile, $store);
-            writeAuditLog($auditLogFile, 'register_admin', $email, 'DENIED_DUPLICATE_SESSION');
-            http_response_code(409);
-            echo json_encode([
-                'success' => false,
-                'code' => 'SESSION_ALREADY_ACTIVE',
-                'error' => 'This account is already signed in on another active session. Concurrent sessions on the same account are not permitted.',
-            ]);
-            exit;
-        }
-
-        $hash = password_hash($password, PASSWORD_BCRYPT);
         $accounts = is_array($store['accounts']) ? $store['accounts'] : [];
         $foundIdx = -1;
         foreach ($accounts as $idx => $acc) {
@@ -1272,15 +1352,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // CRITICAL SECURITY LOCK: Once a password exists for this account, NEVER allow first-time setup to overwrite it!
+        if ($foundIdx >= 0 && (!empty($accounts[$foundIdx]['passwordHash']) || !empty($accounts[$foundIdx]['passwordInitialized']))) {
+            appendAuditEvent(
+                $store,
+                $email,
+                $accounts[$foundIdx]['role'] ?? 'SUPER_ADMIN',
+                'PASSWORD_SETUP_BLOCKED',
+                'Auth',
+                $email,
+                '',
+                'Blocked attempt to overwrite an already-initialized password via First-Time Setup'
+            );
+            writeStore($storeFile, $store);
+            writeAuditLog($auditLogFile, 'register_admin', $email, 'DENIED_PASSWORD_ALREADY_SET');
+            http_response_code(409);
+            echo json_encode([
+                'success' => false,
+                'code' => 'PASSWORD_ALREADY_SET',
+                'passwordInitialized' => true,
+                'error' => 'Your password has already been created and is permanently locked. First-time setup cannot be used again — please use Sign In with your existing password.',
+            ]);
+            exit;
+        }
+
+        if ($foundIdx >= 0 && ($accounts[$foundIdx]['status'] ?? 'Active') === 'Suspended') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'This staff account has been suspended. Please contact a Super Admin.']);
+            exit;
+        }
+
+        $hash = password_hash($password, PASSWORD_BCRYPT);
         $assignedRole = $foundIdx >= 0
             ? normalizeAdminRole($accounts[$foundIdx]['role'] ?? 'SUPPORT_OFFICER')
             : (isSuperAdminEmail($email) ? 'SUPER_ADMIN' : 'SUPPORT_OFFICER');
+        $finalRole = isSuperAdminEmail($email) ? 'SUPER_ADMIN' : $assignedRole;
 
         $record = [
             'email' => $email,
             'passwordHash' => $hash,
+            'passwordInitialized' => true,
+            'passwordSetAt' => gmdate('c'),
             'credentialDigest' => $clientDigest,
-            'role' => isSuperAdminEmail($email) ? 'SUPER_ADMIN' : $assignedRole,
+            'role' => $finalRole,
             'status' => $foundIdx >= 0 ? ($accounts[$foundIdx]['status'] ?? 'Active') : 'Active',
             'updatedAt' => gmdate('c'),
         ];
@@ -1293,16 +1407,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $store['accounts'] = $accounts;
-        $token = issueAdminToken($store, $email, $browserProfileId);
-        writeStore($storeFile, $store);
-        writeAuditLog($auditLogFile, 'register_admin', $email, 'SUCCESS');
+        appendAuditEvent($store, $email, $finalRole, 'INITIAL_PASSWORD_CREATED', 'Auth', $email, '', 'One-time password setup completed and permanently locked');
 
+        if (!writeStore($storeFile, $store)) {
+            writeAuditLog($auditLogFile, 'register_admin', $email, 'FAILED_STORAGE_WRITE', "dir={$dataDir}");
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'code' => 'STORAGE_WRITE_FAILED',
+                'error' => 'Server could not persist your password to secure storage. Please contact system administration to verify cPanel folder permissions.',
+            ]);
+            exit;
+        }
+
+        writeAuditLog($auditLogFile, 'register_admin', $email, 'SUCCESS_PASSWORD_LOCKED');
+
+        // SECURITY: Do NOT issue a session token or auto-login after password creation.
+        // The administrator must sign in normally using their newly created password.
         echo json_encode([
             'success' => true,
-            'token' => $token,
+            'passwordCreated' => true,
+            'requiresSignIn' => true,
+            'message' => 'Your password has been securely created and permanently locked. Please sign in now using your email and new password.',
             'user' => [
                 'email' => $email,
-                'role' => 'Administrator',
+                'role' => $finalRole,
             ],
         ]);
         exit;
@@ -1688,6 +1817,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($newName !== '') $accounts[$idx]['name'] = $newName;
             if ($initialPassword !== '') {
                 $accounts[$idx]['passwordHash'] = password_hash($initialPassword, PASSWORD_BCRYPT);
+                $accounts[$idx]['passwordInitialized'] = true;
+                $accounts[$idx]['passwordSetAt'] = gmdate('c');
                 if ($clientDigest !== '') $accounts[$idx]['credentialDigest'] = $clientDigest;
             }
             $accounts[$idx]['updatedAt'] = gmdate('c');
@@ -1704,13 +1835,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
             if ($initialPassword !== '') {
                 $entry['passwordHash'] = password_hash($initialPassword, PASSWORD_BCRYPT);
+                $entry['passwordInitialized'] = true;
+                $entry['passwordSetAt'] = gmdate('c');
                 if ($clientDigest !== '') $entry['credentialDigest'] = $clientDigest;
             }
             $accounts[] = $entry;
         }
         $store['accounts'] = $accounts;
         appendAuditEvent($store, $adminEmail, $adminRole, $idx >= 0 ? 'UPDATE_STAFF_USER' : 'ADD_STAFF_USER', 'StaffAccount', $targetEmail, "role={$prevRole}", "role={$newRole}, status={$newStatus}" . ($initialPassword !== '' ? ', password_set' : ''));
-        writeStore($storeFile, $store);
+        if (!writeStore($storeFile, $store)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Failed to save staff account changes to server storage.']);
+            exit;
+        }
         writeAuditLog($auditLogFile, 'manage_staff_account', $adminEmail, 'SUCCESS', "target={$targetEmail} role={$newRole} status={$newStatus}");
         echo json_encode(['success' => true]);
         exit;
