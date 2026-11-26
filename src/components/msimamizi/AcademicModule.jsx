@@ -5,11 +5,11 @@ import {
   CalendarRange,
   BadgeDollarSign,
   Plus,
+  ArrowLeft,
   Download,
   Upload,
   Trash2,
   Edit,
-  X,
   Check,
   Search,
   BookOpen,
@@ -159,6 +159,14 @@ export default function AcademicModule({
   const [feePage, setFeePage] = useState(1);
   const [isCohortModalOpen, setIsCohortModalOpen] = useState(false);
   const [editingCohort, setEditingCohort] = useState(null);
+  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
+  if (prevActiveTab !== activeTab) {
+    setPrevActiveTab(activeTab);
+    if (isCohortModalOpen) {
+      setIsCohortModalOpen(false);
+      setEditingCohort(null);
+    }
+  }
   const [cohortForm, setCohortForm] = useState({
     name: '',
     courseSlug: '',
@@ -385,64 +393,153 @@ export default function AcademicModule({
     reader.readAsText(file);
   };
 
-  // Shared Cohort Modal rendered when open from either Destinations or Cohorts tab
-  const cohortModal = isCohortModalOpen ? (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <form onSubmit={handleSaveCohort} className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden text-xs">
-        <div className="bg-[#032e42] text-white px-5 py-4 flex items-center justify-between">
-          <h3 className="font-bold text-sm">{editingCohort ? 'Edit Cohort' : 'Schedule New Cohort / Intake'}</h3>
-          <button type="button" onClick={() => setIsCohortModalOpen(false)} className="cursor-pointer"><X className="w-4 h-4" /></button>
-        </div>
-        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <div className="sm:col-span-2">
-            <label className="block font-bold text-[#032e42] mb-1">Cohort Name *</label>
-            <input required value={cohortForm.name} onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })} placeholder="e.g. Q3 2026 Climate Finance Nairobi Cohort" className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block font-bold text-[#032e42] mb-1">Course Programme</label>
-            <select value={cohortForm.courseSlug} onChange={(e) => setCohortForm({ ...cohortForm, courseSlug: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
-              {courses.map((c) => <option key={c.slug} value={c.slug}>{c.title}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block font-bold text-[#032e42] mb-1">Destination</label>
-            <select value={cohortForm.destination} onChange={(e) => setCohortForm({ ...cohortForm, destination: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
-              {DEFAULT_DESTINATIONS.map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block font-bold text-[#032e42] mb-1">Available Slots</label>
-            <input type="number" min={1} value={cohortForm.availableSlots} onChange={(e) => setCohortForm({ ...cohortForm, availableSlots: Number(e.target.value) })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-          </div>
-          <div>
-            <label className="block font-bold text-[#032e42] mb-1">Start Date</label>
-            <input type="date" value={cohortForm.startDate} onChange={(e) => setCohortForm({ ...cohortForm, startDate: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-          </div>
-          <div>
-            <label className="block font-bold text-[#032e42] mb-1">End Date</label>
-            <input type="date" value={cohortForm.endDate} onChange={(e) => setCohortForm({ ...cohortForm, endDate: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-          </div>
-          <div>
-            <label className="block font-bold text-[#032e42] mb-1">Application Deadline</label>
-            <input type="date" value={cohortForm.applicationDeadline} onChange={(e) => setCohortForm({ ...cohortForm, applicationDeadline: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-          </div>
-          <div>
-            <label className="block font-bold text-[#032e42] mb-1">Status</label>
-            <select value={cohortForm.enrolmentStatus} onChange={(e) => setCohortForm({ ...cohortForm, enrolmentStatus: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
-              <option value="Open">Open</option>
-              <option value="Filling Fast">Filling Fast</option>
-              <option value="Full">Full</option>
-              <option value="Closed">Closed</option>
-            </select>
+  // Dedicated Full-Page Create / Edit Cohort Screen (replaces modal popup)
+  if (isCohortModalOpen) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setIsCohortModalOpen(false);
+                setEditingCohort(null);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#032e42] text-xs font-bold cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+            <div>
+              <h2 className="text-base font-black text-[#032e42] flex items-center gap-2">
+                <CalendarRange className="w-4 h-4 text-[#008000]" />
+                {editingCohort ? 'Edit Tracked Cohort' : 'Schedule New Cohort / Intake'}
+              </h2>
+              <p className="text-[11px] text-[#718096]">
+                Configure intake dates, delivery destination hub, seat capacity, and enrolment status.
+              </p>
+            </div>
           </div>
         </div>
-        <div className="px-5 py-3.5 bg-[#F5F8FC] border-t border-slate-100 flex justify-end gap-2">
-          <button type="button" onClick={() => setIsCohortModalOpen(false)} className="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold cursor-pointer">Cancel</button>
-          <button type="submit" className="px-5 py-2 rounded-xl bg-[#008000] text-white font-bold cursor-pointer">Save Cohort</button>
-        </div>
-      </form>
-    </div>
-  ) : null;
+
+        <form onSubmit={handleSaveCohort} className="bg-white rounded-2xl border border-slate-200/90 shadow-sm max-w-3xl overflow-hidden text-xs">
+          <div className="bg-[#032e42] text-white px-6 py-4 flex items-center justify-between">
+            <h3 className="font-bold text-sm">{editingCohort ? `Editing: ${editingCohort.name}` : 'New Institutional Training Cohort'}</h3>
+            <span className="text-[11px] text-[#4ade80] font-semibold">Cohorts &amp; Intakes</span>
+          </div>
+          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block font-bold text-[#032e42] mb-1">Cohort Name *</label>
+              <input
+                required
+                value={cohortForm.name}
+                onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })}
+                placeholder="e.g. Q3 2026 Climate Finance Nairobi Cohort"
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block font-bold text-[#032e42] mb-1">Course Programme</label>
+              <select
+                value={cohortForm.courseSlug}
+                onChange={(e) => setCohortForm({ ...cohortForm, courseSlug: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+              >
+                {courses.map((c) => <option key={c.slug} value={c.slug}>{c.title}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Destination Hub</label>
+              <select
+                value={cohortForm.destination}
+                onChange={(e) => setCohortForm({ ...cohortForm, destination: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+              >
+                {DEFAULT_DESTINATIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Available Slots</label>
+              <input
+                type="number"
+                min={1}
+                value={cohortForm.availableSlots}
+                onChange={(e) => setCohortForm({ ...cohortForm, availableSlots: Number(e.target.value) })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Start Date</label>
+              <input
+                type="date"
+                value={cohortForm.startDate}
+                onChange={(e) => setCohortForm({ ...cohortForm, startDate: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">End Date</label>
+              <input
+                type="date"
+                value={cohortForm.endDate}
+                onChange={(e) => setCohortForm({ ...cohortForm, endDate: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Application Deadline</label>
+              <input
+                type="date"
+                value={cohortForm.applicationDeadline}
+                onChange={(e) => setCohortForm({ ...cohortForm, applicationDeadline: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Enrolment Status</label>
+              <select
+                value={cohortForm.enrolmentStatus}
+                onChange={(e) => setCohortForm({ ...cohortForm, enrolmentStatus: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+              >
+                <option value="Open">Open</option>
+                <option value="Filling Fast">Filling Fast</option>
+                <option value="Full">Full</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block font-bold text-[#032e42] mb-1">Schedule Notes &amp; Faculty Details</label>
+              <textarea
+                rows={3}
+                value={cohortForm.scheduleNotes || ''}
+                onChange={(e) => setCohortForm({ ...cohortForm, scheduleNotes: e.target.value })}
+                placeholder="Venue hotel, lead facilitators, field visit schedule, or corporate cohort instructions..."
+                className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+          </div>
+          <div className="px-6 py-4 bg-[#F5F8FC] border-t border-slate-100 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setIsCohortModalOpen(false);
+                setEditingCohort(null);
+              }}
+              className="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold text-slate-600 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold shadow-sm cursor-pointer"
+            >
+              <Check className="w-4 h-4" /> Save Cohort
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. COURSE CATEGORIES (Interactive Faculty Breakdown + Drill-Down Catalog)
@@ -863,7 +960,6 @@ export default function AcademicModule({
           </div>
         )}
 
-        {cohortModal}
       </div>
     );
   }
@@ -1098,7 +1194,6 @@ export default function AcademicModule({
           </div>
         </div>
 
-        {cohortModal}
       </div>
     );
   }

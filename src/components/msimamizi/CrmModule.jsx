@@ -10,7 +10,6 @@ import {
   CalendarClock,
   Download,
   Trash2,
-  X,
   UserPlus,
   Clock,
   CheckCircle2,
@@ -42,11 +41,12 @@ export default function CrmModule({
   const [stageFilter, setStageFilter] = useState('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
+  const [activeLead, setActiveLead] = useState(null);
   if (prevActiveTab !== activeTab) {
     setPrevActiveTab(activeTab);
     if (isAddModalOpen) setIsAddModalOpen(false);
+    if (activeLead) setActiveLead(null);
   }
-  const [activeLead, setActiveLead] = useState(null);
   const [callLogText, setCallLogText] = useState('');
   const [callLogType, setCallLogType] = useState('Phone Call');
 
@@ -736,119 +736,236 @@ export default function CrmModule({
     );
   }
 
-  return (
-    <>
-      {renderActiveSubView()}
-
-      {/* CRM Lead Detail Drawer Modal (Available across all CRM sub-views) */}
-      {liveSelectedLead && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-end">
-          <div className="bg-white w-full max-w-lg h-full shadow-2xl flex flex-col overflow-hidden text-xs">
-            <div className="bg-[#032e42] text-white p-5 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-mono text-[#4ade80] font-bold">{liveSelectedLead.referenceNo}</p>
-                <h3 className="text-base font-black">{liveSelectedLead.fullName}</h3>
+  if (liveSelectedLead) {
+    const stage = normalizeLeadStatus(liveSelectedLead.status);
+    const cleanPhone = String(liveSelectedLead.phone || '').replace(/[^0-9]/g, '');
+    return (
+      <div className="space-y-5">
+        {/* Top Navigation & Action Toolbar */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => setActiveLead(null)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#032e42] text-xs font-bold cursor-pointer shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-mono font-bold text-[#008000]">
+                  {liveSelectedLead.referenceNo || liveSelectedLead.id}
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  stage === 'Converted' ? 'bg-emerald-100 text-[#16A36A]' :
+                  stage === 'New Lead' ? 'bg-amber-100 text-amber-800' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
+                  {stage}
+                </span>
               </div>
-              <button type="button" onClick={() => setActiveLead(null)} className="p-1.5 rounded-lg bg-white/10 cursor-pointer"><X className="w-4 h-4" /></button>
+              <h2 className="text-lg font-black text-[#032e42] truncate">{liveSelectedLead.fullName}</h2>
             </div>
-            <div className="p-5 overflow-y-auto flex-1 space-y-4">
-              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#F5F8FC] border border-slate-200">
-                <div><span className="text-[#718096] block">Email</span><span className="font-bold">{liveSelectedLead.email || '—'}</span></div>
-                <div><span className="text-[#718096] block">Phone</span><span className="font-bold">{liveSelectedLead.phone || '—'}</span></div>
-                <div className="col-span-2"><span className="text-[#718096] block">Programme</span><span className="font-bold">{liveSelectedLead.courseTitle}</span></div>
-              </div>
+          </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#032e42] mb-1">Assign Officer</label>
-                  <select
-                    disabled={!canWrite}
-                    value={liveSelectedLead.assignedOfficer || ''}
-                    onChange={(e) => {
-                      adminRegistrationService.updateInquiry(liveSelectedLead.id, { assignedOfficer: e.target.value });
-                      onDataChange();
-                    }}
-                    className="w-full h-9 px-2.5 rounded-xl border border-slate-300 bg-white"
-                  >
-                    <option value="">Unassigned</option>
-                    {staffAccounts.map((a) => <option key={a.email} value={a.email}>{a.email}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-[#032e42] mb-1">Next Follow-up</label>
-                  <input
-                    type="date"
-                    disabled={!canWrite}
-                    value={liveSelectedLead.nextFollowUp || ''}
-                    onChange={(e) => {
-                      adminRegistrationService.updateInquiry(liveSelectedLead.id, { nextFollowUp: e.target.value });
-                      onDataChange();
-                      showToast('Follow-up date updated.');
-                    }}
-                    className="w-full h-9 px-2.5 rounded-xl border border-slate-300"
-                  />
-                </div>
-              </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {cleanPhone && (
+              <a
+                href={`https://wa.me/${cleanPhone}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#1ebd5b] text-white font-bold"
+              >
+                <Phone className="w-3.5 h-3.5" /> WhatsApp
+              </a>
+            )}
+            {liveSelectedLead.email && (
+              <a
+                href={`mailto:${liveSelectedLead.email}?subject=${encodeURIComponent(`ECAS Institute: ${liveSelectedLead.courseTitle}`)}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+              >
+                <Mail className="w-3.5 h-3.5" /> Email Lead
+              </a>
+            )}
+            {stage !== 'Converted' && canWrite ? (
+              <button
+                type="button"
+                onClick={() => handleConvertLead(liveSelectedLead)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16A36A] hover:bg-[#128757] text-white font-bold cursor-pointer shadow-sm"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Convert to Registration
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-50 text-[#16A36A] border border-emerald-200 font-bold">
+                <CheckCircle2 className="w-4 h-4" /> Converted
+              </span>
+            )}
+          </div>
+        </div>
 
-              {canWrite && (
-                <div className="p-3.5 rounded-xl border border-slate-200 space-y-2">
-                  <label className="block font-bold text-[#032e42]">Log Call / Follow-up Note</label>
-                  <div className="flex gap-2">
-                    <select value={callLogType} onChange={(e) => setCallLogType(e.target.value)} className="h-9 px-2.5 rounded-lg border border-slate-300 bg-white">
-                      <option>Phone Call</option>
-                      <option>WhatsApp</option>
-                      <option>Email</option>
-                      <option>Internal Note</option>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 text-xs">
+          {/* Left Column: Lead Contact, Programme & Inquiry Summary */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+              <div className="bg-[#032e42] text-white px-5 py-3.5">
+                <h3 className="font-bold text-sm">Prospective Client &amp; Programme Details</h3>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#F5F8FC] border border-slate-200">
+                  <div>
+                    <span className="text-[10.5px] uppercase font-bold text-[#718096] block">Email</span>
+                    <span className="font-bold text-[#032e42] break-all">{liveSelectedLead.email || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] uppercase font-bold text-[#718096] block">Phone / WhatsApp</span>
+                    <span className="font-bold text-[#032e42]">{liveSelectedLead.phone || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] uppercase font-bold text-[#718096] block">Organisation</span>
+                    <span className="font-semibold text-[#032e42]">{liveSelectedLead.organisation || 'Individual'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] uppercase font-bold text-[#718096] block">Country &amp; Source</span>
+                    <span className="font-semibold text-[#032e42]">
+                      {liveSelectedLead.country || 'Kenya'} &bull; {liveSelectedLead.leadSource || liveSelectedLead.channel || 'Website'}
+                    </span>
+                  </div>
+                  <div className="sm:col-span-2 pt-2 border-t border-slate-200/80">
+                    <span className="text-[10.5px] uppercase font-bold text-[#718096] block">Programme of Interest</span>
+                    <span className="font-bold text-[#008000] text-[13px]">{liveSelectedLead.courseTitle}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] uppercase font-bold text-[#718096] block">Venue / Destination</span>
+                    <span className="font-semibold text-[#032e42]">{liveSelectedLead.venue || 'Nairobi / Online'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] uppercase font-bold text-[#718096] block">Captured Date</span>
+                    <span className="font-semibold text-[#032e42]">
+                      {liveSelectedLead.displayDate || (liveSelectedLead.createdAt ? new Date(liveSelectedLead.createdAt).toLocaleString() : '—')}
+                    </span>
+                  </div>
+                </div>
+
+                {liveSelectedLead.message && (
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                    <span className="text-[10.5px] uppercase font-bold text-[#718096] block">Original Inquiry Notes / Message</span>
+                    <p className="text-slate-700 leading-relaxed whitespace-pre-line">{liveSelectedLead.message}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block font-bold text-[#032e42] mb-1">Pipeline Stage</label>
+                    <select
+                      disabled={!canWrite}
+                      value={stage}
+                      onChange={(e) => handleMoveLeadStage(liveSelectedLead, e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white font-bold text-[#032e42]"
+                    >
+                      {LEAD_PIPELINE_STAGES.map((st) => <option key={st} value={st}>{st}</option>)}
                     </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-[#032e42] mb-1">Assign Officer</label>
+                    <select
+                      disabled={!canWrite}
+                      value={liveSelectedLead.assignedOfficer || ''}
+                      onChange={(e) => {
+                        adminRegistrationService.updateInquiry(liveSelectedLead.id, { assignedOfficer: e.target.value });
+                        onDataChange();
+                        showToast('Assigned officer updated.');
+                      }}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white"
+                    >
+                      <option value="">Unassigned</option>
+                      {staffAccounts.map((a) => <option key={a.email} value={a.email}>{a.email}</option>)}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block font-bold text-[#032e42] mb-1">Next Follow-up Reminder Date</label>
                     <input
-                      value={callLogText}
-                      onChange={(e) => setCallLogText(e.target.value)}
-                      placeholder="Summarize conversation or next step..."
-                      className="flex-1 h-9 px-3 rounded-lg border border-slate-300"
+                      type="date"
+                      disabled={!canWrite}
+                      value={liveSelectedLead.nextFollowUp || ''}
+                      onChange={(e) => {
+                        adminRegistrationService.updateInquiry(liveSelectedLead.id, { nextFollowUp: e.target.value });
+                        onDataChange();
+                        showToast('Follow-up date updated.');
+                      }}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-300"
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Log Follow-up Interactions & Activity Timeline */}
+          <div className="lg:col-span-7 space-y-4">
+            {canWrite && (
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+                <h3 className="font-black text-sm text-[#032e42]">Log Call / Follow-up Note</h3>
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  <select
+                    value={callLogType}
+                    onChange={(e) => setCallLogType(e.target.value)}
+                    className="h-10 px-3 rounded-xl border border-slate-300 bg-white font-semibold"
+                  >
+                    <option>Phone Call</option>
+                    <option>WhatsApp</option>
+                    <option>Email</option>
+                    <option>Internal Note</option>
+                  </select>
+                  <input
+                    value={callLogText}
+                    onChange={(e) => setCallLogText(e.target.value)}
+                    placeholder="Summarize conversation, proforma request, or next action..."
+                    className="flex-1 h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+                  />
                   <button
                     type="button"
                     onClick={() => handleLogInteraction(liveSelectedLead)}
-                    className="w-full py-2 rounded-xl bg-[#032e42] text-white font-bold cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white font-bold cursor-pointer transition shrink-0"
                   >
                     Record Interaction
                   </button>
                 </div>
-              )}
-
-              <div className="space-y-2">
-                <h4 className="font-extrabold text-[#032e42] uppercase text-[10px] tracking-wider">Interaction Timeline</h4>
-                {(!liveSelectedLead.communicationLog || liveSelectedLead.communicationLog.length === 0) ? (
-                  <p className="text-[#718096]">No logged conversations yet.</p>
-                ) : (
-                  liveSelectedLead.communicationLog.map((log) => (
-                    <div key={log.id} className="p-2.5 rounded-lg bg-[#F5F8FC] border-l-2 border-[#008000]">
-                      <p className="font-bold text-[#032e42]">{log.type} <span className="font-normal text-[#718096]">• {log.by}</span></p>
-                      <p className="text-slate-600 mt-0.5">{log.summary}</p>
-                      <p className="text-[10px] text-slate-400 mt-1">{new Date(log.at).toLocaleString()}</p>
-                    </div>
-                  ))
-                )}
               </div>
-            </div>
-            <div className="p-4 border-t border-slate-200 bg-[#F5F8FC] flex justify-between items-center">
-              {normalizeLeadStatus(liveSelectedLead.status) !== 'Converted' && canWrite ? (
-                <button
-                  type="button"
-                  onClick={() => handleConvertLead(liveSelectedLead)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16A36A] text-white font-bold cursor-pointer"
-                >
-                  <CheckCircle2 className="w-4 h-4" /> Convert to Registration
-                </button>
+            )}
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-sm text-[#032e42] uppercase tracking-wider text-[11px]">
+                  Interaction Timeline ({(liveSelectedLead.communicationLog || []).length})
+                </h3>
+              </div>
+              {(!liveSelectedLead.communicationLog || liveSelectedLead.communicationLog.length === 0) ? (
+                <p className="text-[#718096] py-6 text-center bg-[#F5F8FC] rounded-xl border border-slate-200/60">
+                  No logged conversations yet. Record a call, WhatsApp chat, or note above.
+                </p>
               ) : (
-                <span className="text-[#16A36A] font-bold">Converted ✓</span>
+                <div className="space-y-2.5">
+                  {liveSelectedLead.communicationLog.map((log) => (
+                    <div key={log.id} className="p-3.5 rounded-xl bg-[#F5F8FC] border-l-4 border-[#008000]">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-bold text-[#032e42]">
+                          {log.type} <span className="font-normal text-[#718096]">&bull; {log.by}</span>
+                        </p>
+                        <p className="text-[10.5px] font-mono text-slate-400">
+                          {new Date(log.at).toLocaleString()}
+                        </p>
+                      </div>
+                      <p className="text-slate-600 mt-1 leading-relaxed">{log.summary}</p>
+                    </div>
+                  ))}
+                </div>
               )}
-              <button type="button" onClick={() => setActiveLead(null)} className="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold cursor-pointer">Close</button>
             </div>
           </div>
         </div>
-      )}
-    </>
-  );
+      </div>
+    );
+  }
+
+  return renderActiveSubView();
 }
