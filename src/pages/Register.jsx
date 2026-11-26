@@ -98,21 +98,23 @@ export default function Register() {
                 <CheckCircle2 className="w-8 h-8 shrink-0" />
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#008000]">
-                    Registration Confirmed • Ref: {submittedData.referenceNo}
+                    Booking Application Received • Ref: {submittedData.referenceNo}
                   </span>
                   <h1 className="text-2xl font-bold text-[#032e42]">
-                    Thank You for Registering!
+                    Thank You — Application Submitted!
                   </h1>
                 </div>
               </div>
 
               <p className="text-sm text-gray-700 mb-6 leading-relaxed">
-                We have received your registration for{" "}
-                <strong className="text-[#032e42]">{submittedData.eventTitle}</strong>. Our
-                Training Admissions Coordinator will send the official invitation letter and
-                proforma invoice to{" "}
+                We have received your course booking application for{" "}
+                <strong className="text-[#032e42]">{submittedData.eventTitle}</strong> (status:{" "}
+                <strong>Pending Review &amp; Invoicing</strong>). Our Training Admissions Coordinator
+                will verify your application and send the official proforma invoice &amp; invitation
+                letter to{" "}
                 <strong className="text-[#032e42]">{submittedData.personalEmail}</strong>
-                {submittedData.officialEmail ? ` and ${submittedData.officialEmail}` : ""}.
+                {submittedData.officialEmail ? ` and ${submittedData.officialEmail}` : ""}. Seat
+                enrolment is finalized upon invoice settlement.
               </p>
 
               <div className="bg-[#f8fafc] border border-gray-200 rounded-lg p-5 mb-6 space-y-2.5 text-sm">

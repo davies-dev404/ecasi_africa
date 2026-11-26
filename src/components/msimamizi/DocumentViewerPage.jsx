@@ -107,7 +107,7 @@ export default function DocumentViewerPage({
             recipientName: clientName,
             recipientContact: recipient,
             subject: `ECAS Institute — Official Proforma Invoice ${invoice.invoiceNo}`,
-            body: `Dear ${clientName},\n\nPlease find your official training invoice from ECAS Institute:\n\nInvoice No: ${invoice.invoiceNo}\nProgramme: ${invoice.courseTitle}\nDestination: ${invoice.destination || 'Nairobi, Kenya'}\nNet Payable: ${invoice.currency} ${Number(invoice.netAmount || 0).toLocaleString()}\nAmount Paid: ${invoice.currency} ${Number(invoice.paidAmount || 0).toLocaleString()}\nBalance Due: ${invoice.currency} ${Number(invoice.balance || 0).toLocaleString()}\nDue Date: ${invoice.dueDate || 'On Receipt'}\n\nPayment Details:\n${effectiveSettings.bankDetails || ''}\n\nWarm regards,\nECAS Institute Finance Office\nP.O. Box 37193-00100, Nairobi, Kenya\nTel/WhatsApp: +254 708 060 223 | 0708 060 223`,
+            body: `Dear ${clientName},\n\nPlease find your official training invoice from ECAS Institute:\n\nInvoice No: ${invoice.invoiceNo}\nProgramme: ${invoice.courseTitle}\nDestination: ${invoice.destination || 'Nairobi, Kenya'}\nNet Payable: ${invoice.currency} ${Number(invoice.netAmount || 0).toLocaleString()}\nAmount Paid: ${invoice.currency} ${Number(invoice.paidAmount || 0).toLocaleString()}\nBalance Due: ${invoice.currency} ${Number(invoice.balance || 0).toLocaleString()}\nDue Date: ${invoice.dueDate || 'On Receipt'}\n\nPayment Details:\n${effectiveSettings.bankDetails || ''}\n\nWarm regards,\nECAS Institute Finance Office\nBeverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani\nP.O. Box 37193-00100, Nairobi, Kenya\nTel/WhatsApp: +254 708 060 223 | 0708 060 223`,
             linkedEntityId: invoice.id,
           },
           currentUser
@@ -124,7 +124,7 @@ export default function DocumentViewerPage({
             recipientName: clientName,
             recipientContact: recipient,
             subject: `ECAS Institute — Official Payment Receipt (${receiptNo})`,
-            body: `Dear ${clientName},\n\nThank you for your payment. Below is your verified official receipt from ECAS Institute:\n\nReceipt No: ${receiptNo}\nPayment Reference: ${payment.reference}\nAmount Verified: ${payment.currency} ${Number(payment.amount || 0).toLocaleString()}\nPayment Method: ${payment.method}\nTransaction Date: ${payment.transactionDate}\nInvoice No: ${payment.invoiceNo || invoice?.invoiceNo || 'Direct Payment'}\nProgramme: ${invoice?.courseTitle || 'Executive Training Programme'}\nStatus: ${payment.status}\n\nWarm regards,\nECAS Institute Finance Office\nP.O. Box 37193-00100, Nairobi, Kenya\nTel/WhatsApp: +254 708 060 223 | 0708 060 223`,
+            body: `Dear ${clientName},\n\nThank you for your payment. Below is your verified official receipt from ECAS Institute:\n\nReceipt No: ${receiptNo}\nPayment Reference: ${payment.reference}\nAmount Verified: ${payment.currency} ${Number(payment.amount || 0).toLocaleString()}\nPayment Method: ${payment.method}\nTransaction Date: ${payment.transactionDate}\nInvoice No: ${payment.invoiceNo || invoice?.invoiceNo || 'Direct Payment'}\nProgramme: ${invoice?.courseTitle || 'Executive Training Programme'}\nStatus: ${payment.status}\n\nWarm regards,\nECAS Institute Finance Office\nBeverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani\nP.O. Box 37193-00100, Nairobi, Kenya\nTel/WhatsApp: +254 708 060 223 | 0708 060 223`,
             linkedEntityId: payment.id,
           },
           currentUser
@@ -163,8 +163,8 @@ export default function DocumentViewerPage({
         `Remittance Details:`,
         `${effectiveSettings.bankDetails || 'Contact finance@ecasiafrica.org for wire instructions.'}`,
         ``,
-        `ECAS Institute • P.O. Box 37193-00100, Nairobi, Kenya`,
-        `Tel/WhatsApp: +254 708 060 223 (0708 060 223) | https://ecasiafrica.org`,
+        `ECAS Institute • Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani`,
+        `P.O. Box 37193-00100, Nairobi, Kenya • Tel/WhatsApp: +254 708 060 223 | https://ecasiafrica.org`,
       ].join('\n');
     }
     if (mode === 'receipt' && payment) {
@@ -181,7 +181,7 @@ export default function DocumentViewerPage({
         `Remaining Balance: ${invoice ? `${invoice.currency} ${Number(invoice.balance || 0).toLocaleString()}` : `${payment.currency} 0`}`,
         ``,
         `Thank you! Your enrolment with ECAS Institute is confirmed.`,
-        `P.O. Box 37193-00100, Nairobi, Kenya • +254 708 060 223 | https://ecasiafrica.org`,
+        `Beverly Court Apartments, Office No. 8, Marcus Garvey Rd, Kilimani • P.O. Box 37193-00100, Nairobi • +254 708 060 223 | https://ecasiafrica.org`,
       ].join('\n');
     }
     return `ECAS Institute Document: ${docSpec?.title || 'Institutional Report'}`;
@@ -378,7 +378,7 @@ export default function DocumentViewerPage({
                   Environmental Capacities and Sustainability Institute
                 </p>
                 <p className="text-[11px] text-slate-600">
-                  {effectiveSettings.address || 'P.O. Box 37193-00100, Nairobi, Kenya'}
+                  {effectiveSettings.address || 'Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani, P.O. Box 37193-00100, Nairobi, Kenya'}
                 </p>
                 <p className="text-[11px] text-slate-600">
                   Tel / WhatsApp: <strong>+254 708 060 223</strong> / <strong>0708 060 223</strong> &bull;{' '}
@@ -661,8 +661,8 @@ export default function DocumentViewerPage({
           <div className="pt-6 mt-6 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="text-[11px] text-slate-600 space-y-0.5">
               <p className="font-black text-[#032e42]">Authorized Institutional Document — ECAS Institute</p>
-              <p>Environmental Capacities and Sustainability Institute • P.O. Box 37193-00100, Nairobi, Kenya</p>
-              <p>Tel/WhatsApp: +254 708 060 223 / 0708 060 223 &bull; finance@ecasiafrica.org &bull; https://ecasiafrica.org</p>
+              <p>Environmental Capacities and Sustainability Institute &bull; Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani</p>
+              <p>P.O. Box 37193-00100, Nairobi, Kenya &bull; Tel/WhatsApp: +254 708 060 223 / 0708 060 223 &bull; finance@ecasiafrica.org &bull; https://ecasiafrica.org</p>
             </div>
             <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 border-dashed border-[#008000]/50 bg-emerald-50/50 text-[#008000] font-black text-[10.5px] uppercase tracking-wider shrink-0">
               <ShieldCheck className="w-4 h-4" /> Official ECAS Record

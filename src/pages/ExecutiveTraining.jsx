@@ -2945,8 +2945,24 @@ export default function ExecutiveTraining() {
                 className="w-full py-3 px-4 rounded-lg bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition shadow-sm"
               >
                 <GraduationCap className="w-4 h-4" />
-                Register Now
+                Register Now (Book Seat)
               </Link>
+
+              <button
+                type="button"
+                onClick={() =>
+                  openModal({
+                    type: "inquiry",
+                    courseTitle: courseInfo.title,
+                    courseCode: courseInfo.code || "",
+                    cohortDates: classroomCohorts[0]?.dates || "Upcoming 2026 Cohorts",
+                  })
+                }
+                className="w-full py-2.5 px-4 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#032e42] border border-[#008000]/30 font-bold text-xs inline-flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <MessageSquare className="w-4 h-4 text-[#008000]" />
+                Make Quick Course Inquiry
+              </button>
 
               <button
                 type="button"

@@ -345,12 +345,23 @@ export default function CrmModule({
             )}
             <button
               type="button"
+              onClick={() => onNavigate('registrations')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold cursor-pointer"
+            >
+              <ArrowRightCircle className="w-3.5 h-3.5" /> Registrations Directory
+            </button>
+            <button
+              type="button"
               onClick={() => adminRegistrationService.downloadInquiriesCSV()}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] border border-slate-200 text-xs font-bold text-[#032e42] cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" /> Export CSV
             </button>
           </div>
+        </div>
+
+        <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/80 px-3.5 py-2.5 text-[11px] text-slate-600">
+          <strong className="text-[#032e42]">Inquiries vs Registrations:</strong> This directory holds <strong className="text-[#032e42]">pre-booking questions, WhatsApp/Email inquiries, Contact Us messages &amp; proposal requests</strong> (<code className="bg-white px-1 rounded border">INQ-...</code>). Unconverted leads do not generate invoices or outstanding fees. Click <strong className="text-[#16A36A]">Convert</strong> once a client confirms attendance to move them to Registrations &amp; Invoicing.
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">

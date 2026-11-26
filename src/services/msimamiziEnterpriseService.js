@@ -362,7 +362,7 @@ const DEFAULT_SETTINGS = {
   financeEmail: 'finance@ecasiafrica.org',
   whatsappNumber: '+254708060223',
   phone: '+254 708 060 223 / 0708 060 223',
-  address: 'P.O. Box 37193-00100, Nairobi, Kenya',
+  address: 'Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani, P.O. Box 37193-00100, Nairobi, Kenya',
   defaultCurrency: 'USD',
   usdToKesRate: 130,
   invoicePaymentTermsDays: 14,
@@ -1236,7 +1236,8 @@ export const msimamiziEnterpriseService = {
     if (!merged.phone || String(merged.phone).includes('722-000-000') || String(merged.phone).includes('722000000')) {
       merged.phone = DEFAULT_SETTINGS.phone;
     }
-    if (!merged.address || String(merged.address).trim() === 'Nairobi, Kenya') {
+    const rawAddr = String(merged.address || '').trim();
+    if (!rawAddr || rawAddr === 'Nairobi, Kenya' || rawAddr === 'P.O. Box 37193-00100, Nairobi, Kenya') {
       merged.address = DEFAULT_SETTINGS.address;
     }
     return merged;

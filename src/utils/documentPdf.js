@@ -19,74 +19,97 @@ async function loadLogoBase64() {
 
 function drawEcasiLetterhead(doc, logoDataUrl, docTitle, docRightLines = [], settings = {}) {
   const pageW = doc.internal.pageSize.getWidth();
+  const marginX = 14;
   // Top accent strip
   doc.setFillColor(3, 46, 66); // #032e42
   doc.rect(0, 0, pageW, 6, 'F');
   doc.setFillColor(0, 128, 0); // #008000
   doc.rect(0, 6, pageW, 2, 'F');
 
-  let textStartX = 15;
+  let textStartX = marginX;
   if (logoDataUrl) {
     try {
-      doc.addImage(logoDataUrl, 'PNG', 15, 13, 28, 16);
-      textStartX = 47;
+      doc.addImage(logoDataUrl, 'PNG', marginX, 12, 26, 15);
+      textStartX = marginX + 29;
     } catch {
       // skip if image decode fails
     }
   }
 
+  const rightColW = pageW >= 250 ? 82 : 64;
+  const leftMaxW = Math.max(60, pageW - marginX - rightColW - 6 - textStartX);
+
   doc.setTextColor(3, 46, 66);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('ECAS INSTITUTE', textStartX, 18);
+  doc.setFontSize(13.5);
+  doc.text('ECAS INSTITUTE', textStartX, 17);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Environmental Capacities and Sustainability Institute', textStartX, 23);
-  doc.text(settings.address || 'P.O. Box 37193-00100, Nairobi, Kenya', textStartX, 27.5);
-  doc.text(
-    `Tel / WhatsApp: +254 708 060 223 / 0708 060 223  |  ${settings.officialEmail || 'info@ecasiafrica.org'}  |  ecasiafrica.org`,
-    textStartX,
-    32
-  );
 
-  // Right side Document Badge
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(0, 128, 0);
-  doc.text(docTitle, pageW - 15, 19, { align: 'right' });
+  const addrStr =
+    settings.address ||
+    'Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani, P.O. Box 37193-00100, Nairobi, Kenya';
+  const contactStr = `Tel/WhatsApp: +254 708 060 223 / 0708 060 223  |  ${settings.officialEmail || 'info@ecasiafrica.org'}  |  ecasiafrica.org`;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(51, 65, 85);
-  let ry = 24.5;
-  docRightLines.forEach((line) => {
-    doc.text(String(line), pageW - 15, ry, { align: 'right' });
-    ry += 4.3;
+  const leftLines = [
+    ...doc.splitTextToSize('Environmental Capacities and Sustainability Institute', leftMaxW),
+    ...doc.splitTextToSize(addrStr, leftMaxW),
+    ...doc.splitTextToSize(contactStr, leftMaxW),
+  ];
+
+  let ly = 21.5;
+  leftLines.forEach((line) => {
+    doc.text(line, textStartX, ly);
+    ly += 3.8;
   });
 
+  // Right side Document Badge (wrapped cleanly inside right column)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(0, 128, 0);
+  const titleLines = doc.splitTextToSize(String(docTitle || 'INSTITUTIONAL DOCUMENT'), rightColW);
+  let ry = 17;
+  titleLines.forEach((ln) => {
+    doc.text(ln, pageW - marginX, ry, { align: 'right' });
+    ry += 4.6;
+  });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(51, 65, 85);
+  ry += 0.8;
+  docRightLines.forEach((line) => {
+    const wrapped = doc.splitTextToSize(String(line), rightColW);
+    wrapped.forEach((wln) => {
+      doc.text(wln, pageW - marginX, ry, { align: 'right' });
+      ry += 3.8;
+    });
+  });
+
+  const dividerY = Math.max(ly, ry, 36) + 2;
   doc.setDrawColor(3, 46, 66);
   doc.setLineWidth(0.5);
-  doc.line(15, 37.5, pageW - 15, 37.5);
-  return 44;
+  doc.line(marginX, dividerY, pageW - marginX, dividerY);
+  return dividerY + 6;
 }
 
 function drawFooter(doc, settings = {}) {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 14;
   doc.setDrawColor(203, 213, 225);
   doc.setLineWidth(0.3);
-  doc.line(15, pageH - 18, pageW - 15, pageH - 18);
+  doc.line(marginX, pageH - 19, pageW - marginX, pageH - 19);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(
-    `ECAS Institute • ${settings.address || 'P.O. Box 37193-00100, Nairobi, Kenya'} • Tel/WhatsApp: +254 708 060 223`,
-    15,
-    pageH - 12
-  );
-  doc.text('https://ecasiafrica.org', pageW - 15, pageH - 12, { align: 'right' });
+  const line1 = `ECAS Institute • ${settings.address || 'Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani, P.O. Box 37193-00100, Nairobi, Kenya'}`;
+  const wrapped1 = doc.splitTextToSize(line1, pageW - marginX * 2 - 42);
+  doc.text(wrapped1[0] || line1, marginX, pageH - 14.5);
+  doc.text('Tel/WhatsApp: +254 708 060 223  |  finance@ecasiafrica.org', marginX, pageH - 10);
+  doc.text('https://ecasiafrica.org', pageW - marginX, pageH - 12.5, { align: 'right' });
 }
 
 export async function downloadInvoicePdf({ invoice, registration, settings = {} }) {
@@ -393,67 +416,126 @@ export async function downloadPaymentReceiptPdf({ payment, invoice, registration
 }
 
 export async function downloadInstitutionalTablePdf({ title, headers = [], rows = [], kpis = [], settings = {} }) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const isWide = headers.length >= 5;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: isWide ? 'landscape' : 'portrait' });
   const logoDataUrl = await loadLogoBase64();
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 14;
+  const usableW = pageW - marginX * 2;
 
   let y = drawEcasiLetterhead(
     doc,
     logoDataUrl,
     'INSTITUTIONAL REPORT',
-    [title.slice(0, 38), `Generated: ${new Date().toLocaleDateString('en-GB')}`],
+    [String(title || 'ECAS Institutional Report'), `Generated: ${new Date().toLocaleDateString('en-GB')}`],
     settings
   );
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(11.5);
   doc.setTextColor(3, 46, 66);
-  doc.text(title, 15, y);
-  y += 8;
+  const titleLines = doc.splitTextToSize(String(title || 'ECAS Institutional Report'), usableW);
+  titleLines.forEach((ln) => {
+    doc.text(ln, marginX, y);
+    y += 5;
+  });
+  y += 2;
 
   if (Array.isArray(kpis) && kpis.length > 0) {
-    kpis.slice(0, 6).forEach((k) => {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.text(`${k.label}:`, 15, y);
-      doc.setFont('helvetica', 'normal');
-      doc.text(String(k.value), 68, y);
-      y += 5;
-    });
-    y += 4;
+    const kpiCols = kpis.length >= 4 ? 2 : 1;
+    const kpiBoxW = (usableW - (kpiCols - 1) * 4) / kpiCols;
+    for (let idx = 0; idx < kpis.length; idx += kpiCols) {
+      for (let c = 0; c < kpiCols; c += 1) {
+        const item = kpis[idx + c];
+        if (!item) continue;
+        const bx = marginX + c * (kpiBoxW + 4);
+        doc.setFillColor(245, 248, 252);
+        doc.roundedRect(bx, y, kpiBoxW, 12, 1.5, 1.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(String(item.label || '').toUpperCase(), bx + 3, y + 4.5);
+        doc.setFontSize(10);
+        doc.setTextColor(3, 46, 66);
+        doc.text(String(item.value ?? ''), bx + 3, y + 9.8);
+      }
+      y += 14.5;
+    }
+    y += 2;
   }
 
   if (headers.length > 0) {
-    const colW = (pageW - 30) / headers.length;
-    doc.setFillColor(3, 46, 66);
-    doc.rect(15, y, pageW - 30, 8, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    headers.forEach((h, i) => {
-      doc.text(String(h).slice(0, 18), 16.5 + i * colW, y + 5.2);
-    });
-    y += 8;
+    // Intelligent column widths: 2-col key/value records get 34% / 66%; wider tables share evenly
+    const colWidths =
+      headers.length === 2
+        ? [usableW * 0.34, usableW * 0.66]
+        : headers.map(() => usableW / headers.length);
+    const colOffsets = colWidths.reduce((acc, w, idx) => {
+      acc.push(idx === 0 ? marginX : acc[idx - 1] + colWidths[idx - 1]);
+      return acc;
+    }, []);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(3, 46, 66);
-    rows.slice(0, 35).forEach((r, idx) => {
-      if (y > 265) {
+    const fontSize = headers.length >= 9 ? 7 : headers.length >= 6 ? 7.5 : 8.5;
+    const lineHeight = fontSize * 0.48 + 0.8;
+
+    const drawTableHeader = (startY) => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fontSize);
+      const headerWrapped = headers.map((h, i) => doc.splitTextToSize(String(h ?? ''), Math.max(12, colWidths[i] - 4)));
+      const maxHeaderLines = Math.max(1, ...headerWrapped.map((lines) => lines.length));
+      const hdrH = maxHeaderLines * lineHeight + 4.5;
+
+      doc.setFillColor(3, 46, 66);
+      doc.rect(marginX, startY, usableW, hdrH, 'F');
+      doc.setTextColor(255, 255, 255);
+      headerWrapped.forEach((lines, i) => {
+        lines.forEach((ln, li) => {
+          doc.text(ln, colOffsets[i] + 2, startY + 4 + li * lineHeight);
+        });
+      });
+      return startY + hdrH;
+    };
+
+    y = drawTableHeader(y);
+
+    rows.forEach((r, idx) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(fontSize);
+
+      const cellWrapped = headers.map((_, i) => {
+        const rawText = String((Array.isArray(r) ? r[i] : '') ?? '—').trim() || '—';
+        return doc.splitTextToSize(rawText, Math.max(12, colWidths[i] - 4));
+      });
+      const maxLines = Math.max(1, ...cellWrapped.map((lines) => lines.length));
+      const rowH = maxLines * lineHeight + 3.8;
+
+      if (y + rowH > pageH - 22) {
         drawFooter(doc, settings);
         doc.addPage();
-        y = 20;
+        y = drawTableHeader(16);
       }
+
       if (idx % 2 === 1) {
         doc.setFillColor(248, 250, 252);
-        doc.rect(15, y, pageW - 30, 6.8, 'F');
+        doc.rect(marginX, y, usableW, rowH, 'F');
       }
-      r.forEach((cell, i) => {
-        doc.text(String(cell ?? '').slice(0, 20), 16.5 + i * colW, y + 4.8);
+
+      cellWrapped.forEach((lines, i) => {
+        doc.setFont('helvetica', headers.length === 2 && i === 0 ? 'bold' : 'normal');
+        doc.setTextColor(3, 46, 66);
+        lines.forEach((ln, li) => {
+          doc.text(ln, colOffsets[i] + 2, y + 3.8 + li * lineHeight);
+        });
       });
-      y += 6.8;
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.2);
+      doc.line(marginX, y + rowH, marginX + usableW, y + rowH);
+      y += rowH;
     });
   }
 
   drawFooter(doc, settings);
-  doc.save(`ECAS_${title.replace(/[^a-zA-Z0-9]+/g, '_')}.pdf`);
+  doc.save(`ECAS_${String(title || 'Report').replace(/[^a-zA-Z0-9]+/g, '_')}.pdf`);
 }

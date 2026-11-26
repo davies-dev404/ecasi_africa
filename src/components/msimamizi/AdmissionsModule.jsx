@@ -59,6 +59,7 @@ export default function AdmissionsModule({
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('All');
   const [paymentFilter, setPaymentFilter] = useState('All');
+  const [bookingCategory, setBookingCategory] = useState('all'); // 'all' | 'unpaid' | 'invoiced' | 'confirmed'
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
   const [selectedProfile, setSelectedProfile] = useState(null);
@@ -67,6 +68,7 @@ export default function AdmissionsModule({
 
   const canWrite = hasPermission(currentUser, 'admissions.write');
   const canFinance = hasPermission(currentUser, 'finance.write');
+  const canCrm = hasPermission(currentUser, 'crm.write');
 
   // Filter based on active sub-view
   const scopedList = useMemo(() => {
@@ -75,6 +77,14 @@ export default function AdmissionsModule({
       list = list.filter((r) => isConfirmedPaidEnrolment(r, invoices, payments));
     } else if (activeTab === 'application-documents') {
       list = list.filter((r) => (Array.isArray(r.documents) && r.documents.length > 0) || getEffectiveRegistrationStage(r) === 'Documents Required' || true);
+    }
+
+    if (bookingCategory === 'unpaid') {
+      list = list.filter((r) => !isConfirmedPaidEnrolment(r, invoices, payments) && (r.paymentStatus || 'Unpaid') === 'Unpaid');
+    } else if (bookingCategory === 'invoiced') {
+      list = list.filter((r) => !isConfirmedPaidEnrolment(r, invoices, payments) && ((r.paymentStatus || '') === 'Invoiced' || (r.paymentStatus || '') === 'Partially Paid'));
+    } else if (bookingCategory === 'confirmed') {
+      list = list.filter((r) => isConfirmedPaidEnrolment(r, invoices, payments));
     }
 
     if (search.trim()) {
@@ -99,7 +109,7 @@ export default function AdmissionsModule({
       return new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0);
     });
     return list;
-  }, [registrations, invoices, payments, activeTab, search, stageFilter, paymentFilter, sortBy]);
+  }, [registrations, invoices, payments, activeTab, bookingCategory, search, stageFilter, paymentFilter, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(scopedList.length / PAGE_SIZE));
   const pagedList = scopedList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -161,6 +171,48 @@ export default function AdmissionsModule({
     );
     onDataChange();
     showToast(`Invoice ${inv.invoiceNo} generated and linked to ${reg.referenceNo}!`);
+  };
+
+  const handleMoveToInquiry = (reg) => {
+    if (!canWrite && !canCrm) return;
+    const linkedInv = invoices.find((i) => i.registrationId === reg.id && i.status !== 'Cancelled');
+    if (linkedInv) {
+      alert(`Registration ${reg.referenceNo} already has Invoice ${linkedInv.invoiceNo}. Void/delete the invoice before reclassifying as a CRM Inquiry.`);
+      return;
+    }
+    const fullName = [reg.title, reg.firstName, reg.middleName, reg.lastName].filter(Boolean).join(' ').trim();
+    if (!window.confirm(`Move "${fullName}" (${reg.referenceNo}) from Registration Directory to CRM Inquiries & Leads?`)) {
+      return;
+    }
+    const createdLead = adminRegistrationService.addInquiry({
+      channel: 'Website',
+      leadSource: 'Website',
+      inquiryType: 'Reclassified Website Booking Inquiry',
+      fullName: fullName || 'Prospective Delegate',
+      email: reg.officialEmail || reg.personalEmail || '',
+      phone: `${reg.dialCode || ''} ${reg.phoneNumber || ''}`.trim(),
+      organisation: reg.organisation || '',
+      country: reg.country || 'Kenya',
+      courseTitle: reg.eventTitle || 'Executive Training Programme',
+      courseCode: reg.scheduleId || '',
+      cohortDates: reg.cohortName || reg.durationText || 'Flexible 2026 Intake',
+      venue: `${reg.venue || 'Nairobi, Kenya'}${reg.format ? ` (${reg.format})` : ''}`,
+      fee: `$${Number(reg.totalFee || 1200).toLocaleString()} USD`,
+      status: 'New Lead',
+      message: `Moved from online booking form (${reg.referenceNo}).${reg.trainingExpectations ? ` Notes: ${reg.trainingExpectations}` : ''}`,
+    });
+    msimamiziEnterpriseService.purgeRegistrationCascade(reg.id, currentUser);
+    msimamiziEnterpriseService.logAudit(
+      currentUser,
+      'MOVE_REGISTRATION_TO_INQUIRY',
+      'Lead',
+      createdLead?.referenceNo || fullName,
+      reg.referenceNo,
+      'Reclassified unpaid website booking into CRM Lead/Inquiry'
+    );
+    if (selectedProfile?.id === reg.id) setSelectedProfile(null);
+    onDataChange();
+    showToast(`Moved ${fullName} to CRM Inquiries & Leads (${createdLead?.referenceNo || ''}).`);
   };
 
   const handleUploadApplicantDoc = (reg, file) => {
@@ -278,27 +330,47 @@ export default function AdmissionsModule({
               type="button"
               onClick={() => {
                 const headers = ['Applicant Field', 'Institutional Record'];
+                const originLabel = activeProfile.sourceInquiryId
+                  ? 'Converted from CRM Inquiry'
+                  : String(activeProfile.adminNotes || '').toLowerCase().includes('manually entered')
+                    ? 'Manual Admissions Entry'
+                    : 'Website Course Registration Form (/register)';
                 const rows = [
-                  ['Registration No', activeProfile.referenceNo],
-                  ['Delegate Full Name', fullName],
+                  ['Registration Reference No', activeProfile.referenceNo || activeProfile.id || '—'],
+                  ['Submission Origin', originLabel],
+                  ['Submitted Date', activeProfile.submittedAt ? new Date(activeProfile.submittedAt).toLocaleString('en-GB') : activeProfile.displayDate || '—'],
                   ['Workflow Stage', stage],
-                  ['Official Email', activeProfile.officialEmail || activeProfile.personalEmail || '—'],
+                  ['Payment Status', activeProfile.paymentStatus || 'Unpaid'],
+                  ['Delegate Full Name', fullName || '—'],
+                  ['Job Title / Designation', activeProfile.jobTitle || '—'],
+                  ['Official Email', activeProfile.officialEmail || '—'],
+                  ['Personal Email', activeProfile.personalEmail || '—'],
                   ['Phone / WhatsApp', `${activeProfile.dialCode || ''} ${activeProfile.phoneNumber || ''}`.trim() || '—'],
-                  ['Organisation', activeProfile.organisation || '—'],
+                  ['Organisation / Ministry', activeProfile.organisation || '—'],
                   ['Country', activeProfile.country || '—'],
                   ['Training Course', activeProfile.eventTitle || '—'],
-                  ['Destination', activeProfile.venue || '—'],
+                  ['Schedule Code', activeProfile.scheduleId ? `#${activeProfile.scheduleId}` : '—'],
+                  ['Destination Hub', activeProfile.venue || '—'],
+                  ['Delivery Mode', activeProfile.format || 'Classroom'],
                   ['Cohort / Dates', activeProfile.cohortName || activeProfile.durationText || '—'],
-                  ['Course Fee', `${activeProfile.currency || 'USD'} ${Number(activeProfile.totalFee || 0).toLocaleString()}`],
+                  ['Participants Count', String(activeProfile.participantsCount || 1)],
+                  ['Total Course Fee', `${activeProfile.currency || 'USD'} ${Number(activeProfile.totalFee || 0).toLocaleString()}`],
+                  ['Invoice Billed To', activeProfile.invoiceTo || 'Organisation'],
+                  ['Approving Authority', activeProfile.approvingAuthorityName ? `${activeProfile.approvingAuthorityName}${activeProfile.approvingAuthorityEmail ? ` (${activeProfile.approvingAuthorityEmail})` : ''}` : 'Direct Self / Pending'],
+                  ['Accommodation', activeProfile.needAccommodation || 'No'],
+                  ['Airport Transfer', activeProfile.needAirportTransfer || 'No'],
+                  ['Excursion / Tour', activeProfile.needSafariTour || 'No'],
+                  ['Assigned Officer', activeProfile.assignedOfficer || 'Unassigned'],
+                  ...(activeProfile.trainingExpectations ? [['Training Expectations', activeProfile.trainingExpectations]] : []),
+                  ...(activeProfile.adminNotes ? [['Internal Notes', activeProfile.adminNotes]] : []),
                 ];
                 const html = `
                   <h3>Applicant Profile — ${fullName}</h3>
                   <table>
-                    <tr><th>Registration No</th><td>${activeProfile.referenceNo}</td><th>Workflow Stage</th><td>${stage}</td></tr>
-                    <tr><th>Email</th><td>${activeProfile.officialEmail || activeProfile.personalEmail || '—'}</td><th>Phone</th><td>${activeProfile.dialCode || ''} ${activeProfile.phoneNumber || ''}</td></tr>
-                    <tr><th>Organisation</th><td>${activeProfile.organisation || '—'}</td><th>Country</th><td>${activeProfile.country || '—'}</td></tr>
-                    <tr><th>Course</th><td>${activeProfile.eventTitle}</td><th>Destination</th><td>${activeProfile.venue}</td></tr>
-                    <tr><th>Cohort / Dates</th><td>${activeProfile.cohortName || activeProfile.durationText || '—'}</td><th>Total Fee</th><td>${activeProfile.currency || 'USD'} ${Number(activeProfile.totalFee || 0).toLocaleString()}</td></tr>
+                    <thead><tr><th>Applicant Field</th><th>Institutional Record</th></tr></thead>
+                    <tbody>
+                      ${rows.map(([k, v]) => `<tr><th style="width:34%">${k}</th><td>${v}</td></tr>`).join('')}
+                    </tbody>
                   </table>
                 `;
                 msimamiziEnterpriseService.printInstitutionalDocument(`Applicant Profile - ${activeProfile.referenceNo}`, html, currentUser, {
@@ -311,7 +383,7 @@ export default function AdmissionsModule({
               }}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] text-white text-xs font-bold cursor-pointer"
             >
-              <Printer className="w-3.5 h-3.5 text-[#4ade80]" /> Print Profile
+              <Printer className="w-3.5 h-3.5 text-[#4ade80]" /> View &amp; Download Profile PDF
             </button>
           </div>
         </div>
@@ -641,6 +713,53 @@ export default function AdmissionsModule({
         </div>
 
         {/* Search & Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            {[
+              { id: 'all', label: `All (${registrations.length})` },
+              {
+                id: 'unpaid',
+                label: `Unpaid Pending Bookings (${registrations.filter((r) => !isConfirmedPaidEnrolment(r, invoices, payments) && (r.paymentStatus || 'Unpaid') === 'Unpaid').length})`,
+              },
+              {
+                id: 'invoiced',
+                label: `Invoiced (${registrations.filter((r) => !isConfirmedPaidEnrolment(r, invoices, payments) && ['Invoiced', 'Partially Paid'].includes(r.paymentStatus || '')).length})`,
+              },
+              {
+                id: 'confirmed',
+                label: `Confirmed Paid Enrolments (${registrations.filter((r) => isConfirmedPaidEnrolment(r, invoices, payments)).length})`,
+              },
+            ].map((pill) => (
+              <button
+                key={pill.id}
+                type="button"
+                onClick={() => { setBookingCategory(pill.id); setPage(1); }}
+                className={`px-3 py-1 rounded-full font-bold border transition cursor-pointer ${
+                  bookingCategory === pill.id
+                    ? 'bg-[#032e42] text-white border-[#032e42]'
+                    : 'bg-[#F5F8FC] text-[#032e42] border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('inquiries')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-bold cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5" /> View Website / CRM Inquiries
+          </button>
+        </div>
+
+        <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/80 px-3.5 py-2.5 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+          <span>
+            <strong className="text-[#032e42]">Registrations vs Inquiries:</strong> Records here are formal <strong className="text-[#032e42]">Course Booking Applications</strong> submitted via <code className="bg-white px-1 rounded border">/register</code> (or converted leads) awaiting confirmation, invoicing &amp; payment. General website questions, brochure requests &amp; WhatsApp leads are tracked under <strong className="text-[#032e42]">CRM Inquiries &amp; Leads</strong> — or click <strong className="text-[#032e42]">To Inquiry</strong> below to reclassify an uninvoiced web booking.
+          </span>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -712,11 +831,21 @@ export default function AdmissionsModule({
                 pagedList.map((reg) => {
                   const fullName = [reg.firstName, reg.lastName].filter(Boolean).join(' ') || 'Applicant';
                   const stage = getEffectiveRegistrationStage(reg);
+                  const linkedInv = invoices.find((i) => i.registrationId === reg.id && i.status !== 'Cancelled');
+                  const isSettled = isConfirmedPaidEnrolment(reg, invoices, payments) || reg.paymentStatus === 'Paid';
+                  const originBadge = reg.sourceInquiryId
+                    ? { label: 'Converted Lead', cls: 'bg-blue-50 text-blue-700 border-blue-200' }
+                    : isSettled
+                      ? { label: 'Confirmed Enrolment', cls: 'bg-emerald-50 text-[#16A36A] border-emerald-200' }
+                      : { label: 'Website Course Booking (Unpaid)', cls: 'bg-amber-50 text-amber-800 border-amber-200' };
                   return (
                     <tr key={reg.id} className="hover:bg-[#F5F8FC]/80 transition">
                       <td className="py-3 px-4 whitespace-nowrap">
                         <p className="font-mono font-bold text-[#032e42]">{reg.referenceNo || reg.id}</p>
                         <p className="text-[10.5px] text-[#718096]">{reg.submittedAt ? new Date(reg.submittedAt).toLocaleDateString() : '—'}</p>
+                        <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[9.5px] font-bold ${originBadge.cls}`}>
+                          {originBadge.label}
+                        </span>
                       </td>
                       <td className="py-3 px-4">
                         <p className="font-bold text-[#032e42]">{fullName}</p>
@@ -757,11 +886,19 @@ export default function AdmissionsModule({
                             onClick={() => setSelectedProfile(reg)}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] hover:bg-[#06405c] text-white text-[11px] font-bold cursor-pointer"
                           >
-                            <Eye className="w-3 h-3 text-[#008000]" /> Profile
+                            <Eye className="w-3 h-3 text-[#4ade80]" /> Profile
                           </button>
+                          {!linkedInv && !isSettled && (canWrite || canCrm) && (
+                            <button
+                              type="button"
+                              onClick={() => handleMoveToInquiry(reg)}
+                              title="Reclassify this unpaid website booking into CRM Inquiries & Leads"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold cursor-pointer"
+                            >
+                              <MessageSquare className="w-3 h-3" /> To Inquiry
+                            </button>
+                          )}
                           {canFinance && (() => {
-                            const linkedInv = invoices.find((i) => i.registrationId === reg.id && i.status !== 'Cancelled');
-                            const isSettled = isConfirmedPaidEnrolment(reg, invoices, payments) || reg.paymentStatus === 'Paid';
                             if (isSettled) {
                               return (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#16A36A] border border-emerald-200 text-[11px] font-bold">

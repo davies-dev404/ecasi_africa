@@ -22,9 +22,12 @@ const Footer = () => {
             </p>
 
             <div className="text-white/95 text-xs space-y-2.5 pt-1">
-              <p className="flex items-center gap-2 text-white">
-                <MapPin size={14} className="text-[#4ade80] shrink-0" />
-                <span className="text-white font-medium">P.O. Box 37193-00100, Nairobi Kenya</span>
+              <p className="flex items-start gap-2 text-white">
+                <MapPin size={14} className="text-[#4ade80] shrink-0 mt-0.5" />
+                <span className="text-white font-medium leading-relaxed">
+                  Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani
+                  <span className="block text-white/80">P.O. Box 37193-00100, Nairobi, Kenya</span>
+                </span>
               </p>
               <p className="flex items-center gap-2 text-white/95">
                 <Phone size={14} className="text-[#4ade80] shrink-0" />
