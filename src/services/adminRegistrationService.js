@@ -7,6 +7,7 @@ import { realtimeService } from '@/services/realtimeService';
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const INQUIRIES_KEY = 'ecasi_course_inquiries_live';
 const DELETED_INQUIRIES_KEY = 'ecasi_deleted_inquiries_v1';
+const DELETED_REGS_KEY = 'ecasi_deleted_registrations_v1';
 const PENDING_INQUIRIES_KEY = 'ecasi_pending_inquiry_sync_v1';
 const PENDING_REGS_KEY = 'ecasi_pending_reg_sync_v1';
 const APPLICATIONS_KEY = 'ecasi_vacancy_applications_live';
@@ -36,7 +37,6 @@ export function normalizeAdminEmail(raw) {
 
 export const SUPER_ADMIN_EMAILS = [
   'jacob@ecasiafrica.org',
-  'acob@ecasiafrica.org',
   'riobag@ecasiafrica.org',
   'gift@ecasiafrica.org',
 ];
@@ -367,9 +367,92 @@ class AdminRegistrationService {
       if (this.isAuthenticated()) {
         this._resumeLocalSessionLock();
       }
+      this._runAccountAndTestCleanups();
       this.syncFromServer();
     } catch (e) {
       console.warn('LocalStorage error initializing admin registrations:', e);
+    }
+  }
+
+  _runAccountAndTestCleanups() {
+    if (typeof window === 'undefined') return;
+    try {
+      // Remove legacy typo admin account acob@ecasiafrica.org cleanly
+      const rawAcc = localStorage.getItem(ADMIN_ACCOUNTS_KEY);
+      if (rawAcc) {
+        const parsed = JSON.parse(rawAcc);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((a) => normalizeAdminEmail(a?.email) !== 'acob@ecasiafrica.org');
+          if (filtered.length !== parsed.length) {
+            localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(filtered));
+          }
+        }
+      }
+
+      // One-time local purge of Gift Rioba's test registration/invoice/payment records (mwangorioba@gmail.com)
+      if (!localStorage.getItem('ecasi_purged_gift_test_20261126')) {
+        const purgedRegIds = [];
+        const rawRegs = localStorage.getItem(STORAGE_KEY);
+        if (rawRegs) {
+          const regs = JSON.parse(rawRegs);
+          if (Array.isArray(regs)) {
+            const nextRegs = regs.filter((r) => {
+              const ref = String(r?.referenceNo || '').toUpperCase();
+              const e1 = String(r?.officialEmail || '').toLowerCase();
+              const e2 = String(r?.personalEmail || '').toLowerCase();
+              const isTest = ref === 'ECAS-400827-1495' || e1 === 'mwangorioba@gmail.com' || e2 === 'mwangorioba@gmail.com';
+              if (isTest && r?.id) purgedRegIds.push(r.id);
+              return !isTest;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRegs));
+          }
+        }
+
+        if (purgedRegIds.length > 0) {
+          const rawDel = localStorage.getItem(DELETED_REGS_KEY);
+          const delArr = rawDel ? JSON.parse(rawDel) : [];
+          const mergedDel = Array.from(new Set([...(Array.isArray(delArr) ? delArr : []), ...purgedRegIds]));
+          localStorage.setItem(DELETED_REGS_KEY, JSON.stringify(mergedDel.slice(0, 2000)));
+        }
+
+        const purgedInvIds = [];
+        const rawInvs = localStorage.getItem('ecasi_msimamizi_invoices_v1');
+        if (rawInvs) {
+          const invs = JSON.parse(rawInvs);
+          if (Array.isArray(invs)) {
+            const nextInvs = invs.filter((inv) => {
+              const invNo = String(inv?.invoiceNo || '').toUpperCase();
+              const email = String(inv?.applicantEmail || '').toLowerCase();
+              const isTest = invNo === 'ECAS-INV-2026-0001' || email === 'mwangorioba@gmail.com' || (inv?.registrationId && purgedRegIds.includes(inv.registrationId));
+              if (isTest && inv?.id) purgedInvIds.push(inv.id);
+              return !isTest;
+            });
+            localStorage.setItem('ecasi_msimamizi_invoices_v1', JSON.stringify(nextInvs));
+          }
+        }
+
+        const rawPays = localStorage.getItem('ecasi_msimamizi_payments_v1');
+        if (rawPays) {
+          const pays = JSON.parse(rawPays);
+          if (Array.isArray(pays)) {
+            const nextPays = pays.filter((pay) => {
+              const invNo = String(pay?.invoiceNo || '').toUpperCase();
+              const ref = String(pay?.reference || '').toLowerCase().trim();
+              const name = String(pay?.applicantName || '').toLowerCase().trim();
+              const isTest = (pay?.invoiceId && purgedInvIds.includes(pay.invoiceId))
+                || (pay?.registrationId && purgedRegIds.includes(pay.registrationId))
+                || invNo === 'ECAS-INV-2026-0001'
+                || (ref === 'cheque' && name === 'gift rioba');
+              return !isTest;
+            });
+            localStorage.setItem('ecasi_msimamizi_payments_v1', JSON.stringify(nextPays));
+          }
+        }
+
+        localStorage.setItem('ecasi_purged_gift_test_20261126', 'true');
+      }
+    } catch {
+      // ignore cleanup errors
     }
   }
 
@@ -611,6 +694,7 @@ class AdminRegistrationService {
           registrations,
           inquiries,
           deletedInquiryIds,
+          deletedRegistrationIds,
           courses,
           vacancies,
           applications,
@@ -655,7 +739,37 @@ class AdminRegistrationService {
           // ignore storage quota errors on secondary cache
         }
 
-        if (Array.isArray(registrations) && registrations.length > 0) {
+        if (scope === 'admin' && Array.isArray(registrations)) {
+          let localDelRegs = [];
+          try {
+            const rawDelReg = localStorage.getItem(DELETED_REGS_KEY);
+            localDelRegs = rawDelReg ? JSON.parse(rawDelReg) : [];
+          } catch {
+            localDelRegs = [];
+          }
+          const delRegSet = new Set([
+            ...(Array.isArray(deletedRegistrationIds) ? deletedRegistrationIds : []),
+            ...(Array.isArray(localDelRegs) ? localDelRegs : []),
+          ]);
+          try {
+            localStorage.setItem(DELETED_REGS_KEY, JSON.stringify(Array.from(delRegSet).slice(0, 2000)));
+          } catch {
+            // ignore
+          }
+          const localRegs = this.getRegistrations();
+          const mergedMap = new Map();
+          [...registrations, ...localRegs].forEach((r) => {
+            if (!r) return;
+            if (r.id && delRegSet.has(r.id)) return;
+            const key = r.id || r.referenceNo;
+            if (key && !mergedMap.has(key)) {
+              mergedMap.set(key, r);
+            }
+          });
+          const merged = Array.from(mergedMap.values());
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
+        } else if (Array.isArray(registrations) && registrations.length > 0) {
           const localRegs = this.getRegistrations();
           const mergedMap = new Map();
           [...registrations, ...localRegs].forEach((r) => {
@@ -664,8 +778,7 @@ class AdminRegistrationService {
               mergedMap.set(key, r);
             }
           });
-          const merged = Array.from(mergedMap.values());
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(mergedMap.values())));
           window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
         }
 
@@ -770,11 +883,11 @@ class AdminRegistrationService {
           const accountMap = new Map();
           localAccounts.forEach((loc) => {
             const em = normalizeAdminEmail(loc.email);
-            if (em) accountMap.set(em, { ...loc, email: em });
+            if (em && em !== 'acob@ecasiafrica.org') accountMap.set(em, { ...loc, email: em });
           });
           accounts.forEach((rem) => {
             const em = normalizeAdminEmail(rem.email);
-            if (!em) return;
+            if (!em || em === 'acob@ecasiafrica.org') return;
             const existing = accountMap.get(em) || { email: em, role: 'Administrator' };
             accountMap.set(em, {
               ...existing,
@@ -878,7 +991,19 @@ class AdminRegistrationService {
       const existing = this.getRegistrations();
       const updated = existing.filter((r) => r.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_registrations', registrations: updated }).then(() => realtimeService.publish('registrations'));
+      try {
+        const rawDel = localStorage.getItem(DELETED_REGS_KEY);
+        const delList = rawDel ? JSON.parse(rawDel) : [];
+        if (id && Array.isArray(delList) && !delList.includes(id)) {
+          delList.unshift(id);
+          localStorage.setItem(DELETED_REGS_KEY, JSON.stringify(delList.slice(0, 2000)));
+        }
+      } catch {
+        // ignore tombstone error
+      }
+      pushToServer({ action: 'set_registrations', registrations: updated, deletedRegistrationId: id }).then(() =>
+        realtimeService.publish('registrations')
+      );
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       return true;
     } catch (e) {
@@ -1422,23 +1547,24 @@ class AdminRegistrationService {
       if (data) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Sanitize any legacy plaintext field & ensure Jacob & Gift always remain Super Admins
-          const sanitized = parsed.map((a) => {
-            const copy = { ...a };
-            if (copy.password && !copy.credentialDigest) {
-              copy.credentialDigest = computeCredentialDigest(copy.email, copy.password);
-            }
-            delete copy.password;
-            const norm = normalizeAdminEmail(copy.email);
-            if (isSuperAdminEmail(norm)) {
-              copy.role = 'SUPER_ADMIN';
-              copy.status = 'Active';
-              if (!copy.name) {
-                copy.name = norm.includes('jacob') || norm.includes('acob') ? 'Jacob Olonde' : 'Gift Rioba';
+          const sanitized = parsed
+            .filter((a) => normalizeAdminEmail(a?.email) !== 'acob@ecasiafrica.org')
+            .map((a) => {
+              const copy = { ...a };
+              if (copy.password && !copy.credentialDigest) {
+                copy.credentialDigest = computeCredentialDigest(copy.email, copy.password);
               }
-            }
-            return copy;
-          });
+              delete copy.password;
+              const norm = normalizeAdminEmail(copy.email);
+              if (isSuperAdminEmail(norm)) {
+                copy.role = 'SUPER_ADMIN';
+                copy.status = 'Active';
+                if (!copy.name) {
+                  copy.name = norm.includes('jacob') ? 'Jacob Olonde' : 'Gift Rioba';
+                }
+              }
+              return copy;
+            });
           return sanitized;
         }
       }

@@ -55,7 +55,7 @@ export default function MasterSidebar({
       {/* Backdrop overlay for mobile slide-over drawer */}
       <div
         onClick={() => setIsMobileMenuOpen(false)}
-        className={`fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden ${
+        className={`print:hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden ${
           isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         aria-hidden="true"
@@ -63,7 +63,7 @@ export default function MasterSidebar({
 
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-[290px] max-w-[85vw] bg-[#032e42] text-white flex flex-col justify-between border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out
+          print:hidden fixed inset-y-0 left-0 z-50 w-[290px] max-w-[85vw] bg-[#032e42] text-white flex flex-col justify-between border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out
           md:static md:w-64 md:h-screen md:sticky md:top-0 md:z-30 md:shadow-none md:translate-x-0
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           ${isSidebarCollapsed ? 'md:hidden' : 'md:flex'}

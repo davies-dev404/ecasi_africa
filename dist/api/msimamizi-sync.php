@@ -45,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // 2. Designated Super Administrators (Jacob Olonde & Gift Rioba) & Institutional Domain Validator
 const SUPER_ADMINS = [
     'jacob@ecasiafrica.org',
-    'acob@ecasiafrica.org',
     'riobag@ecasiafrica.org',
     'gift@ecasiafrica.org',
 ];
@@ -443,6 +442,7 @@ function readStore(string $file): array {
         'registrations' => [],
         'inquiries' => [],
         'deletedInquiryIds' => [],
+        'deletedRegistrationIds' => [],
         'courses' => [],
         'vacancies' => [],
         'applications' => [],
@@ -461,6 +461,7 @@ function readStore(string $file): array {
         'auditEvents' => [],
         'accounts' => [],
         'sessions' => [],
+        'migrations' => [],
         'syncVersion' => 1,
         'lastSyncTopic' => 'init',
         'updatedAt' => gmdate('c'),
@@ -1213,14 +1214,119 @@ function sanitizeResourceItem(array $item, string $resourceType): array {
     ];
 }
 
+function cleanupRemovedAccountsAndTestMigrations(array &$store): bool {
+    $changed = false;
+
+    // 1. Remove typo administrator account acob@ecasiafrica.org and any sessions for it
+    if (isset($store['accounts']) && is_array($store['accounts'])) {
+        $origCount = count($store['accounts']);
+        $store['accounts'] = array_values(array_filter($store['accounts'], function ($acc) {
+            return normalizeAdminEmail($acc['email'] ?? '') !== 'acob@ecasiafrica.org';
+        }));
+        if (count($store['accounts']) !== $origCount) $changed = true;
+    }
+    if (isset($store['sessions']) && is_array($store['sessions'])) {
+        foreach ($store['sessions'] as $tokHash => $sess) {
+            if (normalizeAdminEmail($sess['email'] ?? '') === 'acob@ecasiafrica.org') {
+                unset($store['sessions'][$tokHash]);
+                $changed = true;
+            }
+        }
+    }
+
+    // 2. Filter deleted registration tombstones
+    $deletedRegIds = is_array($store['deletedRegistrationIds'] ?? null) ? $store['deletedRegistrationIds'] : [];
+    if (!empty($deletedRegIds) && is_array($store['registrations'] ?? null)) {
+        $origRegCount = count($store['registrations']);
+        $store['registrations'] = array_values(array_filter($store['registrations'], function ($r) use ($deletedRegIds) {
+            $rid = (string)($r['id'] ?? '');
+            return $rid === '' || !in_array($rid, $deletedRegIds, true);
+        }));
+        if (count($store['registrations']) !== $origRegCount) $changed = true;
+    }
+
+    // 3. One-time purge of Gift Rioba's test registration/invoice/payment history (mwangorioba@gmail.com / ECAS-400827-1495 / ECAS-INV-2026-0001)
+    if (!isset($store['migrations']) || !is_array($store['migrations'])) {
+        $store['migrations'] = [];
+    }
+    if (empty($store['migrations']['purged_gift_rioba_test_20261126'])) {
+        $purgedRegIds = [];
+        $store['registrations'] = array_values(array_filter($store['registrations'] ?? [], function ($r) use (&$purgedRegIds) {
+            $ref = strtoupper((string)($r['referenceNo'] ?? ''));
+            $em1 = strtolower((string)($r['officialEmail'] ?? ''));
+            $em2 = strtolower((string)($r['personalEmail'] ?? ''));
+            $isTest = ($ref === 'ECAS-400827-1495') || ($em1 === 'mwangorioba@gmail.com') || ($em2 === 'mwangorioba@gmail.com');
+            if ($isTest && !empty($r['id'])) {
+                $purgedRegIds[] = (string)$r['id'];
+            }
+            return !$isTest;
+        }));
+
+        foreach ($purgedRegIds as $prId) {
+            if (!in_array($prId, $deletedRegIds, true)) {
+                $deletedRegIds[] = $prId;
+            }
+        }
+        $store['deletedRegistrationIds'] = array_slice($deletedRegIds, 0, 2000);
+
+        $purgedInvIds = [];
+        $store['invoices'] = array_values(array_filter($store['invoices'] ?? [], function ($inv) use ($purgedRegIds, &$purgedInvIds) {
+            $invNo = strtoupper((string)($inv['invoiceNo'] ?? ''));
+            $email = strtolower((string)($inv['applicantEmail'] ?? ''));
+            $regId = (string)($inv['registrationId'] ?? '');
+            $isTest = ($invNo === 'ECAS-INV-2026-0001') || ($email === 'mwangorioba@gmail.com') || ($regId !== '' && in_array($regId, $purgedRegIds, true));
+            if ($isTest && !empty($inv['id'])) {
+                $purgedInvIds[] = (string)$inv['id'];
+            }
+            return !$isTest;
+        }));
+
+        $store['payments'] = array_values(array_filter($store['payments'] ?? [], function ($pay) use ($purgedRegIds, $purgedInvIds) {
+            $invId = (string)($pay['invoiceId'] ?? '');
+            $regId = (string)($pay['registrationId'] ?? '');
+            $invNo = strtoupper((string)($pay['invoiceNo'] ?? ''));
+            $ref = strtolower(trim((string)($pay['reference'] ?? '')));
+            $name = strtolower(trim((string)($pay['applicantName'] ?? '')));
+            $isTest = ($invId !== '' && in_array($invId, $purgedInvIds, true))
+                || ($regId !== '' && in_array($regId, $purgedRegIds, true))
+                || ($invNo === 'ECAS-INV-2026-0001')
+                || ($ref === 'cheque' && $name === 'gift rioba');
+            return !$isTest;
+        }));
+
+        $store['auditEvents'] = array_values(array_filter($store['auditEvents'] ?? [], function ($ev) {
+            $rec = strtolower((string)($ev['affectedRecord'] ?? '') . ' ' . (string)($ev['newValue'] ?? ''));
+            return strpos($rec, 'ecas-400827-1495') === false
+                && strpos($rec, 'ecas-inv-2026-0001') === false
+                && strpos($rec, 'mwangorioba@gmail.com') === false;
+        }));
+
+        $store['migrations']['purged_gift_rioba_test_20261126'] = true;
+        $changed = true;
+    }
+
+    return $changed;
+}
+
 $needsStoreLock = ($_SERVER['REQUEST_METHOD'] === 'POST')
     || ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['scope'] ?? 'public') === 'admin');
 if ($needsStoreLock) {
     $storeLockHandle = acquireStoreLock($dataDir);
 }
 $store = readStore($storeFile);
-if ($needsStoreLock && recoverSiblingStoresData($storeFile, $store)) {
-    writeStore($storeFile, $store);
+$storeDirty = false;
+if ($needsStoreLock) {
+    if (recoverSiblingStoresData($storeFile, $store)) {
+        $storeDirty = true;
+    }
+    if (cleanupRemovedAccountsAndTestMigrations($store)) {
+        $storeDirty = true;
+    }
+    if ($storeDirty) {
+        writeStore($storeFile, $store);
+    }
+} else {
+    cleanupRemovedAccountsAndTestMigrations($store);
 }
 
 // ─── GET REQUESTS ─────────────────────────────────────────────────────────────
@@ -1362,6 +1468,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'registrations' => $store['registrations'] ?? [],
                 'inquiries' => $store['inquiries'] ?? [],
                 'deletedInquiryIds' => array_values($store['deletedInquiryIds'] ?? []),
+                'deletedRegistrationIds' => array_values($store['deletedRegistrationIds'] ?? []),
                 'courses' => (object)($store['courses'] ?? []),
                 'vacancies' => $store['vacancies'] ?? [],
                 'applications' => $store['applications'] ?? [],
@@ -1849,8 +1956,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $cleanList[] = sanitizeRegistration($r);
             }
         }
-        $prevCount = count($store['registrations'] ?? []);
+        $prevRegs = is_array($store['registrations'] ?? null) ? $store['registrations'] : [];
+        $prevCount = count($prevRegs);
+        $nextIds = array_flip(array_values(array_filter(array_map(fn($x) => (string)($x['id'] ?? ''), $cleanList))));
+        $deletedRegIds = is_array($store['deletedRegistrationIds'] ?? null) ? $store['deletedRegistrationIds'] : [];
+        if (!empty($payload['deletedRegistrationId'])) {
+            $delId = sanitizeText($payload['deletedRegistrationId'], 64);
+            if ($delId !== '' && !in_array($delId, $deletedRegIds, true)) {
+                array_unshift($deletedRegIds, $delId);
+            }
+        }
+        foreach ($prevRegs as $pr) {
+            $pid = (string)($pr['id'] ?? '');
+            if ($pid !== '' && !isset($nextIds[$pid]) && !in_array($pid, $deletedRegIds, true)) {
+                array_unshift($deletedRegIds, $pid);
+            }
+        }
+        $store['deletedRegistrationIds'] = array_slice($deletedRegIds, 0, 2000);
         $store['registrations'] = $cleanList;
+        $store['lastSyncTopic'] = 'registrations';
         $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
         appendAuditEvent(
             $store,

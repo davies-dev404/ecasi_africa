@@ -111,16 +111,14 @@ export default function OverviewDashboard({
     const verifiedPaymentsTotal = scopedPayments
       .filter((p) => p.status === 'Verified')
       .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-    const invoicedRegIds = new Set(scopedInvoices.map((i) => i.registrationId).filter(Boolean));
     const totalRevenue = verifiedPaymentsTotal;
 
     const invoiceOutstanding = scopedInvoices
       .filter((i) => i.status !== 'Cancelled' && i.status !== 'Draft')
       .reduce((sum, i) => sum + Math.max(0, (Number(i.netAmount) || 0) - (Number(i.paidAmount) || 0)), 0);
-    const uninvoicedUnpaidRegs = scopedRegs
-      .filter((r) => r.paymentStatus !== 'Paid' && r.paymentStatus !== 'Refunded' && !invoicedRegIds.has(r.id))
-      .reduce((sum, r) => sum + (Number(r.totalFee) || 0), 0);
-    const outstandingFees = invoiceOutstanding + uninvoicedUnpaidRegs;
+    // Outstanding fees come strictly from issued, uncancelled invoices with remaining balance.
+    // Uninvoiced inquiries/registrations are unconverted leads and not yet billed receivables.
+    const outstandingFees = invoiceOutstanding;
 
     const activeCourses = courses.length;
     const courseInquiries = inquiries.length;
@@ -283,6 +281,21 @@ export default function OverviewDashboard({
   );
 
   const handleDownloadExecutiveBrief = () => {
+    const kpis = [
+      { label: 'Total Registrations', value: String(stats.totalRegistrations) },
+      { label: 'Confirmed Enrolments', value: String(stats.confirmedEnrolments) },
+      { label: 'Collected Revenue (USD)', value: `$${stats.totalRevenue.toLocaleString()}` },
+      { label: 'Outstanding Fees (USD)', value: `$${stats.outstandingFees.toLocaleString()}` },
+    ];
+    const headers = ['Metric', 'Actual Database Value'];
+    const rows = [
+      ['Pending Applications', String(stats.pendingApplications)],
+      ['Approved Applications', String(stats.approvedApplications)],
+      ['Active Courses & Programmes', String(stats.activeCourses)],
+      ['Total Course Inquiries & Leads', String(stats.courseInquiries)],
+      ['Active Job Vacancies', String(stats.activeVacancies)],
+      ['Candidate CVs Received', String(stats.candidateCvs)],
+    ];
     const html = `
       <div class="kpi-grid">
         <div class="kpi"><div class="kpi-label">Total Registrations</div><div class="kpi-val">${stats.totalRegistrations}</div></div>
@@ -294,16 +307,16 @@ export default function OverviewDashboard({
       <table>
         <thead><tr><th>Metric</th><th>Actual Database Value</th></tr></thead>
         <tbody>
-          <tr><td>Pending Applications</td><td>${stats.pendingApplications}</td></tr>
-          <tr><td>Approved Applications</td><td>${stats.approvedApplications}</td></tr>
-          <tr><td>Active Courses & Programmes</td><td>${stats.activeCourses}</td></tr>
-          <tr><td>Total Course Inquiries & Leads</td><td>${stats.courseInquiries}</td></tr>
-          <tr><td>Active Job Vacancies</td><td>${stats.activeVacancies}</td></tr>
-          <tr><td>Candidate CVs Received</td><td>${stats.candidateCvs}</td></tr>
+          ${rows.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}
         </tbody>
       </table>
     `;
-    msimamiziEnterpriseService.printInstitutionalDocument('ECAS Institutional Executive Brief', html, currentUser);
+    msimamiziEnterpriseService.printInstitutionalDocument('ECAS Institutional Executive Brief', html, currentUser, {
+      mode: 'report',
+      kpis,
+      headers,
+      rows,
+    });
   };
 
   const kpiCards = [

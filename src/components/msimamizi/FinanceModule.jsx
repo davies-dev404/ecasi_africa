@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Scale,
   Plus,
-  Printer,
   Mail,
   CheckCircle2,
   X,
@@ -17,7 +16,13 @@ import {
   XCircle,
   RotateCcw,
   Trash2,
+  MessageCircle,
+  Eye,
 } from 'lucide-react';
+import {
+  downloadInvoicePdf,
+  downloadPaymentReceiptPdf,
+} from '@/utils/documentPdf';
 import {
   ResponsiveContainer,
   BarChart,
@@ -41,6 +46,7 @@ export default function FinanceModule({
   payments = [],
   currentUser,
   onDataChange,
+  onOpenDocument,
   showToast,
 }) {
   const [search, setSearch] = useState('');
@@ -176,45 +182,95 @@ export default function FinanceModule({
     );
   };
 
-  const handlePrintInvoice = (inv) => {
-    const settings = msimamiziEnterpriseService.getSettings();
-    const html = `
-      <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
-        <div>
-          <h3 style="margin:0 0 6px 0;">Bill To:</h3>
-          <div><strong>${inv.applicantName}</strong></div>
-          <div>${inv.organisation || ''}</div>
-          <div>${inv.applicantEmail || ''}</div>
-        </div>
-        <div style="text-align:right;">
-          <div><strong>Invoice No:</strong> ${inv.invoiceNo}</div>
-          <div><strong>Date Issued:</strong> ${new Date(inv.createdAt).toLocaleDateString()}</div>
-          <div><strong>Due Date:</strong> ${inv.dueDate || 'On Receipt'}</div>
-          <div><strong>Status:</strong> ${inv.status}</div>
-        </div>
-      </div>
-      <table>
-        <thead><tr><th>Description / Training Programme</th><th>Destination</th><th style="text-align:right;">Amount (${inv.currency})</th></tr></thead>
-        <tbody>
-          <tr><td>${inv.courseTitle} ${inv.cohortName ? `(${inv.cohortName})` : ''}</td><td>${inv.destination}</td><td style="text-align:right;">${Number(inv.amount).toLocaleString()}</td></tr>
-          ${Number(inv.additionalCharges) > 0 ? `<tr><td>Additional Charges / Logistics</td><td>—</td><td style="text-align:right;">${Number(inv.additionalCharges).toLocaleString()}</td></tr>` : ''}
-          ${Number(inv.discount) > 0 ? `<tr><td>Authorized Institutional Discount</td><td>—</td><td style="text-align:right;">-${Number(inv.discount).toLocaleString()}</td></tr>` : ''}
-          <tr><td colspan="2" style="text-align:right;font-weight:bold;">Net Total Due</td><td style="text-align:right;font-weight:bold;">${inv.currency} ${Number(inv.netAmount).toLocaleString()}</td></tr>
-          <tr><td colspan="2" style="text-align:right;">Amount Paid</td><td style="text-align:right;">${inv.currency} ${Number(inv.paidAmount || 0).toLocaleString()}</td></tr>
-          <tr><td colspan="2" style="text-align:right;font-weight:bold;">Balance Outstanding</td><td style="text-align:right;font-weight:bold;">${inv.currency} ${Number(inv.balance || 0).toLocaleString()}</td></tr>
-        </tbody>
-      </table>
-      <div style="margin-top:18px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-        <strong>Payment Instructions:</strong><br/>
-        <pre style="font-family:inherit;white-space:pre-wrap;margin:4px 0 0 0;">${settings.bankDetails || 'Contact finance@ecasiafrica.org for wire transfer details.'}</pre>
-      </div>
-    `;
-    msimamiziEnterpriseService.printInstitutionalDocument(`Official Proforma Invoice ${inv.invoiceNo}`, html, currentUser);
+  const openDoc = (spec) => {
+    if (typeof onOpenDocument === 'function') {
+      onOpenDocument(spec);
+      return;
+    }
+    msimamiziEnterpriseService.printInstitutionalDocument(spec.title || 'ECAS Document', '', currentUser, spec);
+  };
+
+  const handlePrintInvoice = (inv, initialWaOpen = false) => {
+    const linkedReg = registrations.find((r) => r.id === inv.registrationId) || null;
+    openDoc({
+      mode: 'invoice',
+      title: `Official Invoice — ${inv.invoiceNo}`,
+      invoice: inv,
+      registration: linkedReg,
+      registrationId: inv.registrationId || '',
+      initialWaOpen,
+    });
+  };
+
+  const handleDownloadInvoicePdf = async (inv) => {
+    const linkedReg = registrations.find((r) => r.id === inv.registrationId) || null;
+    await downloadInvoicePdf({
+      invoice: inv,
+      registration: linkedReg,
+      settings: msimamiziEnterpriseService.getSettings(),
+    });
+    showToast(`Downloaded official PDF invoice ECAS_Invoice_${inv.invoiceNo}.pdf`);
+  };
+
+  const handleOpenReceipt = (pay, initialWaOpen = false) => {
+    const linkedInv = invoices.find((i) => i.id === pay.invoiceId) || null;
+    const linkedReg =
+      registrations.find((r) => r.id === (pay.registrationId || linkedInv?.registrationId)) || null;
+    openDoc({
+      mode: 'receipt',
+      title: `Official Payment Receipt — ${pay.receiptNo || pay.reference}`,
+      payment: pay,
+      invoice: linkedInv,
+      registration: linkedReg,
+      registrationId: pay.registrationId || linkedInv?.registrationId || '',
+      initialWaOpen,
+    });
+  };
+
+  const handleDownloadReceiptPdf = async (pay) => {
+    const linkedInv = invoices.find((i) => i.id === pay.invoiceId) || null;
+    const linkedReg =
+      registrations.find((r) => r.id === (pay.registrationId || linkedInv?.registrationId)) || null;
+    await downloadPaymentReceiptPdf({
+      payment: pay,
+      invoice: linkedInv,
+      registration: linkedReg,
+      settings: msimamiziEnterpriseService.getSettings(),
+    });
+    showToast(`Downloaded official PDF receipt for ${pay.reference}.`);
+  };
+
+  const handleEmailReceipt = async (pay) => {
+    const linkedInv = invoices.find((i) => i.id === pay.invoiceId) || null;
+    const linkedReg =
+      registrations.find((r) => r.id === (pay.registrationId || linkedInv?.registrationId)) || null;
+    const recipient = linkedInv?.applicantEmail || linkedReg?.officialEmail || linkedReg?.personalEmail || '';
+    if (!recipient) {
+      handleOpenReceipt(pay);
+      showToast('Enter recipient email on the official receipt page.');
+      return;
+    }
+    const receiptNo = pay.receiptNo || `RCP-${String(pay.id || '').replace(/^PAY-/, '')}`;
+    await msimamiziEnterpriseService.sendCommunication(
+      {
+        channel: 'Email',
+        category: 'Receipt',
+        recipientName: pay.applicantName || linkedInv?.applicantName || 'Delegate',
+        recipientContact: recipient,
+        subject: `ECAS Institute — Official Payment Receipt (${receiptNo})`,
+        body: `Dear ${pay.applicantName || 'Delegate'},\n\nThank you for your payment.\nReceipt No: ${receiptNo}\nPayment Ref: ${pay.reference}\nAmount Verified: ${pay.currency} ${Number(pay.amount || 0).toLocaleString()}\nMethod: ${pay.method}\nDate: ${pay.transactionDate}\nInvoice No: ${pay.invoiceNo || linkedInv?.invoiceNo || 'Direct Payment'}\n\nWarm regards,\nECAS Institute Finance Desk`,
+        linkedEntityId: pay.id,
+      },
+      currentUser
+    );
+    onDataChange();
+    showToast(`Official receipt emailed/logged to ${recipient}.`);
   };
 
   const handleEmailInvoice = async (inv) => {
     if (!inv.applicantEmail) {
-      alert('No recipient email address on this invoice.');
+      handlePrintInvoice(inv);
+      showToast('Enter recipient email on the official invoice page.');
       return;
     }
     await msimamiziEnterpriseService.sendCommunication(
@@ -484,26 +540,61 @@ export default function FinanceModule({
                           {pay.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const html = `
-                              <h3>Official Payment Receipt</h3>
-                              <table>
-                                <tr><th>Payment Reference</th><td>${pay.reference}</td><th>Transaction Date</th><td>${pay.transactionDate}</td></tr>
-                                <tr><th>Received From</th><td>${pay.applicantName || 'Delegate'}</td><th>Invoice No</th><td>${pay.invoiceNo || 'Direct Payment'}</td></tr>
-                                <tr><th>Amount Verified</th><td><strong>${pay.currency} ${Number(pay.amount).toLocaleString()}</strong></td><th>Payment Method</th><td>${pay.method}</td></tr>
-                                <tr><th>Verified By</th><td>${pay.verifiedBy}</td><th>Status</th><td>${pay.status}</td></tr>
-                              </table>
-                              ${pay.supportingNote ? `<p><strong>Reference Notes:</strong> ${pay.supportingNote}</p>` : ''}
-                            `;
-                            msimamiziEnterpriseService.printInstitutionalDocument(`Official Receipt - ${pay.reference}`, html, currentUser);
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer"
-                        >
-                          <Printer className="w-3 h-3 text-[#4ade80]" /> Receipt
-                        </button>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReceipt(pay, false)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer"
+                            title="Open Official Payment Receipt Page"
+                          >
+                            <Eye className="w-3 h-3 text-[#4ade80]" /> Receipt
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadReceiptPdf(pay)}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-50 text-[#008000] hover:bg-emerald-100 text-[11px] font-bold cursor-pointer"
+                            title="Download Official Receipt PDF"
+                          >
+                            <Download className="w-3.5 h-3.5" /> PDF
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReceipt(pay, true)}
+                            className="p-1.5 rounded-lg bg-emerald-50 text-[#25D366] hover:bg-emerald-100 cursor-pointer"
+                            title="Send Receipt via WhatsApp"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEmailReceipt(pay)}
+                            className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+                            title="Email Receipt"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                          </button>
+                          {hasPermission(currentUser, 'admin.manage') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Delete payment record ${pay.reference} (${pay.currency} ${Number(pay.amount || 0).toLocaleString()})? Invoice balance will recalculate automatically.`)) {
+                                  const res = msimamiziEnterpriseService.deletePayment(pay.id, currentUser);
+                                  if (!res.success) {
+                                    alert(res.error);
+                                    return;
+                                  }
+                                  onDataChange();
+                                  showToast(`Removed payment record ${pay.reference}.`);
+                                }
+                              }}
+                              title="Super Admin: Delete Test / Erroneous Payment"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-[#DC4545] hover:bg-red-50 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -576,10 +667,36 @@ export default function FinanceModule({
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           <div className="inline-flex items-center gap-1.5">
-                            <button type="button" onClick={() => handlePrintInvoice(inv)} className="px-2.5 py-1.5 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer inline-flex items-center gap-1">
-                              <Printer className="w-3 h-3 text-[#4ade80]" /> PDF
+                            <button
+                              type="button"
+                              onClick={() => handlePrintInvoice(inv, false)}
+                              className="px-2.5 py-1.5 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer inline-flex items-center gap-1"
+                              title="Open Official Invoice Page"
+                            >
+                              <Eye className="w-3 h-3 text-[#4ade80]" /> View
                             </button>
-                            <button type="button" onClick={() => handleEmailInvoice(inv)} title="Email Invoice" className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadInvoicePdf(inv)}
+                              className="px-2 py-1.5 rounded-lg bg-emerald-50 text-[#008000] hover:bg-emerald-100 text-[11px] font-bold cursor-pointer inline-flex items-center gap-1"
+                              title="Download Official Invoice PDF"
+                            >
+                              <Download className="w-3.5 h-3.5" /> PDF
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handlePrintInvoice(inv, true)}
+                              title="Send Invoice via WhatsApp"
+                              className="p-1.5 rounded-lg bg-emerald-50 text-[#25D366] hover:bg-emerald-100 cursor-pointer"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEmailInvoice(inv)}
+                              title="Email Invoice"
+                              className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+                            >
                               <Mail className="w-3.5 h-3.5" />
                             </button>
                             {canWrite && inv.status !== 'Paid' && (
@@ -599,21 +716,25 @@ export default function FinanceModule({
                                 Pay
                               </button>
                             )}
-                            {canWrite && inv.status !== 'Paid' && Number(inv.paidAmount || 0) === 0 && (
+                            {((canWrite && inv.status !== 'Paid' && Number(inv.paidAmount || 0) === 0) || hasPermission(currentUser, 'admin.manage')) && (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (window.confirm(`Delete unpaid invoice ${inv.invoiceNo}?`)) {
-                                    const res = msimamiziEnterpriseService.deleteInvoice(inv.id, currentUser);
+                                  const isSuperForce = inv.status === 'Paid' || Number(inv.paidAmount || 0) > 0;
+                                  const promptText = isSuperForce
+                                    ? `Super Admin Purge: Delete PAID/test invoice ${inv.invoiceNo} and any linked payment records?`
+                                    : `Delete unpaid invoice ${inv.invoiceNo}?`;
+                                  if (window.confirm(promptText)) {
+                                    const res = msimamiziEnterpriseService.deleteInvoice(inv.id, currentUser, { force: isSuperForce });
                                     if (!res.success) {
                                       alert(res.error);
                                       return;
                                     }
                                     onDataChange();
-                                    showToast(`Deleted unpaid invoice ${inv.invoiceNo}.`);
+                                    showToast(`Deleted invoice ${inv.invoiceNo}.`);
                                   }
                                 }}
-                                title="Delete Unpaid Invoice"
+                                title={inv.status === 'Paid' ? 'Super Admin: Delete Test / Paid Invoice' : 'Delete Unpaid Invoice'}
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-[#DC4545] hover:bg-red-50 cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

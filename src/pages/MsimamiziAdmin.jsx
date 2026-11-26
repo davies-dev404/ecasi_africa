@@ -74,6 +74,7 @@ const ReportsModule = lazy(() => import('@/components/msimamizi/ReportsModule'))
 const CommunicationsModule = lazy(() => import('@/components/msimamizi/CommunicationsModule'));
 const WebsiteCmsModule = lazy(() => import('@/components/msimamizi/WebsiteCmsModule'));
 const AdministrationModule = lazy(() => import('@/components/msimamizi/AdministrationModule'));
+const DocumentViewerPage = lazy(() => import('@/components/msimamizi/DocumentViewerPage'));
 
 const ModuleSkeleton = () => (
   <div className="space-y-4 animate-pulse">
@@ -192,6 +193,7 @@ function MsimamiziAdminInner() {
     setIsNewModalOpen(false);
     setSelectedApplication(null);
     setIsVacancyFormOpen(false);
+    setActiveDocument(null);
     scrollMainTop();
     try {
       localStorage.setItem('msimamizi_active_tab', tab);
@@ -274,6 +276,7 @@ function MsimamiziAdminInner() {
   });
   const [isPosterDragging, setIsPosterDragging] = useState(false);
   const [posterPreviewModal, setPosterPreviewModal] = useState(null);
+  const [activeDocument, setActiveDocument] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
   // World-Class Filtering & View State for Courses Catalog (Cached in localStorage & sessionStorage)
@@ -625,6 +628,22 @@ function MsimamiziAdminInner() {
   useEffect(() => {
     loadData();
     const handleUpdate = () => loadData();
+    const handleOpenDoc = (e) => {
+      if (!e?.detail) return;
+      setEditingCourse(null);
+      setIsNewCourseModalOpen(false);
+      setSelectedReg(null);
+      setIsNewModalOpen(false);
+      setSelectedApplication(null);
+      setIsVacancyFormOpen(false);
+      setActiveDocument(e.detail);
+      if (mainScrollRef.current && typeof mainScrollRef.current.scrollTo === 'function') {
+        mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
     window.addEventListener('ecasi_registration_updated', handleUpdate);
     window.addEventListener('ecasi_inquiry_updated', handleUpdate);
     window.addEventListener('ecasi_vacancies_updated', handleUpdate);
@@ -632,6 +651,7 @@ function MsimamiziAdminInner() {
     window.addEventListener('ecasi_enterprise_updated', handleUpdate);
     window.addEventListener('ecasi_gallery_updated', handleUpdate);
     window.addEventListener('ecasi_resources_updated', handleUpdate);
+    window.addEventListener('ecasi_open_document_page', handleOpenDoc);
     return () => {
       window.removeEventListener('ecasi_registration_updated', handleUpdate);
       window.removeEventListener('ecasi_inquiry_updated', handleUpdate);
@@ -640,6 +660,7 @@ function MsimamiziAdminInner() {
       window.removeEventListener('ecasi_enterprise_updated', handleUpdate);
       window.removeEventListener('ecasi_gallery_updated', handleUpdate);
       window.removeEventListener('ecasi_resources_updated', handleUpdate);
+      window.removeEventListener('ecasi_open_document_page', handleOpenDoc);
     };
   }, []);
 
@@ -880,6 +901,13 @@ function MsimamiziAdminInner() {
     setIsNewModalOpen(false);
     setSelectedApplication(null);
     setIsVacancyFormOpen(false);
+    setActiveDocument(null);
+  };
+
+  const openDocumentPage = (docSpec) => {
+    closeDetailViews();
+    setActiveDocument(docSpec);
+    scrollMainTop();
   };
 
   const openNewCoursePage = () => {
@@ -907,6 +935,7 @@ function MsimamiziAdminInner() {
   };
 
   const activeDetailView =
+    activeDocument ? 'document-view' :
     editingCourse ? 'edit-course' :
     isNewCourseModalOpen ? 'new-course' :
     selectedReg ? 'registration-dossier' :
@@ -1839,6 +1868,7 @@ function MsimamiziAdminInner() {
       currentUser,
       onDataChange: loadData,
       onNavigate: setActiveTab,
+      onOpenDocument: openDocumentPage,
       showToast,
     };
 
@@ -2018,7 +2048,7 @@ function MsimamiziAdminInner() {
       ───────────────────────────────────────────────────────────── */}
       <div ref={mainScrollRef} className="flex-1 flex flex-col min-w-0 overflow-y-auto min-h-screen">
         {/* Top White Enterprise Utility Bar */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+        <header className="print:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Mobile Hamburger Toggle */}
             <button
@@ -2048,6 +2078,7 @@ function MsimamiziAdminInner() {
                 return <ActiveIcon className="w-3.5 h-3.5 text-[#008000] shrink-0" />;
               })()}
               <span className="truncate">
+                {activeDetailView === 'document-view' && (activeDocument?.title || 'Official Institutional Document')}
                 {activeDetailView === 'edit-course' && 'Edit Course & Pricing'}
                 {activeDetailView === 'new-course' && 'Upload New Course'}
                 {activeDetailView === 'registration-dossier' && 'Registration Dossier'}
@@ -2189,6 +2220,32 @@ function MsimamiziAdminInner() {
 
         {/* Centered SaaS Content Body */}
         <main className="p-4 sm:p-6 lg:px-8 lg:py-6 space-y-5 flex-1 max-w-[1320px] w-full mx-auto">
+          {activeDetailView === 'document-view' && activeDocument && (
+            <MsimamiziErrorBoundary
+              resetKey={`doc-${activeDocument.mode}-${activeDocument.invoice?.id || activeDocument.payment?.id || activeDocument.title}`}
+              sectionLabel="Official Document Viewer"
+              onRecoverDashboard={() => {
+                setActiveDocument(null);
+                setActiveTab('dashboard');
+              }}
+            >
+              <Suspense fallback={<ModuleSkeleton />}>
+                <DocumentViewerPage
+                  docSpec={activeDocument}
+                  onClose={() => {
+                    setActiveDocument(null);
+                    scrollMainTop();
+                  }}
+                  registrations={registrations}
+                  invoices={invoices}
+                  settings={platformSettings}
+                  currentUser={currentUser}
+                  onDataChange={loadData}
+                  showToast={showToast}
+                />
+              </Suspense>
+            </MsimamiziErrorBoundary>
+          )}
           {!activeDetailView && (
             <>
               <MsimamiziErrorBoundary
@@ -5136,7 +5193,7 @@ function MsimamiziAdminInner() {
         </main>
 
         {/* Transparent Portal Footer: ECAS Copyright & Transparent Tagline */}
-        <footer className="mt-auto bg-transparent border-t border-slate-200/60 px-4 sm:px-6 lg:px-8 py-4 max-w-[1180px] w-full mx-auto">
+        <footer className="print:hidden mt-auto bg-transparent border-t border-slate-200/60 px-4 sm:px-6 lg:px-8 py-4 max-w-[1180px] w-full mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left bg-transparent">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 bg-transparent">
               <img

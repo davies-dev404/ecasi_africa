@@ -289,7 +289,11 @@ export default function ReportsModule({
                   type="button"
                   onClick={() => {
                     const html = `<table><thead><tr>${set.headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${set.rows.map((r) => `<tr>${r.map((c) => `<td>${c ?? ''}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-                    msimamiziEnterpriseService.printInstitutionalDocument(set.name, html, currentUser);
+                    msimamiziEnterpriseService.printInstitutionalDocument(set.name, html, currentUser, {
+                      mode: 'report',
+                      headers: set.headers,
+                      rows: set.rows,
+                    });
                   }}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#032e42] text-white font-bold cursor-pointer"
                 >

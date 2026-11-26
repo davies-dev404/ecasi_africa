@@ -16,7 +16,6 @@ const REALTIME_PORT = Number(process.env.REALTIME_PORT || 3001);
 
 const SUPER_ADMINS = new Set([
   'jacob@ecasiafrica.org',
-  'acob@ecasiafrica.org',
   'riobag@ecasiafrica.org',
   'gift@ecasiafrica.org',
 ]);
@@ -73,8 +72,10 @@ function hasPerm(role, perm) {
 function ensureDefaultStore() {
   return {
     registrations: [],
+    deletedRegistrationIds: [],
     inquiries: [],
     deletedInquiryIds: [],
+    migrations: [],
     courses: {},
     vacancies: [],
     applications: [],
@@ -99,6 +100,59 @@ function ensureDefaultStore() {
   };
 }
 
+function cleanupLocalStore(store) {
+  let dirty = false;
+  const removedAccounts = new Set(['acob@ecasiafrica.org']);
+  if (Array.isArray(store.accounts)) {
+    const filtered = store.accounts.filter((a) => !removedAccounts.has(normalizeEmail(a?.email)));
+    if (filtered.length !== store.accounts.length) {
+      store.accounts = filtered;
+      dirty = true;
+    }
+  }
+  if (store.sessions && typeof store.sessions === 'object') {
+    for (const [tok, sess] of Object.entries(store.sessions)) {
+      if (removedAccounts.has(normalizeEmail(sess?.email))) {
+        delete store.sessions[tok];
+        dirty = true;
+      }
+    }
+  }
+  const deletedRegIds = new Set(Array.isArray(store.deletedRegistrationIds) ? store.deletedRegistrationIds : []);
+  if (deletedRegIds.size > 0 && Array.isArray(store.registrations)) {
+    const filteredRegs = store.registrations.filter((r) => !deletedRegIds.has(r?.id));
+    if (filteredRegs.length !== store.registrations.length) {
+      store.registrations = filteredRegs;
+      dirty = true;
+    }
+  }
+  store.migrations = Array.isArray(store.migrations) ? store.migrations : [];
+  if (!store.migrations.includes('purged_gift_rioba_test_20261126')) {
+    const isGiftTestReg = (r) =>
+      r?.referenceNo === 'ECAS-400827-1495' ||
+      normalizeEmail(r?.officialEmail) === 'mwangorioba@gmail.com' ||
+      normalizeEmail(r?.personalEmail) === 'mwangorioba@gmail.com';
+    const isGiftTestInv = (i) =>
+      i?.invoiceNo === 'ECAS-INV-2026-0001' ||
+      normalizeEmail(i?.applicantEmail) === 'mwangorioba@gmail.com' ||
+      (String(i?.applicantName || '').trim().toLowerCase() === 'gift rioba' && Number(i?.netAmount || 0) === 1200);
+    const purgedRegIds = new Set((store.registrations || []).filter(isGiftTestReg).map((r) => r.id));
+    const purgedInvIds = new Set((store.invoices || []).filter((i) => isGiftTestInv(i) || purgedRegIds.has(i?.registrationId)).map((i) => i.id));
+    store.registrations = (store.registrations || []).filter((r) => !purgedRegIds.has(r.id));
+    for (const id of purgedRegIds) {
+      if (!store.deletedRegistrationIds.includes(id)) store.deletedRegistrationIds.unshift(id);
+    }
+    store.invoices = (store.invoices || []).filter((i) => !purgedInvIds.has(i.id));
+    store.payments = (store.payments || []).filter((p) => {
+      const matchPay = purgedInvIds.has(p?.invoiceId) || purgedRegIds.has(p?.registrationId) || p?.invoiceNo === 'ECAS-INV-2026-0001';
+      return !matchPay;
+    });
+    store.migrations.push('purged_gift_rioba_test_20261126');
+    dirty = true;
+  }
+  return dirty;
+}
+
 function readStore() {
   const defaults = ensureDefaultStore();
   try {
@@ -106,7 +160,11 @@ function readStore() {
     const raw = fs.readFileSync(STORE_FILE, 'utf8');
     if (!raw) return defaults;
     const parsed = JSON.parse(raw);
-    return { ...defaults, ...parsed };
+    const merged = { ...defaults, ...parsed };
+    if (cleanupLocalStore(merged)) {
+      writeStore(merged, 'cleanup');
+    }
+    return merged;
   } catch {
     return defaults;
   }
@@ -336,6 +394,7 @@ const server = http.createServer(async (req, res) => {
         permissions: rolePermissions(role),
         data: {
           registrations: store.registrations || [],
+          deletedRegistrationIds: store.deletedRegistrationIds || [],
           inquiries: store.inquiries || [],
           deletedInquiryIds: store.deletedInquiryIds || [],
           courses: store.courses || {},
@@ -585,11 +644,24 @@ const server = http.createServer(async (req, res) => {
 
     if (action === 'set_registrations' && Array.isArray(payload.registrations)) {
       if (deny('admissions.write')) return;
+      const incomingIds = new Set(payload.registrations.map((r) => r?.id).filter(Boolean));
+      const existingDel = new Set(Array.isArray(store.deletedRegistrationIds) ? store.deletedRegistrationIds : []);
+      (store.registrations || []).forEach((prev) => {
+        if (prev?.id && !incomingIds.has(prev.id)) {
+          existingDel.add(prev.id);
+        }
+      });
+      if (Array.isArray(payload.deletedRegistrationIds)) {
+        payload.deletedRegistrationIds.forEach((did) => {
+          if (did) existingDel.add(did);
+        });
+      }
+      store.deletedRegistrationIds = Array.from(existingDel).slice(0, 500);
       store.registrations = payload.registrations;
       appendAudit(store, adminEmail, adminRole, 'UPDATE_REGISTRATIONS', 'Registration', `Total: ${payload.registrations.length}`);
       writeStore(store, 'registrations');
       emitSync('registrations', { action: 'set_registrations' });
-      return sendJson(res, 200, { success: true, count: store.registrations.length });
+      return sendJson(res, 200, { success: true, count: store.registrations.length, deletedRegistrationIds: store.deletedRegistrationIds });
     }
 
     if (action === 'set_applications' && Array.isArray(payload.applications)) {

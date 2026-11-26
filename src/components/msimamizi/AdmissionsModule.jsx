@@ -277,6 +277,20 @@ export default function AdmissionsModule({
             <button
               type="button"
               onClick={() => {
+                const headers = ['Applicant Field', 'Institutional Record'];
+                const rows = [
+                  ['Registration No', activeProfile.referenceNo],
+                  ['Delegate Full Name', fullName],
+                  ['Workflow Stage', stage],
+                  ['Official Email', activeProfile.officialEmail || activeProfile.personalEmail || '—'],
+                  ['Phone / WhatsApp', `${activeProfile.dialCode || ''} ${activeProfile.phoneNumber || ''}`.trim() || '—'],
+                  ['Organisation', activeProfile.organisation || '—'],
+                  ['Country', activeProfile.country || '—'],
+                  ['Training Course', activeProfile.eventTitle || '—'],
+                  ['Destination', activeProfile.venue || '—'],
+                  ['Cohort / Dates', activeProfile.cohortName || activeProfile.durationText || '—'],
+                  ['Course Fee', `${activeProfile.currency || 'USD'} ${Number(activeProfile.totalFee || 0).toLocaleString()}`],
+                ];
                 const html = `
                   <h3>Applicant Profile — ${fullName}</h3>
                   <table>
@@ -287,7 +301,13 @@ export default function AdmissionsModule({
                     <tr><th>Cohort / Dates</th><td>${activeProfile.cohortName || activeProfile.durationText || '—'}</td><th>Total Fee</th><td>${activeProfile.currency || 'USD'} ${Number(activeProfile.totalFee || 0).toLocaleString()}</td></tr>
                   </table>
                 `;
-                msimamiziEnterpriseService.printInstitutionalDocument(`Applicant Profile - ${activeProfile.referenceNo}`, html, currentUser);
+                msimamiziEnterpriseService.printInstitutionalDocument(`Applicant Profile - ${activeProfile.referenceNo}`, html, currentUser, {
+                  mode: 'report',
+                  headers,
+                  rows,
+                  registration: activeProfile,
+                  registrationId: activeProfile.id,
+                });
               }}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] text-white text-xs font-bold cursor-pointer"
             >
@@ -607,7 +627,11 @@ export default function AdmissionsModule({
               onClick={() => {
                 const { headers, rows } = exportRows();
                 const html = `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-                msimamiziEnterpriseService.printInstitutionalDocument('ECAS Admissions Directory Report', html, currentUser);
+                msimamiziEnterpriseService.printInstitutionalDocument('ECAS Admissions Directory Report', html, currentUser, {
+                  mode: 'report',
+                  headers,
+                  rows,
+                });
               }}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#032e42] text-white text-xs font-bold cursor-pointer"
             >
