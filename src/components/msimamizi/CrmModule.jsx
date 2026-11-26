@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   Search,
   Plus,
+  ArrowLeft,
   Phone,
   Mail,
   MessageSquare,
@@ -40,11 +41,16 @@ export default function CrmModule({
   const [sourceFilter, setSourceFilter] = useState('All');
   const [stageFilter, setStageFilter] = useState('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
+  if (prevActiveTab !== activeTab) {
+    setPrevActiveTab(activeTab);
+    if (isAddModalOpen) setIsAddModalOpen(false);
+  }
   const [activeLead, setActiveLead] = useState(null);
   const [callLogText, setCallLogText] = useState('');
   const [callLogType, setCallLogType] = useState('Phone Call');
 
-  const [leadForm, setLeadForm] = useState({
+  const createEmptyLeadForm = (tab = activeTab) => ({
     fullName: '',
     email: '',
     phone: '',
@@ -54,10 +60,19 @@ export default function CrmModule({
     inquiryType: 'Course Inquiry',
     courseTitle: '',
     venue: 'Nairobi, Kenya',
-    nextFollowUp: '',
+    status: 'New Lead',
+    nextFollowUp: tab === 'follow-ups' ? new Date().toISOString().split('T')[0] : '',
     assignedOfficer: currentUser?.email || '',
     message: '',
   });
+
+  const [leadForm, setLeadForm] = useState(() => createEmptyLeadForm(activeTab));
+
+  const openAddLeadPage = () => {
+    setLeadForm(createEmptyLeadForm(activeTab));
+    setActiveLead(null);
+    setIsAddModalOpen(true);
+  };
 
   const canWrite = hasPermission(currentUser, 'crm.write');
   const todayStr = new Date().toISOString().split('T')[0];
@@ -89,7 +104,7 @@ export default function CrmModule({
     adminRegistrationService.addInquiry({
       ...leadForm,
       channel: leadForm.leadSource,
-      status: 'New Lead',
+      status: leadForm.status || 'New Lead',
       lastContactDate: todayStr,
       communicationLog: [
         {
@@ -103,20 +118,7 @@ export default function CrmModule({
     });
     msimamiziEnterpriseService.logAudit(currentUser, 'CREATE_CRM_LEAD', 'Lead', leadForm.fullName, '', leadForm.courseTitle || leadForm.inquiryType);
     setIsAddModalOpen(false);
-    setLeadForm({
-      fullName: '',
-      email: '',
-      phone: '',
-      organisation: '',
-      country: 'Kenya',
-      leadSource: 'Website',
-      inquiryType: 'Course Inquiry',
-      courseTitle: '',
-      venue: 'Nairobi, Kenya',
-      nextFollowUp: '',
-      assignedOfficer: currentUser?.email || '',
-      message: '',
-    });
+    setLeadForm(createEmptyLeadForm(activeTab));
     onDataChange();
     showToast('New CRM lead created and added to pipeline.');
   };
@@ -176,8 +178,9 @@ export default function CrmModule({
     [activeLead, inquiries]
   );
 
-  // ─── Communication History Sub-view ─────────────────────────────────────────
-  if (activeTab === 'communication-history') {
+  const renderActiveSubView = () => {
+    // ─── Communication History Sub-view ───────────────────────────────────────
+    if (activeTab === 'communication-history') {
     const allLogs = [
       ...communications.map((c) => ({
         id: c.id,
@@ -253,8 +256,8 @@ export default function CrmModule({
           {canWrite && (
             <button
               type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] text-white text-xs font-bold cursor-pointer"
+              onClick={openAddLeadPage}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Add Lead &amp; Follow-up
             </button>
@@ -334,7 +337,7 @@ export default function CrmModule({
             {canWrite && (
               <button
                 type="button"
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={openAddLeadPage}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" /> Add New Lead
@@ -557,69 +560,176 @@ export default function CrmModule({
           </div>
         </div>
       )}
+      </div>
+    );
+  };
 
-      {/* Add Lead Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleCreateLead} className="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden text-xs">
-            <div className="bg-[#032e42] text-white px-5 py-4 flex items-center justify-between">
-              <h3 className="font-bold text-sm">Add New CRM Lead</h3>
-              <button type="button" onClick={() => setIsAddModalOpen(false)} className="cursor-pointer"><X className="w-4 h-4" /></button>
+  if (isAddModalOpen) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#032e42] text-xs font-bold cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+            <div>
+              <h2 className="text-base font-black text-[#032e42] flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-[#008000]" /> Add New CRM Lead &amp; Follow-up
+              </h2>
+              <p className="text-[11px] text-[#718096]">
+                Capture prospective delegate details, assign an officer, and schedule follow-up reminders.
+              </p>
             </div>
-            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block font-bold text-[#032e42] mb-1">Contact Name *</label>
-                <input required value={leadForm.fullName} onChange={(e) => setLeadForm({ ...leadForm, fullName: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-              </div>
-              <div>
-                <label className="block font-bold text-[#032e42] mb-1">Lead Source</label>
-                <select value={leadForm.leadSource} onChange={(e) => setLeadForm({ ...leadForm, leadSource: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
-                  {LEAD_SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block font-bold text-[#032e42] mb-1">Email</label>
-                <input type="email" value={leadForm.email} onChange={(e) => setLeadForm({ ...leadForm, email: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-              </div>
-              <div>
-                <label className="block font-bold text-[#032e42] mb-1">Phone / WhatsApp</label>
-                <input value={leadForm.phone} onChange={(e) => setLeadForm({ ...leadForm, phone: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-              </div>
-              <div>
-                <label className="block font-bold text-[#032e42] mb-1">Organisation</label>
-                <input value={leadForm.organisation} onChange={(e) => setLeadForm({ ...leadForm, organisation: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-              </div>
-              <div>
-                <label className="block font-bold text-[#032e42] mb-1">Next Follow-up Date</label>
-                <input type="date" value={leadForm.nextFollowUp} onChange={(e) => setLeadForm({ ...leadForm, nextFollowUp: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block font-bold text-[#032e42] mb-1">Programme of Interest</label>
-                <input
-                  list="ecas-courses-datalist"
-                  value={leadForm.courseTitle}
-                  onChange={(e) => setLeadForm({ ...leadForm, courseTitle: e.target.value })}
-                  placeholder="Type or pick a course..."
-                  className="w-full h-9 px-3 rounded-xl border border-slate-300"
-                />
-                <datalist id="ecas-courses-datalist">
-                  {courses.slice(0, 100).map((c) => <option key={c.slug} value={c.title} />)}
-                </datalist>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block font-bold text-[#032e42] mb-1">Inquiry Notes</label>
-                <textarea rows={3} value={leadForm.message} onChange={(e) => setLeadForm({ ...leadForm, message: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-300" />
-              </div>
-            </div>
-            <div className="px-5 py-3.5 bg-[#F5F8FC] border-t border-slate-100 flex justify-end gap-2">
-              <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold cursor-pointer">Cancel</button>
-              <button type="submit" className="px-5 py-2 rounded-xl bg-[#008000] text-white font-bold cursor-pointer">Save Lead</button>
-            </div>
-          </form>
+          </div>
         </div>
-      )}
 
-      {/* CRM Lead Detail Drawer Modal */}
+        <form onSubmit={handleCreateLead} className="bg-white rounded-2xl border border-slate-200/90 shadow-sm max-w-3xl overflow-hidden text-xs">
+          <div className="bg-[#032e42] text-white px-6 py-4 flex items-center justify-between">
+            <h3 className="font-bold text-sm">Prospective Delegate / Client Details</h3>
+            <span className="text-[11px] text-[#4ade80] font-semibold">Live CRM Pipeline</span>
+          </div>
+          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Contact Name *</label>
+              <input
+                required
+                value={leadForm.fullName}
+                onChange={(e) => setLeadForm({ ...leadForm, fullName: e.target.value })}
+                placeholder="e.g. Jane Wanjiku"
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Lead Source</label>
+              <select
+                value={leadForm.leadSource}
+                onChange={(e) => setLeadForm({ ...leadForm, leadSource: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+              >
+                {LEAD_SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Email</label>
+              <input
+                type="email"
+                value={leadForm.email}
+                onChange={(e) => setLeadForm({ ...leadForm, email: e.target.value })}
+                placeholder="delegate@organisation.org"
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Phone / WhatsApp</label>
+              <input
+                value={leadForm.phone}
+                onChange={(e) => setLeadForm({ ...leadForm, phone: e.target.value })}
+                placeholder="+254 708 060 223"
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Organisation</label>
+              <input
+                value={leadForm.organisation}
+                onChange={(e) => setLeadForm({ ...leadForm, organisation: e.target.value })}
+                placeholder="Ministry / NGO / Corporate"
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Country</label>
+              <input
+                value={leadForm.country}
+                onChange={(e) => setLeadForm({ ...leadForm, country: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Pipeline Stage</label>
+              <select
+                value={leadForm.status}
+                onChange={(e) => setLeadForm({ ...leadForm, status: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+              >
+                {LEAD_PIPELINE_STAGES.map((st) => <option key={st} value={st}>{st}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Next Follow-up Date</label>
+              <input
+                type="date"
+                value={leadForm.nextFollowUp}
+                onChange={(e) => setLeadForm({ ...leadForm, nextFollowUp: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Preferred Venue / Destination</label>
+              <input
+                value={leadForm.venue}
+                onChange={(e) => setLeadForm({ ...leadForm, venue: e.target.value })}
+                placeholder="Nairobi, Kenya / Online"
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#032e42] mb-1">Assigned Officer</label>
+              <select
+                value={leadForm.assignedOfficer}
+                onChange={(e) => setLeadForm({ ...leadForm, assignedOfficer: e.target.value })}
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-[#008000]"
+              >
+                <option value="">Unassigned</option>
+                {staffAccounts.map((a) => <option key={a.email} value={a.email}>{a.email}</option>)}
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block font-bold text-[#032e42] mb-1">Programme of Interest</label>
+              <input
+                list="ecas-courses-datalist"
+                value={leadForm.courseTitle}
+                onChange={(e) => setLeadForm({ ...leadForm, courseTitle: e.target.value })}
+                placeholder="Type or pick a course..."
+                className="w-full h-10 px-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+              <datalist id="ecas-courses-datalist">
+                {courses.slice(0, 100).map((c) => <option key={c.slug} value={c.title} />)}
+              </datalist>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block font-bold text-[#032e42] mb-1">Inquiry &amp; Follow-up Notes</label>
+              <textarea
+                rows={4}
+                value={leadForm.message}
+                onChange={(e) => setLeadForm({ ...leadForm, message: e.target.value })}
+                placeholder="Details of the call, email, WhatsApp inquiry, or next action..."
+                className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-[#008000]"
+              />
+            </div>
+          </div>
+          <div className="px-6 py-4 bg-[#F5F8FC] border-t border-slate-100 flex justify-end gap-2">
+            <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold text-slate-600 cursor-pointer">
+              Cancel
+            </button>
+            <button type="submit" className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold shadow-sm cursor-pointer">
+              <UserPlus className="w-4 h-4" /> Save Lead
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {renderActiveSubView()}
+
+      {/* CRM Lead Detail Drawer Modal (Available across all CRM sub-views) */}
       {liveSelectedLead && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-end">
           <div className="bg-white w-full max-w-lg h-full shadow-2xl flex flex-col overflow-hidden text-xs">
@@ -728,6 +838,6 @@ export default function CrmModule({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
