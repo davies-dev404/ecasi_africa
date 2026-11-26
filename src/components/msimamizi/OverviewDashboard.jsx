@@ -44,6 +44,9 @@ import {
 } from 'recharts';
 import {
   getEffectiveRegistrationStage,
+  isConfirmedPaidEnrolment,
+  getRealizedRegistrationRevenue,
+  normalizeDestinationHub,
   normalizeLeadStatus,
   normalizeCandidateStage,
   hasPermission,
@@ -94,10 +97,7 @@ export default function OverviewDashboard({
   // ─── Real Database KPIs (Zero Fabricated Numbers) ───────────────────────────
   const stats = useMemo(() => {
     const totalRegistrations = scopedRegs.length;
-    const confirmedEnrolments = scopedRegs.filter((r) => {
-      const s = getEffectiveRegistrationStage(r);
-      return s === 'Enrolment Confirmed' || s === 'Payment Confirmed' || s === 'Training In Progress' || s === 'Completed';
-    }).length;
+    const confirmedEnrolments = scopedRegs.filter((r) => isConfirmedPaidEnrolment(r, invoices, payments)).length;
     const pendingApplications = scopedRegs.filter((r) => {
       const s = getEffectiveRegistrationStage(r);
       return s === 'Application Received' || s === 'Under Review' || s === 'Documents Required';
@@ -107,15 +107,12 @@ export default function OverviewDashboard({
       return s === 'Approved' || s === 'Invoice Issued' || s === 'Payment Pending';
     }).length;
 
-    // Revenue from verified payments + paid registrations (avoiding double counting linked invoices)
+    // Revenue strictly from verified & reconciled payments (only paid + invoiced transactions count)
     const verifiedPaymentsTotal = scopedPayments
       .filter((p) => p.status === 'Verified')
       .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
     const invoicedRegIds = new Set(scopedInvoices.map((i) => i.registrationId).filter(Boolean));
-    const uninvoicedPaidRegs = scopedRegs
-      .filter((r) => r.paymentStatus === 'Paid' && !invoicedRegIds.has(r.id))
-      .reduce((sum, r) => sum + (Number(r.totalFee) || 0), 0);
-    const totalRevenue = verifiedPaymentsTotal + uninvoicedPaidRegs;
+    const totalRevenue = verifiedPaymentsTotal;
 
     const invoiceOutstanding = scopedInvoices
       .filter((i) => i.status !== 'Cancelled' && i.status !== 'Draft')
@@ -142,7 +139,7 @@ export default function OverviewDashboard({
       activeVacancies,
       candidateCvs,
     };
-  }, [scopedRegs, scopedInvoices, scopedPayments, courses, inquiries, vacancies, applications]);
+  }, [scopedRegs, scopedInvoices, scopedPayments, invoices, payments, courses, inquiries, vacancies, applications]);
 
   // ─── Attention Needed Operational Alerts (11 Real Checks) ───────────────────
   const alerts = useMemo(() => {
@@ -219,11 +216,13 @@ export default function OverviewDashboard({
       }
       if (!buckets[key]) buckets[key] = { period: key, registrations: 0, delegates: 0, revenue: 0 };
       buckets[key].registrations += 1;
-      buckets[key].delegates += Number(r.participantsCount) || 1;
-      buckets[key].revenue += Number(r.totalFee) || 0;
+      if (isConfirmedPaidEnrolment(r, invoices, payments)) {
+        buckets[key].delegates += Number(r.participantsCount) || 1;
+        buckets[key].revenue += getRealizedRegistrationRevenue(r, invoices, payments);
+      }
     });
     return Object.values(buckets).sort((a, b) => a.period.localeCompare(b.period)).slice(-12);
-  }, [scopedRegs, trendGranularity]);
+  }, [scopedRegs, invoices, payments, trendGranularity]);
 
   const admissionStatusData = useMemo(() => {
     const counts = {
@@ -255,13 +254,14 @@ export default function OverviewDashboard({
   const destinationPerformanceData = useMemo(() => {
     const map = {};
     scopedRegs.forEach((r) => {
-      const dest = (r.venue || 'Nairobi').split(',')[0].trim();
+      if (!isConfirmedPaidEnrolment(r, invoices, payments)) return;
+      const dest = normalizeDestinationHub(r.venue);
       if (!map[dest]) map[dest] = { destination: dest, enrolments: 0, revenue: 0 };
       map[dest].enrolments += Number(r.participantsCount) || 1;
-      map[dest].revenue += Number(r.totalFee) || 0;
+      map[dest].revenue += getRealizedRegistrationRevenue(r, invoices, payments);
     });
     return Object.values(map).sort((a, b) => b.enrolments - a.enrolments).slice(0, 7);
-  }, [scopedRegs]);
+  }, [scopedRegs, invoices, payments]);
 
   const recruitmentFunnelData = useMemo(() => {
     return [

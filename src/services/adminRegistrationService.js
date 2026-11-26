@@ -1358,13 +1358,15 @@ class AdminRegistrationService {
     const applications = this.getApplications();
     const totalRegistrations = list.length;
     const pendingCount = list.filter((r) => r.status === 'Pending').length;
-    const confirmedCount = list.filter((r) => r.status === 'Confirmed').length;
+    const confirmedCount = list.filter((r) => r.status === 'Confirmed' && r.paymentStatus === 'Paid').length;
     const approvedCount = list.filter((r) => r.status === 'Approved').length;
-    const totalDelegates = list.reduce((acc, cur) => acc + (Number(cur.participantsCount) || 1), 0);
-    const totalRevenueUSD = list.reduce((acc, cur) => acc + (Number(cur.totalFee) || 0), 0);
+    const totalDelegates = list
+      .filter((r) => r.status === 'Confirmed' && r.paymentStatus === 'Paid')
+      .reduce((acc, cur) => acc + (Number(cur.participantsCount) || 1), 0);
     const paidRevenueUSD = list
-      .filter((r) => r.paymentStatus === 'Paid')
+      .filter((r) => r.paymentStatus === 'Paid' && (r.status === 'Confirmed' || r.status === 'Completed' || r.workflowStage === 'Enrolment Confirmed' || r.workflowStage === 'Payment Confirmed'))
       .reduce((acc, cur) => acc + (Number(cur.totalFee) || 0), 0);
+    const totalRevenueUSD = paidRevenueUSD;
 
     const totalInquiries = inquiries.length;
     const newInquiriesCount = inquiries.filter((i) => (i.status || 'New') === 'New').length;

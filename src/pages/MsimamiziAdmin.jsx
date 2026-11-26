@@ -58,6 +58,7 @@ import {
   hasPermission,
   getRoleDefinition,
   getEffectiveRegistrationStage,
+  isConfirmedPaidEnrolment,
   normalizeLeadStatus,
   normalizeCandidateStage,
 } from '@/services/msimamiziEnterpriseService';
@@ -1756,9 +1757,7 @@ function MsimamiziAdminInner() {
 
   const sidebarBadges = {
     registrations: registrations.length,
-    enrolments: registrations.filter((r) =>
-      ['Payment Confirmed', 'Enrolment Confirmed', 'Training In Progress', 'Completed'].includes(getEffectiveRegistrationStage(r))
-    ).length,
+    enrolments: registrations.filter((r) => isConfirmedPaidEnrolment(r, invoices, payments)).length,
     inquiries: inquiries.length,
     overdueFollowups: inquiries.filter(
       (i) => i.nextFollowUp && i.nextFollowUp < todayStr && !['Converted', 'Closed'].includes(normalizeLeadStatus(i.status))
@@ -1898,6 +1897,8 @@ function MsimamiziAdminInner() {
           courses={courses}
           registrations={registrations}
           cohorts={cohorts}
+          invoices={invoices}
+          payments={payments}
           settings={platformSettings}
           publicSiteUrl={publicSiteUrl}
           onEditCourse={(course) => openEditCourse(course, false)}

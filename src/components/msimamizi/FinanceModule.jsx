@@ -16,6 +16,7 @@ import {
   Clock,
   XCircle,
   RotateCcw,
+  Trash2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -596,6 +597,26 @@ export default function FinanceModule({
                                 className="px-2.5 py-1.5 rounded-lg bg-[#16A36A] text-white text-[11px] font-bold cursor-pointer"
                               >
                                 Pay
+                              </button>
+                            )}
+                            {canWrite && inv.status !== 'Paid' && Number(inv.paidAmount || 0) === 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`Delete unpaid invoice ${inv.invoiceNo}?`)) {
+                                    const res = msimamiziEnterpriseService.deleteInvoice(inv.id, currentUser);
+                                    if (!res.success) {
+                                      alert(res.error);
+                                      return;
+                                    }
+                                    onDataChange();
+                                    showToast(`Deleted unpaid invoice ${inv.invoiceNo}.`);
+                                  }
+                                }}
+                                title="Delete Unpaid Invoice"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-[#DC4545] hover:bg-red-50 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>

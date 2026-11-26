@@ -24,6 +24,9 @@ import {
 import { dataService } from '@/lib/dataService';
 import {
   hasPermission,
+  isConfirmedPaidEnrolment,
+  getRealizedRegistrationRevenue,
+  normalizeDestinationHub,
   msimamiziEnterpriseService,
 } from '@/services/msimamiziEnterpriseService';
 
@@ -136,6 +139,8 @@ export default function AcademicModule({
   courses = [],
   registrations = [],
   cohorts = [],
+  invoices = [],
+  payments = [],
   settings,
   currentUser,
   onDataChange,
@@ -194,12 +199,13 @@ export default function AcademicModule({
       map[cat].courses.push(c);
     });
     registrations.forEach((r) => {
+      if (!isConfirmedPaidEnrolment(r, invoices, payments)) return;
       const matched = courses.find((c) => c.slug === r.courseSlug || c.title === r.eventTitle);
       const cat = matched?.category || 'Executive Training';
       if (map[cat]) map[cat].enrolments += Number(r.participantsCount) || 1;
     });
     return Object.values(map).sort((a, b) => b.count - a.count);
-  }, [courses, registrations]);
+  }, [courses, registrations, invoices, payments]);
 
   useEffect(() => {
     if (categories.length > 0 && (!selectedCategory || !categories.some((c) => c.name === selectedCategory))) {
@@ -207,7 +213,7 @@ export default function AcademicModule({
     }
   }, [categories, selectedCategory]);
 
-  // Training Destinations breakdown
+  // Training Destinations breakdown (strictly Confirmed + Invoiced + Paid for delegates & revenue)
   const destinations = useMemo(() => {
     const map = {};
     DESTINATION_HUBS.forEach((hub) => {
@@ -216,12 +222,13 @@ export default function AcademicModule({
         cohorts: 0,
         cohortRecords: [],
         enrolments: 0,
+        pendingPipeline: 0,
         registrationRecords: [],
         revenue: 0,
       };
     });
     cohorts.forEach((c) => {
-      const d = c.destination || 'Nairobi, Kenya';
+      const d = normalizeDestinationHub(c.destination);
       if (!map[d]) {
         map[d] = {
           name: d,
@@ -233,6 +240,7 @@ export default function AcademicModule({
           cohorts: 0,
           cohortRecords: [],
           enrolments: 0,
+          pendingPipeline: 0,
           registrationRecords: [],
           revenue: 0,
         };
@@ -241,10 +249,7 @@ export default function AcademicModule({
       map[d].cohortRecords.push(c);
     });
     registrations.forEach((r) => {
-      const d = r.venue || 'Nairobi, Kenya';
-      const firstToken = d.split(',')[0].trim().toLowerCase();
-      const key =
-        Object.keys(map).find((k) => firstToken && k.toLowerCase().includes(firstToken)) || d;
+      const key = normalizeDestinationHub(r.venue);
       if (!map[key]) {
         map[key] = {
           name: key,
@@ -256,16 +261,24 @@ export default function AcademicModule({
           cohorts: 0,
           cohortRecords: [],
           enrolments: 0,
+          pendingPipeline: 0,
           registrationRecords: [],
           revenue: 0,
         };
       }
-      map[key].enrolments += Number(r.participantsCount) || 1;
-      map[key].revenue += Number(r.totalFee) || 0;
-      map[key].registrationRecords.push(r);
+      if (isConfirmedPaidEnrolment(r, invoices, payments)) {
+        map[key].enrolments += Number(r.participantsCount) || 1;
+        map[key].revenue += getRealizedRegistrationRevenue(r, invoices, payments);
+        map[key].registrationRecords.push(r);
+      } else {
+        const st = (r.status || r.workflowStage || '').toLowerCase();
+        if (!st.includes('rejected') && !st.includes('withdrawn') && !st.includes('cancelled')) {
+          map[key].pendingPipeline += Number(r.participantsCount) || 1;
+        }
+      }
     });
     return Object.values(map);
-  }, [cohorts, registrations]);
+  }, [cohorts, registrations, invoices, payments]);
 
   const openNewCohortModal = (prefill = {}) => {
     setEditingCohort(null);
@@ -700,11 +713,11 @@ export default function AcademicModule({
             <p className="text-2xl font-black text-[#008000] mt-1">{cohorts.length}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-            <p className="text-[10.5px] font-bold uppercase text-[#718096]">Total Delegates</p>
+            <p className="text-[10.5px] font-bold uppercase text-[#718096]">Confirmed Delegates</p>
             <p className="text-2xl font-black text-[#032e42] mt-1">{totalHubDelegates}</p>
           </div>
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-            <p className="text-[10.5px] font-bold uppercase text-[#718096]">Hub Revenue (USD)</p>
+            <p className="text-[10.5px] font-bold uppercase text-[#718096]">Confirmed Revenue (USD)</p>
             <p className="text-2xl font-black text-[#16A36A] mt-1">${totalHubRevenue.toLocaleString()}</p>
           </div>
         </div>
@@ -819,7 +832,7 @@ export default function AcademicModule({
 
               <div className="rounded-xl bg-[#F5F8FC] border border-slate-200/80 p-4 space-y-2.5">
                 <h4 className="font-black text-[#032e42] flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-[#008000]" /> Tracked Cohorts &amp; Bookings ({activeHub.cohortRecords.length} Cohorts • {activeHub.enrolments} Delegates)
+                  <Users className="w-4 h-4 text-[#008000]" /> Tracked Cohorts &amp; Confirmed Bookings ({activeHub.cohortRecords.length} Cohorts • {activeHub.enrolments} Confirmed Delegates)
                 </h4>
                 {activeHub.cohortRecords.length > 0 ? (
                   <div className="space-y-2">
@@ -838,6 +851,11 @@ export default function AcademicModule({
                 ) : (
                   <p className="text-[#718096]">
                     All {courses.length} catalog courses are open for delivery in <strong>{activeHub.name}</strong>. Use &ldquo;Schedule Cohort Here&rdquo; to track slot capacities and deadlines.
+                  </p>
+                )}
+                {activeHub.pendingPipeline > 0 && (
+                  <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200/80 rounded-lg px-3 py-2">
+                    <strong>{activeHub.pendingPipeline}</strong> unconfirmed registration/inquiry awaiting confirmation, invoicing &amp; verified payment before counting toward confirmed delegates or hub revenue.
                   </p>
                 )}
               </div>

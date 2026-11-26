@@ -1,8 +1,18 @@
 import React from "react";
 import { adminRegistrationService } from "@/services/adminRegistrationService";
+import { msimamiziEnterpriseService } from "@/services/msimamiziEnterpriseService";
+
+function normalizeWhatsAppDigits(raw) {
+  const digits = String(raw || "0708060223").replace(/[^0-9]/g, "");
+  if (digits.startsWith("0") && digits.length === 10) {
+    return `254${digits.slice(1)}`;
+  }
+  return digits || "254708060223";
+}
 
 const WhatsAppWidget = () => {
-  const phoneNumber = "254708060223";
+  const configuredNumber = msimamiziEnterpriseService.getSettings()?.whatsappNumber || "0708060223";
+  const phoneNumber = normalizeWhatsAppDigits(configuredNumber);
   const defaultMessage = encodeURIComponent(
     "Hello ECAS Institute, I would like to inquire about your executive training programs and courses."
   );

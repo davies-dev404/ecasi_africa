@@ -24,6 +24,8 @@ import {
 } from 'recharts';
 import {
   getEffectiveRegistrationStage,
+  isConfirmedPaidEnrolment,
+  getRealizedRegistrationRevenue,
   normalizeLeadStatus,
   normalizeCandidateStage,
   msimamiziEnterpriseService,
@@ -63,11 +65,13 @@ export default function ReportsModule({
       const k = r.eventTitle || 'Unassigned Course';
       if (!map[k]) map[k] = { programme: k, registrations: 0, delegates: 0, revenue: 0 };
       map[k].registrations += 1;
-      map[k].delegates += Number(r.participantsCount) || 1;
-      map[k].revenue += Number(r.totalFee) || 0;
+      if (isConfirmedPaidEnrolment(r, fInvs, fPays)) {
+        map[k].delegates += Number(r.participantsCount) || 1;
+        map[k].revenue += getRealizedRegistrationRevenue(r, fInvs, fPays);
+      }
     });
     return Object.values(map).sort((a, b) => b.registrations - a.registrations);
-  }, [fRegs]);
+  }, [fRegs, fInvs, fPays]);
 
   const byCurrency = useMemo(() => {
     const map = {};

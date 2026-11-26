@@ -216,6 +216,73 @@ export function getEffectiveRegistrationStage(reg) {
   return 'Application Received';
 }
 
+export const CONFIRMED_ENROLMENT_STAGES = [
+  'Payment Confirmed',
+  'Enrolment Confirmed',
+  'Training In Progress',
+  'Completed',
+];
+
+/**
+ * Strict ERP confirmation & revenue recognition gate:
+ * A registration/lead counts as Confirmed & Realized Revenue ONLY when:
+ * 1) It has not been Rejected / Withdrawn / Cancelled
+ * 2) Its admission stage is confirmed (Payment Confirmed / Enrolment Confirmed / Training In Progress / Completed)
+ * 3) It has been Invoiced AND Paid (paymentStatus === 'Paid' backed by a Paid invoice and/or Verified payment)
+ */
+export function isConfirmedPaidEnrolment(reg, invoices = [], payments = []) {
+  if (!reg || typeof reg !== 'object') return false;
+  const stage = getEffectiveRegistrationStage(reg);
+  if (['Rejected', 'Withdrawn', 'Cancelled'].includes(stage)) return false;
+  if (!CONFIRMED_ENROLMENT_STAGES.includes(stage)) return false;
+  if (reg.paymentStatus !== 'Paid') return false;
+
+  const invList = Array.isArray(invoices) ? invoices : [];
+  const payList = Array.isArray(payments) ? payments : [];
+  const linkedInv = invList.find((i) => i && i.registrationId === reg.id && i.status !== 'Cancelled');
+  const hasPaidInvoice = Boolean(linkedInv && linkedInv.status === 'Paid');
+  const hasVerifiedPayment = payList.some(
+    (p) =>
+      p &&
+      p.status === 'Verified' &&
+      (p.registrationId === reg.id || (linkedInv && p.invoiceId === linkedInv.id))
+  );
+  return hasPaidInvoice || hasVerifiedPayment;
+}
+
+export function getRealizedRegistrationRevenue(reg, invoices = [], payments = []) {
+  if (!isConfirmedPaidEnrolment(reg, invoices, payments)) return 0;
+  const invList = Array.isArray(invoices) ? invoices : [];
+  const payList = Array.isArray(payments) ? payments : [];
+  const linkedInvIds = new Set(
+    invList.filter((i) => i && i.registrationId === reg.id && i.status !== 'Cancelled').map((i) => i.id)
+  );
+  const verifiedPaid = payList
+    .filter((p) => p && p.status === 'Verified' && (p.registrationId === reg.id || linkedInvIds.has(p.invoiceId)))
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  if (verifiedPaid > 0) return verifiedPaid;
+  return Number(reg.totalFee) || 0;
+}
+
+export function normalizeDestinationHub(rawVenue) {
+  const v = String(rawVenue || '').trim();
+  if (!v) return 'Nairobi, Kenya';
+  const low = v.toLowerCase();
+  if (low.includes('nairobi')) return 'Nairobi, Kenya';
+  if (low.includes('mombasa')) return 'Mombasa, Kenya';
+  if (low.includes('diani')) return 'Diani, Kenya';
+  if (low.includes('naivasha')) return 'Naivasha, Kenya';
+  if (low.includes('zanzibar')) return 'Zanzibar, Tanzania';
+  if (low.includes('kigali')) return 'Kigali, Rwanda';
+  if (low.includes('arusha')) return 'Arusha, Tanzania';
+  if (low.includes('dubai')) return 'Dubai, UAE';
+  if (low.includes('kuala')) return 'Kuala Lumpur, Malaysia';
+  if (low.includes('online') || low.includes('virtual') || low.includes('remote') || low.includes('zoom')) {
+    return 'Online / Virtual Cohort';
+  }
+  return v;
+}
+
 export function normalizeLeadStatus(rawStatus) {
   const s = String(rawStatus || 'New Lead').trim();
   if (s === 'New') return 'New Lead';
@@ -293,8 +360,8 @@ const DEFAULT_SETTINGS = {
   officialEmail: 'info@ecasiafrica.org',
   admissionsEmail: 'admissions@ecasiafrica.org',
   financeEmail: 'finance@ecasiafrica.org',
-  whatsappNumber: '+254722000000',
-  phone: '+254-722-000-000',
+  whatsappNumber: '+254708060223',
+  phone: '+254 708 060 223 / 0708 060 223',
   address: 'Nairobi, Kenya',
   defaultCurrency: 'USD',
   usdToKesRate: 130,
@@ -393,7 +460,7 @@ const DEFAULT_CMS_SECTIONS = {
   contact_info: {
     title: 'ECAS Institute Admissions & Advisory Desk',
     subtitle: 'Reach our Nairobi headquarters for proforma invoices, corporate delegations, and advisory partnerships.',
-    body: 'Email: info@ecasiafrica.org\nPhone: +254-722-000-000\nLocation: Nairobi, Kenya',
+    body: 'Email: info@ecasiafrica.org\nPhone / WhatsApp: +254 708 060 223 (0708 060 223)\nLocation: Nairobi, Kenya',
     ctaLabel: 'Send Inquiry',
     ctaUrl: '/contact',
     status: 'Published',
@@ -557,6 +624,73 @@ export const msimamiziEnterpriseService = {
     });
     this.logAudit(actor, 'UPDATE_INVOICE', 'Invoice', prev?.invoiceNo || id, prev?.status || '', updates.status || 'Updated', false);
     return updated.find((i) => i.id === id);
+  },
+
+  deleteInvoice(id, actor) {
+    const existing = this.getInvoices();
+    const target = existing.find((i) => i.id === id);
+    if (!target) return { success: false, error: 'Invoice not found.' };
+    const verifiedPays = this.getPayments().filter((p) => p.invoiceId === id && p.status === 'Verified');
+    if (Number(target.paidAmount || 0) > 0 || verifiedPays.length > 0 || target.status === 'Paid') {
+      return { success: false, error: 'Cannot delete a paid invoice with verified receipts.' };
+    }
+    const updated = existing.filter((i) => i.id !== id);
+    this.saveInvoices(updated, {
+      action: 'DELETE_INVOICE',
+      record: target.invoiceNo || id,
+      previousValue: target.status || 'Issued',
+      newValue: 'Deleted',
+    });
+    this.logAudit(actor, 'DELETE_INVOICE', 'Invoice', target.invoiceNo || id, target.status || 'Issued', 'Deleted', false);
+    if (target.registrationId) {
+      const reg = adminRegistrationService.getRegistrations().find((r) => r.id === target.registrationId);
+      if (reg && reg.paymentStatus !== 'Paid') {
+        this.updateRegistrationWorkflow(
+          reg.id,
+          'Approved',
+          `Unpaid invoice ${target.invoiceNo} removed.`,
+          actor,
+          { paymentStatus: 'Unpaid' }
+        );
+      }
+    }
+    return { success: true };
+  },
+
+  purgeRegistrationCascade(regId, actor) {
+    const regs = adminRegistrationService.getRegistrations();
+    const targetReg = regs.find((r) => r.id === regId);
+    const existingInvs = this.getInvoices();
+    const allPays = this.getPayments();
+    const removedInvNos = [];
+    const nextInvs = existingInvs.filter((inv) => {
+      if (inv.registrationId !== regId) return true;
+      const hasPaid = Number(inv.paidAmount || 0) > 0 || inv.status === 'Paid' || allPays.some((p) => p.invoiceId === inv.id && p.status === 'Verified');
+      if (hasPaid) return true;
+      removedInvNos.push(inv.invoiceNo || inv.id);
+      return false;
+    });
+    if (removedInvNos.length > 0) {
+      this.saveInvoices(nextInvs, {
+        action: 'PURGE_LINKED_INVOICES',
+        record: removedInvNos.join(', '),
+        previousValue: 'Issued (Unpaid)',
+        newValue: 'Purged with test/deleted registration',
+      });
+    }
+    const ok = adminRegistrationService.deleteRegistration(regId);
+    if (ok) {
+      this.logAudit(
+        actor,
+        'DELETE_REGISTRATION',
+        'Registration',
+        targetReg?.referenceNo || regId,
+        targetReg ? `${targetReg.firstName || ''} ${targetReg.lastName || ''}`.trim() : regId,
+        removedInvNos.length > 0 ? `Deleted (+ removed unpaid invoice ${removedInvNos.join(', ')})` : 'Deleted'
+      );
+      notifyEnterpriseUpdate('registrations');
+    }
+    return ok;
   },
 
   // ─── Payments & Reconciliation ──────────────────────────────────────────────
@@ -1037,7 +1171,15 @@ export const msimamiziEnterpriseService = {
   // ─── Platform Settings ──────────────────────────────────────────────────────
   getSettings() {
     const stored = readJson(ENTERPRISE_KEYS.SETTINGS, null);
-    return stored && typeof stored === 'object' ? { ...DEFAULT_SETTINGS, ...stored } : DEFAULT_SETTINGS;
+    if (!stored || typeof stored !== 'object') return DEFAULT_SETTINGS;
+    const merged = { ...DEFAULT_SETTINGS, ...stored };
+    if (!merged.whatsappNumber || String(merged.whatsappNumber).includes('722000000')) {
+      merged.whatsappNumber = DEFAULT_SETTINGS.whatsappNumber;
+    }
+    if (!merged.phone || String(merged.phone).includes('722-000-000') || String(merged.phone).includes('722000000')) {
+      merged.phone = DEFAULT_SETTINGS.phone;
+    }
+    return merged;
   },
 
   saveSettings(newSettings, actor) {

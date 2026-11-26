@@ -6,7 +6,7 @@ import {
   FileSpreadsheet,
   Printer,
   Eye,
-  Receipt,
+  FileText,
   CheckCircle2,
   FileCheck2,
   Upload,
@@ -21,7 +21,9 @@ import {
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import {
   ADMISSION_STAGES,
+  CONFIRMED_ENROLMENT_STAGES,
   getEffectiveRegistrationStage,
+  isConfirmedPaidEnrolment,
   hasPermission,
   msimamiziEnterpriseService,
 } from '@/services/msimamiziEnterpriseService';
@@ -70,10 +72,7 @@ export default function AdmissionsModule({
   const scopedList = useMemo(() => {
     let list = [...registrations];
     if (activeTab === 'enrolments') {
-      list = list.filter((r) => {
-        const s = getEffectiveRegistrationStage(r);
-        return ['Payment Confirmed', 'Enrolment Confirmed', 'Training In Progress', 'Completed'].includes(s);
-      });
+      list = list.filter((r) => isConfirmedPaidEnrolment(r, invoices, payments));
     } else if (activeTab === 'application-documents') {
       list = list.filter((r) => (Array.isArray(r.documents) && r.documents.length > 0) || getEffectiveRegistrationStage(r) === 'Documents Required' || true);
     }
@@ -100,7 +99,7 @@ export default function AdmissionsModule({
       return new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0);
     });
     return list;
-  }, [registrations, activeTab, search, stageFilter, paymentFilter, sortBy]);
+  }, [registrations, invoices, payments, activeTab, search, stageFilter, paymentFilter, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(scopedList.length / PAGE_SIZE));
   const pagedList = scopedList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -113,6 +112,12 @@ export default function AdmissionsModule({
 
   const handleStageUpdate = (reg, newStage) => {
     if (!canWrite) return;
+    if (CONFIRMED_ENROLMENT_STAGES.includes(newStage) && !isConfirmedPaidEnrolment({ ...reg, workflowStage: newStage }, invoices, payments)) {
+      const msg = 'Enrolment and revenue cannot be confirmed until an official invoice is issued and verified payment is recorded in Finance.';
+      showToast(msg);
+      alert(msg);
+      return;
+    }
     msimamiziEnterpriseService.updateRegistrationWorkflow(reg.id, newStage, stageNote, currentUser);
     setStageNote('');
     onDataChange();
@@ -251,13 +256,23 @@ export default function AdmissionsModule({
           </button>
           <div className="flex items-center gap-2">
             {canFinance && (
-              <button
-                type="button"
-                onClick={() => handleGenerateInvoice(activeProfile)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm cursor-pointer"
-              >
-                <Receipt className="w-3.5 h-3.5" /> Generate Invoice
-              </button>
+              linkedInvoices.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('invoices')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" /> View Invoice ({linkedInvoices[0].invoiceNo})
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleGenerateInvoice(activeProfile)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold shadow-sm cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" /> Issue Invoice
+                </button>
+              )
             )}
             <button
               type="button"
@@ -720,22 +735,45 @@ export default function AdmissionsModule({
                           >
                             <Eye className="w-3 h-3 text-[#008000]" /> Profile
                           </button>
-                          {canFinance && (
-                            <button
-                              type="button"
-                              onClick={() => handleGenerateInvoice(reg)}
-                              title="Generate Invoice"
-                              className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#008000] cursor-pointer"
-                            >
-                              <Receipt className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          {canFinance && (() => {
+                            const linkedInv = invoices.find((i) => i.registrationId === reg.id && i.status !== 'Cancelled');
+                            const isSettled = isConfirmedPaidEnrolment(reg, invoices, payments) || reg.paymentStatus === 'Paid';
+                            if (isSettled) {
+                              return (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#16A36A] border border-emerald-200 text-[11px] font-bold">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Paid
+                                </span>
+                              );
+                            }
+                            if (linkedInv) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => onNavigate('invoices')}
+                                  title={`Invoice ${linkedInv.invoiceNo} already issued — go to Invoices to record payment`}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-bold cursor-pointer"
+                                >
+                                  <FileText className="w-3.5 h-3.5" /> Invoiced
+                                </button>
+                              );
+                            }
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateInvoice(reg)}
+                                title="Issue Invoice for this Registration"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#008000] hover:bg-[#006600] text-white text-[11px] font-bold cursor-pointer"
+                              >
+                                <FileText className="w-3.5 h-3.5" /> Issue Invoice
+                              </button>
+                            );
+                          })()}
                           {canWrite && (
                             <button
                               type="button"
                               onClick={() => {
-                                if (window.confirm(`Delete registration ${reg.referenceNo}?`)) {
-                                  adminRegistrationService.deleteRegistration(reg.id);
+                                if (window.confirm(`Delete registration ${reg.referenceNo} and any uncollected test invoices linked to it?`)) {
+                                  msimamiziEnterpriseService.purgeRegistrationCascade(reg.id, currentUser);
                                   onDataChange();
                                   showToast(`Deleted registration ${reg.referenceNo}.`);
                                 }
