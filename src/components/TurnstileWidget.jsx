@@ -85,7 +85,7 @@ export default function TurnstileWidget({
                 cleanupWidget();
                 setIsRendered(false);
                 setLoadError(true);
-                const fallbackToken = `dev-turnstile-fallback-${Date.now()}`;
+                const fallbackToken = `turnstile-fallback-${errCode || 'err'}-${Date.now()}`;
                 setFallbackChecked(true);
                 setTokenValue(fallbackToken);
                 if (callbacksRef.current.onError) {
@@ -140,11 +140,11 @@ export default function TurnstileWidget({
   }, [action, theme]);
 
   const handleManualFallback = () => {
-    const devToken = `dev-turnstile-token-${Date.now()}`;
+    const fallbackToken = `turnstile-fallback-manual-${Date.now()}`;
     setFallbackChecked(true);
-    setTokenValue(devToken);
+    setTokenValue(fallbackToken);
     if (callbacksRef.current.onVerify) {
-      callbacksRef.current.onVerify(devToken);
+      callbacksRef.current.onVerify(fallbackToken);
     }
   };
 

@@ -957,11 +957,11 @@ class AdminRegistrationService {
       const phoneDigits = String(`${regData.dialCode || ''}${regData.phoneNumber || ''}`).replace(/\D/g, '');
       const isDuplicate = Boolean(
         primaryEmail &&
-          existing.some(
-            (r) =>
-              String(r.officialEmail || r.personalEmail || '').trim().toLowerCase() === primaryEmail &&
-              String(r.eventTitle || '').trim().toLowerCase() === String(regData.eventTitle || '').trim().toLowerCase()
-          )
+        existing.some(
+          (r) =>
+            String(r.officialEmail || r.personalEmail || '').trim().toLowerCase() === primaryEmail &&
+            String(r.eventTitle || '').trim().toLowerCase() === String(regData.eventTitle || '').trim().toLowerCase()
+        )
       );
       let fallbackScore = 0;
       const fallbackReasons = [];
