@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PageHeroBanner from '@/components/PageHeroBanner';
+import TurnstileWidget from '@/components/TurnstileWidget';
+import { verifyTurnstile } from '@/services/turnstileService';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
+import { validateGenuineInquiry } from '@/utils/antiSpamValidator';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -18,24 +21,61 @@ const Contact = () => {
   });
   const [submittedRef, setSubmittedRef] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+  const formOpenedAtRef = useRef(Date.now());
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.fullName.trim() || !formData.email.trim()) return;
+    setFormError('');
+
+    const spamErr = validateGenuineInquiry(formData);
+    if (spamErr) {
+      setFormError(spamErr);
+      return;
+    }
+
+    const domToken = e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')?.value || '';
+    const effectiveToken = turnstileToken || domToken;
+    if (!effectiveToken) {
+      setFormError('Please complete the security verification before submitting your inquiry.');
+      return;
+    }
+
     setSubmitting(true);
-    const created = adminRegistrationService.addInquiry({
-      channel: 'Website',
-      leadSource: 'Website',
-      inquiryType: 'Contact Page Inquiry',
-      fullName: formData.fullName.trim(),
-      email: formData.email.trim(),
-      phone: formData.phone.trim(),
-      organisation: formData.organisation.trim(),
-      courseTitle: formData.courseTitle.trim() || 'General Executive Training Inquiry',
-      venue: 'Nairobi / Online',
-      message: formData.message.trim() || 'Submitted inquiry from ECAS Institute Contact page.',
-    });
+    const check = await verifyTurnstile(effectiveToken, 'contact_inquiry');
+    if (check && check.success === false) {
+      setSubmitting(false);
+      setFormError(check.error || 'Security verification failed. Please retry.');
+      return;
+    }
+
+    const created = adminRegistrationService.addInquiry(
+      {
+        channel: 'Website',
+        leadSource: 'Website',
+        inquiryType: 'Contact Page Inquiry',
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        organisation: formData.organisation.trim(),
+        courseTitle: formData.courseTitle.trim() || 'General Executive Training Inquiry',
+        venue: 'Nairobi / Online',
+        message: formData.message.trim() || 'Submitted inquiry from ECAS Institute Contact page.',
+      },
+      {
+        securityMeta: {
+          honeypot,
+          dwellMs: Math.max(0, Date.now() - formOpenedAtRef.current),
+        },
+      }
+    );
     setSubmitting(false);
+    if (created && created.blocked) {
+      setFormError(created.error || 'Inquiry blocked by ECAS anti-spam protection.');
+      return;
+    }
     setSubmittedRef(created?.referenceNo || 'INQ-RECEIVED');
   };
 
@@ -142,9 +182,10 @@ const Contact = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Phone / WhatsApp</label>
+                    <label className="block font-bold text-slate-700 mb-1">Phone / WhatsApp *</label>
                     <input
                       type="tel"
+                      required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+254 7XX XXX XXX"
@@ -152,9 +193,10 @@ const Contact = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Organization / Institution</label>
+                    <label className="block font-bold text-slate-700 mb-1">Organization / Institution *</label>
                     <input
                       type="text"
+                      required
                       value={formData.organisation}
                       onChange={(e) => setFormData({ ...formData, organisation: e.target.value })}
                       placeholder="Ministry, NGO, Corporate..."
@@ -162,6 +204,17 @@ const Contact = () => {
                     />
                   </div>
                 </div>
+                {/* Hidden anti-bot honeypot */}
+                <input
+                  type="text"
+                  name="companyFaxUrl"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  aria-hidden="true"
+                  style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+                />
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Area of Interest / Course</label>
                   <input
@@ -183,6 +236,20 @@ const Contact = () => {
                     className="w-full p-3.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#008000]"
                   />
                 </div>
+                <TurnstileWidget
+                  action="contact_inquiry"
+                  onVerify={(tok) => {
+                    setTurnstileToken(tok);
+                    setFormError('');
+                  }}
+                  onExpire={() => setTurnstileToken('')}
+                />
+                {formError && (
+                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-[#d83030]">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{formError}</span>
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={submitting}

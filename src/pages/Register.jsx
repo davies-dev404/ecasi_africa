@@ -44,8 +44,12 @@ export default function Register() {
 
   const handleSubmitRegistration = async (submissionRecord, securityMeta = {}) => {
     const saved = await adminRegistrationService.addRegistration(submissionRecord, securityMeta);
+    if (saved && saved.blocked) {
+      return saved;
+    }
     setSubmittedData(saved || submissionRecord);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    return saved;
   };
 
   return (

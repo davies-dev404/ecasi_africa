@@ -350,6 +350,22 @@ export default function CrmModule({
             >
               <ArrowRightCircle className="w-3.5 h-3.5" /> Registrations Directory
             </button>
+            {canWrite && inquiries.length > 0 && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!window.confirm(`Permanently purge ALL ${inquiries.length} inquiries from the server? Only new verified requests from real people and organizations will be accepted going forward.`)) {
+                    return;
+                  }
+                  const res = await adminRegistrationService.purgeAllInquiries();
+                  onDataChange();
+                  showToast(`Purged ${res.purgedCount} inquiry record(s) from the system.`);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC4545] border border-red-200 text-xs font-bold cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Purge All Inquiries
+              </button>
+            )}
             <button
               type="button"
               onClick={() => adminRegistrationService.downloadInquiriesCSV()}

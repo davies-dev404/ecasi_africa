@@ -1706,11 +1706,6 @@ function MsimamiziAdminInner() {
                     setTurnstileVerified(true);
                     setAuthError('');
                   }}
-                  onError={(_errCode, fallbackToken) => {
-                    setTurnstileToken(fallbackToken || `dev-turnstile-fallback-${Date.now()}`);
-                    setTurnstileVerified(true);
-                    setAuthError('');
-                  }}
                   onExpire={() => {
                     setTurnstileToken('');
                     setTurnstileVerified(false);
@@ -1813,11 +1808,6 @@ function MsimamiziAdminInner() {
                   action="create_admin"
                   onVerify={(token) => {
                     setTurnstileToken(token);
-                    setTurnstileVerified(true);
-                    setAuthError('');
-                  }}
-                  onError={(_errCode, fallbackToken) => {
-                    setTurnstileToken(fallbackToken || `dev-turnstile-fallback-${Date.now()}`);
                     setTurnstileVerified(true);
                     setAuthError('');
                   }}

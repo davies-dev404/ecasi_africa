@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, Search, ShieldCheck, CheckCircle2, Mail } from "lucide-react";
+import { ArrowLeft, RotateCcw, Search, AlertCircle } from "lucide-react";
 import countryListData from "@/data/countriesData.json";
 import CountrySelector from "@/components/CountrySelector";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { verifyTurnstile } from "@/services/turnstileService";
-import { getSyncUrl } from "@/services/adminRegistrationService";
+import { validateGenuineRegistration } from "@/utils/antiSpamValidator";
 
 const COUNTRY_DIAL_CODES = countryListData;
 
@@ -145,70 +144,11 @@ export default function CourseRegistrationForm({
   const [notARobot, setNotARobot] = useState(false);
   const [robotLoading, setRobotLoading] = useState(false);
   const [robotError, setRobotError] = useState(false);
+  const [validationError, setValidationError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const [honeypot, setHoneypot] = useState("");
   const formOpenedAtRef = useRef(Date.now());
-  const [otpState, setOtpState] = useState({
-    sent: false,
-    sending: false,
-    verifying: false,
-    verified: false,
-    code: "",
-    token: "",
-    feedback: "",
-  });
-
-  const handleSendEmailOtp = async () => {
-    const targetEmail = (formData.officialEmail || formData.personalEmail || "").trim();
-    if (!targetEmail || !targetEmail.includes("@")) {
-      setOtpState((s) => ({ ...s, feedback: "Please enter a valid email address before requesting a verification code." }));
-      return;
-    }
-    setOtpState((s) => ({ ...s, sending: true, feedback: "" }));
-    try {
-      const res = await fetch(getSyncUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "send_reg_otp", email: targetEmail }),
-      });
-      const json = await res.json().catch(() => null);
-      if (res.ok && json?.success) {
-        setOtpState((s) => ({ ...s, sending: false, sent: true, feedback: json.message || "Verification code sent to your email." }));
-      } else {
-        setOtpState((s) => ({ ...s, sending: false, feedback: json?.error || "Could not send code right now. You may still complete registration." }));
-      }
-    } catch {
-      setOtpState((s) => ({ ...s, sending: false, feedback: "Email OTP service offline in local mode. You may still submit registration." }));
-    }
-  };
-
-  const handleVerifyEmailOtp = async () => {
-    const targetEmail = (formData.officialEmail || formData.personalEmail || "").trim();
-    if (!otpState.code.trim()) return;
-    setOtpState((s) => ({ ...s, verifying: true, feedback: "" }));
-    try {
-      const res = await fetch(getSyncUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verify_reg_otp", email: targetEmail, code: otpState.code.trim() }),
-      });
-      const json = await res.json().catch(() => null);
-      if (res.ok && json?.verified) {
-        setOtpState((s) => ({
-          ...s,
-          verifying: false,
-          verified: true,
-          token: json.emailVerifyToken || "",
-          feedback: "Email address verified successfully!",
-        }));
-      } else {
-        setOtpState((s) => ({ ...s, verifying: false, feedback: json?.error || "Invalid verification code." }));
-      }
-    } catch {
-      setOtpState((s) => ({ ...s, verifying: false, feedback: "Verification check unavailable right now." }));
-    }
-  };
 
   const filteredCourseOptions = useMemo(() => {
     const q = courseFilter.trim().toLowerCase();
@@ -313,12 +253,21 @@ export default function CourseRegistrationForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setValidationError("");
+
+    if (!isAdmin) {
+      const spamErr = validateGenuineRegistration(formData);
+      if (spamErr) {
+        setValidationError(spamErr);
+        return;
+      }
+    }
 
     const domToken =
       e.currentTarget?.querySelector?.('input[name="cf-turnstile-response"]')
         ?.value || "";
     const effectiveToken = turnstileToken || domToken;
-    if (!notARobot && !effectiveToken) {
+    if (!notARobot || !effectiveToken) {
       setRobotError(true);
       return;
     }
@@ -383,11 +332,12 @@ export default function CourseRegistrationForm({
       honeypot,
       dwellMs: Math.max(0, Date.now() - formOpenedAtRef.current),
       turnstileStatus,
-      emailVerifyToken: otpState.token || "",
-      emailOtpVerified: otpState.verified,
     };
 
-    onSubmitRegistration?.(submissionRecord, securityMeta);
+    const result = await onSubmitRegistration?.(submissionRecord, securityMeta);
+    if (result && result.blocked) {
+      setValidationError(result.error || "Submission could not be verified. Please use real organizational details.");
+    }
   };
 
   return (
@@ -1074,71 +1024,10 @@ export default function CourseRegistrationForm({
         )}
       </div>
 
-      {/* Optional Fast-Track Email Verification OTP + Anti-Phishing Notice (Public Mode Only) */}
-      {!isAdmin && (
-        <div className="rounded-lg border border-slate-200 bg-[#f8fafc] p-4 space-y-3 text-xs">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 font-bold text-[#032e42]">
-              <Mail className="w-4 h-4 text-[#008000]" />
-              <span>Email Verification (Recommended for Faster Clearance)</span>
-            </div>
-            {otpState.verified ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#008000] font-bold text-[11px]">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Email Verified
-              </span>
-            ) : (
-              <button
-                type="button"
-                disabled={otpState.sending}
-                onClick={handleSendEmailOtp}
-                className="px-3 py-1.5 rounded-md bg-[#032e42] hover:bg-[#008000] text-white font-semibold text-[11px] transition cursor-pointer disabled:opacity-50"
-              >
-                {otpState.sending ? "Sending..." : otpState.sent ? "Resend 6-Digit Code" : "Send Verification Code"}
-              </button>
-            )}
-          </div>
-          {otpState.sent && !otpState.verified && (
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={otpState.code}
-                onChange={(e) => setOtpState((s) => ({ ...s, code: e.target.value }))}
-                placeholder="Enter 6-digit code"
-                className="h-9 px-3 rounded border border-slate-300 bg-white text-xs font-mono w-44"
-              />
-              <button
-                type="button"
-                disabled={otpState.verifying}
-                onClick={handleVerifyEmailOtp}
-                className="h-9 px-3.5 rounded bg-[#008000] hover:bg-[#006600] text-white font-bold text-xs cursor-pointer"
-              >
-                {otpState.verifying ? "Checking..." : "Verify Email"}
-              </button>
-            </div>
-          )}
-          {otpState.feedback && (
-            <p className={`text-[11px] font-medium ${otpState.verified ? "text-[#008000]" : "text-slate-600"}`}>
-              {otpState.feedback}
-            </p>
-          )}
-          <div className="pt-2 border-t border-slate-200 flex items-start gap-2 text-[11px] text-slate-600">
-            <ShieldCheck className="w-4 h-4 text-[#008000] shrink-0 mt-0.5" />
-            <p>
-              <strong>Official ECAS Security &amp; Privacy Notice:</strong> All registrations undergo automated verification. Official invoices are issued solely from <strong className="font-mono">@ecasiafrica.org</strong>.{' '}
-              <Link to="/security-notice" className="text-[#1e73be] font-semibold hover:underline">
-                Verify invoices or report phishing →
-              </Link>
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Divider after Summary */}
       <hr className="border-t border-gray-300 my-6" />
 
-      {/* Cloudflare Turnstile Verification + Action Buttons (Back | Complete Registration | Reset) */}
+      {/* Security Verification + Action Buttons (Back | Complete Registration | Reset) */}
       <div className="space-y-3 pt-1">
         <div className="space-y-2">
           <TurnstileWidget
@@ -1153,20 +1042,20 @@ export default function CourseRegistrationForm({
               setTurnstileToken("");
               setNotARobot(false);
             }}
-            onError={(_errCode, fallbackToken) => {
-              setTurnstileToken(
-                fallbackToken || `dev-turnstile-fallback-${Date.now()}`
-              );
-              setNotARobot(true);
-              setRobotError(false);
-            }}
           />
         </div>
 
         {robotError && (
           <p className="text-xs text-[#d83030] font-medium">
-            Please confirm that you are not a robot before completing registration.
+            Please complete the security verification before completing registration.
           </p>
+        )}
+
+        {validationError && (
+          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-[#d83030]">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{validationError}</span>
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-1.5 pt-1">

@@ -710,6 +710,26 @@ export default function AdmissionsModule({
                 <Plus className="w-4 h-4" /> New Registration
               </button>
             )}
+            {canWrite && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!window.confirm('Permanently purge all disposable-email, bot, and phishing spam registrations from the server? Real delegates will be preserved.')) {
+                    return;
+                  }
+                  const res = await adminRegistrationService.purgeSpamRegistrations();
+                  onDataChange();
+                  showToast(
+                    res.purgedCount > 0
+                      ? `Purged ${res.purgedCount} spam / phishing registration(s) from the system.`
+                      : 'No spam or disposable-email registrations found.'
+                  );
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC4545] border border-red-200 text-xs font-bold cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Purge Spam
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {

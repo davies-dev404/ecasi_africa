@@ -13,6 +13,7 @@ import {
 } from '@/services/adminRegistrationService';
 import { sanitizeRichHtml } from '@/utils/htmlSanitizer';
 import { realtimeService } from '@/services/realtimeService';
+import { isDisposableEmail } from '@/utils/antiSpamValidator';
 
 export const ENTERPRISE_KEYS = {
   INVOICES: 'ecasi_msimamizi_invoices_v1',
@@ -330,38 +331,72 @@ export const SECURITY_GATED_STAGES = [
 
 export function getRegistrationSecurityInfo(reg) {
   const sec = reg?.securityAssessment || {};
-  const riskScore = Number(sec.riskScore) || 0;
+  let riskScore = Number(sec.riskScore) || 0;
+  const reasons = Array.isArray(sec.reasons) ? [...sec.reasons] : [];
+  let emailVerification = sec.emailVerification || 'Unverified';
+
+  // Dynamically catch disposable/spam records even if created prior to risk engine deployment
+  const hasDisposable = isDisposableEmail(reg?.officialEmail) || isDisposableEmail(reg?.personalEmail);
+  if (hasDisposable && riskScore < 85) {
+    riskScore = 90;
+    emailVerification = 'Disposable / Blocked Domain';
+    if (!reasons.some((r) => r.signal === 'DISPOSABLE_EMAIL')) {
+      reasons.unshift({
+        signal: 'DISPOSABLE_EMAIL',
+        weight: 90,
+        detail: 'Submitted using a disposable/temporary spam email provider (e.g. Mailinator).',
+      });
+    }
+  }
+  const participants = Number(reg?.participantsCount) || 1;
+  if (participants > 30 && riskScore < 65) {
+    riskScore = Math.min(100, Math.max(riskScore + 35, 65));
+    if (!reasons.some((r) => r.signal === 'LARGE_DELEGATE_GROUP')) {
+      reasons.push({
+        signal: 'LARGE_DELEGATE_GROUP',
+        weight: 35,
+        detail: `Abnormal participant count (${participants}) flagged for verification.`,
+      });
+    }
+  }
+
   const riskLevel =
-    sec.riskLevel ||
-    (riskScore >= 80
+    hasDisposable
       ? 'CRITICAL RISK'
-      : riskScore >= 60
-        ? 'HIGH RISK'
-        : riskScore >= 30
-          ? 'MEDIUM RISK'
-          : 'LOW RISK');
+      : sec.riskLevel ||
+        (riskScore >= 80
+          ? 'CRITICAL RISK'
+          : riskScore >= 60
+            ? 'HIGH RISK'
+            : riskScore >= 30
+              ? 'MEDIUM RISK'
+              : 'LOW RISK');
   const securityClearance =
-    sec.securityClearance ||
-    (riskScore >= 80
-      ? 'Blocked — Review Required'
-      : riskScore >= 60
-        ? 'Pending Review'
-        : riskScore >= 30
-          ? 'Additional Check Recommended'
-          : 'Auto-Cleared (Low Risk)');
+    hasDisposable && sec.securityClearance !== 'Cleared'
+      ? 'Blocked — Spam / Disposable Email'
+      : sec.securityClearance ||
+        (riskScore >= 80
+          ? 'Blocked — Review Required'
+          : riskScore >= 60
+            ? 'Pending Review'
+            : riskScore >= 30
+              ? 'Additional Check Recommended'
+              : 'Auto-Cleared (Low Risk)');
 
   return {
     riskScore,
     riskLevel,
-    reasons: Array.isArray(sec.reasons) ? sec.reasons : [],
+    reasons,
     isDuplicate: Boolean(sec.isDuplicate),
-    botFlagged: Boolean(sec.botFlagged),
+    botFlagged: Boolean(sec.botFlagged) || hasDisposable,
     orgVerification: sec.orgVerification || 'Unverified',
-    emailVerification: sec.emailVerification || 'Unverified',
+    emailVerification,
     phoneVerification: sec.phoneVerification || 'Unverified',
     securityClearance,
     requiresSecurityReview: riskScore >= 60 && securityClearance !== 'Cleared',
-    recommendedAction: sec.recommendedAction || 'Proceed through standard admissions review.',
+    recommendedAction: hasDisposable
+      ? 'Purge this spam/disposable-email submission immediately.'
+      : sec.recommendedAction || 'Proceed through standard admissions review.',
     reviewHistory: Array.isArray(sec.reviewHistory) ? sec.reviewHistory : [],
     falsePositiveCleared: Boolean(sec.falsePositiveCleared),
   };

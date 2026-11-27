@@ -394,17 +394,193 @@ function ecasRecordSecurityAlert(
  * Note: Free email providers are NEVER treated as fraud alone — only combined with multiple risk signals.
  */
 const ECAS_DISPOSABLE_DOMAINS = [
-    'mailinator.com', 'guerrillamail.com', 'guerrillamail.net', '10minutemail.com',
-    'tempmail.com', 'temp-mail.org', 'throwawaymail.com', 'yopmail.com', 'yopmail.fr',
-    'sharklasers.com', 'trashmail.com', 'getnada.com', 'dispostable.com', 'maildrop.cc',
-    'fakeinbox.com', 'mintemail.com', 'mytemp.email', 'mohmal.com', 'mailnesia.com',
-    'burnermail.io', 'tempail.com', 'emailondeck.com', '33mail.com', 'inboxbear.com',
+    'mailinator.com', 'mailinator.net', 'mailinator.org', 'mailinator2.com', 'mailin8r.com',
+    'guerrillamail.com', 'guerrillamail.net', 'guerrillamail.org', 'guerrillamail.biz', 'guerrillamail.de',
+    'sharklasers.com', 'grr.la', 'pokemail.net', 'spam4.me',
+    '10minutemail.com', '10minutemail.net', '10minemail.com',
+    'tempmail.com', 'temp-mail.org', 'temp-mail.io', 'tempail.com', 'tempinbox.com', 'tempomail.fr',
+    'throwawaymail.com', 'yopmail.com', 'yopmail.fr', 'yopmail.net', 'cool.fr.nf', 'jetable.org',
+    'trashmail.com', 'trashmail.net', 'trashmail.org', 'mytrashmail.com',
+    'getnada.com', 'nada.email', 'dispostable.com', 'maildrop.cc', 'fakeinbox.com',
+    'fakemailgenerator.com', 'mintemail.com', 'mytemp.email', 'mohmal.com', 'mailnesia.com',
+    'burnermail.io', 'emailondeck.com', '33mail.com', 'inboxbear.com', 'mailcatch.com',
+    'harakirimail.com', 'crazymailing.com', 'dropmail.me', 'mailexpire.com', 'mailtothis.com',
+    'noclickemail.com', 'nowmymail.com', 'pookmail.com', 'quickinbox.com', 'rcpt.at',
+    'sogetthis.com', 'spambox.us', 'spamex.com', 'spamfree24.org', 'spamgourmet.com',
+    'spamherelots.com', 'spamhole.com', 'spammotel.com', 'temporaryemail.net',
+    'temporaryinbox.com', 'thisisnotmyrealemail.com', 'tmailinator.com',
+    'wegwerfmail.de', 'wegwerfmail.net', 'wegwerfmail.org', 'zippymail.info',
+    'example.com', 'example.org', 'test.com', 'invalid.com', 'localhost.localdomain',
 ];
 
 const ECAS_FREE_EMAIL_DOMAINS = [
     'gmail.com', 'yahoo.com', 'yahoo.co.uk', 'outlook.com', 'hotmail.com',
     'live.com', 'icloud.com', 'proton.me', 'protonmail.com', 'aol.com', 'zoho.com',
 ];
+
+function ecasIsDisposableEmail(string $email): bool {
+    $clean = strtolower(trim($email));
+    if ($clean === '' || !str_contains($clean, '@')) return false;
+    $domain = substr($clean, strrpos($clean, '@') + 1);
+    if ($domain === '') return false;
+    foreach (ECAS_DISPOSABLE_DOMAINS as $d) {
+        if ($domain === $d || str_ends_with($domain, '.' . $d)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function ecasIsPlaceholderText(string $val): bool {
+    $clean = trim($val);
+    if ($clean === '') return true;
+    if (preg_match('/^(test|testing|asdf|qwerty|abc|xyz|aaa|xxx|fake|spam|none|n\/a|na|null|undefined|unknown|sample|demo|admin|root|lorem|ipsum|website visitor)$/i', $clean)) {
+        return true;
+    }
+    if (preg_match('#https?://|www\.#i', $clean)) return true;
+    $letters = preg_replace('/[^a-zA-Z0-9]/', '', $clean);
+    if (strlen($letters) < 2) return true;
+    if (preg_match('/^(.)\1{3,}$/i', $letters)) return true;
+    return false;
+}
+
+function ecasHasSpamKeywords(string $text): bool {
+    return (bool)preg_match('/(viagra|cialis|casino|porn|crypto\s*giveaway|bitcoin\s*doubler|seo\s*backlink|buy\s*followers|whatsapp\s*hack|t\.me\/|bit\.ly\/|tinyurl\.com\/)/i', $text);
+}
+
+/**
+ * Hard-block obvious spam, phishing, disposable-email, and automated bot registrations
+ * before they can ever enter the institutional database.
+ * Returns null if genuine/allowed, or an error string if rejected.
+ */
+function ecasScreenPublicRegistrationSpam(array $reg, array $meta = []): ?string {
+    if (!empty($meta['honeypot'])) {
+        return 'Automated bot submission blocked.';
+    }
+    $dwellMs = isset($meta['dwellMs']) ? (int)$meta['dwellMs'] : null;
+    if ($dwellMs !== null && $dwellMs > 0 && $dwellMs < 2500) {
+        return 'Submission rejected: form was completed abnormally fast. Please review your details and try again.';
+    }
+
+    $firstName = trim((string)($reg['firstName'] ?? ''));
+    $lastName = trim((string)($reg['lastName'] ?? ''));
+    $orgName = trim((string)($reg['organisation'] ?? ''));
+    $personalEmail = strtolower(trim((string)($reg['personalEmail'] ?? '')));
+    $officialEmail = strtolower(trim((string)($reg['officialEmail'] ?? '')));
+    $primaryEmail = $officialEmail !== '' ? $officialEmail : $personalEmail;
+    $phoneDigits = preg_replace('/\D/', '', trim((string)(($reg['dialCode'] ?? '') . ($reg['phoneNumber'] ?? ''))));
+    $participants = (int)($reg['participantsCount'] ?? 1);
+
+    if (ecasIsPlaceholderText($firstName) || ecasIsPlaceholderText($lastName)) {
+        return 'Please enter your genuine first and last name.';
+    }
+    if (strlen($orgName) < 3 || ecasIsPlaceholderText($orgName)) {
+        return 'Please provide the genuine name of your organization, ministry, NGO, or institution.';
+    }
+    if ($primaryEmail === '' || !filter_var($primaryEmail, FILTER_VALIDATE_EMAIL)) {
+        return 'Please enter a valid email address.';
+    }
+    if (ecasIsDisposableEmail($personalEmail) || ecasIsDisposableEmail($officialEmail)) {
+        return 'Disposable or temporary email addresses (e.g. Mailinator, YOPmail, TempMail) are not permitted. Please use your real institutional or personal email.';
+    }
+    // Live DNS MX/A validation for primary email domain on production
+    if (function_exists('checkdnsrr') && !ecasIsLocalHost()) {
+        $domain = substr($primaryEmail, strrpos($primaryEmail, '@') + 1);
+        if ($domain !== '' && !@checkdnsrr($domain, 'MX') && !@checkdnsrr($domain, 'A')) {
+            return 'The email domain provided cannot receive mail (no valid DNS record). Please enter a real email address.';
+        }
+    }
+    if (strlen($phoneDigits) < 8 || strlen($phoneDigits) > 15 || preg_match('/^(\d)\1{6,}$/', $phoneDigits) || str_contains($phoneDigits, '1234567') || str_contains($phoneDigits, '0000000')) {
+        return 'Please enter a valid international telephone / WhatsApp number (8–15 digits).';
+    }
+    if ($participants < 1 || $participants > 30) {
+        return 'For group bookings exceeding 30 delegates, please contact admissions@ecasiafrica.org directly.';
+    }
+    $bundle = trim((string)($reg['currentDuties'] ?? '') . ' ' . (string)($reg['trainingExpectations'] ?? '') . ' ' . (string)($reg['tailorMadeRequirements'] ?? ''));
+    if ($bundle !== '' && ecasHasSpamKeywords($bundle)) {
+        return 'Submission blocked by ECAS anti-spam protection.';
+    }
+    return null;
+}
+
+/**
+ * Hard-block spam, phishing, anonymous link-click, and disposable-email inquiries.
+ * Only permits genuine inquiries from real people and real organizations.
+ */
+function ecasScreenPublicInquirySpam(array $inq, array $meta = []): ?string {
+    if (!empty($meta['honeypot'])) {
+        return 'Automated bot inquiry blocked.';
+    }
+    $fullName = trim((string)($inq['fullName'] ?? ''));
+    $email = strtolower(trim((string)($inq['email'] ?? '')));
+    $phone = trim((string)($inq['phone'] ?? ''));
+    $org = trim((string)($inq['organisation'] ?? ''));
+    $msg = trim((string)($inq['message'] ?? ''));
+    $phoneDigits = preg_replace('/\D/', '', $phone);
+
+    // Block anonymous link-click tracking pseudo-inquiries ("Website Visitor (...)")
+    if ($fullName === '' || stripos($fullName, 'website visitor') !== false || stripos($fullName, 'prospective delegate') !== false || ecasIsPlaceholderText($fullName)) {
+        return 'Please provide your real full name to submit an inquiry.';
+    }
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return 'Please provide a valid email address.';
+    }
+    if (ecasIsDisposableEmail($email)) {
+        return 'Temporary or disposable email addresses are blocked. Please use your real institutional or personal email.';
+    }
+    if (function_exists('checkdnsrr') && !ecasIsLocalHost()) {
+        $domain = substr($email, strrpos($email, '@') + 1);
+        if ($domain !== '' && !@checkdnsrr($domain, 'MX') && !@checkdnsrr($domain, 'A')) {
+            return 'The email domain provided is not valid. Please use a real email address.';
+        }
+    }
+    if (strlen($org) < 3 || ecasIsPlaceholderText($org)) {
+        return 'Please enter your genuine organization, ministry, NGO, or institution name.';
+    }
+    if (strlen($phoneDigits) < 8 || strlen($phoneDigits) > 15 || preg_match('/^(\d)\1{6,}$/', $phoneDigits) || str_contains($phoneDigits, '1234567')) {
+        return 'Please enter a valid phone or WhatsApp number (8–15 digits).';
+    }
+    if (ecasHasSpamKeywords($fullName . ' ' . $org . ' ' . $msg)) {
+        return 'Inquiry blocked by ECAS anti-spam & anti-phishing protection.';
+    }
+    return null;
+}
+
+/**
+ * Identifies known spam/phishing/disposable/bot registrations for automated & manual purge.
+ * Preserves all legitimate registrations (e.g. real institutional/personal delegates).
+ */
+function ecasIsKnownSpamRegistration(array $reg): bool {
+    $ref = strtoupper(trim((string)($reg['referenceNo'] ?? '')));
+    $em1 = strtolower(trim((string)($reg['officialEmail'] ?? '')));
+    $em2 = strtolower(trim((string)($reg['personalEmail'] ?? '')));
+    $fullName = strtolower(trim((string)($reg['firstName'] ?? '') . ' ' . (string)($reg['lastName'] ?? '')));
+    $org = strtolower(trim((string)($reg['organisation'] ?? '')));
+    $sec = is_array($reg['securityAssessment'] ?? null) ? $reg['securityAssessment'] : [];
+
+    // Known disposable email domains (mailinator.com, yopmail, guerrillamail, etc.)
+    if (ecasIsDisposableEmail($em1) || ecasIsDisposableEmail($em2)) {
+        return true;
+    }
+    // Known Fake Filler / spam references & records reported by administrator
+    if (in_array($ref, ['ECAS-400829-2539', 'ECAS-400840-2208'], true)) {
+        return true;
+    }
+    if (in_array($fullName, ['kitra carson', 'amity hurst'], true)) {
+        return true;
+    }
+    if (in_array($org, ['acevedo mcconnell associates', 'edwards cunningham inc'], true)) {
+        return true;
+    }
+    // Explicitly flagged bot / rejected fraudulent registrations
+    if (!empty($sec['botFlagged']) || stripos((string)($sec['securityClearance'] ?? ''), 'Rejected') !== false) {
+        return true;
+    }
+    if (ecasHasSpamKeywords($fullName . ' ' . $org . ' ' . (string)($reg['trainingExpectations'] ?? ''))) {
+        return true;
+    }
+    return false;
+}
 
 /**
  * Server-Side Registration Fraud & Risk Assessment Engine (0-100)

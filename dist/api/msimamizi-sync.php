@@ -327,11 +327,14 @@ function recoverSiblingStoresData(string $primaryStoreFile, array &$store): bool
             $store['inquiries'] = array_slice($store['inquiries'], 0, 5000);
         }
 
+        $deletedRegIds = is_array($store['deletedRegistrationIds'] ?? null) ? $store['deletedRegistrationIds'] : [];
         $sibRegAdded = false;
         foreach (($sib['registrations'] ?? []) as $reg) {
             if (!is_array($reg)) continue;
             $rid = (string)($reg['id'] ?? '');
             $rref = (string)($reg['referenceNo'] ?? '');
+            if ($rid !== '' && in_array($rid, $deletedRegIds, true)) continue;
+            if (ecasIsKnownSpamRegistration($reg)) continue;
             if (($rid !== '' && isset($seenReg['id:' . $rid])) || ($rref !== '' && isset($seenReg['ref:' . $rref]))) {
                 continue;
             }
@@ -1302,6 +1305,57 @@ function cleanupRemovedAccountsAndTestMigrations(array &$store): bool {
         $changed = true;
     }
 
+    // 4. One-time purge of phishing/spam/mailinator registrations & all legacy spam/anonymous inquiries (2026-11-27)
+    if (empty($store['migrations']['purge_spam_and_inquiries_20261127'])) {
+        $deletedRegIds = is_array($store['deletedRegistrationIds'] ?? null) ? $store['deletedRegistrationIds'] : [];
+        $deletedInqIds = is_array($store['deletedInquiryIds'] ?? null) ? $store['deletedInquiryIds'] : [];
+
+        $purgedSpamRegIds = [];
+        $purgedSpamRefs = [];
+        $store['registrations'] = array_values(array_filter($store['registrations'] ?? [], function ($r) use (&$purgedSpamRegIds, &$purgedSpamRefs) {
+            if (!is_array($r)) return false;
+            if (ecasIsKnownSpamRegistration($r)) {
+                if (!empty($r['id'])) $purgedSpamRegIds[] = (string)$r['id'];
+                if (!empty($r['referenceNo'])) $purgedSpamRefs[] = strtoupper((string)$r['referenceNo']);
+                return false;
+            }
+            return true;
+        }));
+        foreach ($purgedSpamRegIds as $pid) {
+            if (!in_array($pid, $deletedRegIds, true)) {
+                array_unshift($deletedRegIds, $pid);
+            }
+        }
+        $store['deletedRegistrationIds'] = array_slice($deletedRegIds, 0, 2000);
+
+        // Remove any unpaid draft invoices / security alerts tied to the purged spam registrations
+        if (!empty($purgedSpamRegIds) || !empty($purgedSpamRefs)) {
+            $store['invoices'] = array_values(array_filter($store['invoices'] ?? [], function ($inv) use ($purgedSpamRegIds) {
+                $rid = (string)($inv['registrationId'] ?? '');
+                return !($rid !== '' && in_array($rid, $purgedSpamRegIds, true) && strtolower((string)($inv['status'] ?? '')) !== 'paid');
+            }));
+            $store['securityAlerts'] = array_values(array_filter($store['securityAlerts'] ?? [], function ($al) use ($purgedSpamRefs) {
+                $rel = strtoupper((string)($al['relatedEntity'] ?? ''));
+                return !($rel !== '' && in_array($rel, $purgedSpamRefs, true));
+            }));
+        }
+
+        // Purge ALL existing spam/anonymous inquiries and record their IDs in deletedInquiryIds
+        foreach (($store['inquiries'] ?? []) as $inq) {
+            if (is_array($inq) && !empty($inq['id'])) {
+                $iid = (string)$inq['id'];
+                if (!in_array($iid, $deletedInqIds, true)) {
+                    array_unshift($deletedInqIds, $iid);
+                }
+            }
+        }
+        $store['inquiries'] = [];
+        $store['deletedInquiryIds'] = array_slice($deletedInqIds, 0, 4000);
+
+        $store['migrations']['purge_spam_and_inquiries_20261127'] = true;
+        $changed = true;
+    }
+
     return $changed;
 }
 
@@ -1719,10 +1773,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $cleanReg = sanitizeRegistration($regInput);
         $cleanReg['submitterIp'] = $clientIp;
+        $securityMeta = is_array($payload['securityMeta'] ?? null) ? $payload['securityMeta'] : [];
+
+        // Check whether this call is from an authenticated staff administrator (manual entry)
+        $isStaffEntry = (validateAdminToken($store, getBearerToken(), false) !== null);
+
+        // Hard-reject disposable emails, bots, fake organizations & spam BEFORE saving on public submissions
+        if (!$isStaffEntry) {
+            $spamReason = ecasScreenPublicRegistrationSpam($cleanReg, $securityMeta);
+            if ($spamReason !== null) {
+                $store['securityStats']['blockedBots'] = (int)($store['securityStats']['blockedBots'] ?? 0) + 1;
+                ecasRecordSecurityAlert(
+                    $store,
+                    'Blocked Spam / Phishing Registration',
+                    'HIGH',
+                    $cleanReg['referenceNo'] ?: $clientIp,
+                    "Blocked non-genuine registration ({$cleanReg['firstName']} {$cleanReg['lastName']}, {$cleanReg['officialEmail']} / {$cleanReg['personalEmail']}, {$cleanReg['organisation']}): {$spamReason}",
+                    'Submission was automatically rejected and not stored.',
+                    $clientIp
+                );
+                writeStore($storeFile, $store);
+                writeAuditLog($auditLogFile, 'add_registration', $clientIp, 'BLOCKED_SPAM', $spamReason);
+                http_response_code(422);
+                echo json_encode(['success' => false, 'blocked' => true, 'error' => $spamReason]);
+                exit;
+            }
+        }
 
         // Check if applicant verified their email via OTP
         $primaryEmail = strtolower(trim((string)($cleanReg['officialEmail'] ?: ($cleanReg['personalEmail'] ?? ''))));
-        $emailVerifyToken = sanitizeText($payload['securityMeta']['emailVerifyToken'] ?? '', 120);
+        $emailVerifyToken = sanitizeText($securityMeta['emailVerifyToken'] ?? '', 120);
         $otpVerified = false;
         if ($primaryEmail !== '' && $emailVerifyToken !== '') {
             $otpEntry = $store['emailOtps'][hash('sha256', $primaryEmail)] ?? null;
@@ -1731,7 +1811,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $securityMeta = is_array($payload['securityMeta'] ?? null) ? $payload['securityMeta'] : [];
         $securityMeta['emailOtpVerified'] = $otpVerified;
 
         // Run Authoritative Server-Side Registration Risk Assessment Engine
@@ -1829,6 +1908,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $cleanInq = sanitizeInquiry($inqInput);
+        $inqMeta = is_array($payload['securityMeta'] ?? null) ? $payload['securityMeta'] : [];
+        $isStaffInquiry = (validateAdminToken($store, getBearerToken(), false) !== null);
+
+        // Hard-reject spam, phishing, disposable emails, and anonymous non-organizational inquiries
+        if (!$isStaffInquiry) {
+            $inqSpamReason = ecasScreenPublicInquirySpam($cleanInq, $inqMeta);
+            if ($inqSpamReason !== null) {
+                $store['securityStats']['blockedBots'] = (int)($store['securityStats']['blockedBots'] ?? 0) + 1;
+                writeStore($storeFile, $store);
+                writeAuditLog($auditLogFile, 'add_inquiry', $clientIp, 'BLOCKED_SPAM', $inqSpamReason);
+                http_response_code(422);
+                echo json_encode(['success' => false, 'blocked' => true, 'error' => $inqSpamReason]);
+                exit;
+            }
+        }
+
         $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
         $alreadyExists = false;
         foreach ($existingInq as $item) {
@@ -2445,6 +2540,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'purge_spam_registrations') {
+        $enforcePermission('admissions.write');
+        $deletedRegIds = is_array($store['deletedRegistrationIds'] ?? null) ? $store['deletedRegistrationIds'] : [];
+        $purgedCount = 0;
+        $purgedRefs = [];
+        $store['registrations'] = array_values(array_filter($store['registrations'] ?? [], function ($r) use (&$deletedRegIds, &$purgedCount, &$purgedRefs) {
+            if (!is_array($r)) return false;
+            if (ecasIsKnownSpamRegistration($r)) {
+                $purgedCount++;
+                if (!empty($r['id']) && !in_array((string)$r['id'], $deletedRegIds, true)) {
+                    array_unshift($deletedRegIds, (string)$r['id']);
+                }
+                if (!empty($r['referenceNo'])) {
+                    $purgedRefs[] = strtoupper((string)$r['referenceNo']);
+                }
+                return false;
+            }
+            return true;
+        }));
+        $store['deletedRegistrationIds'] = array_slice($deletedRegIds, 0, 2000);
+        appendAuditEvent($store, $adminEmail, $adminRole, 'PURGE_SPAM_REGISTRATIONS', 'Registration', "Purged {$purgedCount} spam records", '', implode(', ', array_slice($purgedRefs, 0, 20)));
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'purge_spam_registrations', $adminEmail, 'SUCCESS', "purged={$purgedCount}");
+        echo json_encode([
+            'success' => true,
+            'purgedCount' => $purgedCount,
+            'registrations' => $store['registrations'],
+            'deletedRegistrationIds' => $store['deletedRegistrationIds'],
+        ]);
+        exit;
+    }
+
+    if ($action === 'purge_all_inquiries') {
+        $enforcePermission('crm.write');
+        $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
+        $deletedIds = is_array($store['deletedInquiryIds'] ?? null) ? $store['deletedInquiryIds'] : [];
+        $purgedCount = count($existingInq);
+        foreach ($existingInq as $inq) {
+            if (is_array($inq) && !empty($inq['id'])) {
+                $iid = (string)$inq['id'];
+                if (!in_array($iid, $deletedIds, true)) {
+                    array_unshift($deletedIds, $iid);
+                }
+            }
+        }
+        $store['inquiries'] = [];
+        $store['deletedInquiryIds'] = array_slice($deletedIds, 0, 4000);
+        appendAuditEvent($store, $adminEmail, $adminRole, 'PURGE_ALL_INQUIRIES', 'Lead', "Purged {$purgedCount} inquiries", "count={$purgedCount}", 'count=0');
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'purge_all_inquiries', $adminEmail, 'SUCCESS', "purged={$purgedCount}");
+        echo json_encode([
+            'success' => true,
+            'purgedCount' => $purgedCount,
+            'inquiries' => [],
+            'deletedInquiryIds' => $store['deletedInquiryIds'],
+        ]);
+        exit;
+    }
+
     if ($action === 'delete_inquiry' && !empty($payload['id'])) {
         $enforcePermission('crm.write');
         $targetId = sanitizeText($payload['id'], 64);
@@ -2482,6 +2636,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $candId = $cleanInq['id'] ?? '';
             $candRef = $cleanInq['referenceNo'] ?? '';
             if ($candId !== '' && in_array($candId, $deletedIds, true)) continue;
+            if (ecasScreenPublicInquirySpam($cleanInq, []) !== null) continue;
             if (($candId !== '' && isset($seenKeys['id:' . $candId])) || ($candRef !== '' && isset($seenKeys['ref:' . $candRef]))) {
                 continue;
             }

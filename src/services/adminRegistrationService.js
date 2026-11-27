@@ -3,6 +3,7 @@
 
 import { dataService } from '@/lib/dataService';
 import { realtimeService } from '@/services/realtimeService';
+import { isDisposableEmail, validateGenuineInquiry } from '@/utils/antiSpamValidator';
 
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const INQUIRIES_KEY = 'ecasi_course_inquiries_live';
@@ -1020,6 +1021,13 @@ class AdminRegistrationService {
         securityMeta,
       });
 
+      if (!serverRes.unreachable && (serverRes.status === 422 || serverRes.data?.blocked)) {
+        return {
+          blocked: true,
+          error: serverRes.data?.error || 'Registration blocked by ECAS anti-spam protection. Please use genuine personal and organizational details.',
+        };
+      }
+
       if (!serverRes.unreachable && serverRes.ok && serverRes.data?.securityAssessment) {
         newRecord.securityAssessment = {
           ...newRecord.securityAssessment,
@@ -1207,6 +1215,20 @@ class AdminRegistrationService {
   addInquiry(inqData, options = {}) {
     if (typeof window === 'undefined') return null;
     try {
+      const isStaff = this.isAuthenticated() && Boolean(getStoredAdminToken());
+      if (!isStaff && !options.skipSpamCheck) {
+        const spamErr = validateGenuineInquiry({
+          fullName: inqData.fullName,
+          email: inqData.email,
+          phone: inqData.phone,
+          organisation: inqData.organisation,
+          message: inqData.message,
+        });
+        if (spamErr) {
+          return { blocked: true, error: spamErr };
+        }
+      }
+
       const existing = this.getInquiries();
       const newId = `INQ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       const newRef = inqData.referenceNo || `INQ-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -1219,7 +1241,7 @@ class AdminRegistrationService {
         minute: '2-digit',
       });
 
-      const resolvedChannel = inqData.channel || 'WhatsApp';
+      const resolvedChannel = inqData.channel || 'Website';
       const standardSources = ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration'];
       const resolvedSource = inqData.leadSource || (standardSources.includes(resolvedChannel) ? resolvedChannel : 'Website');
 
@@ -1229,7 +1251,7 @@ class AdminRegistrationService {
         channel: resolvedChannel,
         leadSource: resolvedSource,
         inquiryType: inqData.inquiryType || 'Course Inquiry',
-        fullName: inqData.fullName || 'Prospective Delegate',
+        fullName: inqData.fullName || '',
         email: inqData.email || '',
         phone: inqData.phone || '',
         organisation: inqData.organisation || '',
@@ -1251,9 +1273,17 @@ class AdminRegistrationService {
       localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
       enqueuePendingSyncId(PENDING_INQUIRIES_KEY, newInquiry.id);
       pushToServerWithStatus(
-        { action: 'add_inquiry', inquiry: newInquiry },
+        { action: 'add_inquiry', inquiry: newInquiry, securityMeta: options.securityMeta || {} },
         { beaconFallback: true, beaconFirst: Boolean(options.beaconFirst) }
       ).then((res) => {
+        if (res && !res.unreachable && (res.status === 422 || res.data?.blocked)) {
+          // Server rejected as spam/disposable — remove from local cache & pending queue
+          dequeuePendingSyncId(PENDING_INQUIRIES_KEY, newInquiry.id);
+          const cleaned = this.getInquiries().filter((i) => i.id !== newInquiry.id);
+          localStorage.setItem(INQUIRIES_KEY, JSON.stringify(cleaned));
+          window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+          return;
+        }
         if (res?.ok && res.data?.success) {
           dequeuePendingSyncId(PENDING_INQUIRIES_KEY, newInquiry.id);
         }
@@ -1268,29 +1298,84 @@ class AdminRegistrationService {
     }
   }
 
-  trackOutboundChannel(channel, label, extra = {}) {
-    if (typeof window === 'undefined') return null;
+  // Disabled creating anonymous pseudo-inquiries on link clicks so CRM Inquiries
+  // only contains verified submissions from real people and real organizations.
+  trackOutboundChannel() {
+    return null;
+  }
+
+  async purgeSpamRegistrations() {
+    if (typeof window === 'undefined') return { success: false, purgedCount: 0 };
     try {
-      const pagePath = window.location.pathname || '/';
-      const cooldownKey = `ecasi_track_${channel}_${extra.courseTitle || pagePath}`;
-      const last = Number(sessionStorage.getItem(cooldownKey) || 0);
-      const now = Date.now();
-      if (now - last < 5 * 60 * 1000) return null;
-      sessionStorage.setItem(cooldownKey, String(now));
-      return this.addInquiry(
-        {
-          channel,
-          leadSource: ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media'].includes(channel) ? channel : 'Website',
-          inquiryType: extra.inquiryType || `${label} Inquiry`,
-          fullName: extra.fullName || `Website Visitor (${label})`,
-          courseTitle: extra.courseTitle || 'General Institutional Inquiry',
-          venue: extra.venue || 'Nairobi / Online',
-          message: extra.message || `Visitor initiated ${label} from ${pagePath}.`,
-        },
-        { beaconFirst: true }
-      );
-    } catch {
-      return null;
+      const serverRes = await pushToServerWithStatus({ action: 'purge_spam_registrations' });
+      let purgedCount = 0;
+      if (serverRes?.ok && serverRes.data?.success) {
+        purgedCount = Number(serverRes.data.purgedCount || 0);
+        if (Array.isArray(serverRes.data.registrations)) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(serverRes.data.registrations));
+        }
+        if (Array.isArray(serverRes.data.deletedRegistrationIds)) {
+          localStorage.setItem(DELETED_REGS_KEY, JSON.stringify(serverRes.data.deletedRegistrationIds));
+        }
+      } else {
+        // Local fallback filtering
+        const existing = this.getRegistrations();
+        const spamRefs = new Set(['ECAS-400829-2539', 'ECAS-400840-2208']);
+        const spamNames = new Set(['kitra carson', 'amity hurst']);
+        const kept = [];
+        const removedIds = [];
+        for (const r of existing) {
+          const fullName = `${r.firstName || ''} ${r.lastName || ''}`.trim().toLowerCase();
+          const isSpam =
+            isDisposableEmail(r.officialEmail) ||
+            isDisposableEmail(r.personalEmail) ||
+            spamRefs.has(String(r.referenceNo || '').toUpperCase()) ||
+            spamNames.has(fullName) ||
+            Boolean(r.securityAssessment?.botFlagged);
+          if (isSpam) {
+            purgedCount++;
+            if (r.id) removedIds.push(r.id);
+          } else {
+            kept.push(r);
+          }
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(kept));
+        const rawDel = localStorage.getItem(DELETED_REGS_KEY);
+        const prevDel = rawDel ? JSON.parse(rawDel) : [];
+        localStorage.setItem(DELETED_REGS_KEY, JSON.stringify(Array.from(new Set([...removedIds, ...prevDel])).slice(0, 2000)));
+      }
+      realtimeService.publish('registrations', { action: 'purge_spam_registrations' });
+      window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
+      return { success: true, purgedCount };
+    } catch (e) {
+      console.error('Failed to purge spam registrations:', e);
+      return { success: false, purgedCount: 0 };
+    }
+  }
+
+  async purgeAllInquiries() {
+    if (typeof window === 'undefined') return { success: false, purgedCount: 0 };
+    try {
+      const existing = this.getInquiries();
+      const localCount = existing.length;
+      const serverRes = await pushToServerWithStatus({ action: 'purge_all_inquiries' });
+      const purgedCount = serverRes?.ok && serverRes.data?.success ? Number(serverRes.data.purgedCount ?? localCount) : localCount;
+      localStorage.setItem(INQUIRIES_KEY, JSON.stringify([]));
+      localStorage.setItem(PENDING_INQUIRIES_KEY, JSON.stringify([]));
+      if (serverRes?.ok && Array.isArray(serverRes.data?.deletedInquiryIds)) {
+        localStorage.setItem(DELETED_INQUIRIES_KEY, JSON.stringify(serverRes.data.deletedInquiryIds));
+      } else {
+        const rawDel = localStorage.getItem(DELETED_INQUIRIES_KEY);
+        const prevDel = rawDel ? JSON.parse(rawDel) : [];
+        const allIds = existing.map((i) => i.id).filter(Boolean);
+        localStorage.setItem(DELETED_INQUIRIES_KEY, JSON.stringify(Array.from(new Set([...allIds, ...prevDel])).slice(0, 4000)));
+      }
+      realtimeService.publish('inquiries', { action: 'purge_all_inquiries' });
+      window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+      return { success: true, purgedCount };
+    } catch (e) {
+      console.error('Failed to purge inquiries:', e);
+      return { success: false, purgedCount: 0 };
     }
   }
 
