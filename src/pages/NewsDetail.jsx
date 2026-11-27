@@ -18,6 +18,7 @@ const NewsDetail = () => {
 
   if (!article) {
     return <Navigate to="/newsroom" replace />;
+ 
   }
 
   return (
@@ -25,9 +26,9 @@ const NewsDetail = () => {
       <Header />
 
       {/* Hero / Header Section */}
-      <div className="bg-[#1e3a8a] text-white pt-32 pb-20">
+      <div className="bg-[#032e42] border-b-4 border-[#008000] text-white pt-32 pb-20">
         <div className="healthcare-container">
-           <Link to="/newsroom" className="inline-flex items-center text-teal-300 hover:text-white mb-6 transition-colors">
+           <Link to="/newsroom" className="inline-flex items-center text-[#4ade80] hover:text-white mb-6 transition-colors">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Newsroom
            </Link>

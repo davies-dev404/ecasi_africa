@@ -24,6 +24,8 @@ import {
 } from 'recharts';
 import {
   getEffectiveRegistrationStage,
+  isConfirmedPaidEnrolment,
+  getRealizedRegistrationRevenue,
   normalizeLeadStatus,
   normalizeCandidateStage,
   msimamiziEnterpriseService,
@@ -63,11 +65,13 @@ export default function ReportsModule({
       const k = r.eventTitle || 'Unassigned Course';
       if (!map[k]) map[k] = { programme: k, registrations: 0, delegates: 0, revenue: 0 };
       map[k].registrations += 1;
-      map[k].delegates += Number(r.participantsCount) || 1;
-      map[k].revenue += Number(r.totalFee) || 0;
+      if (isConfirmedPaidEnrolment(r, fInvs, fPays)) {
+        map[k].delegates += Number(r.participantsCount) || 1;
+        map[k].revenue += getRealizedRegistrationRevenue(r, fInvs, fPays);
+      }
     });
     return Object.values(map).sort((a, b) => b.registrations - a.registrations);
-  }, [fRegs]);
+  }, [fRegs, fInvs, fPays]);
 
   const byCurrency = useMemo(() => {
     const map = {};
@@ -135,8 +139,8 @@ export default function ReportsModule({
     <div className="space-y-5">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-[#00B8B0]" /> {reportTitles[activeTab] || 'Reports & BI'}
+          <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-[#008000]" /> {reportTitles[activeTab] || 'Reports & BI'}
           </h2>
           <p className="text-xs text-[#718096]">Verified institutional datasets with custom date range filtering and CSV, Excel &amp; PDF export.</p>
         </div>
@@ -161,18 +165,18 @@ export default function ReportsModule({
         <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-2">
           <div>
             <p className="text-[10px] font-bold uppercase text-[#718096]">Registrations (Period)</p>
-            <p className="text-xl font-black text-[#10243E] mt-1">{fRegs.length}</p>
+            <p className="text-xl font-black text-[#032e42] mt-1">{fRegs.length}</p>
           </div>
-          <span className="w-10 h-10 rounded-xl bg-slate-100 text-[#071C2D] flex items-center justify-center shrink-0">
+          <span className="w-10 h-10 rounded-xl bg-slate-100 text-[#032e42] flex items-center justify-center shrink-0">
             <Users className="w-5 h-5" />
           </span>
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-2">
           <div>
             <p className="text-[10px] font-bold uppercase text-[#718096]">Lead Conversion Rate</p>
-            <p className="text-xl font-black text-[#00B8B0] mt-1">{conversionRate}</p>
+            <p className="text-xl font-black text-[#008000] mt-1">{conversionRate}</p>
           </div>
-          <span className="w-10 h-10 rounded-xl bg-teal-50 text-[#00B8B0] flex items-center justify-center shrink-0">
+          <span className="w-10 h-10 rounded-xl bg-emerald-50 text-[#008000] flex items-center justify-center shrink-0">
             <TrendingUp className="w-5 h-5" />
           </span>
         </div>
@@ -190,7 +194,7 @@ export default function ReportsModule({
         <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-2">
           <div>
             <p className="text-[10px] font-bold uppercase text-[#718096]">Shortlisted / Total CVs</p>
-            <p className="text-xl font-black text-[#10243E] mt-1">
+            <p className="text-xl font-black text-[#032e42] mt-1">
               {fApps.filter((a) => ['Shortlisted', 'Interview', 'Selected'].includes(normalizeCandidateStage(a.status))).length} / {fApps.length}
             </p>
           </div>
@@ -204,7 +208,7 @@ export default function ReportsModule({
       {activeTab !== 'data-exports' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="text-sm font-extrabold text-[#10243E] mb-3">Registrations by Programme (Top 8)</h3>
+            <h3 className="text-sm font-extrabold text-[#032e42] mb-3">Registrations by Programme (Top 8)</h3>
             {byProgramme.length === 0 ? (
               <div className="h-52 flex items-center justify-center bg-[#F5F8FC] rounded-xl text-xs text-[#718096]">
                 No programme registrations in the selected period.
@@ -217,7 +221,7 @@ export default function ReportsModule({
                     <XAxis dataKey="programme" tick={{ fontSize: 10 }} tickFormatter={(s) => (s.length > 16 ? `${s.slice(0, 16)}…` : s)} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Bar dataKey="registrations" name="Registrations" fill="#00B8B0" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="registrations" name="Registrations" fill="#008000" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -225,7 +229,7 @@ export default function ReportsModule({
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="text-sm font-extrabold text-[#10243E] mb-3">Verified Collections by Currency</h3>
+            <h3 className="text-sm font-extrabold text-[#032e42] mb-3">Verified Collections by Currency</h3>
             {byCurrency.length === 0 ? (
               <div className="h-52 flex items-center justify-center bg-[#F5F8FC] rounded-xl text-xs text-[#718096]">
                 No verified payments in the selected period.
@@ -238,7 +242,7 @@ export default function ReportsModule({
                     <XAxis dataKey="currency" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Bar dataKey="total" name="Collected" fill="#071C2D" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="total" name="Collected" fill="#032e42" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -250,7 +254,7 @@ export default function ReportsModule({
       {/* Downloadable Datasets Hub */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 bg-[#F5F8FC]">
-          <h3 className="text-sm font-extrabold text-[#10243E]">Exportable Institutional Reports (CSV, Excel &amp; Printable PDF)</h3>
+          <h3 className="text-sm font-extrabold text-[#032e42]">Exportable Institutional Reports (CSV, Excel &amp; Printable PDF)</h3>
         </div>
         <div className="divide-y divide-slate-100">
           {exportSets.map((set) => {
@@ -258,11 +262,11 @@ export default function ReportsModule({
             return (
               <div key={set.name} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-xl bg-[#F5F8FC] border border-slate-200 text-[#00B8B0] flex items-center justify-center shrink-0">
+                  <span className="w-9 h-9 rounded-xl bg-[#F5F8FC] border border-slate-200 text-[#008000] flex items-center justify-center shrink-0">
                     <SetIcon className="w-4 h-4" />
                   </span>
                   <div>
-                    <p className="font-bold text-[#10243E]">{set.name}</p>
+                    <p className="font-bold text-[#032e42]">{set.name}</p>
                     <p className="text-[11px] text-[#718096]">{set.count} verified record{set.count === 1 ? '' : 's'} matching filter</p>
                   </div>
                 </div>
@@ -270,7 +274,7 @@ export default function ReportsModule({
                 <button
                   type="button"
                   onClick={() => msimamiziEnterpriseService.exportCSV(set.headers, set.rows, `ECAS_${set.name.replace(/\s+/g, '_')}.csv`, currentUser)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#F5F8FC] border border-slate-200 font-bold text-[#10243E] cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#F5F8FC] border border-slate-200 font-bold text-[#032e42] cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" /> CSV
                 </button>
@@ -285,11 +289,15 @@ export default function ReportsModule({
                   type="button"
                   onClick={() => {
                     const html = `<table><thead><tr>${set.headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${set.rows.map((r) => `<tr>${r.map((c) => `<td>${c ?? ''}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-                    msimamiziEnterpriseService.printInstitutionalDocument(set.name, html, currentUser);
+                    msimamiziEnterpriseService.printInstitutionalDocument(set.name, html, currentUser, {
+                      mode: 'report',
+                      headers: set.headers,
+                      rows: set.rows,
+                    });
                   }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#071C2D] text-white font-bold cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#032e42] text-white font-bold cursor-pointer"
                 >
-                  <Printer className="w-3.5 h-3.5 text-[#00B8B0]" /> PDF
+                  <Printer className="w-3.5 h-3.5 text-[#4ade80]" /> PDF
                 </button>
               </div>
             </div>

@@ -15,6 +15,17 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 5173,
+      proxy: {
+        "/socket.io": {
+          target: "http://localhost:3001",
+          ws: true,
+          changeOrigin: true,
+        },
+        "/api/msimamizi-sync.php": {
+          target: "http://localhost:3001",
+          changeOrigin: true,
+        },
+      },
     },
     plugins: [
       react(),

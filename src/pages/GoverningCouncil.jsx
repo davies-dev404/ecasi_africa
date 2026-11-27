@@ -3,7 +3,7 @@ import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PageHeroBanner from '@/components/PageHeroBanner';
-import { Award, BookOpen, Globe2, Users, Briefcase, GraduationCap, Star } from 'lucide-react';
+import { Award, BookOpen, Globe2, Users, Briefcase, GraduationCap } from 'lucide-react';
 
 const councilMembers = [
   {
@@ -97,7 +97,7 @@ const Doctors = () => {
             <div className="absolute top-0 left-0 w-2 h-full bg-primary"></div>
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 shadow-inner">
-                <Star className="h-8 w-8 text-primary" />
+                <Award className="h-8 w-8 text-primary" />
               </div>
               <p className="text-slate-600 leading-relaxed text-lg font-medium text-center md:text-left">
                 ECAS Institute&apos;s Governing Council consists of members with diverse skills. The primary mandate

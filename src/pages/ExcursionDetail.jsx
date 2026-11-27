@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ChevronRight,
   ArrowUpRight,
-  Sparkles,
   Compass,
   Heart,
   Mail,
@@ -405,7 +404,7 @@ const ExcursionDetail = () => {
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <div className="max-w-3xl">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold tracking-widest uppercase text-[#4ade80] bg-[#4ade80]/15 px-3 py-1 rounded-full mb-3 border border-[#4ade80]/30">
-                  <Sparkles size={13} />
+                  <Compass size={13} />
                   {currentExcursion.badge}
                 </span>
                 <h1
@@ -582,7 +581,7 @@ const ExcursionDetail = () => {
                   {/* Highlights Bullet List */}
                   <div className="mt-8 pt-8 border-t border-slate-200">
                     <h3 className="text-lg font-bold text-[#032e42] mb-4 flex items-center gap-2">
-                      <Sparkles size={18} className="text-[#008000]" />
+                      <Compass size={18} className="text-[#008000]" />
                       Key Highlights &amp; Delegate Activities
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -658,7 +657,7 @@ const ExcursionDetail = () => {
                   className="bg-white rounded-2xl p-6 sm:p-7 shadow-md border border-slate-200/80 sticky top-16"
                 >
                   <div className="flex items-center gap-2 text-[#008000] font-bold text-xs uppercase tracking-wider mb-2">
-                    <Sparkles size={14} />
+                    <Users size={14} />
                     <span>Executive Cohort Services</span>
                   </div>
                   <h3
@@ -792,13 +791,31 @@ const ExcursionDetail = () => {
                   <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col gap-2 text-xs text-slate-500">
                     <div className="flex items-center gap-2">
                       <Mail size={13} className="text-[#008000]" />
-                      <a href="mailto:info@ecasiafrica.org" className="hover:underline">
+                      <a
+                        href="mailto:info@ecasiafrica.org"
+                        onClick={() =>
+                          adminRegistrationService.trackOutboundChannel("Email", "Excursion Email Link", {
+                            courseTitle: `Beyond the Classroom: ${currentExcursion.title}`,
+                            inquiryType: "Excursion Direct Email Click",
+                          })
+                        }
+                        className="hover:underline"
+                      >
                         info@ecasiafrica.org
                       </a>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone size={13} className="text-[#008000]" />
-                      <a href="tel:+254708060223" className="hover:underline">
+                      <a
+                        href="tel:+254708060223"
+                        onClick={() =>
+                          adminRegistrationService.trackOutboundChannel("Telephone", "Excursion Phone Link", {
+                            courseTitle: `Beyond the Classroom: ${currentExcursion.title}`,
+                            inquiryType: "Excursion Direct Phone Click",
+                          })
+                        }
+                        className="hover:underline"
+                      >
                         +254 708 060 223 / Admissions Desk
                       </a>
                     </div>

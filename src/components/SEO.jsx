@@ -1,6 +1,27 @@
 import { Helmet } from 'react-helmet-async';
 
 const SEO = ({ title, description, keywords, image, url, type = "website", schema, noIndex = false }) => {
+  const isPortalHostOrRoute =
+    typeof window !== "undefined" &&
+    (window.location.hostname.toLowerCase().includes("msimamizi") ||
+      /^\/(msimamizi|admin|portal)(\/|$)/i.test(window.location.pathname) ||
+      window.location.search.toLowerCase().includes("portal=msimamizi"));
+
+  const enforceNoIndex = Boolean(noIndex || isPortalHostOrRoute);
+
+  if (enforceNoIndex) {
+    const adminRobots = "noindex, nofollow, noarchive, nosnippet, noimageindex";
+    return (
+      <Helmet>
+        <title>{title || "Portal"}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#032e42" />
+        <meta name="robots" content={adminRobots} />
+        <meta name="googlebot" content={adminRobots} />
+      </Helmet>
+    );
+  }
+
   const siteTitle = "ECAS Institute";
   const defaultTitle = "ECAS Institute | Executive Training, Short Courses & Capacity Building in Africa";
   const fullTitle = title
@@ -32,9 +53,7 @@ const SEO = ({ title, description, keywords, image, url, type = "website", schem
       ? `${canonicalOrigin}${window.location.pathname}`
       : "https://ecasiafrica.org/");
 
-  const robotsContent = noIndex
-    ? "noindex, nofollow"
-    : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
+  const robotsContent = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
 
   return (
     <Helmet>
@@ -45,9 +64,8 @@ const SEO = ({ title, description, keywords, image, url, type = "website", schem
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="theme-color" content="#032e42" />
       <meta name="robots" content={robotsContent} />
-      {noIndex && <meta name="googlebot" content="noindex, nofollow" />}
       <meta name="google-site-verification" content="K3tyeQb5qs4t6mrjxytSj80FvaoI69hmo6L7qEEN9x4" />
-      {!noIndex && <link rel="canonical" href={canonicalUrl} />}
+      <link rel="canonical" href={canonicalUrl} />
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={type} />

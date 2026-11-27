@@ -9,12 +9,24 @@ const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || 'YOUR_META_PIXEL_ID'
 const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID || 'z8r4lta50m';
 const CLOUDFLARE_BEACON_TOKEN = import.meta.env.VITE_CLOUDFLARE_BEACON_TOKEN || '11c976ef086b4f4e859a8634d7e65a65';
 
+const isPortalContext = () => {
+  if (typeof window === 'undefined') return false;
+  const h = window.location.hostname.toLowerCase();
+  const p = window.location.pathname.toLowerCase();
+  const s = window.location.search.toLowerCase();
+  return (
+    h.includes('msimamizi') ||
+    /^\/(msimamizi|admin|portal)(\/|$)/.test(p) ||
+    s.includes('portal=msimamizi')
+  );
+};
+
 const Analytics = () => {
   const location = useLocation();
   const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (isInitialized.current) return;
+    if (isInitialized.current || isPortalContext()) return;
     isInitialized.current = true;
 
     // 1. Google Analytics (GA4)
@@ -82,8 +94,9 @@ const Analytics = () => {
     }
   }, []);
 
-  // Track pageviews on route navigation for SPA
+  // Track pageviews on route navigation for SPA (skip private admin portal routes)
   useEffect(() => {
+    if (isPortalContext()) return;
     const path = location.pathname + location.search;
 
     // GA4 Pageview

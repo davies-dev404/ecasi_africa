@@ -534,9 +534,9 @@ const devimpactCourseStyles = `
   .course-finder-search-filter {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 16px;
     padding: 18px;
-    box-shadow: 0 4px 16px rgba(3, 46, 66, 0.06);
+    box-shadow: 0 2px 12px rgba(3, 46, 66, 0.05);
     position: static;
   }
   @media (min-width: 992px) {
@@ -568,13 +568,13 @@ const devimpactCourseStyles = `
   .course-finder-input-field {
     width: 100%;
     padding: 10px 36px 10px 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     font-size: 13.5px;
-    color: #1e293b;
-    background: #f8fafc;
+    color: #032e42;
+    background: #F5F8FC;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background-color 0.2s;
   }
   .course-finder-input-field:focus {
     border-color: #008000;
@@ -593,7 +593,7 @@ const devimpactCourseStyles = `
     text-align: left;
     font-size: 13.5px;
     font-weight: 600;
-    border-radius: 6px;
+    border-radius: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -605,11 +605,11 @@ const devimpactCourseStyles = `
     color: #fff;
   }
   .course-finder-toggle-content {
-    background-color: #f9fafb;
+    background-color: #F5F8FC;
     padding: 10px 12px;
     margin-top: 4px;
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    border-radius: 12px;
     max-height: 280px;
     overflow-y: auto;
   }
@@ -645,14 +645,14 @@ const devimpactCourseStyles = `
     flex-shrink: 0;
   }
   .course-finder-reset-btn {
-    background-color: #e2e8f0;
-    color: #1e293b;
+    background-color: #F5F8FC;
+    color: #032e42;
+    border: 1px solid #e2e8f0;
     padding: 10px;
-    border: none;
     cursor: pointer;
     width: 100%;
     text-align: center;
-    border-radius: 6px;
+    border-radius: 12px;
     font-size: 13px;
     font-weight: 600;
     margin-top: 8px;
@@ -705,22 +705,22 @@ const devimpactCourseStyles = `
     justify-content: space-between;
     gap: 18px;
     background-color: #fff;
-    border: 1px solid #ddd;
+    border: 1px solid #e2e8f0;
     border-left: 4px solid #032e42;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(3, 46, 66, 0.05);
     padding: 16px 20px;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
   .custom-course-item:hover {
     transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(3, 46, 66, 0.14);
+    box-shadow: 0 10px 24px rgba(3, 46, 66, 0.1);
     border-left-color: #008000;
   }
   .custom-course-thumb {
     width: 108px;
     height: 74px;
-    border-radius: 6px;
+    border-radius: 12px;
     object-fit: cover;
     flex-shrink: 0;
     border: 1px solid #e2e8f0;
@@ -777,7 +777,7 @@ const devimpactCourseStyles = `
     background-color: #032e42;
     color: #fff;
     padding: 8px 14px;
-    border-radius: 5px;
+    border-radius: 10px;
     text-decoration: none;
     font-size: 13px;
     font-weight: 600;
@@ -785,14 +785,14 @@ const devimpactCourseStyles = `
     white-space: nowrap;
   }
   .custom-course-links .view-btn:hover {
-    background-color: #1e73be;
+    background-color: #06405c;
     color: #ffffff;
   }
   .custom-course-links .reg-btn {
     background-color: #008000;
     color: #fff;
     padding: 8px 14px;
-    border-radius: 5px;
+    border-radius: 10px;
     border: none;
     cursor: pointer;
     font-size: 13px;
@@ -1687,25 +1687,39 @@ export default function ExecutiveTraining() {
     const fee = modalConfig.cohortFee;
     const code = modalConfig.courseCode;
 
+    if (channel === 'direct' && !inquiryContact.fullName.trim() && !inquiryContact.email.trim() && !inquiryContact.phone.trim()) {
+      setToastMessage('Please enter your name, email, or phone number to submit a direct request.');
+      setTimeout(() => setToastMessage(null), 5000);
+      return;
+    }
+
+    const mappedChannel = channel === 'whatsapp' ? 'WhatsApp' : channel === 'direct' ? 'Website' : 'Email';
     // Record inquiry in Msimamizi Admin Portal
-    adminRegistrationService.addInquiry({
-      channel: channel === 'whatsapp' ? 'WhatsApp' : 'Email',
-      inquiryType: isCustomInHouse ? 'In-House Training Proposal' : 'Course Inquiry',
-      fullName: inquiryContact.fullName.trim() || 'Website Visitor (Direct Inquiry)',
-      email: inquiryContact.email.trim(),
-      phone: inquiryContact.phone.trim(),
-      organisation: inquiryContact.organisation.trim(),
-      courseTitle,
-      courseCode: code,
-      cohortDates: dates,
-      venue: `${venue || 'Nairobi / Online'}${modalConfig.cohortFormat ? ` (${modalConfig.cohortFormat})` : ''}`,
-      fee,
-      message: `${isCustomInHouse ? 'Tailored In-House Training Proposal' : 'Course Admission & Proforma Inquiry'} initiated via ${channel === 'whatsapp' ? 'WhatsApp' : 'Email'} for "${courseTitle}" (${dates || '2026 Intake'}).`,
-    });
+    const createdInq = adminRegistrationService.addInquiry(
+      {
+        channel: mappedChannel,
+        leadSource: mappedChannel,
+        inquiryType: isCustomInHouse ? 'In-House Training Proposal' : 'Course Inquiry',
+        fullName: inquiryContact.fullName.trim() || 'Website Visitor (Direct Inquiry)',
+        email: inquiryContact.email.trim(),
+        phone: inquiryContact.phone.trim(),
+        organisation: inquiryContact.organisation.trim(),
+        courseTitle,
+        courseCode: code,
+        cohortDates: dates,
+        venue: `${venue || 'Nairobi / Online'}${modalConfig.cohortFormat ? ` (${modalConfig.cohortFormat})` : ''}`,
+        fee,
+        message: `${isCustomInHouse ? 'Tailored In-House Training Proposal' : 'Course Admission & Proforma Inquiry'} initiated via ${mappedChannel} for "${courseTitle}" (${dates || '2026 Intake'}).`,
+      },
+      { beaconFirst: channel !== 'direct' }
+    );
 
     closeModal();
 
-    if (channel === 'whatsapp') {
+    if (channel === 'direct') {
+      setInquiryContact({ fullName: '', email: '', phone: '', organisation: '' });
+      setToastMessage(`Request received (${createdInq?.referenceNo || 'INQ-LOGGED'})! Our Admissions Team will respond shortly.`);
+    } else if (channel === 'whatsapp') {
       const msg = buildCorporateWhatsAppMessage({
         type: modalConfig.type,
         courseTitle,
@@ -1754,18 +1768,22 @@ export default function ExecutiveTraining() {
   const handleModalSubmit = (e) => {
     e.preventDefault();
     if (modalConfig.type === 'calendar') {
-      adminRegistrationService.addInquiry({
-        channel: 'Calendar Download',
-        inquiryType: '2026 Training Calendar Download',
-        fullName: inquiryContact.fullName.trim() || 'Website Visitor',
-        email: inquiryContact.email.trim(),
-        phone: inquiryContact.phone.trim(),
-        organisation: inquiryContact.organisation.trim(),
-        courseTitle: modalConfig.courseTitle || '2026 ECAS Institute Training Calendar',
-        cohortDates: '2026 Full Academic Year',
-        venue: 'All Training Hubs & Online',
-        message: 'Downloaded the 2026 ECAS Institute Executive Training Calendar PDF.',
-      });
+      adminRegistrationService.addInquiry(
+        {
+          channel: 'Calendar Download',
+          leadSource: 'Website',
+          inquiryType: '2026 Training Calendar Download',
+          fullName: inquiryContact.fullName.trim() || 'Website Visitor',
+          email: inquiryContact.email.trim(),
+          phone: inquiryContact.phone.trim(),
+          organisation: inquiryContact.organisation.trim(),
+          courseTitle: modalConfig.courseTitle || '2026 ECAS Institute Training Calendar',
+          cohortDates: '2026 Full Academic Year',
+          venue: 'All Training Hubs & Online',
+          message: 'Downloaded the 2026 ECAS Institute Executive Training Calendar PDF.',
+        },
+        { beaconFirst: true }
+      );
       closeModal();
       setToastMessage(`Thank you! Your 2026 ECAS Institute Training Calendar is downloading now.`);
       window.open('/courses/ECASI-BROCHURE.pdf', '_blank', 'noopener,noreferrer');
@@ -2928,8 +2946,24 @@ export default function ExecutiveTraining() {
                 className="w-full py-3 px-4 rounded-lg bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition shadow-sm"
               >
                 <GraduationCap className="w-4 h-4" />
-                Register Now
+                Register Now (Book Seat)
               </Link>
+
+              <button
+                type="button"
+                onClick={() =>
+                  openModal({
+                    type: "inquiry",
+                    courseTitle: courseInfo.title,
+                    courseCode: courseInfo.code || "",
+                    cohortDates: classroomCohorts[0]?.dates || "Upcoming 2026 Cohorts",
+                  })
+                }
+                className="w-full py-2.5 px-4 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#032e42] border border-[#008000]/30 font-bold text-xs inline-flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <MessageSquare className="w-4 h-4 text-[#008000]" />
+                Make Quick Course Inquiry
+              </button>
 
               <button
                 type="button"
@@ -3004,13 +3038,33 @@ export default function ExecutiveTraining() {
             <div className="pt-3 border-t border-slate-100 space-y-2 text-xs text-slate-600">
               <div className="flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5 text-[#008000]" />
-                <a href="mailto:info@ecasiafrica.org" className="hover:text-[#032e42] font-medium">
+                <a
+                  href="mailto:info@ecasiafrica.org"
+                  onClick={() =>
+                    adminRegistrationService.trackOutboundChannel('Email', 'Course Sidebar Email', {
+                      courseTitle: courseInfo?.title || 'Executive Training Programme',
+                      inquiryType: 'Course Email Click',
+                    })
+                  }
+                  className="hover:text-[#032e42] font-medium"
+                >
                   info@ecasiafrica.org
                 </a>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-[#008000]" />
-                <a href="tel:+254708060223" className="hover:text-[#032e42] font-medium">+254 708 060 223 | Nairobi, Kenya</a>
+                <a
+                  href="tel:+254708060223"
+                  onClick={() =>
+                    adminRegistrationService.trackOutboundChannel('Telephone', 'Course Sidebar Phone', {
+                      courseTitle: courseInfo?.title || 'Executive Training Programme',
+                      inquiryType: 'Course Phone Click',
+                    })
+                  }
+                  className="hover:text-[#032e42] font-medium"
+                >
+                  +254 708 060 223 | Nairobi, Kenya
+                </a>
               </div>
             </div>
           </div>
@@ -3312,6 +3366,14 @@ function renderModalsAndToast(
                   <p className="text-xs text-slate-600 mb-4 leading-relaxed">
                     Choose <strong>WhatsApp</strong> for immediate chat with our admissions team or <strong>Email</strong> to receive the full syllabus, quotation, and official proforma invoice.
                   </p>
+
+                  <button
+                    type="button"
+                    onClick={() => handleInquiryAction('direct')}
+                    className="w-full mb-3.5 py-2.5 px-4 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white font-bold text-xs sm:text-sm transition-colors shadow-sm cursor-pointer"
+                  >
+                    Submit Request Directly (Admissions Desk)
+                  </button>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Option 1: WhatsApp */}

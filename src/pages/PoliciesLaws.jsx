@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import RequestDocumentModal from '@/components/RequestDocumentModal';
@@ -10,19 +10,27 @@ import { Link } from 'react-router-dom';
 import { dataService } from '@/lib/dataService';
 
 const PoliciesLaws = () => {
-  const policies = dataService.getPolicies();
+  const [policies, setPolicies] = useState(() => dataService.getPolicies());
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
 
-  const types = ['All', ...new Set(policies.map(p => p.type))];
+  useEffect(() => {
+    const reload = () => setPolicies(dataService.getPolicies());
+    window.addEventListener('ecasi_resources_updated', reload);
+    dataService.refreshPublicData?.();
+    return () => window.removeEventListener('ecasi_resources_updated', reload);
+  }, []);
+
+  const types = ['All', ...new Set(policies.map(p => p.type).filter(Boolean))];
 
   const filtered = policies.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
+    const q = searchTerm.toLowerCase();
+    const matchesSearch = String(p.title || '').toLowerCase().includes(q) ||
+      String(p.country || '').toLowerCase().includes(q) ||
+      (Array.isArray(p.tags) && p.tags.some(t => String(t).toLowerCase().includes(q)));
     const matchesType = selectedType === 'All' || p.type === selectedType;
     return matchesSearch && matchesType;
   });
@@ -124,7 +132,7 @@ const PoliciesLaws = () => {
                     )}
                     
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {item.tags.map(tag => (
+                      {(item.tags || []).map(tag => (
                         <span key={tag} className="inline-flex items-center gap-1 text-xs bg-ecasi-section text-ecasi-navy px-2 py-1 rounded-full font-medium">
                           <Tag size={10} />
                           {tag}

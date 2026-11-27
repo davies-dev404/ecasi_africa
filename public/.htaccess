@@ -66,8 +66,19 @@ Options -MultiViews -Indexes
   </IfModule>
 </FilesMatch>
 
+# Mark Admin Portal Subdomain & Routes for Strict Non-Indexing
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase Host ^msimamizi\. IS_MSIMAMIZI_PORTAL=1
+  SetEnvIfNoCase Request_URI ^/(msimamizi|admin|portal|api)(/|$) IS_MSIMAMIZI_PORTAL=1
+</IfModule>
+
 # Configure Secure Server HTTP Headers
 <IfModule mod_headers.c>
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "DENY"
   Header always set X-XSS-Protection "1; mode=block"
@@ -75,6 +86,8 @@ Options -MultiViews -Indexes
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=()"
   Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms https://scripts.clarity.ms; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; frame-src 'self' https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com; connect-src 'self' https://ecasiafrica.org https://msimamizi.ecasiafrica.org https://msimamiziecasi.vercel.app https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com https://www.clarity.ms https://*.clarity.ms; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self' https://ecasiafrica.org https://msimamizi.ecasiafrica.org; upgrade-insecure-requests;"
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex" env=IS_MSIMAMIZI_PORTAL
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex" env=REDIRECT_IS_MSIMAMIZI_PORTAL
   Header unset X-Powered-By
   Header unset Server
 </IfModule>

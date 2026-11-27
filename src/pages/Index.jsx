@@ -4,11 +4,12 @@ import SEO from '@/components/SEO';
 import {
   ArrowUpRight, ArrowRight, Search, Landmark, Wallet, CloudSun, Cpu,
   FolderKanban, Briefcase, Award, Users, Globe, FileText,
-  ChevronLeft, ChevronRight, Star, CheckCircle2, MapPin, Clock, X, Sparkles, ChevronDown
+  ChevronLeft, ChevronRight, CheckCircle2, MapPin, Clock, X, ChevronDown
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ScrollAnimation from '@/components/ScrollAnimation';
+import { adminRegistrationService } from '@/services/adminRegistrationService';
 import beryleImg from '@/assets/beryle.png';
 import yasukoImg from '@/assets/yasuko.png';
 
@@ -365,7 +366,7 @@ const trainingTestimonials = [
   {
     name: "Yasuko Inoue",
     role: "Projects Expert, JICA",
-    quote: "I really thank the organizers of this training that is NETFUND and ECAS. There’s a lot of people who are interested in carbon markets and we are learning with each other, as we interact with various people who are very passionate.",
+    quote: "I really thank the organizers of this training that is NETFUND and ECASI. There’s a lot of people who are interested in carbon markets and we are learning with each other, as we interact with various people who are very passionate.",
     image: yasukoImg
   },
   {
@@ -557,7 +558,25 @@ const Index = () => {
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
-    if (newsletterEmail.trim()) {
+    const cleanEmail = newsletterEmail.trim();
+    if (cleanEmail) {
+      adminRegistrationService.addInquiry({
+        channel: 'Website',
+        leadSource: 'Website',
+        inquiryType: 'Newsletter & Updates Subscription',
+        fullName: cleanEmail.split('@')[0] || 'Website Subscriber',
+        email: cleanEmail,
+        courseTitle: '2026 Executive Training & Policy Updates',
+        venue: 'Online / Newsletter',
+        message: 'Visitor subscribed to ECAS Institute 2026 cohort and policy updates from homepage.',
+      });
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        fetch('/api/subscribe.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cleanEmail }),
+        }).catch(() => { });
+      }
       setNewsletterSubmitted(true);
       setNewsletterEmail("");
       setTimeout(() => setNewsletterSubmitted(false), 5000);
@@ -724,8 +743,7 @@ const Index = () => {
         ══════════════════════════════════════════════════════════════════════ */}
         <section className="relative z-20 -mt-8 md:-mt-10 px-4 sm:px-6">
           <div
-            className="max-w-[1380px] w-full mx-auto bg-white rounded-xl p-5 md:p-7 border border-[#032e42]/10"
-            style={{ boxShadow: "0px 4px 20px rgba(3, 46, 66, 0.16)" }}
+            className="max-w-[1380px] w-full mx-auto bg-white rounded-2xl p-5 md:p-7 border border-slate-200/90 shadow-lg"
           >
             {/* Row 1: Category, Location, Format, Month + Submit */}
             <form
@@ -736,7 +754,7 @@ const Index = () => {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 aria-label="Select Category"
-                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 bg-gray-50/70 text-[#032e42] text-sm font-medium focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-[#F5F8FC] text-[#032e42] text-sm font-medium focus:bg-white focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
               >
                 <option value="">Select Category</option>
                 {searchCategories.map((cat) => (
@@ -750,7 +768,7 @@ const Index = () => {
                 value={selectedLocation}
                 onChange={(e) => setSelectedLocation(e.target.value)}
                 aria-label="Select Location"
-                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 bg-gray-50/70 text-[#032e42] text-sm font-medium focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-[#F5F8FC] text-[#032e42] text-sm font-medium focus:bg-white focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
               >
                 <option value="">Select Location</option>
                 {searchLocations.map((loc) => (
@@ -764,7 +782,7 @@ const Index = () => {
                 value={selectedFormat}
                 onChange={(e) => setSelectedFormat(e.target.value)}
                 aria-label="Select Format"
-                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 bg-gray-50/70 text-[#032e42] text-sm font-medium focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-[#F5F8FC] text-[#032e42] text-sm font-medium focus:bg-white focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
               >
                 <option value="">Select Format</option>
                 {searchFormats.map((fmt) => (
@@ -778,7 +796,7 @@ const Index = () => {
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 aria-label="Select Month"
-                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 bg-gray-50/70 text-[#032e42] text-sm font-medium focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-[#F5F8FC] text-[#032e42] text-sm font-medium focus:bg-white focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
               >
                 <option value="">Select Month</option>
                 {searchMonths.map((m) => (
@@ -790,7 +808,7 @@ const Index = () => {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#032e42] hover:bg-[#008000] text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors shadow-sm cursor-pointer"
+                className="w-full h-11 bg-[#032e42] hover:bg-[#008000] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-colors shadow-sm cursor-pointer"
               >
                 Submit
               </button>
@@ -799,18 +817,18 @@ const Index = () => {
             {/* Row 2: Keyword Search Input + Search Button */}
             <form onSubmit={handleKeywordSubmit} className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={keywordQuery}
                   onChange={(e) => setKeywordQuery(e.target.value)}
                   placeholder="Search Courses (e.g., Climate Finance, AI in Project Management, Procurement, SPV for PPP, Office Administration...)"
-                  className="w-full h-11 pl-10 pr-4 rounded-lg border border-gray-300 bg-white text-[#032e42] text-sm placeholder-gray-400 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
+                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 bg-[#F5F8FC] text-[#032e42] text-sm placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition-all"
                 />
               </div>
               <button
                 type="submit"
-                className="h-11 px-8 bg-[#008000] hover:bg-[#1e73be] text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors shadow-sm cursor-pointer shrink-0"
+                className="h-11 px-8 bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-colors shadow-sm cursor-pointer shrink-0"
               >
                 Search
               </button>
@@ -1155,16 +1173,16 @@ const Index = () => {
         {/* ══════════════════════════════════════════════════════════════════════
             5B. FEATURED 2026 EXECUTIVE TRAINING PROGRAMMES
         ══════════════════════════════════════════════════════════════════════ */}
-        <section className="py-12 md:py-16 px-4 sm:px-6 bg-gray-50/70">
+        <section className="py-12 md:py-16 px-4 sm:px-6 bg-[#F5F8FC]">
           <div className="max-w-[1380px] w-full mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-9 gap-4">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-[#008000] bg-[#008000]/10 px-3 py-1 rounded-full mb-2">
-                  <Sparkles size={13} /> 2026 Executive Cohorts Now Open
+                <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#008000] bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full mb-2">
+                  <span className="w-2 h-2 rounded-full bg-[#008000]" aria-hidden="true" /> 2026 Executive Cohorts Now Open
                 </span>
                 <h2
                   className="text-[#032e42] font-bold text-2xl sm:text-3xl md:text-[33px]"
-                  style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                  style={{ fontFamily: "'Outfit', 'Fira Sans', sans-serif" }}
                 >
                   Featured Executive Training Programmes
                 </h2>
@@ -1182,8 +1200,7 @@ const Index = () => {
               {flagshipCourses.map((course, idx) => (
                 <div
                   key={course.slug}
-                  className="bg-white rounded-[10px] overflow-hidden flex flex-col justify-between transition-all duration-300 hover:-translate-y-1"
-                  style={{ boxShadow: "0px 0px 5px 0px rgba(3, 46, 66, 0.3)" }}
+                  className="bg-white rounded-2xl border border-slate-200/90 hover:border-[#008000]/40 shadow-sm hover:shadow-md overflow-hidden flex flex-col justify-between transition-all duration-300 hover:-translate-y-1"
                 >
                   <div>
                     <div className="relative h-44 overflow-hidden">
@@ -1192,10 +1209,10 @@ const Index = () => {
                         alt={course.title}
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                       />
-                      <div className="absolute top-3 left-3 bg-[#032e42]/90 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded">
+                      <div className="absolute top-3 left-3 bg-[#032e42]/90 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
                         {course.category}
                       </div>
-                      <div className="absolute bottom-3 right-3 bg-[#008000] text-white text-[11px] font-extrabold px-2.5 py-1 rounded shadow">
+                      <div className="absolute bottom-3 right-3 bg-[#008000] text-white text-[11px] font-extrabold px-2.5 py-1 rounded-lg shadow">
                         {course.duration}
                       </div>
                     </div>
@@ -1203,14 +1220,14 @@ const Index = () => {
                     <div className="p-5">
                       <h3
                         className="text-[#032e42] font-bold text-[16.5px] leading-snug mb-3 line-clamp-2 hover:text-[#008000] transition-colors"
-                        style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                        style={{ fontFamily: "'Outfit', 'Fira Sans', sans-serif" }}
                       >
                         <Link to={`/executive-training/${course.slug}`}>
                           {course.title}
                         </Link>
                       </h3>
 
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 mb-4">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 mb-4">
                         <span className="flex items-center gap-1">
                           <MapPin size={13} className="text-[#008000]" />
                           {course.location}
@@ -1223,10 +1240,10 @@ const Index = () => {
                     </div>
                   </div>
 
-                  <div className="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-100 mt-auto">
+                  <div className="px-5 pb-5 pt-0 flex items-center justify-between border-t border-slate-100 mt-auto">
                     <Link
                       to={`/executive-training/${course.slug}`}
-                      className="mt-3 inline-flex items-center gap-1.5 bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold px-4 py-2 rounded transition-colors"
+                      className="mt-3 inline-flex items-center gap-1.5 bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-xs"
                     >
                       <span>Course Details</span>
                       <ArrowUpRight size={14} />
@@ -1525,21 +1542,15 @@ const Index = () => {
                         }}
                       >
                         <div>
-                          {/* Stars + Verified Badge */}
+                          {/* Verified Badge */}
                           <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, sIdx) => (
-                                <Star
-                                  key={sIdx}
-                                  size={16}
-                                  className="fill-[#fbbc04] text-[#fbbc04]"
-                                />
-                              ))}
+                            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#008000] bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                               <CheckCircle2
-                                size={15}
-                                className="text-[#1e73be] ml-1"
+                                size={13}
+                                className="text-[#008000]"
                                 title="Verified Training Participant"
                               />
+                              <span>Verified Participant</span>
                             </div>
                             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                               Verified Review
@@ -1614,16 +1625,16 @@ const Index = () => {
         {/* ══════════════════════════════════════════════════════════════════════
             10. SUBSCRIBE TO OUR NEWSLETTER! (Devimpact Pre-Footer Banner)
         ══════════════════════════════════════════════════════════════════════ */}
-        <section className="py-12 px-4 sm:px-6 bg-[#f2f5f9] border-t border-gray-200">
+        <section className="py-12 px-4 sm:px-6 bg-[#F5F8FC] border-t border-slate-200/80">
           <div className="max-w-[900px] mx-auto text-center">
             <h2
               className="text-[#032e42] font-bold text-2xl sm:text-3xl mb-3"
-              style={{ fontFamily: "'Fira Sans', sans-serif" }}
+              style={{ fontFamily: "'Outfit', 'Fira Sans', sans-serif" }}
             >
               Subscribe to our Newsletter!
             </h2>
             <p
-              className="text-gray-600 text-sm sm:text-base mb-6 max-w-xl mx-auto"
+              className="text-slate-600 text-sm sm:text-base mb-6 max-w-xl mx-auto"
               style={{ textAlign: "center" }}
             >
               Stay updated with our upcoming 2026 executive training cohorts, new courses, workshops, and policy insights.
@@ -1639,11 +1650,11 @@ const Index = () => {
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Enter your email address..."
-                className="flex-1 h-12 px-4 rounded-lg border border-gray-300 bg-white text-[#032e42] text-sm focus:outline-none focus:border-[#008000]"
+                className="flex-1 h-12 px-4 rounded-xl border border-slate-200 bg-white text-[#032e42] text-sm focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15"
               />
               <button
                 type="submit"
-                className="h-12 px-8 bg-[#008000] hover:bg-[#003B80] text-white font-bold text-sm uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+                className="h-12 px-8 bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-colors shadow-sm cursor-pointer"
               >
                 Subscribe
               </button>

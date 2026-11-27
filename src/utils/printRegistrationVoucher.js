@@ -333,6 +333,7 @@ export function printRegistrationVoucher(reg) {
           <p class="brand-sub">Environmental Capacities &amp; Sustainability Institute</p>
           <h1 class="brand-title">ECAS INSTITUTE AFRICA</h1>
           <p class="brand-contact">
+            Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani<br />
             P.O. Box 37193-00100, Nairobi, Kenya &bull; Tel/WhatsApp: +254 708 060 223 (0708 060 223)<br />
             Email: info@ecasiafrica.org &bull; Website: www.ecasiafrica.org
           </p>
@@ -467,12 +468,27 @@ export function printRegistrationVoucher(reg) {
 </body>
 </html>`;
 
-  const printWin = window.open('', '_blank', 'width=900,height=850,scrollbars=yes');
-  if (printWin) {
-    printWin.document.open();
-    printWin.document.write(html);
-    printWin.document.close();
-  } else {
+  try {
+    const existing = document.getElementById('ecasi-voucher-print-frame');
+    if (existing) existing.remove();
+    const iframe = document.createElement('iframe');
+    iframe.id = 'ecasi-voucher-print-frame';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+    } else {
+      window.print();
+    }
+  } catch {
     window.print();
   }
 }

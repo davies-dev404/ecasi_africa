@@ -183,8 +183,54 @@
 
   <!-- Cloudflare Turnstile API (Explicit Render Mode for React SPA) -->
   <script id="cloudflare-turnstile-script" src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <script type="module" crossorigin src="/assets/index-CGvtRfqr.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CTWLiirx.css">
+
+  <!-- Strip public SEO tags and enforce strict noindex on admin subdomain/routes prior to render -->
+  <script>
+    (function () {
+      try {
+        var h = (window.location.hostname || '').toLowerCase();
+        var p = (window.location.pathname || '').toLowerCase();
+        var s = (window.location.search || '').toLowerCase();
+        var isAdminPortal =
+          h.indexOf('msimamizi') !== -1 ||
+          /^\/(msimamizi|admin|portal)(\/|$)/.test(p) ||
+          s.indexOf('portal=msimamizi') !== -1;
+        if (!isAdminPortal) return;
+
+        document.title = 'Portal';
+        var removeSelectors = [
+          'link[rel="canonical"]',
+          'meta[name="description"]',
+          'meta[name="keywords"]',
+          'meta[name="google-site-verification"]',
+          'meta[property^="og:"]',
+          'meta[name^="twitter:"]',
+          'script[type="application/ld+json"]'
+        ];
+        removeSelectors.forEach(function (sel) {
+          var nodes = document.head.querySelectorAll(sel);
+          nodes.forEach(function (n) {
+            if (n && n.parentNode) n.parentNode.removeChild(n);
+          });
+        });
+
+        ['robots', 'googlebot'].forEach(function (metaName) {
+          var el = document.head.querySelector('meta[name="' + metaName + '"]');
+          if (!el) {
+            el = document.createElement('meta');
+            el.setAttribute('name', metaName);
+            document.head.appendChild(el);
+          }
+          el.setAttribute('content', 'noindex, nofollow, noarchive, nosnippet, noimageindex');
+        });
+      } catch (e) {
+        // ignore head mutation errors
+      }
+    })();
+  </script>
+  <script type="module" crossorigin src="/assets/index-CN-IFxjs.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-BWaJ3C7D.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-BCm7Pn8n.css">
 </head>
 
 <body>

@@ -1,0 +1,541 @@
+import { jsPDF } from 'jspdf';
+
+async function loadLogoBase64() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch('/logo.png');
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function drawEcasiLetterhead(doc, logoDataUrl, docTitle, docRightLines = [], settings = {}) {
+  const pageW = doc.internal.pageSize.getWidth();
+  const marginX = 14;
+  // Top accent strip
+  doc.setFillColor(3, 46, 66); // #032e42
+  doc.rect(0, 0, pageW, 6, 'F');
+  doc.setFillColor(0, 128, 0); // #008000
+  doc.rect(0, 6, pageW, 2, 'F');
+
+  let textStartX = marginX;
+  if (logoDataUrl) {
+    try {
+      doc.addImage(logoDataUrl, 'PNG', marginX, 12, 26, 15);
+      textStartX = marginX + 29;
+    } catch {
+      // skip if image decode fails
+    }
+  }
+
+  const rightColW = pageW >= 250 ? 82 : 64;
+  const leftMaxW = Math.max(60, pageW - marginX - rightColW - 6 - textStartX);
+
+  doc.setTextColor(3, 46, 66);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13.5);
+  doc.text('ECAS INSTITUTE', textStartX, 17);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(71, 85, 105);
+
+  const addrStr =
+    settings.address ||
+    'Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani, P.O. Box 37193-00100, Nairobi, Kenya';
+  const contactStr = `Tel/WhatsApp: +254 708 060 223 / 0708 060 223  |  ${settings.officialEmail || 'info@ecasiafrica.org'}  |  ecasiafrica.org`;
+
+  const leftLines = [
+    ...doc.splitTextToSize('Environmental Capacities and Sustainability Institute', leftMaxW),
+    ...doc.splitTextToSize(addrStr, leftMaxW),
+    ...doc.splitTextToSize(contactStr, leftMaxW),
+  ];
+
+  let ly = 21.5;
+  leftLines.forEach((line) => {
+    doc.text(line, textStartX, ly);
+    ly += 3.8;
+  });
+
+  // Right side Document Badge (wrapped cleanly inside right column)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(0, 128, 0);
+  const titleLines = doc.splitTextToSize(String(docTitle || 'INSTITUTIONAL DOCUMENT'), rightColW);
+  let ry = 17;
+  titleLines.forEach((ln) => {
+    doc.text(ln, pageW - marginX, ry, { align: 'right' });
+    ry += 4.6;
+  });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(51, 65, 85);
+  ry += 0.8;
+  docRightLines.forEach((line) => {
+    const wrapped = doc.splitTextToSize(String(line), rightColW);
+    wrapped.forEach((wln) => {
+      doc.text(wln, pageW - marginX, ry, { align: 'right' });
+      ry += 3.8;
+    });
+  });
+
+  const dividerY = Math.max(ly, ry, 36) + 2;
+  doc.setDrawColor(3, 46, 66);
+  doc.setLineWidth(0.5);
+  doc.line(marginX, dividerY, pageW - marginX, dividerY);
+  return dividerY + 6;
+}
+
+function drawFooter(doc, settings = {}) {
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 14;
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.3);
+  doc.line(marginX, pageH - 19, pageW - marginX, pageH - 19);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  const line1 = `ECAS Institute • ${settings.address || 'Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani, P.O. Box 37193-00100, Nairobi, Kenya'}`;
+  const wrapped1 = doc.splitTextToSize(line1, pageW - marginX * 2 - 42);
+  doc.text(wrapped1[0] || line1, marginX, pageH - 14.5);
+  doc.text('Tel/WhatsApp: +254 708 060 223  |  finance@ecasiafrica.org', marginX, pageH - 10);
+  doc.text('https://ecasiafrica.org', pageW - marginX, pageH - 12.5, { align: 'right' });
+}
+
+export async function downloadInvoicePdf({ invoice, registration, settings = {} }) {
+  if (!invoice) return;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const logoDataUrl = await loadLogoBase64();
+  const pageW = doc.internal.pageSize.getWidth();
+
+  const issueDate = invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
+  const titleLabel = invoice.status === 'Paid' ? 'OFFICIAL TAX / TRAINING INVOICE' : 'OFFICIAL PROFORMA INVOICE';
+
+  let y = drawEcasiLetterhead(
+    doc,
+    logoDataUrl,
+    titleLabel,
+    [
+      `Invoice No: ${invoice.invoiceNo}`,
+      `Date Issued: ${issueDate}`,
+      `Due Date: ${invoice.dueDate || 'On Receipt'}`,
+      `Status: ${(invoice.status || 'Issued').toUpperCase()}`,
+    ],
+    settings
+  );
+
+  // Bill To & Programme boxes
+  const boxW = (pageW - 36) / 2;
+  doc.setFillColor(245, 248, 252);
+  doc.roundedRect(15, y, boxW, 34, 2, 2, 'F');
+  doc.roundedRect(15 + boxW + 6, y, boxW, 34, 2, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(0, 128, 0);
+  doc.text('BILL TO / CLIENT DETAILS', 19, y + 6.5);
+  doc.text('TRAINING & INVOICE SUMMARY', 19 + boxW + 6, y + 6.5);
+
+  doc.setTextColor(3, 46, 66);
+  doc.setFontSize(10);
+  doc.text(String(invoice.applicantName || 'Delegate'), 19, y + 12.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+  const clientPhone = registration ? `${registration.dialCode || ''} ${registration.phoneNumber || ''}`.trim() : '';
+  const billLines = [
+    invoice.organisation || registration?.organisation || 'Individual / Corporate Delegate',
+    invoice.applicantEmail || registration?.officialEmail || registration?.personalEmail || '',
+    clientPhone ? `Tel: ${clientPhone}` : (registration?.country || ''),
+  ].filter(Boolean);
+  let ly = y + 17.5;
+  billLines.slice(0, 3).forEach((ln) => {
+    doc.text(String(ln).slice(0, 52), 19, ly);
+    ly += 4.5;
+  });
+
+  const rx = 19 + boxW + 6;
+  const metaLines = [
+    `Destination: ${invoice.destination || registration?.venue || 'Nairobi, Kenya'}`,
+    `Cohort: ${invoice.cohortName || registration?.cohortName || registration?.durationText || '2026 Intake'}`,
+    registration?.referenceNo ? `Registration Ref: ${registration.referenceNo}` : '',
+    `Payment Plan: ${invoice.paymentPlan || 'Full Payment'}`,
+  ].filter(Boolean);
+  let rly = y + 12.5;
+  metaLines.forEach((ln) => {
+    doc.text(String(ln).slice(0, 52), rx, rly);
+    rly += 4.8;
+  });
+
+  y += 42;
+
+  // Table Header
+  doc.setFillColor(3, 46, 66);
+  doc.rect(15, y, pageW - 30, 8.5, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.text('DESCRIPTION / TRAINING PROGRAMME', 18, y + 5.7);
+  doc.text('DESTINATION', 115, y + 5.7);
+  doc.text(`AMOUNT (${invoice.currency || 'USD'})`, pageW - 18, y + 5.7, { align: 'right' });
+
+  y += 11;
+  doc.setTextColor(3, 46, 66);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  const descLines = doc.splitTextToSize(`${invoice.courseTitle || 'Executive Training Programme'}${invoice.cohortName ? ` (${invoice.cohortName})` : ''}`, 90);
+  doc.text(descLines, 18, y + 2);
+  doc.setFont('helvetica', 'normal');
+  doc.text(String(invoice.destination || 'Nairobi, Kenya').slice(0, 28), 115, y + 2);
+  doc.text(`${Number(invoice.amount || 0).toLocaleString()}`, pageW - 18, y + 2, { align: 'right' });
+  y += Math.max(8, descLines.length * 4.5 + 3);
+  doc.setDrawColor(226, 232, 240);
+  doc.line(15, y, pageW - 15, y);
+
+  if (Number(invoice.additionalCharges) > 0) {
+    y += 6;
+    doc.text('Additional Logistics / Materials Charges', 18, y);
+    doc.text('—', 115, y);
+    doc.text(`${Number(invoice.additionalCharges).toLocaleString()}`, pageW - 18, y, { align: 'right' });
+    y += 4;
+    doc.line(15, y, pageW - 15, y);
+  }
+
+  if (Number(invoice.discount) > 0) {
+    y += 6;
+    doc.setTextColor(0, 128, 0);
+    doc.text('Authorized Institutional Discount', 18, y);
+    doc.text('—', 115, y);
+    doc.text(`-${Number(invoice.discount).toLocaleString()}`, pageW - 18, y, { align: 'right' });
+    y += 4;
+    doc.line(15, y, pageW - 15, y);
+  }
+
+  // Totals Summary Right Aligned
+  y += 10;
+  const sumX = 112;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(3, 46, 66);
+  doc.text('Net Total Payable:', sumX, y);
+  doc.text(`${invoice.currency || 'USD'} ${Number(invoice.netAmount || 0).toLocaleString()}`, pageW - 18, y, { align: 'right' });
+
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text('Amount Paid to Date:', sumX, y);
+  doc.text(`${invoice.currency || 'USD'} ${Number(invoice.paidAmount || 0).toLocaleString()}`, pageW - 18, y, { align: 'right' });
+
+  y += 7;
+  doc.setFillColor(240, 253, 244);
+  doc.roundedRect(sumX - 3, y - 4.5, pageW - 15 - (sumX - 3), 9, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(0, 128, 0);
+  doc.text('Balance Outstanding:', sumX, y + 1.5);
+  doc.text(`${invoice.currency || 'USD'} ${Number(invoice.balance || 0).toLocaleString()}`, pageW - 18, y + 1.5, { align: 'right' });
+
+  // Payment Instructions Box
+  y += 18;
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(203, 213, 225);
+  const bankText = settings.bankDetails || 'Account Name: Environmental Capacities and Sustainability Institute (ECAS)\nCurrency: USD / KES\nContact finance@ecasiafrica.org or +254 708 060 223 for wire & M-Pesa remittance details.';
+  const bankLines = doc.splitTextToSize(
+    settings.mpesaPaybill ? `${bankText}\nM-Pesa Paybill / Till: ${settings.mpesaPaybill}` : bankText,
+    pageW - 38
+  );
+  const boxH = 12 + bankLines.length * 4.5;
+  doc.roundedRect(15, y, pageW - 30, boxH, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(3, 46, 66);
+  doc.text('REMITTANCE & PAYMENT INSTRUCTIONS', 19, y + 6.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+  doc.text(bankLines, 19, y + 11.5);
+
+  y += boxH + 14;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(3, 46, 66);
+  doc.text('ECAS Institute Finance & Admissions Office', 15, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 116, 139);
+  doc.text('Thank you for partnering with Environmental Capacities and Sustainability Institute (ECAS Institute).', 15, y + 4.5);
+
+  drawFooter(doc, settings);
+  doc.save(`ECAS_Invoice_${invoice.invoiceNo || invoice.id}.pdf`);
+}
+
+export async function downloadPaymentReceiptPdf({ payment, invoice, registration, settings = {} }) {
+  if (!payment) return;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const logoDataUrl = await loadLogoBase64();
+  const pageW = doc.internal.pageSize.getWidth();
+
+  const receiptNo = payment.receiptNo || `RCP-${String(payment.id || '').replace(/^PAY-/, '')}`;
+
+  let y = drawEcasiLetterhead(
+    doc,
+    logoDataUrl,
+    'OFFICIAL PAYMENT RECEIPT',
+    [
+      `Receipt No: ${receiptNo}`,
+      `Date Received: ${payment.transactionDate || new Date().toLocaleDateString('en-GB')}`,
+      `Payment Ref: ${payment.reference || '—'}`,
+      `Status: ${(payment.status || 'Verified').toUpperCase()}`,
+    ],
+    settings
+  );
+
+  // Green Verified Seal Strip
+  doc.setFillColor(240, 253, 244);
+  doc.setDrawColor(134, 239, 172);
+  doc.roundedRect(15, y, pageW - 30, 14, 2, 2, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(22, 163, 106);
+  doc.text('PAYMENT RECEIVED & OFFICIALLY VERIFIED', 20, y + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+  doc.text(
+    `Received with thanks: ${payment.currency || 'USD'} ${Number(payment.amount || 0).toLocaleString()} via ${payment.method || 'Bank Transfer'}`,
+    20,
+    y + 11
+  );
+
+  y += 20;
+  const boxW = (pageW - 36) / 2;
+  doc.setFillColor(245, 248, 252);
+  doc.roundedRect(15, y, boxW, 34, 2, 2, 'F');
+  doc.roundedRect(15 + boxW + 6, y, boxW, 34, 2, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(0, 128, 0);
+  doc.text('RECEIVED FROM', 19, y + 6.5);
+  doc.text('PROGRAMME & INVOICE REFERENCE', 19 + boxW + 6, y + 6.5);
+
+  const clientName = payment.applicantName || invoice?.applicantName || (registration ? `${registration.firstName || ''} ${registration.lastName || ''}`.trim() : 'Delegate');
+  const org = invoice?.organisation || registration?.organisation || '';
+  const email = invoice?.applicantEmail || registration?.officialEmail || registration?.personalEmail || '';
+  const phone = registration ? `${registration.dialCode || ''} ${registration.phoneNumber || ''}`.trim() : '';
+
+  doc.setTextColor(3, 46, 66);
+  doc.setFontSize(10);
+  doc.text(String(clientName), 19, y + 12.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+  [org, email, phone ? `Tel: ${phone}` : ''].filter(Boolean).slice(0, 3).forEach((ln, i) => {
+    doc.text(String(ln).slice(0, 50), 19, y + 17.5 + i * 4.5);
+  });
+
+  const rx = 19 + boxW + 6;
+  const progLines = [
+    invoice?.courseTitle || registration?.eventTitle || 'Executive Training Programme',
+    `Invoice No: ${payment.invoiceNo || invoice?.invoiceNo || 'Direct Payment'}`,
+    `Destination: ${invoice?.destination || registration?.venue || 'Nairobi, Kenya'}`,
+    registration?.referenceNo ? `Registration Ref: ${registration.referenceNo}` : '',
+  ].filter(Boolean);
+  progLines.slice(0, 4).forEach((ln, i) => {
+    doc.text(String(ln).slice(0, 50), rx, y + 12.5 + i * 4.8);
+  });
+
+  y += 42;
+  doc.setFillColor(3, 46, 66);
+  doc.rect(15, y, pageW - 30, 8.5, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.text('PAYMENT DETAILS & RECONCILIATION', 18, y + 5.7);
+  doc.text(`AMOUNT (${payment.currency || 'USD'})`, pageW - 18, y + 5.7, { align: 'right' });
+
+  const tableRows = [
+    ['Payment Method & Channel', payment.method || 'Bank Transfer'],
+    ['Transaction Reference No.', payment.reference || '—'],
+    ['Payment Verification Status', `${payment.status || 'Verified'} (${payment.verifiedBy || 'ECAS Finance'})`],
+    ['Total Invoice Amount', invoice ? `${invoice.currency || 'USD'} ${Number(invoice.netAmount || 0).toLocaleString()}` : 'N/A'],
+    ['Amount Received (This Receipt)', `${payment.currency || 'USD'} ${Number(payment.amount || 0).toLocaleString()}`],
+    ['Remaining Invoice Balance', invoice ? `${invoice.currency || 'USD'} ${Number(invoice.balance || 0).toLocaleString()}` : `${payment.currency || 'USD'} 0`],
+  ];
+
+  y += 8.5;
+  tableRows.forEach(([label, val], idx) => {
+    if (idx % 2 === 1) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, y, pageW - 30, 8, 'F');
+    }
+    doc.setFont('helvetica', idx === 4 ? 'bold' : 'normal');
+    doc.setFontSize(8.8);
+    doc.setTextColor(idx === 4 ? 0 : 51, idx === 4 ? 128 : 65, idx === 4 ? 0 : 85);
+    doc.text(label, 18, y + 5.4);
+    doc.text(String(val), pageW - 18, y + 5.4, { align: 'right' });
+    y += 8;
+  });
+
+  if (payment.supportingNote) {
+    y += 8;
+    doc.setFillColor(245, 248, 252);
+    doc.roundedRect(15, y, pageW - 30, 14, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(3, 46, 66);
+    doc.text('VERIFICATION NOTES:', 18, y + 5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(String(payment.supportingNote).slice(0, 110), 18, y + 10.5);
+    y += 16;
+  }
+
+  y += 14;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(3, 46, 66);
+  doc.text('Official Finance Confirmation', 15, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('This receipt confirms official verification of funds received by ECAS Institute.', 15, y + 4.8);
+  doc.text('Your seat in the respective executive training programme is confirmed.', 15, y + 9.3);
+
+  drawFooter(doc, settings);
+  doc.save(`ECAS_Receipt_${(payment.reference || receiptNo).replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
+}
+
+export async function downloadInstitutionalTablePdf({ title, headers = [], rows = [], kpis = [], settings = {} }) {
+  const isWide = headers.length >= 5;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: isWide ? 'landscape' : 'portrait' });
+  const logoDataUrl = await loadLogoBase64();
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 14;
+  const usableW = pageW - marginX * 2;
+
+  let y = drawEcasiLetterhead(
+    doc,
+    logoDataUrl,
+    'INSTITUTIONAL REPORT',
+    [String(title || 'ECAS Institutional Report'), `Generated: ${new Date().toLocaleDateString('en-GB')}`],
+    settings
+  );
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11.5);
+  doc.setTextColor(3, 46, 66);
+  const titleLines = doc.splitTextToSize(String(title || 'ECAS Institutional Report'), usableW);
+  titleLines.forEach((ln) => {
+    doc.text(ln, marginX, y);
+    y += 5;
+  });
+  y += 2;
+
+  if (Array.isArray(kpis) && kpis.length > 0) {
+    const kpiCols = kpis.length >= 4 ? 2 : 1;
+    const kpiBoxW = (usableW - (kpiCols - 1) * 4) / kpiCols;
+    for (let idx = 0; idx < kpis.length; idx += kpiCols) {
+      for (let c = 0; c < kpiCols; c += 1) {
+        const item = kpis[idx + c];
+        if (!item) continue;
+        const bx = marginX + c * (kpiBoxW + 4);
+        doc.setFillColor(245, 248, 252);
+        doc.roundedRect(bx, y, kpiBoxW, 12, 1.5, 1.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(String(item.label || '').toUpperCase(), bx + 3, y + 4.5);
+        doc.setFontSize(10);
+        doc.setTextColor(3, 46, 66);
+        doc.text(String(item.value ?? ''), bx + 3, y + 9.8);
+      }
+      y += 14.5;
+    }
+    y += 2;
+  }
+
+  if (headers.length > 0) {
+    // Intelligent column widths: 2-col key/value records get 34% / 66%; wider tables share evenly
+    const colWidths =
+      headers.length === 2
+        ? [usableW * 0.34, usableW * 0.66]
+        : headers.map(() => usableW / headers.length);
+    const colOffsets = colWidths.reduce((acc, w, idx) => {
+      acc.push(idx === 0 ? marginX : acc[idx - 1] + colWidths[idx - 1]);
+      return acc;
+    }, []);
+
+    const fontSize = headers.length >= 9 ? 7 : headers.length >= 6 ? 7.5 : 8.5;
+    const lineHeight = fontSize * 0.48 + 0.8;
+
+    const drawTableHeader = (startY) => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(fontSize);
+      const headerWrapped = headers.map((h, i) => doc.splitTextToSize(String(h ?? ''), Math.max(12, colWidths[i] - 4)));
+      const maxHeaderLines = Math.max(1, ...headerWrapped.map((lines) => lines.length));
+      const hdrH = maxHeaderLines * lineHeight + 4.5;
+
+      doc.setFillColor(3, 46, 66);
+      doc.rect(marginX, startY, usableW, hdrH, 'F');
+      doc.setTextColor(255, 255, 255);
+      headerWrapped.forEach((lines, i) => {
+        lines.forEach((ln, li) => {
+          doc.text(ln, colOffsets[i] + 2, startY + 4 + li * lineHeight);
+        });
+      });
+      return startY + hdrH;
+    };
+
+    y = drawTableHeader(y);
+
+    rows.forEach((r, idx) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(fontSize);
+
+      const cellWrapped = headers.map((_, i) => {
+        const rawText = String((Array.isArray(r) ? r[i] : '') ?? '—').trim() || '—';
+        return doc.splitTextToSize(rawText, Math.max(12, colWidths[i] - 4));
+      });
+      const maxLines = Math.max(1, ...cellWrapped.map((lines) => lines.length));
+      const rowH = maxLines * lineHeight + 3.8;
+
+      if (y + rowH > pageH - 22) {
+        drawFooter(doc, settings);
+        doc.addPage();
+        y = drawTableHeader(16);
+      }
+
+      if (idx % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(marginX, y, usableW, rowH, 'F');
+      }
+
+      cellWrapped.forEach((lines, i) => {
+        doc.setFont('helvetica', headers.length === 2 && i === 0 ? 'bold' : 'normal');
+        doc.setTextColor(3, 46, 66);
+        lines.forEach((ln, li) => {
+          doc.text(ln, colOffsets[i] + 2, y + 3.8 + li * lineHeight);
+        });
+      });
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.2);
+      doc.line(marginX, y + rowH, marginX + usableW, y + rowH);
+      y += rowH;
+    });
+  }
+
+  drawFooter(doc, settings);
+  doc.save(`ECAS_${String(title || 'Report').replace(/[^a-zA-Z0-9]+/g, '_')}.pdf`);
+}

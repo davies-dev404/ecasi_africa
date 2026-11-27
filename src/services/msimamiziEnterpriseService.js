@@ -11,7 +11,8 @@ import {
   isValidInstitutionalEmail,
   computeCredentialDigest,
 } from '@/services/adminRegistrationService';
-import { escapeHtml, sanitizeRichHtml } from '@/utils/htmlSanitizer';
+import { sanitizeRichHtml } from '@/utils/htmlSanitizer';
+import { realtimeService } from '@/services/realtimeService';
 
 export const ENTERPRISE_KEYS = {
   INVOICES: 'ecasi_msimamizi_invoices_v1',
@@ -35,7 +36,7 @@ export const ROLE_CATALOG = [
     label: 'Super Admin',
     description: 'Full institutional access across admissions, finance, academic, recruitment, CMS, staff permissions, and system health.',
     permissions: ['*'],
-    badgeColor: 'bg-teal-100 text-teal-900 border-teal-200',
+    badgeColor: 'bg-emerald-100 text-[#032e42] border-emerald-300',
   },
   {
     id: 'VERIFICATION_OFFICER',
@@ -233,6 +234,73 @@ export function getEffectiveRegistrationStage(reg) {
   return 'Application Received';
 }
 
+export const CONFIRMED_ENROLMENT_STAGES = [
+  'Payment Confirmed',
+  'Enrolment Confirmed',
+  'Training In Progress',
+  'Completed',
+];
+
+/**
+ * Strict ERP confirmation & revenue recognition gate:
+ * A registration/lead counts as Confirmed & Realized Revenue ONLY when:
+ * 1) It has not been Rejected / Withdrawn / Cancelled
+ * 2) Its admission stage is confirmed (Payment Confirmed / Enrolment Confirmed / Training In Progress / Completed)
+ * 3) It has been Invoiced AND Paid (paymentStatus === 'Paid' backed by a Paid invoice and/or Verified payment)
+ */
+export function isConfirmedPaidEnrolment(reg, invoices = [], payments = []) {
+  if (!reg || typeof reg !== 'object') return false;
+  const stage = getEffectiveRegistrationStage(reg);
+  if (['Rejected', 'Withdrawn', 'Cancelled'].includes(stage)) return false;
+  if (!CONFIRMED_ENROLMENT_STAGES.includes(stage)) return false;
+  if (reg.paymentStatus !== 'Paid') return false;
+
+  const invList = Array.isArray(invoices) ? invoices : [];
+  const payList = Array.isArray(payments) ? payments : [];
+  const linkedInv = invList.find((i) => i && i.registrationId === reg.id && i.status !== 'Cancelled');
+  const hasPaidInvoice = Boolean(linkedInv && linkedInv.status === 'Paid');
+  const hasVerifiedPayment = payList.some(
+    (p) =>
+      p &&
+      p.status === 'Verified' &&
+      (p.registrationId === reg.id || (linkedInv && p.invoiceId === linkedInv.id))
+  );
+  return hasPaidInvoice || hasVerifiedPayment;
+}
+
+export function getRealizedRegistrationRevenue(reg, invoices = [], payments = []) {
+  if (!isConfirmedPaidEnrolment(reg, invoices, payments)) return 0;
+  const invList = Array.isArray(invoices) ? invoices : [];
+  const payList = Array.isArray(payments) ? payments : [];
+  const linkedInvIds = new Set(
+    invList.filter((i) => i && i.registrationId === reg.id && i.status !== 'Cancelled').map((i) => i.id)
+  );
+  const verifiedPaid = payList
+    .filter((p) => p && p.status === 'Verified' && (p.registrationId === reg.id || linkedInvIds.has(p.invoiceId)))
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  if (verifiedPaid > 0) return verifiedPaid;
+  return Number(reg.totalFee) || 0;
+}
+
+export function normalizeDestinationHub(rawVenue) {
+  const v = String(rawVenue || '').trim();
+  if (!v) return 'Nairobi, Kenya';
+  const low = v.toLowerCase();
+  if (low.includes('nairobi')) return 'Nairobi, Kenya';
+  if (low.includes('mombasa')) return 'Mombasa, Kenya';
+  if (low.includes('diani')) return 'Diani, Kenya';
+  if (low.includes('naivasha')) return 'Naivasha, Kenya';
+  if (low.includes('zanzibar')) return 'Zanzibar, Tanzania';
+  if (low.includes('kigali')) return 'Kigali, Rwanda';
+  if (low.includes('arusha')) return 'Arusha, Tanzania';
+  if (low.includes('dubai')) return 'Dubai, UAE';
+  if (low.includes('kuala')) return 'Kuala Lumpur, Malaysia';
+  if (low.includes('online') || low.includes('virtual') || low.includes('remote') || low.includes('zoom')) {
+    return 'Online / Virtual Cohort';
+  }
+  return v;
+}
+
 export function normalizeLeadStatus(rawStatus) {
   const s = String(rawStatus || 'New Lead').trim();
   if (s === 'New') return 'New Lead';
@@ -330,10 +398,6 @@ function writeJson(key, value) {
 
 async function postEnterpriseAction(payload) {
   if (typeof window === 'undefined') return { unreachable: true };
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return { unreachable: true, localDev: true };
-  }
   try {
     const token = getStoredAdminToken();
     const headers = { 'Content-Type': 'application/json' };
@@ -343,6 +407,7 @@ async function postEnterpriseAction(payload) {
       headers,
       body: JSON.stringify(payload),
     });
+    if ([502, 503, 504].includes(res.status)) return { unreachable: true, status: res.status };
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('application/json')) return { unreachable: true, status: res.status };
     const data = await res.json();
@@ -355,6 +420,7 @@ async function postEnterpriseAction(payload) {
 function notifyEnterpriseUpdate(topic) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('ecasi_enterprise_updated', { detail: { topic } }));
+    realtimeService.publish(topic || 'sync');
   }
 }
 
@@ -366,9 +432,9 @@ const DEFAULT_SETTINGS = {
   officialEmail: 'info@ecasiafrica.org',
   admissionsEmail: 'admissions@ecasiafrica.org',
   financeEmail: 'finance@ecasiafrica.org',
-  whatsappNumber: '+254722000000',
-  phone: '+254-722-000-000',
-  address: 'Nairobi, Kenya',
+  whatsappNumber: '+254708060223',
+  phone: '+254 708 060 223 / 0708 060 223',
+  address: 'Beverly Court Apartments, Office No. 8, Marcus Garvey Road, Kilimani, P.O. Box 37193-00100, Nairobi, Kenya',
   defaultCurrency: 'USD',
   usdToKesRate: 130,
   invoicePaymentTermsDays: 14,
@@ -466,7 +532,7 @@ const DEFAULT_CMS_SECTIONS = {
   contact_info: {
     title: 'ECAS Institute Admissions & Advisory Desk',
     subtitle: 'Reach our Nairobi headquarters for proforma invoices, corporate delegations, and advisory partnerships.',
-    body: 'Email: info@ecasiafrica.org\nPhone: +254-722-000-000\nLocation: Nairobi, Kenya',
+    body: 'Email: info@ecasiafrica.org\nPhone / WhatsApp: +254 708 060 223 (0708 060 223)\nLocation: Nairobi, Kenya',
     ctaLabel: 'Send Inquiry',
     ctaUrl: '/contact',
     status: 'Published',
@@ -644,6 +710,130 @@ export const msimamiziEnterpriseService = {
     });
     this.logAudit(actor, 'UPDATE_INVOICE', 'Invoice', prev?.invoiceNo || id, prev?.status || '', updates.status || 'Updated', false);
     return updated.find((i) => i.id === id);
+  },
+
+  deleteInvoice(id, actor, { force = false } = {}) {
+    const existing = this.getInvoices();
+    const target = existing.find((i) => i.id === id);
+    if (!target) return { success: false, error: 'Invoice not found.' };
+    const verifiedPays = this.getPayments().filter((p) => p.invoiceId === id && p.status === 'Verified');
+    if (!force && (Number(target.paidAmount || 0) > 0 || verifiedPays.length > 0 || target.status === 'Paid')) {
+      return { success: false, error: 'Cannot delete a paid invoice with verified receipts. Use Purge Test Record as Super Admin if removing test data.' };
+    }
+    const updated = existing.filter((i) => i.id !== id);
+    this.saveInvoices(updated, {
+      action: 'DELETE_INVOICE',
+      record: target.invoiceNo || id,
+      previousValue: target.status || 'Issued',
+      newValue: 'Deleted',
+    });
+    if (force && verifiedPays.length > 0) {
+      const nextPays = this.getPayments().filter((p) => p.invoiceId !== id);
+      this.savePayments(nextPays, {
+        action: 'PURGE_INVOICE_PAYMENTS',
+        record: target.invoiceNo || id,
+        previousValue: `${verifiedPays.length} payment(s)`,
+        newValue: 'Deleted',
+      });
+    }
+    this.logAudit(actor, 'DELETE_INVOICE', 'Invoice', target.invoiceNo || id, target.status || 'Issued', 'Deleted', false);
+    if (target.registrationId) {
+      const reg = adminRegistrationService.getRegistrations().find((r) => r.id === target.registrationId);
+      if (reg && (force || reg.paymentStatus !== 'Paid')) {
+        this.updateRegistrationWorkflow(
+          reg.id,
+          'Approved',
+          `Invoice ${target.invoiceNo} removed.`,
+          actor,
+          { paymentStatus: 'Unpaid' }
+        );
+      }
+    }
+    return { success: true };
+  },
+
+  deletePayment(id, actor) {
+    const existing = this.getPayments();
+    const target = existing.find((p) => p.id === id);
+    if (!target) return { success: false, error: 'Payment record not found.' };
+    const updated = existing.filter((p) => p.id !== id);
+    this.savePayments(updated, {
+      action: 'DELETE_PAYMENT',
+      record: target.reference || id,
+      previousValue: `${target.currency} ${target.amount}`,
+      newValue: 'Deleted',
+    });
+    this.logAudit(actor, 'DELETE_PAYMENT', 'Payment', target.reference || id, `${target.currency} ${target.amount}`, 'Deleted', false);
+
+    if (target.invoiceId) {
+      const linkedInv = this.getInvoices().find((i) => i.id === target.invoiceId);
+      if (linkedInv) {
+        const remainingPaid = updated
+          .filter((p) => p.invoiceId === linkedInv.id && p.status === 'Verified')
+          .reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        const newStatus = remainingPaid >= linkedInv.netAmount && linkedInv.netAmount > 0 ? 'Paid' : remainingPaid > 0 ? 'Partially Paid' : 'Issued';
+        this.updateInvoice(linkedInv.id, { paidAmount: remainingPaid, balance: Math.max(0, linkedInv.netAmount - remainingPaid), status: newStatus }, actor);
+        if (linkedInv.registrationId) {
+          this.updateRegistrationWorkflow(
+            linkedInv.registrationId,
+            newStatus === 'Paid' ? 'Enrolment Confirmed' : 'Invoice Issued',
+            `Payment ${target.reference} removed.`,
+            actor,
+            { paymentStatus: newStatus === 'Paid' ? 'Paid' : 'Invoiced' }
+          );
+        }
+      }
+    }
+    return { success: true };
+  },
+
+  purgeRegistrationCascade(regId, actor, { includePaidFinancials = true } = {}) {
+    const regs = adminRegistrationService.getRegistrations();
+    const targetReg = regs.find((r) => r.id === regId);
+    const existingInvs = this.getInvoices();
+    const allPays = this.getPayments();
+    const removedInvNos = [];
+    const removedInvIds = [];
+    const nextInvs = existingInvs.filter((inv) => {
+      if (inv.registrationId !== regId) return true;
+      const hasPaid = Number(inv.paidAmount || 0) > 0 || inv.status === 'Paid' || allPays.some((p) => p.invoiceId === inv.id && p.status === 'Verified');
+      if (hasPaid && !includePaidFinancials) return true;
+      removedInvNos.push(inv.invoiceNo || inv.id);
+      removedInvIds.push(inv.id);
+      return false;
+    });
+    if (removedInvNos.length > 0) {
+      this.saveInvoices(nextInvs, {
+        action: 'PURGE_LINKED_INVOICES',
+        record: removedInvNos.join(', '),
+        previousValue: 'Linked to deleted registration',
+        newValue: 'Purged',
+      });
+    }
+    const nextPays = allPays.filter(
+      (p) => p.registrationId !== regId && !(p.invoiceId && removedInvIds.includes(p.invoiceId))
+    );
+    if (nextPays.length !== allPays.length) {
+      this.savePayments(nextPays, {
+        action: 'PURGE_LINKED_PAYMENTS',
+        record: targetReg?.referenceNo || regId,
+        previousValue: `${allPays.length - nextPays.length} payment(s)`,
+        newValue: 'Purged',
+      });
+    }
+    const ok = adminRegistrationService.deleteRegistration(regId);
+    if (ok) {
+      this.logAudit(
+        actor,
+        'DELETE_REGISTRATION',
+        'Registration',
+        targetReg?.referenceNo || regId,
+        targetReg ? `${targetReg.firstName || ''} ${targetReg.lastName || ''}`.trim() : regId,
+        removedInvNos.length > 0 ? `Deleted (+ purged invoices ${removedInvNos.join(', ')})` : 'Deleted'
+      );
+      notifyEnterpriseUpdate('registrations');
+    }
+    return ok;
   },
 
   // ─── Payments & Reconciliation ──────────────────────────────────────────────
@@ -1135,7 +1325,19 @@ export const msimamiziEnterpriseService = {
   // ─── Platform Settings ──────────────────────────────────────────────────────
   getSettings() {
     const stored = readJson(ENTERPRISE_KEYS.SETTINGS, null);
-    return stored && typeof stored === 'object' ? { ...DEFAULT_SETTINGS, ...stored } : DEFAULT_SETTINGS;
+    if (!stored || typeof stored !== 'object') return DEFAULT_SETTINGS;
+    const merged = { ...DEFAULT_SETTINGS, ...stored };
+    if (!merged.whatsappNumber || String(merged.whatsappNumber).includes('722000000')) {
+      merged.whatsappNumber = DEFAULT_SETTINGS.whatsappNumber;
+    }
+    if (!merged.phone || String(merged.phone).includes('722-000-000') || String(merged.phone).includes('722000000')) {
+      merged.phone = DEFAULT_SETTINGS.phone;
+    }
+    const rawAddr = String(merged.address || '').trim();
+    if (!rawAddr || rawAddr === 'Nairobi, Kenya' || rawAddr === 'P.O. Box 37193-00100, Nairobi, Kenya') {
+      merged.address = DEFAULT_SETTINGS.address;
+    }
+    return merged;
   },
 
   saveSettings(newSettings, actor) {
@@ -1564,7 +1766,7 @@ export const msimamiziEnterpriseService = {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-    const headerRow = `<tr>${headers.map((h) => `<th style="background:#071C2D;color:#ffffff;font-weight:bold;padding:8px;border:1px solid #cbd5e1;">${escHtml(h)}</th>`).join('')}</tr>`;
+    const headerRow = `<tr>${headers.map((h) => `<th style="background:#032e42;color:#ffffff;font-weight:bold;padding:8px;border:1px solid #cbd5e1;">${escHtml(h)}</th>`).join('')}</tr>`;
     const bodyRows = rows
       .map((r) => `<tr>${r.map((c) => `<td style="padding:6px;border:1px solid #e2e8f0;">${escHtml(c)}</td>`).join('')}</tr>`)
       .join('');
@@ -1581,57 +1783,26 @@ export const msimamiziEnterpriseService = {
     this.logAudit(actor, 'EXPORT_EXCEL', 'Export', filename, '', `${rows.length} rows exported`);
   },
 
-  printInstitutionalDocument(title, bodyHtml, actor = null) {
-    const win = window.open('', '_blank', 'width=960,height=760');
-    if (!win) {
-      alert('Please allow pop-ups to generate printable PDF documents.');
-      return;
+  printInstitutionalDocument(title, bodyHtml, actor = null, extra = {}) {
+    if (typeof window !== 'undefined') {
+      const safeBodyHtml = sanitizeRichHtml(bodyHtml || '');
+      window.dispatchEvent(
+        new CustomEvent('ecasi_open_document_page', {
+          detail: {
+            mode: extra.mode || 'report',
+            title: String(title || 'Official Institutional Document'),
+            bodyHtml: safeBodyHtml,
+            headers: Array.isArray(extra.headers) ? extra.headers : [],
+            rows: Array.isArray(extra.rows) ? extra.rows : [],
+            kpis: Array.isArray(extra.kpis) ? extra.kpis : [],
+            invoice: extra.invoice || null,
+            payment: extra.payment || null,
+            registration: extra.registration || null,
+            registrationId: extra.registrationId || '',
+          },
+        })
+      );
     }
-    const settings = this.getSettings();
-    const safeTitle = escapeHtml(title);
-    const safeBody = sanitizeRichHtml(bodyHtml);
-    win.document.write(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <title>${safeTitle}</title>
-  <style>
-    body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #10243E; margin: 32px; font-size: 12px; line-height: 1.5; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #071C2D; padding-bottom: 14px; margin-bottom: 22px; }
-    .brand { font-size: 20px; font-weight: 800; color: #071C2D; }
-    .brand span { color: #00B8B0; }
-    .meta { text-align: right; color: #718096; font-size: 11px; }
-    table { width: 100%; border-collapse: collapse; margin: 14px 0; }
-    th { background: #071C2D; color: #fff; text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-    td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-    .kpi { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; }
-    .kpi-label { font-size: 10px; text-transform: uppercase; color: #718096; font-weight: 700; }
-    .kpi-val { font-size: 18px; font-weight: 800; color: #071C2D; margin-top: 2px; }
-    .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #cbd5e1; font-size: 10px; color: #718096; display: flex; justify-content: space-between; }
-    @media print { body { margin: 16px; } button { display: none !important; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="brand">${escapeHtml(settings.institutionName)} <span>Msimamizi</span></div>
-      <div style="font-size:11px;color:#718096;">${escapeHtml(settings.tagline)} • ${escapeHtml(settings.officialEmail)}</div>
-    </div>
-    <div class="meta">
-      <div><strong>${safeTitle}</strong></div>
-      <div>Generated: ${escapeHtml(new Date().toLocaleString())}</div>
-    </div>
-  </div>
-  ${safeBody}
-  <div class="footer">
-    <span>Official Institutional Record — ${escapeHtml(settings.institutionName)}</span>
-    <span>msimamizi.ecasiafrica.org</span>
-  </div>
-  <script>window.onload = function(){ window.print(); };</script>
-</body>
-</html>`);
-    win.document.close();
-    this.logAudit(actor, 'EXPORT_PDF_PRINT', 'Export', title, '', 'Generated printable PDF document');
+    this.logAudit(actor, 'OPEN_DOCUMENT_VIEW', 'Document', title, '', 'Opened official institutional document page');
   },
 };

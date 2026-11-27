@@ -14,6 +14,7 @@
 require_once __DIR__ . '/security-lib.php';
 
 ecasApplySecurityHeaders();
+header('X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex');
 ecasApplyStrictCors('GET, POST, OPTIONS', 'Content-Type, Authorization, X-Admin-Token, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -24,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // 2. Designated Super Administrators (Jacob Olonde & Gift Rioba) & Institutional Domain Validator
 const SUPER_ADMINS = [
     'jacob@ecasiafrica.org',
-    'acob@ecasiafrica.org',
     'riobag@ecasiafrica.org',
     'gift@ecasiafrica.org',
 ];
@@ -187,14 +187,19 @@ function ensureProtectedDataDir(string $dir): bool {
     return true;
 }
 
-function resolveWritableDataDir(): string {
+function getStoreCandidateDirs(): array {
     $homeDir = getenv('HOME') ?: '/home/ecasorke';
-    $candidates = array_values(array_unique(array_filter([
+    return array_values(array_unique(array_filter([
         $homeDir . '/.msimamizi_store',
         dirname(__DIR__, 2) . '/.msimamizi_store',
+        dirname(__DIR__, 1) . '/.msimamizi_store',
         __DIR__ . '/.msimamizi_store',
         rtrim(sys_get_temp_dir(), '/\\') . '/ecasi_msimamizi_store',
     ])));
+}
+
+function resolveWritableDataDir(): string {
+    $candidates = getStoreCandidateDirs();
 
     // 1. Prefer an existing database file if its directory is writable (preserves all existing passwords & records)
     $existingReadOnlyFile = null;
@@ -230,6 +235,164 @@ function resolveWritableDataDir(): string {
 $dataDir = resolveWritableDataDir();
 $storeFile = $dataDir . '/msimamizi_db.json';
 $auditLogFile = $dataDir . '/audit.log';
+$storeLockHandle = null;
+
+function acquireStoreLock(string $dir) {
+    ensureProtectedDataDir($dir);
+    $lockPath = $dir . '/.store.lock';
+    $fp = @fopen($lockPath, 'c+');
+    if ($fp === false) {
+        return null;
+    }
+    @chmod($lockPath, 0600);
+    if (!@flock($fp, LOCK_EX)) {
+        @fclose($fp);
+        return null;
+    }
+    return $fp;
+}
+
+register_shutdown_function(function () use (&$storeLockHandle) {
+    if (is_resource($storeLockHandle)) {
+        @flock($storeLockHandle, LOCK_UN);
+        @fclose($storeLockHandle);
+        $storeLockHandle = null;
+    }
+});
+
+function recoverSiblingStoresData(string $primaryStoreFile, array &$store): bool {
+    $candidates = getStoreCandidateDirs();
+    $mergedMtimes = is_array($store['mergedSiblingMtimes'] ?? null) ? $store['mergedSiblingMtimes'] : [];
+    $deletedIds = is_array($store['deletedInquiryIds'] ?? null) ? $store['deletedInquiryIds'] : [];
+    $changed = false;
+
+    $seenInq = [];
+    foreach (($store['inquiries'] ?? []) as $item) {
+        if (!empty($item['id'])) $seenInq['id:' . $item['id']] = true;
+        if (!empty($item['referenceNo'])) $seenInq['ref:' . $item['referenceNo']] = true;
+    }
+    $seenReg = [];
+    foreach (($store['registrations'] ?? []) as $item) {
+        if (!empty($item['id'])) $seenReg['id:' . $item['id']] = true;
+        if (!empty($item['referenceNo'])) $seenReg['ref:' . $item['referenceNo']] = true;
+    }
+    $seenApp = [];
+    foreach (($store['applications'] ?? []) as $item) {
+        if (!empty($item['id'])) $seenApp['id:' . $item['id']] = true;
+        if (!empty($item['referenceNo'])) $seenApp['ref:' . $item['referenceNo']] = true;
+    }
+    $seenAcc = [];
+    foreach (($store['accounts'] ?? []) as $acc) {
+        $em = normalizeAdminEmail($acc['email'] ?? '');
+        if ($em !== '') $seenAcc[$em] = true;
+    }
+
+    foreach ($candidates as $dir) {
+        $sibFile = $dir . '/msimamizi_db.json';
+        if ($sibFile === $primaryStoreFile || !is_file($sibFile) || !is_readable($sibFile)) {
+            continue;
+        }
+        $mtime = (int)@filemtime($sibFile);
+        if (isset($mergedMtimes[$sibFile]) && (int)$mergedMtimes[$sibFile] >= $mtime) {
+            continue;
+        }
+        $raw = @file_get_contents($sibFile);
+        if (!$raw) {
+            $mergedMtimes[$sibFile] = $mtime;
+            continue;
+        }
+        $sib = json_decode($raw, true);
+        if (!is_array($sib)) {
+            $mergedMtimes[$sibFile] = $mtime;
+            continue;
+        }
+
+        $sibInqAdded = false;
+        foreach (($sib['inquiries'] ?? []) as $inq) {
+            if (!is_array($inq)) continue;
+            $iid = (string)($inq['id'] ?? '');
+            $iref = (string)($inq['referenceNo'] ?? '');
+            if ($iid !== '' && in_array($iid, $deletedIds, true)) continue;
+            if (($iid !== '' && isset($seenInq['id:' . $iid])) || ($iref !== '' && isset($seenInq['ref:' . $iref]))) {
+                continue;
+            }
+            $store['inquiries'][] = $inq;
+            if ($iid !== '') $seenInq['id:' . $iid] = true;
+            if ($iref !== '') $seenInq['ref:' . $iref] = true;
+            $sibInqAdded = true;
+            $changed = true;
+        }
+        if ($sibInqAdded) {
+            usort($store['inquiries'], fn($a, $b) => strcmp((string)($b['createdAt'] ?? ''), (string)($a['createdAt'] ?? '')));
+            $store['inquiries'] = array_slice($store['inquiries'], 0, 5000);
+        }
+
+        $sibRegAdded = false;
+        foreach (($sib['registrations'] ?? []) as $reg) {
+            if (!is_array($reg)) continue;
+            $rid = (string)($reg['id'] ?? '');
+            $rref = (string)($reg['referenceNo'] ?? '');
+            if (($rid !== '' && isset($seenReg['id:' . $rid])) || ($rref !== '' && isset($seenReg['ref:' . $rref]))) {
+                continue;
+            }
+            $store['registrations'][] = $reg;
+            if ($rid !== '') $seenReg['id:' . $rid] = true;
+            if ($rref !== '') $seenReg['ref:' . $rref] = true;
+            $sibRegAdded = true;
+            $changed = true;
+        }
+        if ($sibRegAdded) {
+            usort($store['registrations'], fn($a, $b) => strcmp((string)($b['submittedAt'] ?? ''), (string)($a['submittedAt'] ?? '')));
+            $store['registrations'] = array_slice($store['registrations'], 0, 5000);
+        }
+
+        foreach (($sib['applications'] ?? []) as $app) {
+            if (!is_array($app)) continue;
+            $aid = (string)($app['id'] ?? '');
+            $aref = (string)($app['referenceNo'] ?? '');
+            if (($aid !== '' && isset($seenApp['id:' . $aid])) || ($aref !== '' && isset($seenApp['ref:' . $aref]))) {
+                continue;
+            }
+            $store['applications'][] = $app;
+            if ($aid !== '') $seenApp['id:' . $aid] = true;
+            if ($aref !== '') $seenApp['ref:' . $aref] = true;
+            $changed = true;
+        }
+
+        foreach (($sib['accounts'] ?? []) as $acc) {
+            if (!is_array($acc)) continue;
+            $em = normalizeAdminEmail($acc['email'] ?? '');
+            if ($em === '' || isset($seenAcc[$em])) continue;
+            $store['accounts'][] = $acc;
+            $seenAcc[$em] = true;
+            $changed = true;
+        }
+
+        if (empty($store['galleryCustomized']) && !empty($sib['galleryCustomized']) && isset($sib['gallery']) && is_array($sib['gallery'])) {
+            $store['gallery'] = $sib['gallery'];
+            $store['galleryCustomized'] = true;
+            $changed = true;
+        }
+
+        if (!empty($sib['resources']) && is_array($sib['resources'])) {
+            if (!isset($store['resources']) || !is_array($store['resources'])) $store['resources'] = [];
+            if (!isset($store['resourcesCustomized']) || !is_array($store['resourcesCustomized'])) $store['resourcesCustomized'] = [];
+            foreach ($sib['resources'] as $resType => $resList) {
+                if (empty($store['resourcesCustomized'][$resType]) && !empty($sib['resourcesCustomized'][$resType]) && is_array($resList)) {
+                    $store['resources'][$resType] = $resList;
+                    $store['resourcesCustomized'][$resType] = true;
+                    $changed = true;
+                }
+            }
+        }
+
+        $mergedMtimes[$sibFile] = $mtime;
+        $changed = true;
+    }
+
+    $store['mergedSiblingMtimes'] = $mergedMtimes;
+    return $changed;
+}
 
 function getClientIp(): string {
     $ip = $_SERVER['HTTP_CF_CONNECTING_IP']
@@ -262,6 +425,8 @@ function readStore(string $file): array {
     $default = [
         'registrations' => [],
         'inquiries' => [],
+        'deletedInquiryIds' => [],
+        'deletedRegistrationIds' => [],
         'courses' => [],
         'vacancies' => [],
         'applications' => [],
@@ -272,6 +437,10 @@ function readStore(string $file): array {
         'templates' => [],
         'announcements' => [],
         'cmsContent' => [],
+        'gallery' => null,
+        'galleryCustomized' => false,
+        'resources' => [],
+        'resourcesCustomized' => [],
         'settings' => [],
         'auditEvents' => [],
         'securityAlerts' => [],
@@ -287,6 +456,9 @@ function readStore(string $file): array {
         ],
         'accounts' => [],
         'sessions' => [],
+        'migrations' => [],
+        'syncVersion' => 1,
+        'lastSyncTopic' => 'init',
         'updatedAt' => gmdate('c'),
     ];
     if (!file_exists($file)) {
@@ -300,6 +472,7 @@ function readStore(string $file): array {
 }
 
 function writeStore(string $file, array $data): bool {
+    $data['syncVersion'] = max(1, (int)($data['syncVersion'] ?? 0) + 1);
     $data['updatedAt'] = gmdate('c');
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     if ($json === false) {
@@ -330,11 +503,27 @@ const ADMIN_IDLE_TIMEOUT_SECONDS = 600; // Silent 10-minute idle timeout
 const ADMIN_HEARTBEAT_TTL_SECONDS = 90; // Prune un-heartbeated crashed/closed sessions cleanly
 
 function getBearerToken(): string {
-    $header = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $header = $_SERVER['HTTP_X_ADMIN_TOKEN']
+        ?? $_SERVER['REDIRECT_HTTP_X_ADMIN_TOKEN']
+        ?? $_SERVER['HTTP_AUTHORIZATION']
+        ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+        ?? '';
+    if ($header === '' && function_exists('getallheaders')) {
+        $allHeaders = @getallheaders();
+        if (is_array($allHeaders)) {
+            foreach ($allHeaders as $k => $v) {
+                $lk = strtolower((string)$k);
+                if ($lk === 'x-admin-token' || $lk === 'authorization') {
+                    $header = (string)$v;
+                    break;
+                }
+            }
+        }
+    }
     if (stripos($header, 'Bearer ') === 0) {
         return trim(substr($header, 7));
     }
-    return trim($header);
+    return trim((string)$header);
 }
 
 function pruneExpiredSessions(array &$store, int $now): void {
@@ -515,7 +704,7 @@ function sanitizeRegistration(array $reg): array {
 }
 
 function sanitizeInquiry(array $inq): array {
-    $validChannels = ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration', 'In-House Proposal', 'Calendar Download', 'Web Inquiry'];
+    $validChannels = ['Website', 'Website Inquiry', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration', 'In-House Proposal', 'Calendar Download', 'Web Inquiry', 'Direct Inquiry', 'Newsletter'];
     $channel = sanitizeText($inq['channel'] ?? 'WhatsApp', 40);
     if (!in_array($channel, $validChannels, true)) {
         $channel = 'WhatsApp';
@@ -882,8 +1071,8 @@ function sanitizeSettings(array $s): array {
         'officialEmail' => filter_var(trim((string)($s['officialEmail'] ?? 'info@ecasiafrica.org')), FILTER_SANITIZE_EMAIL),
         'admissionsEmail' => filter_var(trim((string)($s['admissionsEmail'] ?? 'admissions@ecasiafrica.org')), FILTER_SANITIZE_EMAIL),
         'financeEmail' => filter_var(trim((string)($s['financeEmail'] ?? 'finance@ecasiafrica.org')), FILTER_SANITIZE_EMAIL),
-        'whatsappNumber' => sanitizeText($s['whatsappNumber'] ?? '+254722000000', 40),
-        'phone' => sanitizeText($s['phone'] ?? '+254-722-000-000', 60),
+        'whatsappNumber' => sanitizeText($s['whatsappNumber'] ?? '+254708060223', 40),
+        'phone' => sanitizeText($s['phone'] ?? '+254 708 060 223', 60),
         'address' => sanitizeText($s['address'] ?? 'Nairobi, Kenya', 260),
         'defaultCurrency' => sanitizeText($s['defaultCurrency'] ?? 'USD', 12),
         'usdToKesRate' => max(1, (float)($s['usdToKesRate'] ?? 130)),
@@ -958,11 +1147,230 @@ function sanitizeCoursesMap(array $courses): array {
     return $cleanMap;
 }
 
+function sanitizeMediaUrl($raw, int $maxDataBytes = 4194304): string {
+    if (!is_string($raw)) return '';
+    $val = trim($raw);
+    if ($val === '') return '';
+    if (preg_match('/^(data:image\/(?:png|jpeg|jpg|webp|gif);base64,|data:application\/pdf;base64,)/i', $val)) {
+        return strlen($val) <= $maxDataBytes ? $val : '';
+    }
+    if (preg_match('/^(?:\/|https?:\/\/)/i', $val)) {
+        return sanitizeText($val, 1500);
+    }
+    if ($val === '#') return '#';
+    return '';
+}
+
+function sanitizeGalleryImage(array $img): array {
+    $validCats = ['events', 'fieldwork', 'training', 'community', 'all'];
+    $cat = strtolower(sanitizeText($img['category'] ?? 'training', 32));
+    if (!in_array($cat, $validCats, true)) {
+        $cat = 'training';
+    }
+    return [
+        'id' => sanitizeText($img['id'] ?? ('gal-' . gmdate('Ymd') . '-' . random_int(1000, 9999)), 64),
+        'src' => sanitizeMediaUrl($img['src'] ?? '', 3145728),
+        'category' => $cat,
+        'title' => sanitizeText($img['title'] ?? 'ECAS Institute Activity', 240),
+        'description' => sanitizeText($img['description'] ?? '', 800),
+        'createdAt' => sanitizeText($img['createdAt'] ?? gmdate('c'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function sanitizeResourceItem(array $item, string $resourceType): array {
+    $tags = [];
+    if (isset($item['tags']) && is_array($item['tags'])) {
+        foreach (array_slice($item['tags'], 0, 15) as $t) {
+            $ts = sanitizeText($t, 48);
+            if ($ts !== '') $tags[] = $ts;
+        }
+    }
+    $cleanDocUrl = sanitizeMediaUrl($item['downloadUrl'] ?? ($item['url'] ?? ''), 5242880);
+    $cleanImage = sanitizeMediaUrl($item['image'] ?? '', 2097152);
+    return [
+        'id' => sanitizeText($item['id'] ?? (substr($resourceType, 0, 3) . '-' . gmdate('Ymd') . '-' . random_int(1000, 9999)), 64),
+        'title' => sanitizeText($item['title'] ?? '', 300),
+        'type' => sanitizeText($item['type'] ?? 'Resource', 120),
+        'issue' => sanitizeText($item['issue'] ?? '', 80),
+        'date' => sanitizeText($item['date'] ?? gmdate('Y'), 64),
+        'pages' => sanitizeText($item['pages'] ?? 'PDF Document', 64),
+        'authors' => sanitizeText($item['authors'] ?? ($item['author'] ?? 'ECAS Institute'), 200),
+        'author' => sanitizeText($item['author'] ?? ($item['authors'] ?? 'ECAS Institute'), 200),
+        'country' => sanitizeText($item['country'] ?? 'Africa / Global', 120),
+        'abstract' => sanitizeText($item['abstract'] ?? ($item['summary'] ?? ''), 2500),
+        'summary' => sanitizeText($item['summary'] ?? ($item['abstract'] ?? ''), 2500),
+        'description' => sanitizeText($item['description'] ?? ($item['summary'] ?? ''), 1500),
+        'image' => $cleanImage,
+        'downloadUrl' => $cleanDocUrl,
+        'url' => sanitizeMediaUrl($item['url'] ?? ($item['downloadUrl'] ?? ''), 5242880),
+        'tags' => $tags,
+        'isSensitive' => !empty($item['isSensitive']),
+        'createdAt' => sanitizeText($item['createdAt'] ?? gmdate('c'), 64),
+        'updatedAt' => gmdate('c'),
+    ];
+}
+
+function cleanupRemovedAccountsAndTestMigrations(array &$store): bool {
+    $changed = false;
+
+    // 1. Remove typo administrator account acob@ecasiafrica.org and any sessions for it
+    if (isset($store['accounts']) && is_array($store['accounts'])) {
+        $origCount = count($store['accounts']);
+        $store['accounts'] = array_values(array_filter($store['accounts'], function ($acc) {
+            return normalizeAdminEmail($acc['email'] ?? '') !== 'acob@ecasiafrica.org';
+        }));
+        if (count($store['accounts']) !== $origCount) $changed = true;
+    }
+    if (isset($store['sessions']) && is_array($store['sessions'])) {
+        foreach ($store['sessions'] as $tokHash => $sess) {
+            if (normalizeAdminEmail($sess['email'] ?? '') === 'acob@ecasiafrica.org') {
+                unset($store['sessions'][$tokHash]);
+                $changed = true;
+            }
+        }
+    }
+
+    // 2. Filter deleted registration tombstones
+    $deletedRegIds = is_array($store['deletedRegistrationIds'] ?? null) ? $store['deletedRegistrationIds'] : [];
+    if (!empty($deletedRegIds) && is_array($store['registrations'] ?? null)) {
+        $origRegCount = count($store['registrations']);
+        $store['registrations'] = array_values(array_filter($store['registrations'], function ($r) use ($deletedRegIds) {
+            $rid = (string)($r['id'] ?? '');
+            return $rid === '' || !in_array($rid, $deletedRegIds, true);
+        }));
+        if (count($store['registrations']) !== $origRegCount) $changed = true;
+    }
+
+    // 3. One-time purge of Gift Rioba's test registration/invoice/payment history (mwangorioba@gmail.com / ECAS-400827-1495 / ECAS-INV-2026-0001)
+    if (!isset($store['migrations']) || !is_array($store['migrations'])) {
+        $store['migrations'] = [];
+    }
+    if (empty($store['migrations']['purged_gift_rioba_test_20261126'])) {
+        $purgedRegIds = [];
+        $store['registrations'] = array_values(array_filter($store['registrations'] ?? [], function ($r) use (&$purgedRegIds) {
+            $ref = strtoupper((string)($r['referenceNo'] ?? ''));
+            $em1 = strtolower((string)($r['officialEmail'] ?? ''));
+            $em2 = strtolower((string)($r['personalEmail'] ?? ''));
+            $isTest = ($ref === 'ECAS-400827-1495') || ($em1 === 'mwangorioba@gmail.com') || ($em2 === 'mwangorioba@gmail.com');
+            if ($isTest && !empty($r['id'])) {
+                $purgedRegIds[] = (string)$r['id'];
+            }
+            return !$isTest;
+        }));
+
+        foreach ($purgedRegIds as $prId) {
+            if (!in_array($prId, $deletedRegIds, true)) {
+                $deletedRegIds[] = $prId;
+            }
+        }
+        $store['deletedRegistrationIds'] = array_slice($deletedRegIds, 0, 2000);
+
+        $purgedInvIds = [];
+        $store['invoices'] = array_values(array_filter($store['invoices'] ?? [], function ($inv) use ($purgedRegIds, &$purgedInvIds) {
+            $invNo = strtoupper((string)($inv['invoiceNo'] ?? ''));
+            $email = strtolower((string)($inv['applicantEmail'] ?? ''));
+            $regId = (string)($inv['registrationId'] ?? '');
+            $isTest = ($invNo === 'ECAS-INV-2026-0001') || ($email === 'mwangorioba@gmail.com') || ($regId !== '' && in_array($regId, $purgedRegIds, true));
+            if ($isTest && !empty($inv['id'])) {
+                $purgedInvIds[] = (string)$inv['id'];
+            }
+            return !$isTest;
+        }));
+
+        $store['payments'] = array_values(array_filter($store['payments'] ?? [], function ($pay) use ($purgedRegIds, $purgedInvIds) {
+            $invId = (string)($pay['invoiceId'] ?? '');
+            $regId = (string)($pay['registrationId'] ?? '');
+            $invNo = strtoupper((string)($pay['invoiceNo'] ?? ''));
+            $ref = strtolower(trim((string)($pay['reference'] ?? '')));
+            $name = strtolower(trim((string)($pay['applicantName'] ?? '')));
+            $isTest = ($invId !== '' && in_array($invId, $purgedInvIds, true))
+                || ($regId !== '' && in_array($regId, $purgedRegIds, true))
+                || ($invNo === 'ECAS-INV-2026-0001')
+                || ($ref === 'cheque' && $name === 'gift rioba');
+            return !$isTest;
+        }));
+
+        $store['auditEvents'] = array_values(array_filter($store['auditEvents'] ?? [], function ($ev) {
+            $rec = strtolower((string)($ev['affectedRecord'] ?? '') . ' ' . (string)($ev['newValue'] ?? ''));
+            return strpos($rec, 'ecas-400827-1495') === false
+                && strpos($rec, 'ecas-inv-2026-0001') === false
+                && strpos($rec, 'mwangorioba@gmail.com') === false;
+        }));
+
+        $store['migrations']['purged_gift_rioba_test_20261126'] = true;
+        $changed = true;
+    }
+
+    return $changed;
+}
+
+$needsStoreLock = ($_SERVER['REQUEST_METHOD'] === 'POST')
+    || ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['scope'] ?? 'public') === 'admin');
+if ($needsStoreLock) {
+    $storeLockHandle = acquireStoreLock($dataDir);
+}
 $store = readStore($storeFile);
+$storeDirty = false;
+if ($needsStoreLock) {
+    if (recoverSiblingStoresData($storeFile, $store)) {
+        $storeDirty = true;
+    }
+    if (cleanupRemovedAccountsAndTestMigrations($store)) {
+        $storeDirty = true;
+    }
+    if ($storeDirty) {
+        writeStore($storeFile, $store);
+    }
+} else {
+    cleanupRemovedAccountsAndTestMigrations($store);
+}
 
 // ─── GET REQUESTS ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $scope = $_GET['scope'] ?? 'public';
+
+    // Real-time Server-Sent Events (SSE) push stream for shared PHP/cPanel hosts
+    if ($scope === 'stream') {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
+        @set_time_limit(30);
+        header('Content-Type: text/event-stream; charset=utf-8');
+        header('Cache-Control: no-cache, no-transform');
+        header('X-Accel-Buffering: no');
+        while (ob_get_level() > 0) {
+            @ob_end_flush();
+        }
+        $lastMtime = file_exists($storeFile) ? (int)@filemtime($storeFile) : 0;
+        $curVer = (int)($store['syncVersion'] ?? 1);
+        $curTopic = (string)($store['lastSyncTopic'] ?? 'init');
+        echo "event: connected\n";
+        echo 'data: ' . json_encode(['version' => $curVer, 'topic' => $curTopic, 'updatedAt' => $store['updatedAt'] ?? gmdate('c')]) . "\n\n";
+        @flush();
+
+        $startedAt = time();
+        while ((time() - $startedAt) < 22 && !connection_aborted()) {
+            usleep(800000);
+            clearstatcache(true, $storeFile);
+            $newMtime = file_exists($storeFile) ? (int)@filemtime($storeFile) : 0;
+            if ($newMtime > $lastMtime) {
+                $lastMtime = $newMtime;
+                $fresh = readStore($storeFile);
+                $newVer = (int)($fresh['syncVersion'] ?? ($curVer + 1));
+                if ($newVer !== $curVer) {
+                    $curVer = $newVer;
+                    $curTopic = (string)($fresh['lastSyncTopic'] ?? 'sync');
+                    echo "event: sync_update\n";
+                    echo "id: {$curVer}\n";
+                    echo 'data: ' . json_encode(['version' => $curVer, 'topic' => $curTopic, 'updatedAt' => $fresh['updatedAt'] ?? gmdate('c')]) . "\n\n";
+                    @flush();
+                }
+            }
+        }
+        exit;
+    }
+
     $isVerify = ($_GET['verify'] ?? '') === '1';
     $token = getBearerToken();
     $adminEmail = validateAdminToken($store, $token, !$isVerify);
@@ -1066,6 +1474,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'data' => [
                 'registrations' => $store['registrations'] ?? [],
                 'inquiries' => $store['inquiries'] ?? [],
+                'deletedInquiryIds' => array_values($store['deletedInquiryIds'] ?? []),
+                'deletedRegistrationIds' => array_values($store['deletedRegistrationIds'] ?? []),
                 'courses' => (object)($store['courses'] ?? []),
                 'vacancies' => $store['vacancies'] ?? [],
                 'applications' => $store['applications'] ?? [],
@@ -1076,12 +1486,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'templates' => $store['templates'] ?? [],
                 'announcements' => $store['announcements'] ?? [],
                 'cmsContent' => (object)($store['cmsContent'] ?? []),
+                'gallery' => !empty($store['galleryCustomized']) ? (is_array($store['gallery'] ?? null) ? $store['gallery'] : []) : null,
+                'galleryCustomized' => !empty($store['galleryCustomized']),
+                'resources' => (object)($store['resources'] ?? []),
+                'resourcesCustomized' => (object)($store['resourcesCustomized'] ?? []),
                 'settings' => (object)($store['settings'] ?? []),
                 'auditEvents' => $store['auditEvents'] ?? [],
                 'securityAlerts' => $store['securityAlerts'] ?? [],
                 'securityIncidents' => $store['securityIncidents'] ?? [],
                 'securityStats' => $store['securityStats'] ?? ['blockedBots' => 0, 'failedLogins' => 0, 'falsePositivesCleared' => 0, 'maliciousUploadsBlocked' => 0],
                 'accounts' => $publicAccounts,
+                'syncVersion' => (int)($store['syncVersion'] ?? 1),
                 'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
             ],
         ]);
@@ -1099,18 +1514,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Unauthenticated / public callers receive non-sensitive catalog updates, open vacancies, published CMS & announcements
-    // Never expose credential digests or hashes to unauthenticated callers — only safe setup status
-    $publicAccountStatus = array_map(function ($acc) {
-        return [
-            'email' => $acc['email'] ?? '',
-            'passwordInitialized' => !empty($acc['passwordHash']) || !empty($acc['passwordInitialized']),
-            'role' => normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN'),
-            'status' => $acc['status'] ?? 'Active',
-            'updatedAt' => $acc['updatedAt'] ?? null,
-        ];
-    }, is_array($store['accounts']) ? $store['accounts'] : []);
-
+    // Unauthenticated / public callers receive only non-sensitive public catalog, open vacancies, published CMS & announcements.
+    // Never expose admin accounts, emails, roles, PII, or internal setup status unauthenticated.
     $publishedCms = [];
     foreach (($store['cmsContent'] ?? []) as $k => $sec) {
         if (is_array($sec) && ($sec['status'] ?? 'Draft') === 'Published') {
@@ -1130,7 +1535,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'cohorts' => $store['cohorts'] ?? [],
             'cmsContent' => (object)$publishedCms,
             'announcements' => $publishedAnnouncements,
-            'accounts' => $publicAccountStatus,
+            'gallery' => !empty($store['galleryCustomized']) ? (is_array($store['gallery'] ?? null) ? $store['gallery'] : []) : null,
+            'galleryCustomized' => !empty($store['galleryCustomized']),
+            'resources' => (object)($store['resources'] ?? []),
+            'resourcesCustomized' => (object)($store['resourcesCustomized'] ?? []),
+            'syncVersion' => (int)($store['syncVersion'] ?? 1),
             'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
         ],
     ]);
@@ -1341,7 +1750,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $store['securityStats']['blockedBots'] = (int)($store['securityStats']['blockedBots'] ?? 0) + 1;
         }
 
-        // Auto-generate Security Notification Centre Alert for HIGH / CRITICAL risk or duplicate/bot flags
+        // Auto-generate Security Notification Centre Alert for HIGH / CRITICAL risk
         if ($assessment['riskScore'] >= 60) {
             $reasonSummary = implode('; ', array_map(static fn($r) => $r['detail'], array_slice($assessment['reasons'], 0, 4)));
             ecasRecordSecurityAlert(
@@ -1355,20 +1764,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
         }
 
-        $existing = is_array($store['registrations']) ? $store['registrations'] : [];
-        array_unshift($existing, $cleanReg);
-        $store['registrations'] = array_slice($existing, 0, 5000);
-        appendAuditEvent(
-            $store,
-            $primaryEmail ?: 'public_delegate',
-            'APPLICANT',
-            'REGISTRATION_SCREENED',
-            'Registration',
-            $cleanReg['referenceNo'],
-            '',
-            "score={$assessment['riskScore']} ({$assessment['riskLevel']}) clearance={$assessment['securityClearance']}"
-        );
-        writeStore($storeFile, $store);
+        // Idempotent save: deduplicate retries by id/referenceNo + verify disk write
+        $existing = is_array($store['registrations'] ?? null) ? $store['registrations'] : [];
+        $alreadyExists = false;
+        foreach ($existing as $item) {
+            if (
+                (!empty($cleanReg['id']) && ($item['id'] ?? '') === $cleanReg['id']) ||
+                (!empty($cleanReg['referenceNo']) && ($item['referenceNo'] ?? '') === $cleanReg['referenceNo'])
+            ) {
+                $alreadyExists = true;
+                break;
+            }
+        }
+        if (!$alreadyExists) {
+            array_unshift($existing, $cleanReg);
+            $store['registrations'] = array_slice($existing, 0, 5000);
+            appendAuditEvent(
+                $store,
+                $primaryEmail ?: 'public_delegate',
+                'APPLICANT',
+                'REGISTRATION_SCREENED',
+                'Registration',
+                $cleanReg['referenceNo'],
+                '',
+                "score={$assessment['riskScore']} ({$assessment['riskLevel']}) clearance={$assessment['securityClearance']}"
+            );
+            if (!writeStore($storeFile, $store)) {
+                writeAuditLog($auditLogFile, 'add_registration', 'system', 'FAILED_STORAGE_WRITE', "dir={$dataDir}");
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Unable to persist registration to storage.']);
+                exit;
+            }
+        }
 
         $actorEmail = $primaryEmail ?: 'public_delegate';
         writeAuditLog($auditLogFile, 'add_registration', $actorEmail, 'SUCCESS', 'ref=' . $cleanReg['referenceNo'] . ' risk=' . $assessment['riskScore']);
@@ -1376,6 +1803,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => true,
             'referenceNo' => $cleanReg['referenceNo'],
+            'id' => $cleanReg['id'],
             'securityAssessment' => [
                 'riskLevel' => $assessment['riskLevel'],
                 'securityClearance' => $assessment['securityClearance'],
@@ -1402,9 +1830,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $cleanInq = sanitizeInquiry($inqInput);
         $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
-        array_unshift($existingInq, $cleanInq);
-        $store['inquiries'] = array_slice($existingInq, 0, 5000);
-        writeStore($storeFile, $store);
+        $alreadyExists = false;
+        foreach ($existingInq as $item) {
+            if (
+                (!empty($cleanInq['id']) && ($item['id'] ?? '') === $cleanInq['id']) ||
+                (!empty($cleanInq['referenceNo']) && ($item['referenceNo'] ?? '') === $cleanInq['referenceNo'])
+            ) {
+                $alreadyExists = true;
+                break;
+            }
+        }
+        if (!$alreadyExists) {
+            array_unshift($existingInq, $cleanInq);
+            $store['inquiries'] = array_slice($existingInq, 0, 5000);
+            if (!empty($cleanInq['id']) && is_array($store['deletedInquiryIds'] ?? null)) {
+                $store['deletedInquiryIds'] = array_values(array_filter(
+                    $store['deletedInquiryIds'],
+                    fn($delId) => $delId !== $cleanInq['id']
+                ));
+            }
+            if (!writeStore($storeFile, $store)) {
+                writeAuditLog($auditLogFile, 'add_inquiry', 'system', 'FAILED_STORAGE_WRITE', "dir={$dataDir}");
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Unable to persist inquiry to storage.']);
+                exit;
+            }
+        }
 
         $actor = $cleanInq['email'] ?: ($cleanInq['phone'] ?: 'public_visitor');
         writeAuditLog($auditLogFile, 'add_inquiry', $actor, 'SUCCESS', 'channel=' . $cleanInq['channel'] . ' ref=' . $cleanInq['referenceNo']);
@@ -1412,6 +1863,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'success' => true,
             'referenceNo' => $cleanInq['referenceNo'],
+            'id' => $cleanInq['id'],
         ]);
         exit;
     }
@@ -1505,8 +1957,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'admin_login', $email, 'DENIED_UNAUTHORIZED_EMAIL');
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Account not provisioned. Please contact a Super Admin (Jacob Olonde or Gift Rioba) to add your @ecasiafrica.org account.']);
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'Invalid email or password.']);
             exit;
         }
 
@@ -1565,15 +2017,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'admin_login', $email, 'FAILED_BAD_PASSWORD');
             http_response_code($failInfo['locked'] ? 429 : 401);
-            $errMessage = $failInfo['locked']
-                ? 'Too many failed login attempts. This account is temporarily locked for 15 minutes.'
-                : ($hasPasswordSet
-                    ? 'Invalid email or password. Please enter the password you created for this account.'
-                    : 'Invalid credentials. If this is your very first visit and you have not set a password yet, use First-Time Setup once.');
             echo json_encode([
                 'success' => false,
-                'passwordInitialized' => $hasPasswordSet,
-                'error' => $errMessage,
+                'error' => $failInfo['locked']
+                    ? 'Too many failed sign-in attempts. Please wait 15 minutes before trying again.'
+                    : 'Invalid email or password.',
             ]);
             exit;
         }
@@ -1733,7 +2181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!isAuthorizedAdmin($email, $store)) {
             writeAuditLog($auditLogFile, 'register_admin', $email, 'DENIED_UNAUTHORIZED_EMAIL');
             http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Account not provisioned. Only users added by Super Admins (Jacob Olonde or Gift Rioba) may activate an @ecasiafrica.org login.']);
+            echo json_encode(['success' => false, 'error' => 'Unable to activate this account. Please verify your details or contact your system administrator.']);
             exit;
         }
 
@@ -1770,8 +2218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode([
                 'success' => false,
                 'code' => 'PASSWORD_ALREADY_SET',
-                'passwordInitialized' => true,
-                'error' => 'Your password has already been created and is permanently locked. First-time setup cannot be used again — please use Sign In with your existing password.',
+                'error' => 'Unable to complete setup for this account. Please sign in with your existing password.',
             ]);
             exit;
         }
@@ -1828,7 +2275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'success' => true,
             'passwordCreated' => true,
             'requiresSignIn' => true,
-            'message' => 'Your password has been securely created and permanently locked. Please sign in now using your email and new password.',
+            'message' => 'Account password configured successfully. Please sign in to continue.',
             'user' => [
                 'email' => $email,
                 'role' => $finalRole,
@@ -1933,8 +2380,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $cleanList[] = $sanitized;
         }
-        $prevCount = count($store['registrations'] ?? []);
+        $prevRegs = is_array($store['registrations'] ?? null) ? $store['registrations'] : [];
+        $prevCount = count($prevRegs);
+        $nextIds = array_flip(array_values(array_filter(array_map(fn($x) => (string)($x['id'] ?? ''), $cleanList))));
+        $deletedRegIds = is_array($store['deletedRegistrationIds'] ?? null) ? $store['deletedRegistrationIds'] : [];
+        if (!empty($payload['deletedRegistrationId'])) {
+            $delId = sanitizeText($payload['deletedRegistrationId'], 64);
+            if ($delId !== '' && !in_array($delId, $deletedRegIds, true)) {
+                array_unshift($deletedRegIds, $delId);
+            }
+        }
+        foreach ($prevRegs as $pr) {
+            $pid = (string)($pr['id'] ?? '');
+            if ($pid !== '' && !isset($nextIds[$pid]) && !in_array($pid, $deletedRegIds, true)) {
+                array_unshift($deletedRegIds, $pid);
+            }
+        }
+        $store['deletedRegistrationIds'] = array_slice($deletedRegIds, 0, 2000);
         $store['registrations'] = $cleanList;
+        $store['lastSyncTopic'] = 'registrations';
         $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
         appendAuditEvent(
             $store,
@@ -1950,6 +2414,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         writeAuditLog($auditLogFile, 'set_registrations', $adminEmail, 'SUCCESS', 'count=' . count($cleanList));
 
         echo json_encode(['success' => true, 'count' => count($cleanList)]);
+        exit;
+    }
+
+    if ($action === 'update_inquiry' && !empty($payload['id']) && is_array($payload['updates'] ?? null)) {
+        $enforcePermission('crm.write');
+        $targetId = sanitizeText($payload['id'], 64);
+        $updates = $payload['updates'];
+        $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
+        $updated = false;
+        foreach ($existingInq as $idx => $inq) {
+            if (($inq['id'] ?? '') === $targetId) {
+                $existingInq[$idx] = sanitizeInquiry(array_merge($inq, $updates, ['id' => $inq['id']]));
+                $updated = true;
+                break;
+            }
+        }
+        if (!$updated && is_array($payload['inquiry'] ?? null)) {
+            $cleanItem = sanitizeInquiry(array_merge($payload['inquiry'], $updates, ['id' => $targetId]));
+            array_unshift($existingInq, $cleanItem);
+            $updated = true;
+        }
+        $store['inquiries'] = array_slice($existingInq, 0, 5000);
+        if ($updated) {
+            appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_LEAD', 'Lead', $targetId, '', sanitizeText($updates['status'] ?? 'Updated', 200));
+            writeStore($storeFile, $store);
+            writeAuditLog($auditLogFile, 'update_inquiry', $adminEmail, 'SUCCESS', "id={$targetId}");
+        }
+        echo json_encode(['success' => true, 'updated' => $updated, 'inquiries' => $store['inquiries']]);
+        exit;
+    }
+
+    if ($action === 'delete_inquiry' && !empty($payload['id'])) {
+        $enforcePermission('crm.write');
+        $targetId = sanitizeText($payload['id'], 64);
+        $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
+        $store['inquiries'] = array_values(array_filter($existingInq, fn($inq) => ($inq['id'] ?? '') !== $targetId));
+        $deletedIds = is_array($store['deletedInquiryIds'] ?? null) ? $store['deletedInquiryIds'] : [];
+        if (!in_array($targetId, $deletedIds, true)) {
+            array_unshift($deletedIds, $targetId);
+        }
+        $store['deletedInquiryIds'] = array_slice($deletedIds, 0, 2000);
+        appendAuditEvent($store, $adminEmail, $adminRole, 'DELETE_LEAD', 'Lead', $targetId, 'Active', 'Deleted');
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'delete_inquiry', $adminEmail, 'SUCCESS', "id={$targetId}");
+        echo json_encode([
+            'success' => true,
+            'inquiries' => $store['inquiries'],
+            'deletedInquiryIds' => $store['deletedInquiryIds'],
+        ]);
+        exit;
+    }
+
+    if ($action === 'merge_inquiries' && isset($payload['inquiries']) && is_array($payload['inquiries'])) {
+        $enforcePermission('crm.view');
+        $existingInq = is_array($store['inquiries'] ?? null) ? $store['inquiries'] : [];
+        $deletedIds = is_array($store['deletedInquiryIds'] ?? null) ? $store['deletedInquiryIds'] : [];
+        $seenKeys = [];
+        foreach ($existingInq as $ex) {
+            if (!empty($ex['id'])) $seenKeys['id:' . $ex['id']] = true;
+            if (!empty($ex['referenceNo'])) $seenKeys['ref:' . $ex['referenceNo']] = true;
+        }
+        $addedCount = 0;
+        foreach (array_slice($payload['inquiries'], 0, 500) as $candidate) {
+            if (!is_array($candidate)) continue;
+            $cleanInq = sanitizeInquiry($candidate);
+            $candId = $cleanInq['id'] ?? '';
+            $candRef = $cleanInq['referenceNo'] ?? '';
+            if ($candId !== '' && in_array($candId, $deletedIds, true)) continue;
+            if (($candId !== '' && isset($seenKeys['id:' . $candId])) || ($candRef !== '' && isset($seenKeys['ref:' . $candRef]))) {
+                continue;
+            }
+            $existingInq[] = $cleanInq;
+            if ($candId !== '') $seenKeys['id:' . $candId] = true;
+            if ($candRef !== '') $seenKeys['ref:' . $candRef] = true;
+            $addedCount++;
+        }
+        if ($addedCount > 0) {
+            usort($existingInq, function ($a, $b) {
+                return strcmp((string)($b['createdAt'] ?? ''), (string)($a['createdAt'] ?? ''));
+            });
+            $store['inquiries'] = array_slice($existingInq, 0, 5000);
+            if (!writeStore($storeFile, $store)) {
+                writeAuditLog($auditLogFile, 'merge_inquiries', $adminEmail, 'FAILED_STORAGE_WRITE', "dir={$dataDir}");
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Unable to persist merged inquiries to storage.']);
+                exit;
+            }
+            writeAuditLog($auditLogFile, 'merge_inquiries', $adminEmail, 'SUCCESS', "added={$addedCount} total=" . count($store['inquiries']));
+        }
+        echo json_encode([
+            'success' => true,
+            'added' => $addedCount,
+            'inquiries' => $store['inquiries'] ?? [],
+            'deletedInquiryIds' => $deletedIds,
+        ]);
         exit;
     }
 
@@ -2215,6 +2774,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'set_cms_content' && isset($payload['cmsContent']) && is_array($payload['cmsContent'])) {
         $enforcePermission('cms.write');
         $store['cmsContent'] = sanitizeCmsContent($payload['cmsContent']);
+        $store['lastSyncTopic'] = 'cms';
         $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
         appendAuditEvent(
             $store,
@@ -2229,6 +2789,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'set_cms_content', $adminEmail, 'SUCCESS', 'sections=' . count($store['cmsContent']));
         echo json_encode(['success' => true, 'count' => count($store['cmsContent'])]);
+        exit;
+    }
+
+    if ($action === 'set_gallery' && isset($payload['gallery']) && is_array($payload['gallery'])) {
+        $enforcePermission('cms.write');
+        $cleanGallery = [];
+        foreach (array_slice($payload['gallery'], 0, 500) as $img) {
+            if (!is_array($img)) continue;
+            $cleanItem = sanitizeGalleryImage($img);
+            if ($cleanItem['src'] !== '') {
+                $cleanGallery[] = $cleanItem;
+            }
+        }
+        $store['gallery'] = $cleanGallery;
+        $store['galleryCustomized'] = true;
+        $store['lastSyncTopic'] = 'gallery';
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_GALLERY', 'Gallery', 'Photos: ' . count($cleanGallery), '', 'Synced to website');
+        if (!writeStore($storeFile, $store)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Unable to save gallery changes to server storage.']);
+            exit;
+        }
+        writeAuditLog($auditLogFile, 'set_gallery', $adminEmail, 'SUCCESS', 'count=' . count($cleanGallery));
+        echo json_encode([
+            'success' => true,
+            'count' => count($cleanGallery),
+            'gallery' => $cleanGallery,
+            'syncVersion' => $store['syncVersion'],
+        ]);
+        exit;
+    }
+
+    if ($action === 'set_resources' && isset($payload['resourceType']) && isset($payload['items']) && is_array($payload['items'])) {
+        $enforcePermission('cms.write');
+        $resourceType = sanitizeText($payload['resourceType'], 40);
+        $validResourceTypes = ['publications', 'reports', 'policies', 'videos', 'books', 'policyBriefs'];
+        if (!in_array($resourceType, $validResourceTypes, true)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Unsupported resource category.']);
+            exit;
+        }
+        $cleanItems = [];
+        foreach (array_slice($payload['items'], 0, 500) as $item) {
+            if (!is_array($item)) continue;
+            $cleanItem = sanitizeResourceItem($item, $resourceType);
+            if ($cleanItem['title'] !== '') {
+                $cleanItems[] = $cleanItem;
+            }
+        }
+        if (!isset($store['resources']) || !is_array($store['resources'])) $store['resources'] = [];
+        if (!isset($store['resourcesCustomized']) || !is_array($store['resourcesCustomized'])) $store['resourcesCustomized'] = [];
+        $store['resources'][$resourceType] = $cleanItems;
+        $store['resourcesCustomized'][$resourceType] = true;
+        $store['lastSyncTopic'] = 'resources';
+        appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_RESOURCES', 'Resource', "{$resourceType}: " . count($cleanItems) . ' items', '', 'Synced to website');
+        if (!writeStore($storeFile, $store)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Unable to save resource changes to server storage.']);
+            exit;
+        }
+        writeAuditLog($auditLogFile, 'set_resources', $adminEmail, 'SUCCESS', "type={$resourceType} count=" . count($cleanItems));
+        echo json_encode([
+            'success' => true,
+            'resourceType' => $resourceType,
+            'count' => count($cleanItems),
+            'items' => $cleanItems,
+            'syncVersion' => $store['syncVersion'],
+        ]);
         exit;
     }
 

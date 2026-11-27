@@ -89,7 +89,7 @@ export default function CountrySelector({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="w-full h-[38px] px-3 rounded-[4px] border border-[#cbd5e1] bg-white text-[13.5px] text-[#1e293b] flex items-center justify-between gap-2.5 focus:outline-none focus:border-[#008000] focus:ring-1 focus:ring-[#008000]/20 transition-all text-left cursor-pointer hover:border-slate-400"
+        className="w-full h-[38px] px-3 rounded-xl border border-slate-200 bg-white text-[13.5px] text-[#1e293b] flex items-center justify-between gap-2.5 focus:outline-none focus:border-[#008000] focus:ring-1 focus:ring-[#008000]/20 transition-all text-left cursor-pointer hover:border-slate-400"
       >
         <div className="flex items-center gap-2.5 min-w-0">
           {selectedCountry?.flagUrl ? (

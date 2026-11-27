@@ -1,11 +1,30 @@
 import React from "react";
+import { adminRegistrationService } from "@/services/adminRegistrationService";
+import { msimamiziEnterpriseService } from "@/services/msimamiziEnterpriseService";
+
+function normalizeWhatsAppDigits(raw) {
+  const digits = String(raw || "0708060223").replace(/[^0-9]/g, "");
+  if (digits.startsWith("0") && digits.length === 10) {
+    return `254${digits.slice(1)}`;
+  }
+  return digits || "254708060223";
+}
 
 const WhatsAppWidget = () => {
-  const phoneNumber = "254708060223";
+  const configuredNumber = msimamiziEnterpriseService.getSettings()?.whatsappNumber || "0708060223";
+  const phoneNumber = normalizeWhatsAppDigits(configuredNumber);
   const defaultMessage = encodeURIComponent(
     "Hello ECAS Institute, I would like to inquire about your executive training programs and courses."
   );
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${defaultMessage}`;
+
+  const handleWidgetClick = () => {
+    adminRegistrationService.trackOutboundChannel("WhatsApp", "Floating WhatsApp Widget", {
+      inquiryType: "WhatsApp Quick Inquiry",
+      fullName: "Website Visitor (WhatsApp)",
+      courseTitle: "Executive Training Programme Inquiry",
+    });
+  };
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex items-center">
@@ -13,6 +32,7 @@ const WhatsAppWidget = () => {
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleWidgetClick}
         aria-label="Inquire Now on WhatsApp"
         className="relative group flex items-center gap-2.5 px-4 py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-medium rounded-full shadow-[0_4px_16px_rgba(37,211,102,0.45)] hover:shadow-[0_6px_22px_rgba(37,211,102,0.6)] transition-all duration-300 hover:scale-105 active:scale-95"
         style={{ fontFamily: "'Roboto', sans-serif" }}

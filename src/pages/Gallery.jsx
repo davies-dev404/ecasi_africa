@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from '@/components/Header';
@@ -29,7 +29,7 @@ const GalleryImage = ({ image }) => {
         )}
         <img
           src={image.src}
-          alt="ECAS Institute photo"
+          alt={image.title || "ECAS Institute photo"}
           className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setImageLoaded(true)}
           onError={() => {
@@ -38,13 +38,26 @@ const GalleryImage = ({ image }) => {
           }}
         />
       </div>
+      {(image.title || image.description) && (
+        <div className="p-4 bg-white border-t border-slate-100">
+          {image.title && <h3 className="text-sm font-bold text-[#032e42] line-clamp-1">{image.title}</h3>}
+          {image.description && <p className="text-xs text-slate-600 line-clamp-2 mt-1">{image.description}</p>}
+        </div>
+      )}
     </div>
   );
 };
 
 const Gallery = () => {
   const [activeTab, setActiveTab] = useState("all");
-  const galleryImages = dataService.getGalleryImages();
+  const [galleryImages, setGalleryImages] = useState(() => dataService.getGalleryImages());
+
+  useEffect(() => {
+    const syncGallery = () => setGalleryImages(dataService.getGalleryImages());
+    window.addEventListener('ecasi_gallery_updated', syncGallery);
+    dataService.refreshPublicData?.();
+    return () => window.removeEventListener('ecasi_gallery_updated', syncGallery);
+  }, []);
 
   const filteredImages = activeTab === "all" 
     ? galleryImages 

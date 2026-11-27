@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Scale,
   Plus,
-  Printer,
   Mail,
   CheckCircle2,
   X,
@@ -16,7 +15,14 @@ import {
   Clock,
   XCircle,
   RotateCcw,
+  Trash2,
+  MessageCircle,
+  Eye,
 } from 'lucide-react';
+import {
+  downloadInvoicePdf,
+  downloadPaymentReceiptPdf,
+} from '@/utils/documentPdf';
 import {
   ResponsiveContainer,
   BarChart,
@@ -40,6 +46,7 @@ export default function FinanceModule({
   payments = [],
   currentUser,
   onDataChange,
+  onOpenDocument,
   showToast,
 }) {
   const [search, setSearch] = useState('');
@@ -179,45 +186,95 @@ export default function FinanceModule({
     );
   };
 
-  const handlePrintInvoice = (inv) => {
-    const settings = msimamiziEnterpriseService.getSettings();
-    const html = `
-      <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
-        <div>
-          <h3 style="margin:0 0 6px 0;">Bill To:</h3>
-          <div><strong>${inv.applicantName}</strong></div>
-          <div>${inv.organisation || ''}</div>
-          <div>${inv.applicantEmail || ''}</div>
-        </div>
-        <div style="text-align:right;">
-          <div><strong>Invoice No:</strong> ${inv.invoiceNo}</div>
-          <div><strong>Date Issued:</strong> ${new Date(inv.createdAt).toLocaleDateString()}</div>
-          <div><strong>Due Date:</strong> ${inv.dueDate || 'On Receipt'}</div>
-          <div><strong>Status:</strong> ${inv.status}</div>
-        </div>
-      </div>
-      <table>
-        <thead><tr><th>Description / Training Programme</th><th>Destination</th><th style="text-align:right;">Amount (${inv.currency})</th></tr></thead>
-        <tbody>
-          <tr><td>${inv.courseTitle} ${inv.cohortName ? `(${inv.cohortName})` : ''}</td><td>${inv.destination}</td><td style="text-align:right;">${Number(inv.amount).toLocaleString()}</td></tr>
-          ${Number(inv.additionalCharges) > 0 ? `<tr><td>Additional Charges / Logistics</td><td>—</td><td style="text-align:right;">${Number(inv.additionalCharges).toLocaleString()}</td></tr>` : ''}
-          ${Number(inv.discount) > 0 ? `<tr><td>Authorized Institutional Discount</td><td>—</td><td style="text-align:right;">-${Number(inv.discount).toLocaleString()}</td></tr>` : ''}
-          <tr><td colspan="2" style="text-align:right;font-weight:bold;">Net Total Due</td><td style="text-align:right;font-weight:bold;">${inv.currency} ${Number(inv.netAmount).toLocaleString()}</td></tr>
-          <tr><td colspan="2" style="text-align:right;">Amount Paid</td><td style="text-align:right;">${inv.currency} ${Number(inv.paidAmount || 0).toLocaleString()}</td></tr>
-          <tr><td colspan="2" style="text-align:right;font-weight:bold;">Balance Outstanding</td><td style="text-align:right;font-weight:bold;">${inv.currency} ${Number(inv.balance || 0).toLocaleString()}</td></tr>
-        </tbody>
-      </table>
-      <div style="margin-top:18px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-        <strong>Payment Instructions:</strong><br/>
-        <pre style="font-family:inherit;white-space:pre-wrap;margin:4px 0 0 0;">${settings.bankDetails || 'Contact finance@ecasiafrica.org for wire transfer details.'}</pre>
-      </div>
-    `;
-    msimamiziEnterpriseService.printInstitutionalDocument(`Official Proforma Invoice ${inv.invoiceNo}`, html, currentUser);
+  const openDoc = (spec) => {
+    if (typeof onOpenDocument === 'function') {
+      onOpenDocument(spec);
+      return;
+    }
+    msimamiziEnterpriseService.printInstitutionalDocument(spec.title || 'ECAS Document', '', currentUser, spec);
+  };
+
+  const handlePrintInvoice = (inv, initialWaOpen = false) => {
+    const linkedReg = registrations.find((r) => r.id === inv.registrationId) || null;
+    openDoc({
+      mode: 'invoice',
+      title: `Official Invoice — ${inv.invoiceNo}`,
+      invoice: inv,
+      registration: linkedReg,
+      registrationId: inv.registrationId || '',
+      initialWaOpen,
+    });
+  };
+
+  const handleDownloadInvoicePdf = async (inv) => {
+    const linkedReg = registrations.find((r) => r.id === inv.registrationId) || null;
+    await downloadInvoicePdf({
+      invoice: inv,
+      registration: linkedReg,
+      settings: msimamiziEnterpriseService.getSettings(),
+    });
+    showToast(`Downloaded official PDF invoice ECAS_Invoice_${inv.invoiceNo}.pdf`);
+  };
+
+  const handleOpenReceipt = (pay, initialWaOpen = false) => {
+    const linkedInv = invoices.find((i) => i.id === pay.invoiceId) || null;
+    const linkedReg =
+      registrations.find((r) => r.id === (pay.registrationId || linkedInv?.registrationId)) || null;
+    openDoc({
+      mode: 'receipt',
+      title: `Official Payment Receipt — ${pay.receiptNo || pay.reference}`,
+      payment: pay,
+      invoice: linkedInv,
+      registration: linkedReg,
+      registrationId: pay.registrationId || linkedInv?.registrationId || '',
+      initialWaOpen,
+    });
+  };
+
+  const handleDownloadReceiptPdf = async (pay) => {
+    const linkedInv = invoices.find((i) => i.id === pay.invoiceId) || null;
+    const linkedReg =
+      registrations.find((r) => r.id === (pay.registrationId || linkedInv?.registrationId)) || null;
+    await downloadPaymentReceiptPdf({
+      payment: pay,
+      invoice: linkedInv,
+      registration: linkedReg,
+      settings: msimamiziEnterpriseService.getSettings(),
+    });
+    showToast(`Downloaded official PDF receipt for ${pay.reference}.`);
+  };
+
+  const handleEmailReceipt = async (pay) => {
+    const linkedInv = invoices.find((i) => i.id === pay.invoiceId) || null;
+    const linkedReg =
+      registrations.find((r) => r.id === (pay.registrationId || linkedInv?.registrationId)) || null;
+    const recipient = linkedInv?.applicantEmail || linkedReg?.officialEmail || linkedReg?.personalEmail || '';
+    if (!recipient) {
+      handleOpenReceipt(pay);
+      showToast('Enter recipient email on the official receipt page.');
+      return;
+    }
+    const receiptNo = pay.receiptNo || `RCP-${String(pay.id || '').replace(/^PAY-/, '')}`;
+    await msimamiziEnterpriseService.sendCommunication(
+      {
+        channel: 'Email',
+        category: 'Receipt',
+        recipientName: pay.applicantName || linkedInv?.applicantName || 'Delegate',
+        recipientContact: recipient,
+        subject: `ECAS Institute — Official Payment Receipt (${receiptNo})`,
+        body: `Dear ${pay.applicantName || 'Delegate'},\n\nThank you for your payment.\nReceipt No: ${receiptNo}\nPayment Ref: ${pay.reference}\nAmount Verified: ${pay.currency} ${Number(pay.amount || 0).toLocaleString()}\nMethod: ${pay.method}\nDate: ${pay.transactionDate}\nInvoice No: ${pay.invoiceNo || linkedInv?.invoiceNo || 'Direct Payment'}\n\nWarm regards,\nECAS Institute Finance Desk`,
+        linkedEntityId: pay.id,
+      },
+      currentUser
+    );
+    onDataChange();
+    showToast(`Official receipt emailed/logged to ${recipient}.`);
   };
 
   const handleEmailInvoice = async (inv) => {
     if (!inv.applicantEmail) {
-      alert('No recipient email address on this invoice.');
+      handlePrintInvoice(inv);
+      showToast('Enter recipient email on the official invoice page.');
       return;
     }
     await msimamiziEnterpriseService.sendCommunication(
@@ -253,7 +310,7 @@ export default function FinanceModule({
       {/* Finance Top KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
-          { label: 'Total Invoiced', val: `$${metrics.totalInvoiced.toLocaleString()}`, color: 'text-[#10243E]', icon: Receipt, iconBg: 'bg-slate-100 text-[#071C2D]' },
+          { label: 'Total Invoiced', val: `$${metrics.totalInvoiced.toLocaleString()}`, color: 'text-[#032e42]', icon: Receipt, iconBg: 'bg-slate-100 text-[#032e42]' },
           { label: 'Total Collected', val: `$${metrics.totalCollected.toLocaleString()}`, color: 'text-[#16A36A]', icon: CheckCircle2, iconBg: 'bg-emerald-50 text-[#16A36A]' },
           { label: 'Outstanding', val: `$${metrics.outstanding.toLocaleString()}`, color: 'text-[#F0A020]', icon: Wallet, iconBg: 'bg-amber-50 text-[#F0A020]' },
           { label: 'Overdue Invoices', val: metrics.overdueCount, color: 'text-[#DC4545]', icon: AlertTriangle, iconBg: 'bg-red-50 text-[#DC4545]' },
@@ -279,11 +336,11 @@ export default function FinanceModule({
       {/* Action Header */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-            {activeTab === 'payment-reconciliation' ? <Scale className="w-5 h-5 text-[#00B8B0]" /> :
-             activeTab === 'payments' ? <CreditCard className="w-5 h-5 text-[#00B8B0]" /> :
+          <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+            {activeTab === 'payment-reconciliation' ? <Scale className="w-5 h-5 text-[#008000]" /> :
+             activeTab === 'payments' ? <CreditCard className="w-5 h-5 text-[#008000]" /> :
              activeTab === 'outstanding-balances' ? <AlertTriangle className="w-5 h-5 text-[#DC4545]" /> :
-             <Wallet className="w-5 h-5 text-[#00B8B0]" />}
+             <Wallet className="w-5 h-5 text-[#008000]" />}
             {activeTab === 'finance-overview' && 'Financial Overview'}
             {activeTab === 'invoices' && 'Invoice Management'}
             {activeTab === 'payments' && 'Payment Records & Verification'}
@@ -299,7 +356,7 @@ export default function FinanceModule({
               <button
                 type="button"
                 onClick={() => setIsInvoiceModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] text-white text-xs font-bold shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] text-white text-xs font-bold shadow-sm cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Generate Invoice
               </button>
@@ -319,7 +376,7 @@ export default function FinanceModule({
               const rows = invoices.map((i) => [i.invoiceNo, i.applicantName, i.courseTitle, i.currency, i.netAmount, i.paidAmount, i.balance, i.dueDate, i.status]);
               msimamiziEnterpriseService.exportCSV(headers, rows, `ECAS_Invoices_${todayStr}.csv`, currentUser);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] border border-slate-200 text-xs font-bold text-[#10243E] cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F8FC] border border-slate-200 text-xs font-bold text-[#032e42] cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
@@ -329,7 +386,7 @@ export default function FinanceModule({
       {/* Sub-view 1: Financial Overview Chart */}
       {activeTab === 'finance-overview' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <h3 className="text-sm font-extrabold text-[#10243E] mb-3">Monthly Collected Revenue (Verified Payments)</h3>
+          <h3 className="text-sm font-extrabold text-[#032e42] mb-3">Monthly Collected Revenue (Verified Payments)</h3>
           {monthlyRevenueChart.length === 0 ? (
             <div className="h-52 flex flex-col items-center justify-center bg-[#F5F8FC] rounded-xl border border-dashed border-slate-200 text-xs text-[#718096]">
               No verified payment transactions recorded yet. Record verified payments to view revenue trends.
@@ -356,7 +413,7 @@ export default function FinanceModule({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-4">
               <p className="text-[10px] font-bold uppercase text-[#718096]">Expected (Active Invoices)</p>
-              <p className="text-xl font-black text-[#10243E] mt-1">${reconciliation.totalExpected.toLocaleString()}</p>
+              <p className="text-xl font-black text-[#032e42] mt-1">${reconciliation.totalExpected.toLocaleString()}</p>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-4">
               <p className="text-[10px] font-bold uppercase text-[#718096]">Actual Verified Payments</p>
@@ -388,7 +445,7 @@ export default function FinanceModule({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                  <tr className="bg-[#032e42] text-white text-[11px] uppercase">
                     <th className="py-3 px-4">Reference</th>
                     <th className="py-3 px-4">Invoice / Applicant</th>
                     <th className="py-3 px-4">Amount</th>
@@ -403,9 +460,9 @@ export default function FinanceModule({
                   ) : (
                     payments.map((pay) => (
                       <tr key={pay.id} className="hover:bg-[#F5F8FC]">
-                        <td className="py-3 px-4 font-mono font-bold text-[#10243E]">{pay.reference}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-[#032e42]">{pay.reference}</td>
                         <td className="py-3 px-4">
-                          <p className="font-bold text-[#10243E]">{pay.invoiceNo || 'Unmatched Direct Payment'}</p>
+                          <p className="font-bold text-[#032e42]">{pay.invoiceNo || 'Unmatched Direct Payment'}</p>
                           <p className="text-[11px] text-[#718096]">{pay.applicantName || '—'}</p>
                         </td>
                         <td className="py-3 px-4 font-black text-[#16A36A]">{pay.currency} {Number(pay.amount).toLocaleString()}</td>
@@ -430,9 +487,9 @@ export default function FinanceModule({
                                 onDataChange();
                                 showToast(`Payment ${pay.reference} marked as Reconciled.`);
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#071C2D] text-white text-[11px] font-bold cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer"
                             >
-                              <CheckCircle2 className="w-3 h-3 text-[#00B8B0]" /> Mark Reconciled
+                              <CheckCircle2 className="w-3 h-3 text-[#4ade80]" /> Mark Reconciled
                             </button>
                           )}
                         </td>
@@ -452,7 +509,7 @@ export default function FinanceModule({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                <tr className="bg-[#032e42] text-white text-[11px] uppercase">
                   <th className="py-3 px-4">Payment Ref</th>
                   <th className="py-3 px-4">Applicant / Invoice</th>
                   <th className="py-3 px-4">Amount</th>
@@ -468,9 +525,9 @@ export default function FinanceModule({
                 ) : (
                   payments.map((pay) => (
                     <tr key={pay.id} className="hover:bg-[#F5F8FC]">
-                      <td className="py-3 px-4 font-mono font-bold text-[#10243E]">{pay.reference}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-[#032e42]">{pay.reference}</td>
                       <td className="py-3 px-4">
-                        <p className="font-bold text-[#10243E]">{pay.applicantName || '—'}</p>
+                        <p className="font-bold text-[#032e42]">{pay.applicantName || '—'}</p>
                         <p className="text-[11px] text-[#718096]">{pay.invoiceNo || 'Direct'}</p>
                       </td>
                       <td className="py-3 px-4 font-black text-[#16A36A]">{pay.currency} {Number(pay.amount).toLocaleString()}</td>
@@ -487,26 +544,61 @@ export default function FinanceModule({
                           {pay.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const html = `
-                              <h3>Official Payment Receipt</h3>
-                              <table>
-                                <tr><th>Payment Reference</th><td>${pay.reference}</td><th>Transaction Date</th><td>${pay.transactionDate}</td></tr>
-                                <tr><th>Received From</th><td>${pay.applicantName || 'Delegate'}</td><th>Invoice No</th><td>${pay.invoiceNo || 'Direct Payment'}</td></tr>
-                                <tr><th>Amount Verified</th><td><strong>${pay.currency} ${Number(pay.amount).toLocaleString()}</strong></td><th>Payment Method</th><td>${pay.method}</td></tr>
-                                <tr><th>Verified By</th><td>${pay.verifiedBy}</td><th>Status</th><td>${pay.status}</td></tr>
-                              </table>
-                              ${pay.supportingNote ? `<p><strong>Reference Notes:</strong> ${pay.supportingNote}</p>` : ''}
-                            `;
-                            msimamiziEnterpriseService.printInstitutionalDocument(`Official Receipt - ${pay.reference}`, html, currentUser);
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#071C2D] text-white text-[11px] font-bold cursor-pointer"
-                        >
-                          <Printer className="w-3 h-3 text-[#00B8B0]" /> Receipt
-                        </button>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReceipt(pay, false)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer"
+                            title="Open Official Payment Receipt Page"
+                          >
+                            <Eye className="w-3 h-3 text-[#4ade80]" /> Receipt
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadReceiptPdf(pay)}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-50 text-[#008000] hover:bg-emerald-100 text-[11px] font-bold cursor-pointer"
+                            title="Download Official Receipt PDF"
+                          >
+                            <Download className="w-3.5 h-3.5" /> PDF
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReceipt(pay, true)}
+                            className="p-1.5 rounded-lg bg-emerald-50 text-[#25D366] hover:bg-emerald-100 cursor-pointer"
+                            title="Send Receipt via WhatsApp"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEmailReceipt(pay)}
+                            className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+                            title="Email Receipt"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                          </button>
+                          {hasPermission(currentUser, 'admin.manage') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Delete payment record ${pay.reference} (${pay.currency} ${Number(pay.amount || 0).toLocaleString()})? Invoice balance will recalculate automatically.`)) {
+                                  const res = msimamiziEnterpriseService.deletePayment(pay.id, currentUser);
+                                  if (!res.success) {
+                                    alert(res.error);
+                                    return;
+                                  }
+                                  onDataChange();
+                                  showToast(`Removed payment record ${pay.reference}.`);
+                                }
+                              }}
+                              title="Super Admin: Delete Test / Erroneous Payment"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-[#DC4545] hover:bg-red-50 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -521,7 +613,7 @@ export default function FinanceModule({
       {(activeTab === 'invoices' || activeTab === 'outstanding-balances' || activeTab === 'finance-overview') && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-extrabold text-[#10243E]">
+            <h3 className="text-sm font-extrabold text-[#032e42]">
               {activeTab === 'outstanding-balances' ? 'Unpaid & Overdue Invoices' : 'Institutional Invoices'} ({filteredInvoices.length})
             </h3>
             <div className="relative w-64">
@@ -537,7 +629,7 @@ export default function FinanceModule({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                <tr className="bg-[#032e42] text-white text-[11px] uppercase">
                   <th className="py-3 px-4">Invoice No</th>
                   <th className="py-3 px-4">Applicant / Org</th>
                   <th className="py-3 px-4">Course Programme</th>
@@ -554,14 +646,14 @@ export default function FinanceModule({
                     const isOverdue = inv.status !== 'Paid' && inv.status !== 'Cancelled' && inv.dueDate && inv.dueDate < todayStr;
                     return (
                       <tr key={inv.id} className="hover:bg-[#F5F8FC]">
-                        <td className="py-3 px-4 font-mono font-bold text-[#10243E]">{inv.invoiceNo}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-[#032e42]">{inv.invoiceNo}</td>
                         <td className="py-3 px-4">
-                          <p className="font-bold text-[#10243E]">{inv.applicantName}</p>
+                          <p className="font-bold text-[#032e42]">{inv.applicantName}</p>
                           <p className="text-[11px] text-[#718096]">{inv.organisation || inv.applicantEmail || '—'}</p>
                         </td>
                         <td className="py-3 px-4 max-w-[220px] truncate font-medium">{inv.courseTitle}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <p className="font-black text-[#10243E]">{inv.currency} {Number(inv.netAmount).toLocaleString()}</p>
+                          <p className="font-black text-[#032e42]">{inv.currency} {Number(inv.netAmount).toLocaleString()}</p>
                           <p className="text-[10.5px] text-[#718096]">
                             Paid: <span className="text-[#16A36A] font-bold">{Number(inv.paidAmount || 0).toLocaleString()}</span> • Bal: <span className="text-[#DC4545] font-bold">{Number(inv.balance || 0).toLocaleString()}</span>
                           </p>
@@ -579,10 +671,36 @@ export default function FinanceModule({
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           <div className="inline-flex items-center gap-1.5">
-                            <button type="button" onClick={() => handlePrintInvoice(inv)} className="px-2.5 py-1.5 rounded-lg bg-[#071C2D] text-white text-[11px] font-bold cursor-pointer inline-flex items-center gap-1">
-                              <Printer className="w-3 h-3 text-[#00B8B0]" /> PDF
+                            <button
+                              type="button"
+                              onClick={() => handlePrintInvoice(inv, false)}
+                              className="px-2.5 py-1.5 rounded-lg bg-[#032e42] text-white text-[11px] font-bold cursor-pointer inline-flex items-center gap-1"
+                              title="Open Official Invoice Page"
+                            >
+                              <Eye className="w-3 h-3 text-[#4ade80]" /> View
                             </button>
-                            <button type="button" onClick={() => handleEmailInvoice(inv)} title="Email Invoice" className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadInvoicePdf(inv)}
+                              className="px-2 py-1.5 rounded-lg bg-emerald-50 text-[#008000] hover:bg-emerald-100 text-[11px] font-bold cursor-pointer inline-flex items-center gap-1"
+                              title="Download Official Invoice PDF"
+                            >
+                              <Download className="w-3.5 h-3.5" /> PDF
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handlePrintInvoice(inv, true)}
+                              title="Send Invoice via WhatsApp"
+                              className="p-1.5 rounded-lg bg-emerald-50 text-[#25D366] hover:bg-emerald-100 cursor-pointer"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEmailInvoice(inv)}
+                              title="Email Invoice"
+                              className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+                            >
                               <Mail className="w-3.5 h-3.5" />
                             </button>
                             {canWrite && inv.status !== 'Paid' && (
@@ -602,6 +720,30 @@ export default function FinanceModule({
                                 Pay
                               </button>
                             )}
+                            {((canWrite && inv.status !== 'Paid' && Number(inv.paidAmount || 0) === 0) || hasPermission(currentUser, 'admin.manage')) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const isSuperForce = inv.status === 'Paid' || Number(inv.paidAmount || 0) > 0;
+                                  const promptText = isSuperForce
+                                    ? `Super Admin Purge: Delete PAID/test invoice ${inv.invoiceNo} and any linked payment records?`
+                                    : `Delete unpaid invoice ${inv.invoiceNo}?`;
+                                  if (window.confirm(promptText)) {
+                                    const res = msimamiziEnterpriseService.deleteInvoice(inv.id, currentUser, { force: isSuperForce });
+                                    if (!res.success) {
+                                      alert(res.error);
+                                      return;
+                                    }
+                                    onDataChange();
+                                    showToast(`Deleted invoice ${inv.invoiceNo}.`);
+                                  }
+                                }}
+                                title={inv.status === 'Paid' ? 'Super Admin: Delete Test / Paid Invoice' : 'Delete Unpaid Invoice'}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-[#DC4545] hover:bg-red-50 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -618,13 +760,13 @@ export default function FinanceModule({
       {isInvoiceModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <form onSubmit={handleCreateInvoice} className="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden text-xs">
-            <div className="bg-[#071C2D] text-white px-5 py-4 flex items-center justify-between">
-              <h3 className="font-bold text-sm flex items-center gap-2"><Receipt className="w-4 h-4 text-[#00B8B0]" /> Generate Official Invoice</h3>
+            <div className="bg-[#032e42] text-white px-5 py-4 flex items-center justify-between">
+              <h3 className="font-bold text-sm flex items-center gap-2"><Receipt className="w-4 h-4 text-[#4ade80]" /> Generate Official Invoice</h3>
               <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="cursor-pointer"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="sm:col-span-2">
-                <label className="block font-bold text-[#10243E] mb-1">Link to Registered Applicant (Optional)</label>
+                <label className="block font-bold text-[#032e42] mb-1">Link to Registered Applicant (Optional)</label>
                 <select value={invForm.registrationId} onChange={(e) => handleSelectRegistrationForInvoice(e.target.value)} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
                   <option value="">— Manual Invoice Entry —</option>
                   {registrations.map((r) => (
@@ -635,22 +777,22 @@ export default function FinanceModule({
                 </select>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Applicant / Client Name *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Applicant / Client Name *</label>
                 <input required value={invForm.applicantName} onChange={(e) => setInvForm({ ...invForm, applicantName: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Email</label>
+                <label className="block font-bold text-[#032e42] mb-1">Email</label>
                 <input type="email" value={invForm.applicantEmail} onChange={(e) => setInvForm({ ...invForm, applicantEmail: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block font-bold text-[#10243E] mb-1">Course / Programme *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Course / Programme *</label>
                 <input required list="fin-courses" value={invForm.courseTitle} onChange={(e) => setInvForm({ ...invForm, courseTitle: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
                 <datalist id="fin-courses">
                   {courses.slice(0, 100).map((c) => <option key={c.slug} value={c.title} />)}
                 </datalist>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Currency</label>
+                <label className="block font-bold text-[#032e42] mb-1">Currency</label>
                 <select value={invForm.currency} onChange={(e) => setInvForm({ ...invForm, currency: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
                   <option value="USD">USD</option>
                   <option value="KES">KES</option>
@@ -659,25 +801,25 @@ export default function FinanceModule({
                 </select>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Course Fee Amount *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Course Fee Amount *</label>
                 <input type="number" min={0} required value={invForm.amount} onChange={(e) => setInvForm({ ...invForm, amount: Number(e.target.value) })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Authorized Discount</label>
+                <label className="block font-bold text-[#032e42] mb-1">Authorized Discount</label>
                 <input type="number" min={0} value={invForm.discount} onChange={(e) => setInvForm({ ...invForm, discount: Number(e.target.value) })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Payment Due Date</label>
+                <label className="block font-bold text-[#032e42] mb-1">Payment Due Date</label>
                 <input type="date" value={invForm.dueDate} onChange={(e) => setInvForm({ ...invForm, dueDate: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
             </div>
             <div className="px-5 py-3.5 bg-[#F5F8FC] border-t border-slate-100 flex items-center justify-between">
-              <span className="font-extrabold text-[#10243E]">
+              <span className="font-extrabold text-[#032e42]">
                 Net Payable: {invForm.currency} {Math.max(0, (Number(invForm.amount) || 0) + (Number(invForm.additionalCharges) || 0) - (Number(invForm.discount) || 0)).toLocaleString()}
               </span>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="px-4 py-2 rounded-xl bg-white border border-slate-200 font-bold cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-[#00B8B0] text-white font-bold cursor-pointer">Issue Invoice</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-[#008000] text-white font-bold cursor-pointer">Issue Invoice</button>
               </div>
             </div>
           </form>
@@ -688,13 +830,13 @@ export default function FinanceModule({
       {isPaymentModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <form onSubmit={handleRecordPayment} className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden text-xs">
-            <div className="bg-[#071C2D] text-white px-5 py-4 flex items-center justify-between">
-              <h3 className="font-bold text-sm flex items-center gap-2"><CreditCard className="w-4 h-4 text-[#00B8B0]" /> Record &amp; Verify Payment</h3>
+            <div className="bg-[#032e42] text-white px-5 py-4 flex items-center justify-between">
+              <h3 className="font-bold text-sm flex items-center gap-2"><CreditCard className="w-4 h-4 text-[#4ade80]" /> Record &amp; Verify Payment</h3>
               <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="cursor-pointer"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="sm:col-span-2">
-                <label className="block font-bold text-[#10243E] mb-1">Apply to Invoice</label>
+                <label className="block font-bold text-[#032e42] mb-1">Apply to Invoice</label>
                 <select
                   value={payForm.invoiceId}
                   onChange={(e) => {
@@ -717,25 +859,25 @@ export default function FinanceModule({
                 </select>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Bank / M-Pesa Reference *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Bank / M-Pesa Reference *</label>
                 <input required value={payForm.reference} onChange={(e) => setPayForm({ ...payForm, reference: e.target.value })} placeholder="e.g. MPESA-QWE8912 / SWIFT-8821" className="w-full h-9 px-3 rounded-xl border border-slate-300 font-mono" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Amount Received *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Amount Received *</label>
                 <input type="number" min={0.01} step="0.01" required value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 font-bold" />
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Payment Method</label>
+                <label className="block font-bold text-[#032e42] mb-1">Payment Method</label>
                 <select value={payForm.method} onChange={(e) => setPayForm({ ...payForm, method: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
                   {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block font-bold text-[#10243E] mb-1">Transaction Date</label>
+                <label className="block font-bold text-[#032e42] mb-1">Transaction Date</label>
                 <input type="date" value={payForm.transactionDate} onChange={(e) => setPayForm({ ...payForm, transactionDate: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block font-bold text-[#10243E] mb-1">Supporting Verification Note *</label>
+                <label className="block font-bold text-[#032e42] mb-1">Supporting Verification Note *</label>
                 <input required value={payForm.supportingNote} onChange={(e) => setPayForm({ ...payForm, supportingNote: e.target.value })} placeholder="Confirm bank statement / remittance advice / receipt verification details..." className="w-full h-9 px-3 rounded-xl border border-slate-300" />
               </div>
             </div>

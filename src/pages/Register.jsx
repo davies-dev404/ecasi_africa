@@ -98,21 +98,23 @@ export default function Register() {
                 <CheckCircle2 className="w-8 h-8 shrink-0" />
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#008000]">
-                    Registration Confirmed • Ref: {submittedData.referenceNo}
+                    Booking Application Received • Ref: {submittedData.referenceNo}
                   </span>
                   <h1 className="text-2xl font-bold text-[#032e42]">
-                    Thank You for Registering!
+                    Thank You — Application Submitted!
                   </h1>
                 </div>
               </div>
 
               <p className="text-sm text-gray-700 mb-6 leading-relaxed">
-                We have received your registration for{" "}
-                <strong className="text-[#032e42]">{submittedData.eventTitle}</strong>. Our
-                Training Admissions Coordinator will send the official invitation letter and
-                proforma invoice to{" "}
+                We have received your course booking application for{" "}
+                <strong className="text-[#032e42]">{submittedData.eventTitle}</strong> (status:{" "}
+                <strong>Pending Review &amp; Invoicing</strong>). Our Training Admissions Coordinator
+                will verify your application and send the official proforma invoice &amp; invitation
+                letter to{" "}
                 <strong className="text-[#032e42]">{submittedData.personalEmail}</strong>
-                {submittedData.officialEmail ? ` and ${submittedData.officialEmail}` : ""}.
+                {submittedData.officialEmail ? ` and ${submittedData.officialEmail}` : ""}. Seat
+                enrolment is finalized upon invoice settlement.
               </p>
 
               <div className="bg-[#f8fafc] border border-gray-200 rounded-lg p-5 mb-6 space-y-2.5 text-sm">
@@ -171,22 +173,26 @@ export default function Register() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => {
-                      adminRegistrationService.addInquiry({
-                        channel: "WhatsApp",
-                        inquiryType: "Registration Follow-Up (WhatsApp)",
-                        referenceNo: `${submittedData.referenceNo}-WA`,
-                        fullName: `${submittedData.title || ""} ${submittedData.firstName || ""} ${submittedData.lastName || ""}`.trim(),
-                        email: submittedData.officialEmail || submittedData.personalEmail || "",
-                        phone: `${submittedData.dialCode || ""} ${submittedData.phoneNumber || ""}`.trim(),
-                        organisation: submittedData.organisation || "",
-                        country: submittedData.country || "Kenya",
-                        courseTitle: submittedData.eventTitle || "",
-                        courseCode: submittedData.scheduleId || "",
-                        cohortDates: submittedData.durationText || "",
-                        venue: `${submittedData.venue || ""} (${submittedData.format || ""})`,
-                        fee: `$${(submittedData.totalFee || 1200).toLocaleString()} USD`,
-                        message: `Registered delegate clicked "Send to WhatsApp" for Registration Ref ${submittedData.referenceNo} (${submittedData.participantsCount || 1} participant(s)).`,
-                      });
+                      adminRegistrationService.addInquiry(
+                        {
+                          channel: "WhatsApp",
+                          leadSource: "WhatsApp",
+                          inquiryType: "Registration Follow-Up (WhatsApp)",
+                          referenceNo: `${submittedData.referenceNo}-WA`,
+                          fullName: `${submittedData.title || ""} ${submittedData.firstName || ""} ${submittedData.lastName || ""}`.trim(),
+                          email: submittedData.officialEmail || submittedData.personalEmail || "",
+                          phone: `${submittedData.dialCode || ""} ${submittedData.phoneNumber || ""}`.trim(),
+                          organisation: submittedData.organisation || "",
+                          country: submittedData.country || "Kenya",
+                          courseTitle: submittedData.eventTitle || "",
+                          courseCode: submittedData.scheduleId || "",
+                          cohortDates: submittedData.durationText || "",
+                          venue: `${submittedData.venue || ""} (${submittedData.format || ""})`,
+                          fee: `$${(submittedData.totalFee || 1200).toLocaleString()} USD`,
+                          message: `Registered delegate clicked "Send to WhatsApp" for Registration Ref ${submittedData.referenceNo} (${submittedData.participantsCount || 1} participant(s)).`,
+                        },
+                        { beaconFirst: true }
+                      );
                     }}
                     className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5"
                   >
@@ -203,22 +209,26 @@ export default function Register() {
                       `Registration Reference: ${submittedData.referenceNo}\nCourse: ${submittedData.eventTitle}\nParticipant: ${submittedData.title} ${submittedData.firstName} ${submittedData.middleName || ''} ${submittedData.lastName}\nJob Title: ${submittedData.jobTitle || 'N/A'}\nOrganisation: ${submittedData.organisation} (${submittedData.country})\nPhone: ${submittedData.dialCode || ''} ${submittedData.phoneNumber || ''}\nPersonal Email: ${submittedData.personalEmail}\nOfficial Email: ${submittedData.officialEmail || 'N/A'}\nInvoice To: ${submittedData.invoiceTo}\nNumber of Participants: ${submittedData.participantsCount}\nTotal Fee: $${submittedData.totalFee}\nAccommodation: ${submittedData.needAccommodation || 'No'}\nAirport Transfer: ${submittedData.needAirportTransfer || 'No'}\nSafari Tour: ${submittedData.needSafariTour || 'No'}\n\nPlease issue proforma invoice and letter of invitation.`
                     )}`}
                     onClick={() => {
-                      adminRegistrationService.addInquiry({
-                        channel: "Email",
-                        inquiryType: "Registration Follow-Up (Email)",
-                        referenceNo: `${submittedData.referenceNo}-EM`,
-                        fullName: `${submittedData.title || ""} ${submittedData.firstName || ""} ${submittedData.lastName || ""}`.trim(),
-                        email: submittedData.officialEmail || submittedData.personalEmail || "",
-                        phone: `${submittedData.dialCode || ""} ${submittedData.phoneNumber || ""}`.trim(),
-                        organisation: submittedData.organisation || "",
-                        country: submittedData.country || "Kenya",
-                        courseTitle: submittedData.eventTitle || "",
-                        courseCode: submittedData.scheduleId || "",
-                        cohortDates: submittedData.durationText || "",
-                        venue: `${submittedData.venue || ""} (${submittedData.format || ""})`,
-                        fee: `$${(submittedData.totalFee || 1200).toLocaleString()} USD`,
-                        message: `Registered delegate clicked "Send via Email" for Registration Ref ${submittedData.referenceNo} (${submittedData.participantsCount || 1} participant(s)).`,
-                      });
+                      adminRegistrationService.addInquiry(
+                        {
+                          channel: "Email",
+                          leadSource: "Email",
+                          inquiryType: "Registration Follow-Up (Email)",
+                          referenceNo: `${submittedData.referenceNo}-EM`,
+                          fullName: `${submittedData.title || ""} ${submittedData.firstName || ""} ${submittedData.lastName || ""}`.trim(),
+                          email: submittedData.officialEmail || submittedData.personalEmail || "",
+                          phone: `${submittedData.dialCode || ""} ${submittedData.phoneNumber || ""}`.trim(),
+                          organisation: submittedData.organisation || "",
+                          country: submittedData.country || "Kenya",
+                          courseTitle: submittedData.eventTitle || "",
+                          courseCode: submittedData.scheduleId || "",
+                          cohortDates: submittedData.durationText || "",
+                          venue: `${submittedData.venue || ""} (${submittedData.format || ""})`,
+                          fee: `$${(submittedData.totalFee || 1200).toLocaleString()} USD`,
+                          message: `Registered delegate clicked "Send via Email" for Registration Ref ${submittedData.referenceNo} (${submittedData.participantsCount || 1} participant(s)).`,
+                        },
+                        { beaconFirst: true }
+                      );
                     }}
                     className="inline-flex items-center gap-1.5 bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-transform hover:-translate-y-0.5"
                   >

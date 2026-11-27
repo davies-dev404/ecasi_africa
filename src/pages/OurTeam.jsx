@@ -3,7 +3,7 @@ import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PageHeroBanner from '@/components/PageHeroBanner';
-import { Mail, Linkedin, Sparkles } from 'lucide-react';
+import { Mail, Linkedin, Users } from 'lucide-react';
 
 const teamMembers = [
   {
@@ -124,7 +124,7 @@ const OurTeam = () => {
             className="max-w-4xl mx-auto text-center mb-16 bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-5">
-              <Sparkles className="h-4 w-4" />
+              <Users className="h-4 w-4" />
               <span>African Expertise</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-800 mb-6">

@@ -17,7 +17,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         hero: "bg-white text-primary hover:bg-white/90 shadow-lg",
         heroOutline: "border-2 border-white text-white hover:bg-white hover:text-primary",
-        healthcare: "bg-teal-600 text-white hover:bg-teal-700",
+        healthcare: "bg-[#008000] text-white hover:bg-[#006600]",
       },
       size: {
         default: "h-10 px-4 py-2",

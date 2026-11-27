@@ -124,13 +124,13 @@ export default function AdministrationModule({
     return (
       <div className="space-y-5">
         {/* Primary Super Admin Authority Banner */}
-        <div className="bg-[#071C2D] text-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/10 shadow-sm">
+        <div className="bg-[#032e42] text-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/10 shadow-sm">
           <div className="flex items-start gap-3">
-            <span className="w-10 h-10 rounded-xl bg-[#00B8B0]/20 border border-[#00B8B0]/40 text-[#00B8B0] flex items-center justify-center shrink-0">
+            <span className="w-10 h-10 rounded-xl bg-[#008000]/25 border border-[#4ade80]/40 text-[#4ade80] flex items-center justify-center shrink-0">
               <Crown className="w-5 h-5" />
             </span>
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#00B8B0]">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#4ade80]">
                 Super Admin User Provisioning Authority
               </p>
               <h3 className="text-sm font-black mt-0.5">
@@ -146,15 +146,15 @@ export default function AdministrationModule({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-5 border-b border-slate-100">
-              <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-                <UserCog className="w-5 h-5 text-[#00B8B0]" /> Institutional Staff Accounts ({staffAccounts.length})
+              <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+                <UserCog className="w-5 h-5 text-[#008000]" /> Institutional Staff Accounts ({staffAccounts.length})
               </h2>
               <p className="text-xs text-[#718096]">Role-based access control enforced on both backend PHP API and Msimamizi UI.</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                  <tr className="bg-[#032e42] text-white text-[11px] uppercase">
                     <th className="py-3 px-4">Staff Member</th>
                     <th className="py-3 px-4">Role</th>
                     <th className="py-3 px-4">Status</th>
@@ -169,12 +169,12 @@ export default function AdministrationModule({
                       <tr key={acc.email} className="hover:bg-[#F5F8FC]">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5">
-                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${isPrimarySuper ? 'bg-[#071C2D] text-[#00B8B0]' : 'bg-teal-50 text-teal-800'
+                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${isPrimarySuper ? 'bg-[#032e42] text-[#4ade80]' : 'bg-emerald-50 text-[#008000]'
                               }`}>
                               {isPrimarySuper ? <Crown className="w-4 h-4" /> : (acc.name || acc.email).substring(0, 2).toUpperCase()}
                             </span>
                             <div className="min-w-0">
-                              <p className="font-bold text-[#10243E] flex items-center gap-1.5">
+                              <p className="font-bold text-[#032e42] flex items-center gap-1.5">
                                 <span>{acc.name || acc.email.split('@')[0]}</span>
                                 {isPrimarySuper && (
                                   <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[9px] font-black uppercase">
@@ -201,7 +201,7 @@ export default function AdministrationModule({
                           <div className="inline-flex items-center gap-1.5">
                             {isPrimarySuper ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10.5px] font-bold">
-                                <Lock className="w-3 h-3 text-[#00B8B0]" /> Protected Super Admin
+                                <Lock className="w-3 h-3 text-[#008000]" /> Protected Super Admin
                               </span>
                             ) : (
                               <>
@@ -276,8 +276,8 @@ export default function AdministrationModule({
           {/* Add New @ecasiafrica.org User Form */}
           <form onSubmit={handleSaveStaff} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3.5 text-xs h-fit">
             <div>
-              <h3 className="text-sm font-black text-[#10243E] flex items-center gap-1.5">
-                <UserPlus className="w-4 h-4 text-[#00B8B0]" /> Add @ecasiafrica.org User
+              <h3 className="text-sm font-black text-[#032e42] flex items-center gap-1.5">
+                <UserPlus className="w-4 h-4 text-[#008000]" /> Add @ecasiafrica.org User
               </h3>
               <p className="text-[11px] text-[#718096] mt-0.5">
                 Provision a new staff account using their institutional email.
@@ -285,7 +285,7 @@ export default function AdministrationModule({
             </div>
 
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Full Name *</label>
+              <label className="block font-bold text-[#032e42] mb-1">Full Name *</label>
               <div className="relative">
                 <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -299,8 +299,8 @@ export default function AdministrationModule({
             </div>
 
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Institutional Email *</label>
-              <div className="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:border-[#00B8B0]">
+              <label className="block font-bold text-[#032e42] mb-1">Institutional Email *</label>
+              <div className="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:border-[#008000]">
                 <div className="relative flex-1">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -313,7 +313,7 @@ export default function AdministrationModule({
                   />
                 </div>
                 {!staffForm.email.includes('@') && (
-                  <span className="px-2.5 h-9 flex items-center bg-[#F5F8FC] border-l border-slate-200 text-[11px] font-mono font-bold text-[#071C2D]">
+                  <span className="px-2.5 h-9 flex items-center bg-[#F5F8FC] border-l border-slate-200 text-[11px] font-mono font-bold text-[#032e42]">
                     @ecasiafrica.org
                   </span>
                 )}
@@ -321,9 +321,9 @@ export default function AdministrationModule({
             </div>
 
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Assigned Role &amp; Permissions</label>
+              <label className="block font-bold text-[#032e42] mb-1">Assigned Role &amp; Permissions</label>
               <div className="relative">
-                <ShieldCheck className="w-4 h-4 text-[#00B8B0] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ShieldCheck className="w-4 h-4 text-[#008000] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <select
                   value={staffForm.role}
                   onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
@@ -335,7 +335,7 @@ export default function AdministrationModule({
             </div>
 
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">
+              <label className="block font-bold text-[#032e42] mb-1">
                 Initial Password <span className="font-normal text-[#718096]">(Optional, min 6 chars)</span>
               </label>
               <div className="relative">
@@ -363,7 +363,7 @@ export default function AdministrationModule({
 
             <button
               type="submit"
-              className="w-full py-2.5 rounded-xl bg-[#00B8B0] hover:bg-[#009c95] text-white font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition"
+              className="w-full py-2.5 rounded-xl bg-[#008000] hover:bg-[#006600] text-white font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition"
             >
               <UserPlus className="w-4 h-4" />
               <span>Add &amp; Authorize User</span>
@@ -379,8 +379,8 @@ export default function AdministrationModule({
     return (
       <div className="space-y-5">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#00B8B0]" /> Enterprise Roles &amp; Permissions Matrix
+          <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-[#008000]" /> Enterprise Roles &amp; Permissions Matrix
           </h2>
           <p className="text-xs text-[#718096] mt-0.5">
             Role-based access control is enforced both in the PHP backend API (HTTP 403 on unauthorized mutations) and the Msimamizi UI.
@@ -397,7 +397,7 @@ export default function AdministrationModule({
               <p className="text-xs text-slate-600 leading-relaxed">{role.description}</p>
               <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5">
                 {role.permissions.map((p) => (
-                  <span key={p} className="px-2 py-0.5 rounded bg-[#F5F8FC] border border-slate-200 text-[10px] font-mono text-[#10243E]">
+                  <span key={p} className="px-2 py-0.5 rounded bg-[#F5F8FC] border border-slate-200 text-[10px] font-mono text-[#032e42]">
                     {p === '*' ? 'ALL_PERMISSIONS' : p}
                   </span>
                 ))}
@@ -416,8 +416,8 @@ export default function AdministrationModule({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-                <ScrollText className="w-5 h-5 text-[#00B8B0]" /> Security &amp; Audit Logs ({filteredAudits.length})
+              <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+                <ScrollText className="w-5 h-5 text-[#008000]" /> Security &amp; Audit Logs ({filteredAudits.length})
               </h2>
               <p className="text-xs text-[#718096] flex items-center gap-1 mt-0.5">
                 <Lock className="w-3.5 h-3.5 text-[#16A36A]" /> Append-only immutable audit trail — cannot be edited or deleted through the portal.
@@ -430,9 +430,9 @@ export default function AdministrationModule({
                 const rows = filteredAudits.map((e) => [e.id, e.timestamp, e.administrator, e.role, e.action, e.entityType, e.affectedRecord, e.previousValue, e.newValue, e.ip]);
                 msimamiziEnterpriseService.exportCSV(headers, rows, `ECAS_Audit_Logs_${new Date().toISOString().slice(0, 10)}.csv`, currentUser);
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#071C2D] text-white text-xs font-bold cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] text-white text-xs font-bold cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 text-[#00B8B0]" /> Export Audit CSV
+              <Download className="w-3.5 h-3.5 text-[#4ade80]" /> Export Audit CSV
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
@@ -453,7 +453,7 @@ export default function AdministrationModule({
           <div className="overflow-x-auto max-h-[600px]">
             <table className="w-full text-left border-collapse text-xs">
               <thead className="sticky top-0">
-                <tr className="bg-[#071C2D] text-white text-[11px] uppercase">
+                <tr className="bg-[#032e42] text-white text-[11px] uppercase">
                   <th className="py-3 px-4">Timestamp / Event ID</th>
                   <th className="py-3 px-4">Administrator</th>
                   <th className="py-3 px-4">Action &amp; Entity</th>
@@ -469,21 +469,21 @@ export default function AdministrationModule({
                   filteredAudits.slice(0, 200).map((ev) => (
                     <tr key={ev.id} className="hover:bg-[#F5F8FC]">
                       <td className="py-2.5 px-4 whitespace-nowrap">
-                        <p className="font-mono text-[11px] font-bold text-[#10243E]">{new Date(ev.timestamp).toLocaleString()}</p>
+                        <p className="font-mono text-[11px] font-bold text-[#032e42]">{new Date(ev.timestamp).toLocaleString()}</p>
                         <p className="text-[10px] font-mono text-[#718096]">{ev.id}</p>
                       </td>
                       <td className="py-2.5 px-4">
-                        <p className="font-bold text-[#10243E]">{ev.administrator}</p>
+                        <p className="font-bold text-[#032e42]">{ev.administrator}</p>
                         <p className="text-[10px] text-[#718096]">{ev.role}</p>
                       </td>
                       <td className="py-2.5 px-4">
-                        <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-900 font-mono font-bold text-[10px]">{ev.action}</span>
+                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-[#032e42] font-mono font-bold text-[10px]">{ev.action}</span>
                         <span className="block text-[10px] text-[#718096] mt-0.5">{ev.entityType}</span>
                       </td>
-                      <td className="py-2.5 px-4 font-semibold text-[#10243E] max-w-[180px] truncate">{ev.affectedRecord || '—'}</td>
+                      <td className="py-2.5 px-4 font-semibold text-[#032e42] max-w-[180px] truncate">{ev.affectedRecord || '—'}</td>
                       <td className="py-2.5 px-4 text-[11px] text-slate-600 max-w-[260px]">
                         {ev.previousValue && <span className="line-through text-slate-400 mr-1.5">{ev.previousValue}</span>}
-                        {ev.newValue && <span className="font-semibold text-[#10243E]">{ev.newValue}</span>}
+                        {ev.newValue && <span className="font-semibold text-[#032e42]">{ev.newValue}</span>}
                       </td>
                       <td className="py-2.5 px-4 font-mono text-[10.5px] text-[#718096]">{ev.ip || '—'}</td>
                     </tr>
@@ -509,14 +509,14 @@ export default function AdministrationModule({
         }}
         className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-xs max-w-4xl"
       >
-        <div className="bg-[#071C2D] text-white p-5 flex items-center justify-between">
+        <div className="bg-[#032e42] text-white p-5 flex items-center justify-between">
           <div>
             <h2 className="text-base font-black flex items-center gap-2">
-              <Settings className="w-4 h-4 text-[#00B8B0]" /> Platform &amp; Institutional Settings
+              <Settings className="w-4 h-4 text-[#4ade80]" /> Platform &amp; Institutional Settings
             </h2>
             <p className="text-[11px] text-slate-300 mt-0.5">Secrets, passwords, and API keys are never exposed or editable from the client UI.</p>
           </div>
-          <button type="submit" className="px-4 py-2 rounded-xl bg-[#00B8B0] text-white font-bold cursor-pointer">
+          <button type="submit" className="px-4 py-2 rounded-xl bg-[#008000] text-white font-bold cursor-pointer">
             Save Configuration
           </button>
         </div>
@@ -524,34 +524,34 @@ export default function AdministrationModule({
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Institution Legal Name</label>
+              <label className="block font-bold text-[#032e42] mb-1">Institution Legal Name</label>
               <input value={settingsForm.institutionName || ''} onChange={(e) => setSettingsForm({ ...settingsForm, institutionName: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
             </div>
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Institutional Tagline</label>
+              <label className="block font-bold text-[#032e42] mb-1">Institutional Tagline</label>
               <input value={settingsForm.tagline || ''} onChange={(e) => setSettingsForm({ ...settingsForm, tagline: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
             </div>
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Official Email</label>
+              <label className="block font-bold text-[#032e42] mb-1">Official Email</label>
               <input type="email" value={settingsForm.officialEmail || ''} onChange={(e) => setSettingsForm({ ...settingsForm, officialEmail: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
             </div>
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Finance Desk Email</label>
+              <label className="block font-bold text-[#032e42] mb-1">Finance Desk Email</label>
               <input type="email" value={settingsForm.financeEmail || ''} onChange={(e) => setSettingsForm({ ...settingsForm, financeEmail: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
             </div>
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">WhatsApp Business Number</label>
+              <label className="block font-bold text-[#032e42] mb-1">WhatsApp Business Number</label>
               <input value={settingsForm.whatsappNumber || ''} onChange={(e) => setSettingsForm({ ...settingsForm, whatsappNumber: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
             </div>
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Physical Address</label>
+              <label className="block font-bold text-[#032e42] mb-1">Physical Address</label>
               <input value={settingsForm.address || ''} onChange={(e) => setSettingsForm({ ...settingsForm, address: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
             </div>
           </div>
 
           <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Default Currency</label>
+              <label className="block font-bold text-[#032e42] mb-1">Default Currency</label>
               <select value={settingsForm.defaultCurrency || 'USD'} onChange={(e) => setSettingsForm({ ...settingsForm, defaultCurrency: e.target.value })} className="w-full h-9 px-3 rounded-xl border border-slate-300 bg-white">
                 <option value="USD">USD ($)</option>
                 <option value="KES">KES (KSh)</option>
@@ -560,30 +560,30 @@ export default function AdministrationModule({
               </select>
             </div>
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">USD → KES Exchange Rate</label>
+              <label className="block font-bold text-[#032e42] mb-1">USD → KES Exchange Rate</label>
               <input type="number" min={1} value={settingsForm.usdToKesRate || 130} onChange={(e) => setSettingsForm({ ...settingsForm, usdToKesRate: Number(e.target.value) })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
             </div>
             <div>
-              <label className="block font-bold text-[#10243E] mb-1">Invoice Payment Terms (Days)</label>
+              <label className="block font-bold text-[#032e42] mb-1">Invoice Payment Terms (Days)</label>
               <input type="number" min={1} max={90} value={settingsForm.invoicePaymentTermsDays || 14} onChange={(e) => setSettingsForm({ ...settingsForm, invoicePaymentTermsDays: Number(e.target.value) })} className="w-full h-9 px-3 rounded-xl border border-slate-300" />
             </div>
           </div>
 
           <div>
-            <label className="block font-bold text-[#10243E] mb-1">Bank &amp; Wire Instructions (Shown on Printable Invoices)</label>
+            <label className="block font-bold text-[#032e42] mb-1">Bank &amp; Wire Instructions (Shown on Printable Invoices)</label>
             <textarea rows={3} value={settingsForm.bankDetails || ''} onChange={(e) => setSettingsForm({ ...settingsForm, bankDetails: e.target.value })} className="w-full p-3 rounded-xl border border-slate-300" />
           </div>
 
           <div className="flex flex-wrap gap-6 pt-2">
-            <label className="flex items-center gap-2 font-semibold text-[#10243E] cursor-pointer">
+            <label className="flex items-center gap-2 font-semibold text-[#032e42] cursor-pointer">
               <input type="checkbox" checked={Boolean(settingsForm.emailNotificationsEnabled)} onChange={(e) => setSettingsForm({ ...settingsForm, emailNotificationsEnabled: e.target.checked })} />
               <span>Enable Email Notifications</span>
             </label>
-            <label className="flex items-center gap-2 font-semibold text-[#10243E] cursor-pointer">
+            <label className="flex items-center gap-2 font-semibold text-[#032e42] cursor-pointer">
               <input type="checkbox" checked={Boolean(settingsForm.whatsappNotificationsEnabled)} onChange={(e) => setSettingsForm({ ...settingsForm, whatsappNotificationsEnabled: e.target.checked })} />
               <span>Enable WhatsApp Integrations</span>
             </label>
-            <label className="flex items-center gap-2 font-semibold text-[#10243E] cursor-pointer">
+            <label className="flex items-center gap-2 font-semibold text-[#032e42] cursor-pointer">
               <input type="checkbox" checked={Boolean(settingsForm.autoInvoiceOnApproval)} onChange={(e) => setSettingsForm({ ...settingsForm, autoInvoiceOnApproval: e.target.checked })} />
               <span>Auto-prompt Invoice on Application Approval</span>
             </label>
@@ -606,8 +606,8 @@ export default function AdministrationModule({
     <div className="space-y-5">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-            <Activity className="w-5 h-5 text-[#00B8B0]" /> System Health, Account MFA &amp; Verified Backups
+          <h2 className="text-lg font-black text-[#032e42] flex items-center gap-2">
+            <Activity className="w-5 h-5 text-[#008000]" /> System Health, Account MFA &amp; Verified Backups
           </h2>
           <p className="text-xs text-[#718096]">
             {healthState.live ? 'Live production server telemetry from msimamizi-sync.php' : 'Local environment telemetry snapshot'}
@@ -625,16 +625,16 @@ export default function AdministrationModule({
                 alert(res.error);
               }
             }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] hover:bg-teal-600 text-white text-xs font-bold cursor-pointer transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#008000] hover:bg-[#006600] text-white text-xs font-bold cursor-pointer transition"
           >
             <Download className="w-3.5 h-3.5" /> Download Verified Backup
           </button>
           <button
             type="button"
             onClick={loadHealth}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#071C2D] text-white text-xs font-bold cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#032e42] text-white text-xs font-bold cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#00B8B0] ${healthState.loading ? 'animate-spin' : ''}`} /> Run Health Check
+            <RefreshCw className={`w-3.5 h-3.5 text-[#4ade80] ${healthState.loading ? 'animate-spin' : ''}`} /> Run Health Check
           </button>
         </div>
       </div>
@@ -649,8 +649,8 @@ export default function AdministrationModule({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-black text-[#10243E] flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#00B8B0]" /> Multi-Factor Authentication (Authenticator App)
+            <h3 className="text-sm font-black text-[#032e42] flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#008000]" /> Multi-Factor Authentication (Authenticator App)
             </h3>
             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${currentUser?.mfaEnabled ? 'bg-emerald-100 text-[#16A36A]' : 'bg-amber-100 text-amber-800'}`}>
               {currentUser?.mfaEnabled ? 'MFA Active' : 'Not Enrolled'}
@@ -673,7 +673,7 @@ export default function AdministrationModule({
                   setMfaSetup((s) => ({ ...s, busy: false, error: res.error }));
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#071C2D] hover:bg-[#00B8B0] text-white font-bold cursor-pointer transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white font-bold cursor-pointer transition"
             >
               <Lock className="w-3.5 h-3.5" /> Enroll Authenticator App MFA
             </button>
@@ -681,12 +681,12 @@ export default function AdministrationModule({
 
           {mfaSetup.active && (
             <div className="p-4 rounded-xl bg-[#F5F8FC] border border-slate-200 space-y-3">
-              <p className="font-bold text-[#10243E]">Step 1: Add this account to Google / Microsoft Authenticator</p>
+              <p className="font-bold text-[#032e42]">Step 1: Add this account to Google / Microsoft Authenticator</p>
               <div className="p-3 rounded-lg bg-white border border-slate-200 font-mono text-[11px] break-all">
                 <span className="text-[10px] text-[#718096] block uppercase font-sans font-bold mb-1">Manual Setup Key (Base32):</span>
-                <strong className="text-[#071C2D] select-all">{mfaSetup.secret}</strong>
+                <strong className="text-[#032e42] select-all">{mfaSetup.secret}</strong>
               </div>
-              <p className="font-bold text-[#10243E]">Step 2: Enter the 6-digit code shown in your app</p>
+              <p className="font-bold text-[#032e42]">Step 2: Enter the 6-digit code shown in your app</p>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -722,7 +722,7 @@ export default function AdministrationModule({
           {mfaSetup.recoveryCodes.length > 0 && (
             <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 space-y-2">
               <p className="font-black text-amber-950">Save These 8 Single-Use Backup Recovery Codes Now (Shown Once!):</p>
-              <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px] font-bold text-[#10243E]">
+              <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px] font-bold text-[#032e42]">
                 {mfaSetup.recoveryCodes.map((c) => <span key={c} className="bg-white px-2 py-1 rounded border border-amber-200">{c}</span>)}
               </div>
             </div>
@@ -778,8 +778,8 @@ export default function AdministrationModule({
           }}
           className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3"
         >
-          <h3 className="text-sm font-black text-[#10243E] flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-[#00B8B0]" /> Rotate My Administrator Password
+          <h3 className="text-sm font-black text-[#032e42] flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-[#008000]" /> Rotate My Administrator Password
           </h3>
           <p className="text-[#718096]">Changing your password requires your current password and immediately invalidates all other active sessions.</p>
           <input type="password" required value={pwdForm.currentPassword} onChange={(e) => setPwdForm({ ...pwdForm, currentPassword: e.target.value })} placeholder="Current password *" className="w-full h-9 px-3 rounded-xl border border-slate-300" />
@@ -789,7 +789,7 @@ export default function AdministrationModule({
           </div>
           {pwdForm.err && <p className="text-[#DC4545] font-bold">{pwdForm.err}</p>}
           {pwdForm.msg && <p className="text-[#16A36A] font-bold">{pwdForm.msg}</p>}
-          <button type="submit" disabled={pwdForm.busy} className="px-4 py-2 rounded-xl bg-[#071C2D] hover:bg-[#00B8B0] text-white font-bold cursor-pointer transition">
+          <button type="submit" disabled={pwdForm.busy} className="px-4 py-2 rounded-xl bg-[#032e42] hover:bg-[#008000] text-white font-bold cursor-pointer transition">
             {pwdForm.busy ? 'Updating...' : 'Update Password & Invalidate Other Sessions'}
           </button>
         </form>
@@ -809,12 +809,12 @@ export default function AdministrationModule({
             return (
               <div key={card.label} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 font-bold text-[#10243E]">
-                    <Icon className="w-4 h-4 text-[#00B8B0]" /> {card.label}
+                  <span className="flex items-center gap-2 font-bold text-[#032e42]">
+                    <Icon className="w-4 h-4 text-[#008000]" /> {card.label}
                   </span>
                   {card.ok ? <CheckCircle2 className="w-4 h-4 text-[#16A36A]" /> : <AlertTriangle className="w-4 h-4 text-[#F0A020]" />}
                 </div>
-                <p className="text-sm font-black text-[#10243E]">{card.val}</p>
+                <p className="text-sm font-black text-[#032e42]">{card.val}</p>
                 <p className="text-[11px] text-[#718096]">{card.sub}</p>
               </div>
             );

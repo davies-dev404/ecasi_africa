@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -8,13 +8,21 @@ import { Link } from 'react-router-dom';
 import { dataService } from '@/lib/dataService';
 
 const PolicyBriefs = () => {
-  const briefs = dataService.getPolicyBriefs();
+  const [briefs, setBriefs] = useState(() => dataService.getPolicyBriefs());
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
+  useEffect(() => {
+    const reload = () => setBriefs(dataService.getPolicyBriefs());
+    window.addEventListener('ecasi_resources_updated', reload);
+    dataService.refreshPublicData?.();
+    return () => window.removeEventListener('ecasi_resources_updated', reload);
+  }, []);
+
   const filtered = briefs.filter(b => {
-    return b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
+    const q = searchTerm.toLowerCase();
+    return String(b.title || '').toLowerCase().includes(q) ||
+      (Array.isArray(b.tags) && b.tags.some(t => String(t).toLowerCase().includes(q)));
   });
 
   const handleDownload = async (url) => {
@@ -117,7 +125,7 @@ const PolicyBriefs = () => {
                     )}
 
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {item.tags.map(tag => (
+                      {(item.tags || []).map(tag => (
                         <span key={tag} className="inline-flex items-center gap-1 text-xs bg-ecasi-section text-ecasi-navy px-2 py-1 rounded-full font-medium">
                           <Tag size={10} />
                           {tag}

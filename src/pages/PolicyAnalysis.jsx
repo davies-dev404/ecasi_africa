@@ -7,7 +7,7 @@ import {
   BarChart3, Search, FileText, Scale, ShieldCheck,
   Target, Database, GitCompareArrows, TrendingUp, CheckCircle2,
   Lightbulb, ArrowRight, Users, Globe, BookOpen,
-  ClipboardCheck, ChevronRight, Sparkles, LayoutDashboard
+  ClipboardCheck, ChevronRight, LayoutDashboard
 } from 'lucide-react';
 
 /* ── Framer Motion Variants ── */
@@ -54,28 +54,28 @@ const whatItInvolves = [
     icon: Search,
     title: 'Analyzing Existing Policies',
     description: 'Examining how policies were created, their intended and unintended consequences, and their effectiveness in achieving their goals.',
-    color: 'from-emerald-500 to-teal-600',
+    color: 'from-[#008000] to-[#006600]',
     bgLight: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
+    iconColor: 'text-[#008000]',
     borderColor: 'border-emerald-200',
   },
   {
     icon: FileText,
     title: 'Developing New Policies',
     description: 'Identifying problems, exploring potential solutions, and designing policies that are likely to be effective and equitable.',
-    color: 'from-blue-500 to-indigo-600',
+    color: 'from-[#032e42] to-[#1e73be]',
     bgLight: 'bg-blue-50',
-    iconColor: 'text-blue-600',
+    iconColor: 'text-[#032e42]',
     borderColor: 'border-blue-200',
   },
   {
     icon: ClipboardCheck,
     title: 'Evaluating Policy Proposals',
     description: 'Assessing the potential impact of proposed policies, considering their costs and benefits, and identifying potential risks and challenges.',
-    color: 'from-teal-500 to-emerald-600',
-    bgLight: 'bg-teal-50',
-    iconColor: 'text-teal-600',
-    borderColor: 'border-teal-200',
+    color: 'from-[#032e42] to-[#008000]',
+    bgLight: 'bg-emerald-50',
+    iconColor: 'text-[#008000]',
+    borderColor: 'border-emerald-200',
   },
   {
     icon: Users,
@@ -125,7 +125,7 @@ const benefits = [
     statLabel: 'Effectiveness',
   },
   {
-    icon: Sparkles,
+    icon: TrendingUp,
     title: 'Increased Efficiency',
     description: 'By identifying the most effective and efficient policy options, policy analysis can help reduce costs and maximize benefits.',
     stat: '40%',
@@ -167,7 +167,7 @@ const PolicyAnalysis = () => {
       {/* ── Hero Banner ── */}
       <section className="relative pt-28 pb-20 overflow-hidden">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#006400] via-[#008000] to-[#20b2aa]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#032e42] via-[#06405c] to-[#008000]" />
         {/* Decorative pattern */}
         <div className="absolute inset-0 opacity-[0.07]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
@@ -238,7 +238,7 @@ const PolicyAnalysis = () => {
                 style={{ fontFamily: "'Fira Sans', sans-serif" }}
               >
                 Evidence-Based Policy Analysis for{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008000] to-[#1e73be]">
                   Sustainable Impact
                 </span>
               </h2>
@@ -261,7 +261,7 @@ const PolicyAnalysis = () => {
               className="flex-1 w-full"
             >
               <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-3xl blur-xl opacity-40" />
+                <div className="absolute -inset-4 bg-gradient-to-r from-emerald-100 to-sky-100 rounded-3xl blur-xl opacity-40" />
                 <div className="relative bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
                   <img
                     src="/images/Gallery/1717137013866.jpg"
@@ -442,7 +442,7 @@ const PolicyAnalysis = () => {
             className="text-center mb-14"
           >
             <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 px-4 py-2 rounded-full mb-4 border border-emerald-400/20">
-              <Sparkles className="h-3.5 w-3.5" />
+              <Target className="h-3.5 w-3.5" />
               Why Policy Analysis
             </span>
             <h2
@@ -473,7 +473,7 @@ const PolicyAnalysis = () => {
                 <div className="bg-white/[0.04] backdrop-blur-sm rounded-3xl p-7 border border-white/[0.08] hover:border-emerald-500/30 hover:bg-white/[0.08] transition-all duration-300 h-full flex flex-col">
                   {/* Stat number */}
                   <div className="mb-5">
-                    <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
+                    <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#4ade80] to-emerald-200" style={{ fontFamily: "'Outfit', 'Fira Sans', sans-serif" }}>
                       {benefit.stat}
                     </span>
                     <p className="text-emerald-400/60 text-xs font-semibold uppercase tracking-wider mt-1">
@@ -481,7 +481,7 @@ const PolicyAnalysis = () => {
                     </p>
                   </div>
 
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center mb-4 group-hover:from-emerald-500/30 group-hover:to-teal-500/30 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#008000]/25 to-[#4ade80]/20 flex items-center justify-center mb-4 group-hover:from-[#008000]/35 group-hover:to-[#4ade80]/30 transition-all duration-300">
                     <benefit.icon className="h-6 w-6 text-emerald-400" />
                   </div>
 
@@ -583,7 +583,7 @@ const PolicyAnalysis = () => {
       </section>
 
       {/* ── CTA Banner ── */}
-      <section className="py-16 bg-gradient-to-r from-[#006400] via-[#008000] to-[#20b2aa] relative overflow-hidden">
+      <section className="py-16 bg-gradient-to-r from-[#032e42] via-[#06405c] to-[#008000] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full border-2 border-white" />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full border-2 border-white" />

@@ -10,67 +10,70 @@
   }
 
   :root {
-    /* ECASI Africa Color Palette */
+    /* ECASI Africa Color Palette (Unified Across Website & Msimamizi Portal) */
     --ecasi-green: #008000;
     --ecasi-green-dark: #006600;
     --ecasi-green-light: #20a020;
     --ecasi-navy: #032e42;
+    --ecasi-navy-dark: #022231;
+    --ecasi-navy-light: #06405c;
     --ecasi-red: #d83030;
-    --ecasi-teal: #20b2aa;
-    --ecasi-teal-card: #3cb591;
+    --ecasi-teal: #008000;
+    --ecasi-teal-card: #032e42;
     --ecasi-blue: #1e73be;
-    --ecasi-text: #676767;
+    --ecasi-surface: #F5F8FC;
+    --ecasi-text: #475569;
 
     /* Shadcn tokens mapped to ECASI palette */
-    --background: 0 0% 100%;
-    --foreground: 207 87% 14%;       /* #032e42 navy */
+    --background: 214 45% 97%;
+    --foreground: 199 89% 14%;       /* #032e42 ECAS navy */
 
     --card: 0 0% 100%;
-    --card-foreground: 207 87% 14%;
+    --card-foreground: 199 89% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 207 87% 14%;
+    --popover-foreground: 199 89% 14%;
 
-    --primary: 120 100% 25%;         /* #008000 green */
+    --primary: 120 100% 25%;         /* #008000 ECAS green */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 120 20% 95%;
     --secondary-foreground: 120 100% 20%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 41%;    /* #676767 */
+    --muted: 214 35% 95%;
+    --muted-foreground: 215 16% 42%;
 
-    --accent: 120 60% 92%;
+    --accent: 120 55% 93%;
     --accent-foreground: 120 100% 20%;
 
     --destructive: 0 67% 51%;        /* #d83030 red */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
     --ring: 120 100% 25%;
 
-    --radius: 0.375rem;
+    --radius: 0.75rem;
 
     /* ECASI-specific tokens */
     --topbar-bg: #008000;
-    --topbar-blue: #1e73be;
+    --topbar-blue: #032e42;
     --header-bg: #ffffff;
     --nav-text: #032e42;
-    --nav-active: #d83030;
-    --nav-hover: #d83030;
-    --footer-bg: #008000;
-    --footer-contact-bg: #1a8080;
-    --section-bg-light: #f2f2f2;
+    --nav-active: #008000;
+    --nav-hover: #008000;
+    --footer-bg: #032e42;
+    --footer-contact-bg: #06405c;
+    --section-bg-light: #F5F8FC;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 199 89% 14%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 120 100% 25%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 199 88% 19%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 199 70% 22%;
+    --sidebar-ring: 120 100% 25%;
   }
 
   .dark {
@@ -106,23 +109,25 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: "Roboto", system-ui, sans-serif;
+    @apply bg-[#F5F8FC] text-[#032e42] antialiased;
+    font-family: "Inter", "Roboto", system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.7;
-    color: #032e42; /* ECASI Navy for high visibility and contrast */
+    color: #032e42;
+    selection-background-color: #008000;
   }
 
   p {
     text-align: left;
-    color: #1a202c; /* High contrast body paragraph text */
+    color: #1e293b;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: "Fira Sans", sans-serif;
+    font-family: "Outfit", "Fira Sans", sans-serif;
     font-weight: 700;
-    color: #032e42; /* ECASI Navy */
+    color: #032e42;
     line-height: 1.3;
+    letter-spacing: -0.015em;
   }
 
   h1 { font-size: 40px; }
@@ -133,27 +138,31 @@
   h6 { font-size: 19px; }
 
   a {
-    color: #008000; /* ECASI Green */
+    color: #008000;
     transition: color 0.2s ease;
   }
 
   a:hover {
-    color: #1e73be; /* ECASI Blue */
+    color: #006600;
   }
 
-  /* ECASI High Visibility Utilities for washed-out fonts */
+  /* High visibility white contrast on dark navy banners */
   .text-white\/40, .text-white\/50, .text-white\/60 {
-    color: #ffffff !important; /* Force high contrast white */
-    opacity: 0.95 !important;
+    color: rgba(255, 255, 255, 0.85) !important;
   }
 
   .text-white\/70, .text-white\/80, .text-white\/90 {
     color: #ffffff !important;
-    opacity: 1 !important;
+    opacity: 0.96 !important;
   }
 
   .text-slate-400, .text-gray-400 {
-    color: #032e42 !important; /* ECASI Navy instead of invisible grey */
+    color: #475569;
+  }
+
+  aside .text-slate-400,
+  .bg-\[\#032e42\] .text-slate-400 {
+    color: #cbd5e1;
   }
 }
 
@@ -314,50 +323,54 @@
 
   /* ===== SECTION HEADINGS ===== */
   .ecasi-section-title {
-    font-family: "Fira Sans", sans-serif;
-    font-weight: 700;
+    font-family: "Outfit", "Fira Sans", sans-serif;
+    font-weight: 800;
     text-transform: uppercase;
-    color: #008000;
+    color: #032e42;
     font-size: 28px;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.015em;
     line-height: 1.2;
   }
 
   .ecasi-section-divider {
     height: 3px;
-    background: linear-gradient(90deg, #008000, #20b2aa);
-    width: 60px;
-    border-radius: 2px;
+    background: linear-gradient(90deg, #008000, #032e42);
+    width: 64px;
+    border-radius: 999px;
     margin: 12px 0 24px;
   }
 
-  /* ===== CARDS ===== */
+  /* ===== CARDS (Msimamizi Portal Style + ECAS Colors) ===== */
   .ecasi-card-green {
-    background: linear-gradient(160deg, #2d7d4e 0%, #1a6b3c 50%, #0f5c30 100%);
+    background: linear-gradient(155deg, #008000 0%, #006600 55%, #004d00 100%);
     color: #ffffff;
-    border-radius: 4px;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 4px 18px rgba(3, 46, 66, 0.08);
     overflow: hidden;
     position: relative;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
 
   .ecasi-card-green:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(0, 128, 0, 0.22);
   }
 
   .ecasi-card-teal {
-    background: linear-gradient(160deg, #20b2aa 0%, #1a9490 50%, #12756d 100%);
+    background: linear-gradient(155deg, #032e42 0%, #053b54 55%, #06405c 100%);
     color: #ffffff;
-    border-radius: 4px;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 18px rgba(3, 46, 66, 0.1);
     overflow: hidden;
     position: relative;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
 
   .ecasi-card-teal:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(3, 46, 66, 0.24);
   }
 
   .ecasi-card-wave {
@@ -366,12 +379,12 @@
     left: 0;
     right: 0;
     height: 40px;
-    background: rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.12);
     clip-path: polygon(0 40%, 25% 0%, 50% 40%, 75% 0%, 100% 40%, 100% 0%, 0 0%);
   }
 
   .ecasi-learn-more {
-    color: #d83030;
+    color: #008000;
     font-weight: 700;
     font-size: 13px;
     text-transform: uppercase;
@@ -381,14 +394,14 @@
   }
 
   .ecasi-learn-more:hover {
-    color: #ff4444;
+    color: #032e42;
     text-decoration: underline;
   }
 
   /* Drop Cap */
   .ecasi-drop-cap::first-letter {
-    font-family: "Fira Sans", sans-serif;
-    font-weight: 700;
+    font-family: "Outfit", "Fira Sans", sans-serif;
+    font-weight: 800;
     font-size: 4em;
     float: left;
     line-height: 0.75;
@@ -396,43 +409,51 @@
     color: #008000;
   }
 
-  /* ===== BUTTONS ===== */
+  /* ===== BUTTONS (Msimamizi Portal Style + ECAS Colors) ===== */
   .ecasi-btn-primary {
     background: #008000;
     color: #ffffff;
-    font-family: "Roboto", sans-serif;
-    font-weight: 600;
-    padding: 10px 28px;
-    border-radius: 3px;
+    font-family: "Inter", "Roboto", sans-serif;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 0.75rem;
     text-transform: uppercase;
-    font-size: 13px;
-    letter-spacing: 0.05em;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
     border: none;
     cursor: pointer;
-    transition: background 0.2s ease;
-    display: inline-block;
+    box-shadow: 0 2px 8px rgba(0, 128, 0, 0.18);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     text-decoration: none;
   }
 
   .ecasi-btn-primary:hover {
-    background: #252628;
+    background: #006600;
     color: #ffffff;
+    box-shadow: 0 6px 16px rgba(0, 128, 0, 0.26);
   }
 
   .ecasi-btn-outline {
     background: transparent;
     color: #008000;
-    font-family: "Roboto", sans-serif;
-    font-weight: 600;
-    padding: 10px 28px;
-    border-radius: 3px;
+    font-family: "Inter", "Roboto", sans-serif;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 0.75rem;
     text-transform: uppercase;
-    font-size: 13px;
-    letter-spacing: 0.05em;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
     border: 2px solid #008000;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     text-decoration: none;
   }
 
@@ -443,21 +464,26 @@
 
   /* ===== CONTACT STRIP ===== */
   .ecasi-contact-strip {
-    background: linear-gradient(135deg, #1a8080 0%, #147070 100%);
+    background: linear-gradient(135deg, #032e42 0%, #06405c 58%, #006600 100%);
     color: white;
   }
 
-  /* ===== FOOTER ===== */
+  /* ===== FOOTER (Msimamizi Shell + ECAS Navy & Green) ===== */
   .ecasi-footer {
-    background: #008000;
-    color: rgba(255,255,255,0.85);
-    font-size: 15px;
+    background: #032e42;
+    border-top: 4px solid #008000;
+    color: rgba(255,255,255,0.9);
+    font-size: 14.5px;
+  }
+
+  .ecasi-footer p {
+    color: rgba(255,255,255,0.9);
   }
 
   .ecasi-footer h3,
   .ecasi-footer h4 {
     color: #ffffff;
-    font-family: "Fira Sans", sans-serif;
+    font-family: "Outfit", "Fira Sans", sans-serif;
     font-weight: 700;
   }
 
@@ -468,7 +494,7 @@
   }
 
   .ecasi-footer a:hover {
-    color: #ffffff;
+    color: #4ade80;
   }
 
   .ecasi-footer-list li {
@@ -481,7 +507,7 @@
 
   .ecasi-footer-list li::before {
     content: "›";
-    color: rgba(255,255,255,0.5);
+    color: #4ade80;
     font-size: 16px;
     flex-shrink: 0;
   }
@@ -489,8 +515,8 @@
   /* ===== STATS COUNTER ===== */
   .ecasi-stat-card {
     background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 1rem;
     padding: 24px;
     text-align: center;
     -webkit-backdrop-filter: blur(8px);
@@ -499,39 +525,43 @@
 
   /* ===== ICON BOX ===== */
   .ecasi-icon-box {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
     background: #008000;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     flex-shrink: 0;
-    transition: background 0.2s;
+    box-shadow: 0 4px 10px rgba(0, 128, 0, 0.2);
+    transition: background 0.2s, transform 0.2s;
   }
 
   .ecasi-icon-box:hover {
     background: #006600;
+    transform: translateY(-2px);
   }
 
   /* ===== SEARCH ICON CIRCLE ===== */
   .ecasi-icon-circle {
     width: 38px;
     height: 38px;
-    border-radius: 50%;
-    border: 1.5px solid #676767;
+    border-radius: 0.75rem;
+    border: 1px solid #cbd5e1;
+    background: #F5F8FC;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
-    color: #676767;
+    color: #032e42;
   }
 
   .ecasi-icon-circle:hover {
-    border-color: #d83030;
-    color: #d83030;
+    border-color: #008000;
+    background: #ecfdf5;
+    color: #008000;
   }
 
   /* ===== SLIDER ARROWS ===== */
@@ -541,9 +571,9 @@
     transform: translateY(-50%);
     width: 44px;
     height: 44px;
-    background: rgba(255,255,255,0.2);
-    border: 2px solid rgba(255,255,255,0.5);
-    border-radius: 50%;
+    background: rgba(3, 46, 66, 0.55);
+    border: 1.5px solid rgba(255,255,255,0.45);
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -554,14 +584,14 @@
   }
 
   .ecasi-slider-arrow:hover {
-    background: #ff9139;
-    border-color: #ff9139;
+    background: #008000;
+    border-color: #4ade80;
   }
 
   /* ===== PAGE HEADER ===== */
   .ecasi-page-header {
-    background: #008000;
-    height: 400px;
+    background: linear-gradient(135deg, #032e42 0%, #06405c 58%, #006600 100%);
+    height: 360px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -570,40 +600,44 @@
   }
 
   .ecasi-page-header-title {
-    font-family: "Fira Sans", sans-serif;
-    font-size: clamp(32px, 5vw, 59px);
-    font-weight: 700;
-    color: #fda128;
+    font-family: "Outfit", "Fira Sans", sans-serif;
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    color: #ffffff;
     text-align: center;
   }
 
   /* ===== EVENT CARD ===== */
   .ecasi-event-card {
     background: white;
-    border-radius: 4px;
+    border-radius: 1rem;
+    border: 1px solid rgba(226, 232, 240, 0.9);
     overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 10px rgba(3, 46, 66, 0.05);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   }
 
   .ecasi-event-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+    border-color: rgba(0, 128, 0, 0.45);
+    box-shadow: 0 12px 28px rgba(3, 46, 66, 0.1);
   }
 
   /* ===== NEWS CARD ===== */
   .ecasi-news-card {
     background: white;
-    border-radius: 4px;
+    border-radius: 1rem;
+    border: 1px solid rgba(226, 232, 240, 0.9);
     overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(3, 46, 66, 0.05);
+    transition: all 0.25s ease;
     border-bottom: 3px solid transparent;
   }
 
   .ecasi-news-card:hover {
+    border-color: rgba(0, 128, 0, 0.35);
     border-bottom-color: #008000;
-    box-shadow: 0 8px 28px rgba(0,128,0,0.12);
+    box-shadow: 0 12px 28px rgba(0, 128, 0, 0.1);
     transform: translateY(-4px);
   }
 
@@ -613,12 +647,14 @@
     width: 100%;
     top: 0;
     z-index: 50;
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
     transition: box-shadow 0.3s ease;
   }
 
   .ecasi-sticky-nav.scrolled {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 20px rgba(3, 46, 66, 0.08);
   }
 }
 
@@ -684,15 +720,15 @@
   .text-ecasi-green { color: #008000; }
   .text-ecasi-navy { color: #032e42; }
   .text-ecasi-red { color: #d83030; }
-  .text-ecasi-teal { color: #20b2aa; }
+  .text-ecasi-teal { color: #008000; }
   .text-ecasi-blue { color: #1e73be; }
-  .text-ecasi-body { color: #676767; }
+  .text-ecasi-body { color: #475569; }
 
   .bg-ecasi-green { background-color: #008000; }
   .bg-ecasi-navy { background-color: #032e42; }
   .bg-ecasi-red { background-color: #d83030; }
-  .bg-ecasi-teal { background-color: #20b2aa; }
-  .bg-ecasi-section { background-color: #f2f2f2; }
+  .bg-ecasi-teal { background-color: #008000; }
+  .bg-ecasi-section { background-color: #F5F8FC; }
 
   .border-ecasi-green { border-color: #008000; }
   .border-ecasi-red { border-color: #d83030; }

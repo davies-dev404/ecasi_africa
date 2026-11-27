@@ -1,8 +1,15 @@
 // ECAS Institute - Msimamizi Administrative Service
 // Real-time persistent data service for Course Registrations, Corporate Quotes & Portal Analytics
 
+import { dataService } from '@/lib/dataService';
+import { realtimeService } from '@/services/realtimeService';
+
 const STORAGE_KEY = 'ecasi_course_registrations_live';
 const INQUIRIES_KEY = 'ecasi_course_inquiries_live';
+const DELETED_INQUIRIES_KEY = 'ecasi_deleted_inquiries_v1';
+const DELETED_REGS_KEY = 'ecasi_deleted_registrations_v1';
+const PENDING_INQUIRIES_KEY = 'ecasi_pending_inquiry_sync_v1';
+const PENDING_REGS_KEY = 'ecasi_pending_reg_sync_v1';
 const APPLICATIONS_KEY = 'ecasi_vacancy_applications_live';
 const VACANCIES_KEY = 'ecasi_vacancies';
 const ADMIN_AUTH_KEY = 'ecasi_msimamizi_auth';
@@ -30,7 +37,6 @@ export function normalizeAdminEmail(raw) {
 
 export const SUPER_ADMIN_EMAILS = [
   'jacob@ecasiafrica.org',
-  'acob@ecasiafrica.org',
   'riobag@ecasiafrica.org',
   'gift@ecasiafrica.org',
 ];
@@ -142,8 +148,17 @@ function clearLegacyPersistentAuth() {
 export function getSyncUrl() {
   if (typeof window === 'undefined') return '/api/msimamizi-sync.php';
   const host = window.location.hostname;
-  // Both ecasiafrica.org and msimamizi.ecasiafrica.org share the /public_html Document Root
-  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('ecasiafrica.org')) {
+  const port = String(window.location.port || '');
+  // Both ecasiafrica.org and msimamizi.ecasiafrica.org share the /public_html Document Root;
+  // local Vite dev proxies /api/msimamizi-sync.php to server/realtime.js
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('ecasiafrica.org') ||
+    port === '5173' ||
+    port === '4173' ||
+    port === '8080'
+  ) {
     return '/api/msimamizi-sync.php';
   }
   return 'https://ecasiafrica.org/api/msimamizi-sync.php';
@@ -151,8 +166,6 @@ export function getSyncUrl() {
 
 function sendKeepaliveLifecycle(action, explicitToken = '') {
   if (typeof window === 'undefined') return;
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return;
   const token = explicitToken || getStoredAdminToken();
   if (!token) return;
   const payloadStr = JSON.stringify({ action, token });
@@ -220,8 +233,73 @@ if (typeof window !== 'undefined') {
   }
 }
 
-async function pushToServerWithStatus(payload) {
+function readPendingSyncIds(storageKey) {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string' && id) : [];
+  } catch {
+    return [];
+  }
+}
+
+function enqueuePendingSyncId(storageKey, id) {
+  if (typeof window === 'undefined' || !id) return;
+  try {
+    const ids = readPendingSyncIds(storageKey);
+    if (!ids.includes(id)) {
+      ids.unshift(id);
+      localStorage.setItem(storageKey, JSON.stringify(ids.slice(0, 200)));
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function dequeuePendingSyncId(storageKey, id) {
+  if (typeof window === 'undefined' || !id) return;
+  try {
+    const ids = readPendingSyncIds(storageKey);
+    const next = ids.filter((item) => item !== id);
+    if (next.length !== ids.length) {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function trySendBeacon(payloadStr) {
+  if (
+    payloadStr.length >= 60000 ||
+    typeof navigator === 'undefined' ||
+    typeof navigator.sendBeacon !== 'function'
+  ) {
+    return false;
+  }
+  try {
+    return navigator.sendBeacon(
+      getSyncUrl(),
+      new Blob([payloadStr], { type: 'text/plain;charset=UTF-8' })
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function pushToServerWithStatus(payload, options = {}) {
   if (typeof window === 'undefined') return { unreachable: true, status: 0, data: null };
+  let payloadStr = '';
+  try {
+    payloadStr = JSON.stringify(payload);
+  } catch {
+    return { unreachable: true, status: 0, data: null };
+  }
+  const canKeepalive = payloadStr.length < 60000;
+  if (options.beaconFirst && trySendBeacon(payloadStr)) {
+    return { unreachable: false, status: 202, ok: true, beaconQueued: true, data: { success: true } };
+  }
   try {
     const token = getStoredAdminToken();
     const headers = { 'Content-Type': 'application/json' };
@@ -231,21 +309,34 @@ async function pushToServerWithStatus(payload) {
     const res = await fetch(getSyncUrl(), {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload),
+      body: payloadStr,
+      ...(canKeepalive ? { keepalive: true } : {}),
     });
+    if ([502, 503, 504].includes(res.status)) {
+      return { unreachable: true, status: res.status, data: null };
+    }
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
+      if (options.beaconFallback) {
+        trySendBeacon(payloadStr);
+      }
       return { unreachable: true, status: res.status, data: null };
     }
     const data = await res.json();
+    if (!res.ok && options.beaconFallback) {
+      trySendBeacon(payloadStr);
+    }
     return { unreachable: false, status: res.status, ok: res.ok, data };
   } catch {
+    if (options.beaconFallback) {
+      trySendBeacon(payloadStr);
+    }
     return { unreachable: true, status: 0, data: null };
   }
 }
 
-async function pushToServer(payload) {
-  const result = await pushToServerWithStatus(payload);
+async function pushToServer(payload, options = {}) {
+  const result = await pushToServerWithStatus(payload, options);
   if (result.unreachable || !result.ok) return null;
   return result.data;
 }
@@ -276,9 +367,92 @@ class AdminRegistrationService {
       if (this.isAuthenticated()) {
         this._resumeLocalSessionLock();
       }
+      this._runAccountAndTestCleanups();
       this.syncFromServer();
     } catch (e) {
       console.warn('LocalStorage error initializing admin registrations:', e);
+    }
+  }
+
+  _runAccountAndTestCleanups() {
+    if (typeof window === 'undefined') return;
+    try {
+      // Remove legacy typo admin account acob@ecasiafrica.org cleanly
+      const rawAcc = localStorage.getItem(ADMIN_ACCOUNTS_KEY);
+      if (rawAcc) {
+        const parsed = JSON.parse(rawAcc);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((a) => normalizeAdminEmail(a?.email) !== 'acob@ecasiafrica.org');
+          if (filtered.length !== parsed.length) {
+            localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(filtered));
+          }
+        }
+      }
+
+      // One-time local purge of Gift Rioba's test registration/invoice/payment records (mwangorioba@gmail.com)
+      if (!localStorage.getItem('ecasi_purged_gift_test_20261126')) {
+        const purgedRegIds = [];
+        const rawRegs = localStorage.getItem(STORAGE_KEY);
+        if (rawRegs) {
+          const regs = JSON.parse(rawRegs);
+          if (Array.isArray(regs)) {
+            const nextRegs = regs.filter((r) => {
+              const ref = String(r?.referenceNo || '').toUpperCase();
+              const e1 = String(r?.officialEmail || '').toLowerCase();
+              const e2 = String(r?.personalEmail || '').toLowerCase();
+              const isTest = ref === 'ECAS-400827-1495' || e1 === 'mwangorioba@gmail.com' || e2 === 'mwangorioba@gmail.com';
+              if (isTest && r?.id) purgedRegIds.push(r.id);
+              return !isTest;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRegs));
+          }
+        }
+
+        if (purgedRegIds.length > 0) {
+          const rawDel = localStorage.getItem(DELETED_REGS_KEY);
+          const delArr = rawDel ? JSON.parse(rawDel) : [];
+          const mergedDel = Array.from(new Set([...(Array.isArray(delArr) ? delArr : []), ...purgedRegIds]));
+          localStorage.setItem(DELETED_REGS_KEY, JSON.stringify(mergedDel.slice(0, 2000)));
+        }
+
+        const purgedInvIds = [];
+        const rawInvs = localStorage.getItem('ecasi_msimamizi_invoices_v1');
+        if (rawInvs) {
+          const invs = JSON.parse(rawInvs);
+          if (Array.isArray(invs)) {
+            const nextInvs = invs.filter((inv) => {
+              const invNo = String(inv?.invoiceNo || '').toUpperCase();
+              const email = String(inv?.applicantEmail || '').toLowerCase();
+              const isTest = invNo === 'ECAS-INV-2026-0001' || email === 'mwangorioba@gmail.com' || (inv?.registrationId && purgedRegIds.includes(inv.registrationId));
+              if (isTest && inv?.id) purgedInvIds.push(inv.id);
+              return !isTest;
+            });
+            localStorage.setItem('ecasi_msimamizi_invoices_v1', JSON.stringify(nextInvs));
+          }
+        }
+
+        const rawPays = localStorage.getItem('ecasi_msimamizi_payments_v1');
+        if (rawPays) {
+          const pays = JSON.parse(rawPays);
+          if (Array.isArray(pays)) {
+            const nextPays = pays.filter((pay) => {
+              const invNo = String(pay?.invoiceNo || '').toUpperCase();
+              const ref = String(pay?.reference || '').toLowerCase().trim();
+              const name = String(pay?.applicantName || '').toLowerCase().trim();
+              const isTest = (pay?.invoiceId && purgedInvIds.includes(pay.invoiceId))
+                || (pay?.registrationId && purgedRegIds.includes(pay.registrationId))
+                || invNo === 'ECAS-INV-2026-0001'
+                || (ref === 'cheque' && name === 'gift rioba');
+              return !isTest;
+            });
+            localStorage.setItem('ecasi_msimamizi_payments_v1', JSON.stringify(nextPays));
+          }
+        }
+
+        localStorage.setItem('ecasi_purged_gift_test_20261126', 'true');
+      }
+    } catch {
+      // ignore cleanup errors
     }
   }
 
@@ -430,166 +604,330 @@ class AdminRegistrationService {
     }
   }
 
-  async syncFromServer() {
+  async _flushPendingPublicWrites() {
     if (typeof window === 'undefined') return;
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return;
 
-    try {
-      const isAuth = this.isAuthenticated();
-      const token = getStoredAdminToken();
-      const scope = isAuth && token ? 'admin' : 'public';
-      const headers = {};
-      if (token) {
-        headers['X-Admin-Token'] = token;
-      }
-
-      const res = await fetch(`${getSyncUrl()}?scope=${scope}`, {
-        method: 'GET',
-        headers,
-        cache: 'no-store',
-      });
-      if (!res.ok) return;
-      const json = await res.json();
-      if (scope === 'admin' && json?.authenticated === false) {
-        this.logout();
-        window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
-        return;
-      }
-      if (!json?.success || !json?.data) return;
-
-      const {
-        registrations,
-        inquiries,
-        courses,
-        vacancies,
-        applications,
-        accounts,
-        invoices,
-        payments,
-        cohorts,
-        communications,
-        templates,
-        announcements,
-        cmsContent,
-        settings,
-        auditEvents,
-        securityAlerts,
-        securityIncidents,
-        securityStats,
-      } = json.data;
-
-      try {
-        if (Array.isArray(invoices)) localStorage.setItem('ecasi_msimamizi_invoices_v1', JSON.stringify(invoices));
-        if (Array.isArray(payments)) localStorage.setItem('ecasi_msimamizi_payments_v1', JSON.stringify(payments));
-        if (Array.isArray(cohorts)) localStorage.setItem('ecasi_msimamizi_cohorts_v1', JSON.stringify(cohorts));
-        if (Array.isArray(communications)) localStorage.setItem('ecasi_msimamizi_communications_v1', JSON.stringify(communications));
-        if (Array.isArray(templates) && templates.length > 0) localStorage.setItem('ecasi_msimamizi_templates_v1', JSON.stringify(templates));
-        if (Array.isArray(announcements)) localStorage.setItem('ecasi_msimamizi_announcements_v1', JSON.stringify(announcements));
-        if (cmsContent && typeof cmsContent === 'object' && Object.keys(cmsContent).length > 0) {
-          localStorage.setItem('ecasi_msimamizi_cms_v1', JSON.stringify(cmsContent));
+    const pendingInqIds = readPendingSyncIds(PENDING_INQUIRIES_KEY);
+    if (pendingInqIds.length > 0) {
+      const localInq = this.getInquiries();
+      for (const id of pendingInqIds) {
+        const item = localInq.find((inq) => inq.id === id);
+        if (!item) {
+          dequeuePendingSyncId(PENDING_INQUIRIES_KEY, id);
+          continue;
         }
-        if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
-          localStorage.setItem('ecasi_msimamizi_settings_v1', JSON.stringify(settings));
+        const res = await pushToServerWithStatus({ action: 'add_inquiry', inquiry: item });
+        if (res?.ok && res.data?.success) {
+          dequeuePendingSyncId(PENDING_INQUIRIES_KEY, id);
         }
-        if (Array.isArray(auditEvents)) localStorage.setItem('ecasi_msimamizi_audit_events_v1', JSON.stringify(auditEvents));
-        if (Array.isArray(securityAlerts)) localStorage.setItem('ecasi_msimamizi_security_alerts_v1', JSON.stringify(securityAlerts));
-        if (Array.isArray(securityIncidents)) localStorage.setItem('ecasi_msimamizi_security_incidents_v1', JSON.stringify(securityIncidents));
-        if (securityStats && typeof securityStats === 'object') localStorage.setItem('ecasi_msimamizi_security_stats_v1', JSON.stringify(securityStats));
-        if (typeof json.mfaEnabled === 'boolean') {
-          const curRaw = sessionStorage.getItem(ADMIN_CURRENT_USER_KEY);
-          if (curRaw) {
-            const parsedCur = JSON.parse(curRaw);
-            sessionStorage.setItem(ADMIN_CURRENT_USER_KEY, JSON.stringify({ ...parsedCur, mfaEnabled: json.mfaEnabled }));
-          }
-        }
-        window.dispatchEvent(new CustomEvent('ecasi_enterprise_updated', { detail: { topic: 'server_sync' } }));
-      } catch {
-        // ignore storage quota errors on secondary cache
       }
-
-      if (Array.isArray(registrations) && registrations.length > 0) {
-        const localRegs = this.getRegistrations();
-        const mergedMap = new Map();
-        [...registrations, ...localRegs].forEach((r) => {
-          const key = r.id || r.referenceNo;
-          if (key && !mergedMap.has(key)) {
-            mergedMap.set(key, r);
-          }
-        });
-        const merged = Array.from(mergedMap.values());
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-        window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
-      }
-
-      if (Array.isArray(inquiries) && inquiries.length > 0) {
-        const localInq = this.getInquiries();
-        const mergedInqMap = new Map();
-        [...inquiries, ...localInq].forEach((inq) => {
-          const key = inq.id || inq.referenceNo;
-          if (key && !mergedInqMap.has(key)) {
-            mergedInqMap.set(key, inq);
-          }
-        });
-        const mergedInq = Array.from(mergedInqMap.values());
-        localStorage.setItem(INQUIRIES_KEY, JSON.stringify(mergedInq));
-        window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
-      }
-
-      if (Array.isArray(vacancies)) {
-        localStorage.setItem(VACANCIES_KEY, JSON.stringify(vacancies));
-        window.dispatchEvent(new CustomEvent('ecasi_vacancies_updated'));
-      }
-
-      if (Array.isArray(applications) && applications.length > 0) {
-        const localApps = this.getApplications();
-        const mergedAppsMap = new Map();
-        [...applications, ...localApps].forEach((app) => {
-          const key = app.id || app.referenceNo;
-          if (key && !mergedAppsMap.has(key)) {
-            mergedAppsMap.set(key, app);
-          }
-        });
-        const mergedApps = Array.from(mergedAppsMap.values());
-        localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(mergedApps));
-        window.dispatchEvent(new CustomEvent('ecasi_applications_updated'));
-      }
-
-      if (courses && typeof courses === 'object' && Object.keys(courses).length > 0) {
-        const localCoursesRaw = localStorage.getItem(COURSES_KEY);
-        const localCourses = localCoursesRaw ? JSON.parse(localCoursesRaw) : {};
-        const mergedCourses = { ...localCourses, ...courses };
-        localStorage.setItem(COURSES_KEY, JSON.stringify(mergedCourses));
-        window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
-      }
-
-      if (Array.isArray(accounts) && accounts.length > 0) {
-        const localAccounts = this.getAdminAccounts();
-        const accountMap = new Map();
-        localAccounts.forEach((loc) => {
-          const em = normalizeAdminEmail(loc.email);
-          if (em) accountMap.set(em, { ...loc, email: em });
-        });
-        accounts.forEach((rem) => {
-          const em = normalizeAdminEmail(rem.email);
-          if (!em) return;
-          const existing = accountMap.get(em) || { email: em, role: 'Administrator' };
-          accountMap.set(em, {
-            ...existing,
-            name: rem.name || existing.name || '',
-            role: rem.role || existing.role || 'Administrator',
-            status: rem.status || existing.status || 'Active',
-            passwordInitialized: Boolean(rem.passwordInitialized || existing.passwordInitialized),
-            credentialDigest: rem.credentialDigest || existing.credentialDigest,
-            updatedAt: rem.updatedAt || existing.updatedAt,
-          });
-        });
-        localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(Array.from(accountMap.values())));
-        window.dispatchEvent(new CustomEvent('ecasi_accounts_updated'));
-      }
-    } catch {
-      // Ignore network sync errors
     }
+
+    const pendingRegIds = readPendingSyncIds(PENDING_REGS_KEY);
+    if (pendingRegIds.length > 0) {
+      const localRegs = this.getRegistrations();
+      for (const id of pendingRegIds) {
+        const item = localRegs.find((reg) => reg.id === id);
+        if (!item) {
+          dequeuePendingSyncId(PENDING_REGS_KEY, id);
+          continue;
+        }
+        const res = await pushToServerWithStatus({ action: 'add_registration', registration: item });
+        if (res?.ok && res.data?.success) {
+          dequeuePendingSyncId(PENDING_REGS_KEY, id);
+        }
+      }
+    }
+  }
+
+  async syncFromServer() {
+    if (typeof window === 'undefined') return { ok: false, error: 'SSR' };
+
+    const requestedScope = this.isAuthenticated() && getStoredAdminToken() ? 'admin' : 'public';
+    if (this._activeSyncPromise) {
+      if (this._activeSyncScope === requestedScope || requestedScope === 'public') {
+        return this._activeSyncPromise;
+      }
+      try {
+        await this._activeSyncPromise;
+      } catch {
+        // Proceed with authenticated admin sync after public sync settles
+      }
+    }
+
+    let currentPromise = null;
+    this._activeSyncScope = requestedScope;
+    currentPromise = (async () => {
+      try {
+        await this._flushPendingPublicWrites();
+        const isAuth = this.isAuthenticated();
+        const token = getStoredAdminToken();
+        const scope = isAuth && token ? 'admin' : 'public';
+        const headers = {};
+        if (token) {
+          headers['X-Admin-Token'] = token;
+        }
+
+        const res = await fetch(`${getSyncUrl()}?scope=${scope}&t=${Date.now()}`, {
+          method: 'GET',
+          headers,
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          return { ok: false, scope, status: res.status, error: `Server returned HTTP ${res.status}` };
+        }
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          return { ok: false, scope, error: 'Sync endpoint returned non-JSON response' };
+        }
+        const json = await res.json();
+        if (scope === 'admin' && json?.authenticated === false) {
+          this.logout();
+          window.dispatchEvent(new CustomEvent('ecasi_session_invalidated'));
+          return { ok: false, scope, authenticated: false, error: 'Administrator session expired' };
+        }
+        if (!json?.success || !json?.data) {
+          return { ok: false, scope, error: json?.error || 'Invalid sync payload' };
+        }
+
+        const {
+          registrations,
+          inquiries,
+          deletedInquiryIds,
+          deletedRegistrationIds,
+          courses,
+          vacancies,
+          applications,
+          accounts,
+          invoices,
+          payments,
+          cohorts,
+          communications,
+          templates,
+          announcements,
+          cmsContent,
+          gallery,
+          galleryCustomized,
+          resources,
+          resourcesCustomized,
+          settings,
+          auditEvents,
+          securityAlerts,
+          securityIncidents,
+          securityStats,
+        } = json.data;
+
+        try {
+          dataService.applyServerMediaSnapshot({ gallery, galleryCustomized, resources, resourcesCustomized });
+        } catch {
+          // ignore
+        }
+
+        try {
+          if (Array.isArray(invoices)) localStorage.setItem('ecasi_msimamizi_invoices_v1', JSON.stringify(invoices));
+          if (Array.isArray(payments)) localStorage.setItem('ecasi_msimamizi_payments_v1', JSON.stringify(payments));
+          if (Array.isArray(cohorts)) localStorage.setItem('ecasi_msimamizi_cohorts_v1', JSON.stringify(cohorts));
+          if (Array.isArray(communications)) localStorage.setItem('ecasi_msimamizi_communications_v1', JSON.stringify(communications));
+          if (Array.isArray(templates) && templates.length > 0) localStorage.setItem('ecasi_msimamizi_templates_v1', JSON.stringify(templates));
+          if (Array.isArray(announcements)) localStorage.setItem('ecasi_msimamizi_announcements_v1', JSON.stringify(announcements));
+          if (cmsContent && typeof cmsContent === 'object' && Object.keys(cmsContent).length > 0) {
+            localStorage.setItem('ecasi_msimamizi_cms_v1', JSON.stringify(cmsContent));
+          }
+          if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
+            localStorage.setItem('ecasi_msimamizi_settings_v1', JSON.stringify(settings));
+          }
+          if (Array.isArray(auditEvents)) localStorage.setItem('ecasi_msimamizi_audit_events_v1', JSON.stringify(auditEvents));
+          if (Array.isArray(securityAlerts)) localStorage.setItem('ecasi_msimamizi_security_alerts_v1', JSON.stringify(securityAlerts));
+          if (Array.isArray(securityIncidents)) localStorage.setItem('ecasi_msimamizi_security_incidents_v1', JSON.stringify(securityIncidents));
+          if (securityStats && typeof securityStats === 'object') localStorage.setItem('ecasi_msimamizi_security_stats_v1', JSON.stringify(securityStats));
+          if (typeof json.mfaEnabled === 'boolean') {
+            const curRaw = sessionStorage.getItem(ADMIN_CURRENT_USER_KEY);
+            if (curRaw) {
+              const parsedCur = JSON.parse(curRaw);
+              sessionStorage.setItem(ADMIN_CURRENT_USER_KEY, JSON.stringify({ ...parsedCur, mfaEnabled: json.mfaEnabled }));
+            }
+          }
+          window.dispatchEvent(new CustomEvent('ecasi_enterprise_updated', { detail: { topic: 'server_sync' } }));
+        } catch {
+          // ignore storage quota errors on secondary cache
+        }
+
+        if (scope === 'admin' && Array.isArray(registrations)) {
+          let localDelRegs = [];
+          try {
+            const rawDelReg = localStorage.getItem(DELETED_REGS_KEY);
+            localDelRegs = rawDelReg ? JSON.parse(rawDelReg) : [];
+          } catch {
+            localDelRegs = [];
+          }
+          const delRegSet = new Set([
+            ...(Array.isArray(deletedRegistrationIds) ? deletedRegistrationIds : []),
+            ...(Array.isArray(localDelRegs) ? localDelRegs : []),
+          ]);
+          try {
+            localStorage.setItem(DELETED_REGS_KEY, JSON.stringify(Array.from(delRegSet).slice(0, 2000)));
+          } catch {
+            // ignore
+          }
+          const localRegs = this.getRegistrations();
+          const mergedMap = new Map();
+          [...registrations, ...localRegs].forEach((r) => {
+            if (!r) return;
+            if (r.id && delRegSet.has(r.id)) return;
+            const key = r.id || r.referenceNo;
+            if (key && !mergedMap.has(key)) {
+              mergedMap.set(key, r);
+            }
+          });
+          const merged = Array.from(mergedMap.values());
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
+        } else if (Array.isArray(registrations) && registrations.length > 0) {
+          const localRegs = this.getRegistrations();
+          const mergedMap = new Map();
+          [...registrations, ...localRegs].forEach((r) => {
+            const key = r.id || r.referenceNo;
+            if (key && !mergedMap.has(key)) {
+              mergedMap.set(key, r);
+            }
+          });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(mergedMap.values())));
+          window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
+        }
+
+        if (scope === 'admin' && Array.isArray(inquiries)) {
+          let localDeletedIds = [];
+          try {
+            const rawDel = localStorage.getItem(DELETED_INQUIRIES_KEY);
+            localDeletedIds = rawDel ? JSON.parse(rawDel) : [];
+          } catch {
+            localDeletedIds = [];
+          }
+          const deletedSet = new Set([
+            ...(Array.isArray(deletedInquiryIds) ? deletedInquiryIds : []),
+            ...(Array.isArray(localDeletedIds) ? localDeletedIds : []),
+          ]);
+          try {
+            localStorage.setItem(DELETED_INQUIRIES_KEY, JSON.stringify(Array.from(deletedSet).slice(0, 2000)));
+          } catch {
+            // ignore
+          }
+
+          const serverKeys = new Set();
+          inquiries.forEach((inq) => {
+            if (inq?.id) serverKeys.add(`id:${inq.id}`);
+            if (inq?.referenceNo) serverKeys.add(`ref:${inq.referenceNo}`);
+          });
+
+          const localInq = this.getInquiries();
+          const unsyncedLocal = localInq
+            .filter((inq) => {
+              if (!inq || (inq.id && deletedSet.has(inq.id))) return false;
+              const hasId = inq.id && serverKeys.has(`id:${inq.id}`);
+              const hasRef = inq.referenceNo && serverKeys.has(`ref:${inq.referenceNo}`);
+              return !hasId && !hasRef;
+            })
+            .map((inq) => ({
+              ...inq,
+              id: inq.id || (inq.referenceNo ? `INQ-${String(inq.referenceNo).replace(/[^a-zA-Z0-9_-]/g, '')}` : `INQ-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`),
+            }));
+
+          let mergedAdded = 0;
+          let finalInquiries = inquiries.filter((inq) => !inq?.id || !deletedSet.has(inq.id));
+          if (unsyncedLocal.length > 0) {
+            const mergeRes = await pushToServer({ action: 'merge_inquiries', inquiries: unsyncedLocal });
+            if (mergeRes?.success && Array.isArray(mergeRes.inquiries)) {
+              finalInquiries = mergeRes.inquiries;
+              mergedAdded = Number(mergeRes.added || 0);
+              if (mergedAdded > 0) {
+                realtimeService.publish('inquiries', { action: 'merge_inquiries', added: mergedAdded });
+              }
+            } else {
+              finalInquiries = [...unsyncedLocal, ...finalInquiries];
+            }
+          }
+
+          localStorage.setItem(INQUIRIES_KEY, JSON.stringify(finalInquiries));
+          window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
+          this._lastSyncStats = {
+            scope,
+            inquiriesCount: finalInquiries.length,
+            mergedAdded,
+            registrationsCount: Array.isArray(registrations) ? registrations.length : this.getRegistrations().length,
+          };
+        } else {
+          this._lastSyncStats = {
+            scope,
+            inquiriesCount: this.getInquiries().length,
+            mergedAdded: 0,
+            registrationsCount: Array.isArray(registrations) ? registrations.length : this.getRegistrations().length,
+          };
+        }
+
+        if (Array.isArray(vacancies)) {
+          localStorage.setItem(VACANCIES_KEY, JSON.stringify(vacancies));
+          window.dispatchEvent(new CustomEvent('ecasi_vacancies_updated'));
+        }
+
+        if (Array.isArray(applications) && applications.length > 0) {
+          const localApps = this.getApplications();
+          const mergedAppsMap = new Map();
+          [...applications, ...localApps].forEach((app) => {
+            const key = app.id || app.referenceNo;
+            if (key && !mergedAppsMap.has(key)) {
+              mergedAppsMap.set(key, app);
+            }
+          });
+          const mergedApps = Array.from(mergedAppsMap.values());
+          localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(mergedApps));
+          window.dispatchEvent(new CustomEvent('ecasi_applications_updated'));
+        }
+
+        if (courses && typeof courses === 'object' && Object.keys(courses).length > 0) {
+          const localCoursesRaw = localStorage.getItem(COURSES_KEY);
+          const localCourses = localCoursesRaw ? JSON.parse(localCoursesRaw) : {};
+          const mergedCourses = { ...localCourses, ...courses };
+          localStorage.setItem(COURSES_KEY, JSON.stringify(mergedCourses));
+          window.dispatchEvent(new CustomEvent('ecasi_courses_updated'));
+        }
+
+        if (Array.isArray(accounts) && accounts.length > 0) {
+          const localAccounts = this.getAdminAccounts();
+          const accountMap = new Map();
+          localAccounts.forEach((loc) => {
+            const em = normalizeAdminEmail(loc.email);
+            if (em && em !== 'acob@ecasiafrica.org') accountMap.set(em, { ...loc, email: em });
+          });
+          accounts.forEach((rem) => {
+            const em = normalizeAdminEmail(rem.email);
+            if (!em || em === 'acob@ecasiafrica.org') return;
+            const existing = accountMap.get(em) || { email: em, role: 'Administrator' };
+            accountMap.set(em, {
+              ...existing,
+              name: rem.name || existing.name || '',
+              role: rem.role || existing.role || 'Administrator',
+              status: rem.status || existing.status || 'Active',
+              passwordInitialized: Boolean(rem.passwordInitialized || existing.passwordInitialized),
+              credentialDigest: rem.credentialDigest || existing.credentialDigest,
+              updatedAt: rem.updatedAt || existing.updatedAt,
+            });
+          });
+          localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(Array.from(accountMap.values())));
+          window.dispatchEvent(new CustomEvent('ecasi_accounts_updated'));
+        }
+        return { ok: true, ...(this._lastSyncStats || { scope }) };
+      } catch (err) {
+        return { ok: false, error: err?.message || 'Network sync error' };
+      } finally {
+        if (this._activeSyncPromise === currentPromise) {
+          this._activeSyncPromise = null;
+          this._activeSyncScope = null;
+        }
+      }
+    })();
+
+    this._activeSyncPromise = currentPromise;
+    return currentPromise;
   }
 
   // Retrieve all real registrations (no fake mock seeds)
@@ -691,6 +1029,18 @@ class AdminRegistrationService {
 
       const updated = [newRecord, ...existing];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      if (!serverRes?.ok || !serverRes?.data?.success) {
+        enqueuePendingSyncId(PENDING_REGS_KEY, newRecord.id);
+        pushToServerWithStatus({ action: 'add_registration', registration: newRecord, securityMeta }, { beaconFallback: true }).then((res) => {
+          if (res?.ok && res.data?.success) {
+            dequeuePendingSyncId(PENDING_REGS_KEY, newRecord.id);
+          }
+          realtimeService.publish('registrations', { action: 'add_registration', id: newRecord.id });
+        });
+      } else {
+        dequeuePendingSyncId(PENDING_REGS_KEY, newRecord.id);
+        realtimeService.publish('registrations', { action: 'add_registration', id: newRecord.id });
+      }
 
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated', { detail: newRecord }));
       return newRecord;
@@ -707,7 +1057,7 @@ class AdminRegistrationService {
       const existing = this.getRegistrations();
       const updated = existing.map((r) => (r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_registrations', registrations: updated });
+      pushToServer({ action: 'set_registrations', registrations: updated }).then(() => realtimeService.publish('registrations'));
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       return true;
     } catch (e) {
@@ -723,7 +1073,19 @@ class AdminRegistrationService {
       const existing = this.getRegistrations();
       const updated = existing.filter((r) => r.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_registrations', registrations: updated });
+      try {
+        const rawDel = localStorage.getItem(DELETED_REGS_KEY);
+        const delList = rawDel ? JSON.parse(rawDel) : [];
+        if (id && Array.isArray(delList) && !delList.includes(id)) {
+          delList.unshift(id);
+          localStorage.setItem(DELETED_REGS_KEY, JSON.stringify(delList.slice(0, 2000)));
+        }
+      } catch {
+        // ignore tombstone error
+      }
+      pushToServer({ action: 'set_registrations', registrations: updated, deletedRegistrationId: id }).then(() =>
+        realtimeService.publish('registrations')
+      );
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated'));
       return true;
     } catch (e) {
@@ -842,7 +1204,7 @@ class AdminRegistrationService {
     }
   }
 
-  addInquiry(inqData) {
+  addInquiry(inqData, options = {}) {
     if (typeof window === 'undefined') return null;
     try {
       const existing = this.getInquiries();
@@ -857,10 +1219,15 @@ class AdminRegistrationService {
         minute: '2-digit',
       });
 
+      const resolvedChannel = inqData.channel || 'WhatsApp';
+      const standardSources = ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media', 'Manual Registration'];
+      const resolvedSource = inqData.leadSource || (standardSources.includes(resolvedChannel) ? resolvedChannel : 'Website');
+
       const newInquiry = {
         id: newId,
         referenceNo: newRef,
-        channel: inqData.channel || 'WhatsApp',
+        channel: resolvedChannel,
+        leadSource: resolvedSource,
         inquiryType: inqData.inquiryType || 'Course Inquiry',
         fullName: inqData.fullName || 'Prospective Delegate',
         email: inqData.email || '',
@@ -882,7 +1249,17 @@ class AdminRegistrationService {
 
       const updated = [newInquiry, ...existing];
       localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'add_inquiry', inquiry: newInquiry });
+      enqueuePendingSyncId(PENDING_INQUIRIES_KEY, newInquiry.id);
+      pushToServerWithStatus(
+        { action: 'add_inquiry', inquiry: newInquiry },
+        { beaconFallback: true, beaconFirst: Boolean(options.beaconFirst) }
+      ).then((res) => {
+        if (res?.ok && res.data?.success) {
+          dequeuePendingSyncId(PENDING_INQUIRIES_KEY, newInquiry.id);
+        }
+        realtimeService.publish('inquiries', { action: 'add_inquiry', id: newInquiry.id });
+      });
+      realtimeService.publish('inquiries', { action: 'add_inquiry', id: newInquiry.id });
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated', { detail: newInquiry }));
       return newInquiry;
     } catch (e) {
@@ -891,15 +1268,47 @@ class AdminRegistrationService {
     }
   }
 
+  trackOutboundChannel(channel, label, extra = {}) {
+    if (typeof window === 'undefined') return null;
+    try {
+      const pagePath = window.location.pathname || '/';
+      const cooldownKey = `ecasi_track_${channel}_${extra.courseTitle || pagePath}`;
+      const last = Number(sessionStorage.getItem(cooldownKey) || 0);
+      const now = Date.now();
+      if (now - last < 5 * 60 * 1000) return null;
+      sessionStorage.setItem(cooldownKey, String(now));
+      return this.addInquiry(
+        {
+          channel,
+          leadSource: ['Website', 'WhatsApp', 'Email', 'Telephone', 'Social Media'].includes(channel) ? channel : 'Website',
+          inquiryType: extra.inquiryType || `${label} Inquiry`,
+          fullName: extra.fullName || `Website Visitor (${label})`,
+          courseTitle: extra.courseTitle || 'General Institutional Inquiry',
+          venue: extra.venue || 'Nairobi / Online',
+          message: extra.message || `Visitor initiated ${label} from ${pagePath}.`,
+        },
+        { beaconFirst: true }
+      );
+    } catch {
+      return null;
+    }
+  }
+
   updateInquiry(id, updates) {
     if (typeof window === 'undefined') return false;
     try {
       const existing = this.getInquiries();
+      const target = existing.find((inq) => inq.id === id);
       const updated = existing.map((inq) =>
         inq.id === id ? { ...inq, ...updates, updatedAt: new Date().toISOString() } : inq
       );
       localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_inquiries', inquiries: updated });
+      pushToServer({
+        action: 'update_inquiry',
+        id,
+        updates,
+        ...(target ? { inquiry: target } : {}),
+      }, { beaconFallback: true }).then(() => realtimeService.publish('inquiries', { action: 'update_inquiry', id }));
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
       return true;
     } catch (e) {
@@ -914,7 +1323,17 @@ class AdminRegistrationService {
       const existing = this.getInquiries();
       const updated = existing.filter((inq) => inq.id !== id);
       localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'set_inquiries', inquiries: updated });
+      try {
+        const rawDel = localStorage.getItem(DELETED_INQUIRIES_KEY);
+        const delList = rawDel ? JSON.parse(rawDel) : [];
+        if (id && Array.isArray(delList) && !delList.includes(id)) {
+          delList.unshift(id);
+          localStorage.setItem(DELETED_INQUIRIES_KEY, JSON.stringify(delList.slice(0, 2000)));
+        }
+      } catch {
+        // ignore tombstone write failure
+      }
+      pushToServer({ action: 'delete_inquiry', id }, { beaconFallback: true }).then(() => realtimeService.publish('inquiries', { action: 'delete_inquiry', id }));
       window.dispatchEvent(new CustomEvent('ecasi_inquiry_updated'));
       return true;
     } catch (e) {
@@ -1146,13 +1565,15 @@ class AdminRegistrationService {
     const applications = this.getApplications();
     const totalRegistrations = list.length;
     const pendingCount = list.filter((r) => r.status === 'Pending').length;
-    const confirmedCount = list.filter((r) => r.status === 'Confirmed').length;
+    const confirmedCount = list.filter((r) => r.status === 'Confirmed' && r.paymentStatus === 'Paid').length;
     const approvedCount = list.filter((r) => r.status === 'Approved').length;
-    const totalDelegates = list.reduce((acc, cur) => acc + (Number(cur.participantsCount) || 1), 0);
-    const totalRevenueUSD = list.reduce((acc, cur) => acc + (Number(cur.totalFee) || 0), 0);
+    const totalDelegates = list
+      .filter((r) => r.status === 'Confirmed' && r.paymentStatus === 'Paid')
+      .reduce((acc, cur) => acc + (Number(cur.participantsCount) || 1), 0);
     const paidRevenueUSD = list
-      .filter((r) => r.paymentStatus === 'Paid')
+      .filter((r) => r.paymentStatus === 'Paid' && (r.status === 'Confirmed' || r.status === 'Completed' || r.workflowStage === 'Enrolment Confirmed' || r.workflowStage === 'Payment Confirmed'))
       .reduce((acc, cur) => acc + (Number(cur.totalFee) || 0), 0);
+    const totalRevenueUSD = paidRevenueUSD;
 
     const totalInquiries = inquiries.length;
     const newInquiriesCount = inquiries.filter((i) => (i.status || 'New') === 'New').length;
@@ -1208,23 +1629,24 @@ class AdminRegistrationService {
       if (data) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Sanitize any legacy plaintext field & ensure Jacob & Gift always remain Super Admins
-          const sanitized = parsed.map((a) => {
-            const copy = { ...a };
-            if (copy.password && !copy.credentialDigest) {
-              copy.credentialDigest = computeCredentialDigest(copy.email, copy.password);
-            }
-            delete copy.password;
-            const norm = normalizeAdminEmail(copy.email);
-            if (isSuperAdminEmail(norm)) {
-              copy.role = 'SUPER_ADMIN';
-              copy.status = 'Active';
-              if (!copy.name) {
-                copy.name = norm.includes('jacob') || norm.includes('acob') ? 'Jacob Olonde' : 'Gift Rioba';
+          const sanitized = parsed
+            .filter((a) => normalizeAdminEmail(a?.email) !== 'acob@ecasiafrica.org')
+            .map((a) => {
+              const copy = { ...a };
+              if (copy.password && !copy.credentialDigest) {
+                copy.credentialDigest = computeCredentialDigest(copy.email, copy.password);
               }
-            }
-            return copy;
-          });
+              delete copy.password;
+              const norm = normalizeAdminEmail(copy.email);
+              if (isSuperAdminEmail(norm)) {
+                copy.role = 'SUPER_ADMIN';
+                copy.status = 'Active';
+                if (!copy.name) {
+                  copy.name = norm.includes('jacob') ? 'Jacob Olonde' : 'Gift Rioba';
+                }
+              }
+              return copy;
+            });
           return sanitized;
         }
       }
@@ -1280,7 +1702,7 @@ class AdminRegistrationService {
     if (!this.isAuthorizedAdminEmail(cleanEmail)) {
       return {
         success: false,
-        message: 'Unauthorized email. Msimamizi portal access requires an official @ecasiafrica.org email address.',
+        message: 'Unable to activate this account. Please verify your email or contact your system administrator.',
       };
     }
 
@@ -1300,7 +1722,7 @@ class AdminRegistrationService {
         return {
           success: false,
           code: 'PASSWORD_ALREADY_SET',
-          message: 'Your password has already been created and is permanently locked. Please use Sign In with your existing password.',
+          message: 'Unable to complete setup for this account. Please sign in with your existing password.',
         };
       }
 
@@ -1333,7 +1755,7 @@ class AdminRegistrationService {
             code: 'PASSWORD_ALREADY_SET',
             message:
               serverRes.data?.error ||
-              'Your password has already been created and is permanently locked. Please use Sign In with your existing password.',
+              'Unable to complete setup for this account. Please sign in with your existing password.',
           };
         }
         if (!serverRes.ok || !serverRes.data?.success) {
@@ -1373,7 +1795,7 @@ class AdminRegistrationService {
         requiresSignIn: true,
         message:
           serverRes.data?.message ||
-          'Your password has been securely created and permanently locked. Please sign in now using your new password.',
+          'Account password configured successfully. Please sign in to continue.',
         user: { email: cleanEmail, role: resolvedRole },
       };
     } catch (e) {
@@ -1393,8 +1815,7 @@ class AdminRegistrationService {
     } catch {
       // ignore
     }
-    const host = window.location.hostname;
-    if (host !== 'localhost' && host !== '127.0.0.1' && now - (this._lastServerTouchAt || 0) >= 45000) {
+    if (now - (this._lastServerTouchAt || 0) >= 45000 && getStoredAdminToken()) {
       this._lastServerTouchAt = now;
       pushToServerWithStatus({ action: 'touch_activity' }).then((res) => {
         if (!res.unreachable && res.status === 401) {
@@ -1407,12 +1828,14 @@ class AdminRegistrationService {
 
   async verifyServerSession() {
     if (typeof window === 'undefined') return true;
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return this.isAuthenticated();
-    }
     const token = getStoredAdminToken();
-    if (!token) return false;
+    if (!token) {
+      const host = window.location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1') {
+        return this.isAuthenticated();
+      }
+      return false;
+    }
     const res = await pushToServerWithStatus({ action: 'heartbeat' });
     if (!res.unreachable && res.status === 401) {
       this.logout();
@@ -1471,7 +1894,7 @@ class AdminRegistrationService {
     if (!this.isAuthorizedAdminEmail(inputUser)) {
       return {
         success: false,
-        message: 'Access restricted. Please sign in with your official @ecasiafrica.org administrator email.',
+        message: 'Invalid email or password.',
       };
     }
 
@@ -1562,7 +1985,7 @@ class AdminRegistrationService {
         this._storeToken(serverRes.data.token);
       }
       this._setAuthSession(inputUser, role, mfaEnabled);
-      this.syncFromServer();
+      await this.syncFromServer();
       return { success: true, user: { email: inputUser, role, mfaEnabled } };
     }
 

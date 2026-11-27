@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   Users,
-  GraduationCap,
   Calendar,
   DollarSign,
   MapPin,
@@ -40,12 +39,12 @@ import {
   Building2,
   Paperclip,
   Eye,
-  TrendingUp,
   Bell,
-  Activity,
+  Wifi,
 } from 'lucide-react';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
 import { dataService } from '@/lib/dataService';
+import { realtimeService } from '@/services/realtimeService';
 import TurnstileWidget from '@/components/TurnstileWidget';
 import { verifyTurnstile } from '@/services/turnstileService';
 import { printRegistrationVoucher } from '@/utils/printRegistrationVoucher';
@@ -60,6 +59,7 @@ import {
   getRoleDefinition,
   getEffectiveRegistrationStage,
   getRegistrationSecurityInfo,
+  isConfirmedPaidEnrolment,
   normalizeLeadStatus,
   normalizeCandidateStage,
 } from '@/services/msimamiziEnterpriseService';
@@ -76,6 +76,7 @@ const ReportsModule = lazy(() => import('@/components/msimamizi/ReportsModule'))
 const CommunicationsModule = lazy(() => import('@/components/msimamizi/CommunicationsModule'));
 const WebsiteCmsModule = lazy(() => import('@/components/msimamizi/WebsiteCmsModule'));
 const AdministrationModule = lazy(() => import('@/components/msimamizi/AdministrationModule'));
+const DocumentViewerPage = lazy(() => import('@/components/msimamizi/DocumentViewerPage'));
 
 const ModuleSkeleton = () => (
   <div className="space-y-4 animate-pulse">
@@ -159,8 +160,7 @@ function MsimamiziAdminInner() {
     }
   };
 
-  // Active Tab across all 41 Master Navigation modules (Persisted across refreshes & URL synced)
-  const validTabIds = useMemo(() => ALL_NAV_ITEMS.map((i) => i.id), []);
+  // Active Tab across all Master Navigation modules (Persisted across refreshes & URL synced)
   const getInitialTab = () => {
     try {
       const validIds = ALL_NAV_ITEMS.map((i) => i.id);
@@ -197,6 +197,7 @@ function MsimamiziAdminInner() {
     setIsNewModalOpen(false);
     setSelectedApplication(null);
     setIsVacancyFormOpen(false);
+    setActiveDocument(null);
     scrollMainTop();
     try {
       localStorage.setItem('msimamizi_active_tab', tab);
@@ -252,9 +253,6 @@ function MsimamiziAdminInner() {
   // New Manual Registration page state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
-  // KPI stats
-  const [kpis, setKpis] = useState(adminRegistrationService.getKPIs());
-
   // Dynamic Courses Management State (Accredited Programs from DataService)
   const [courses, setCourses] = useState(() => dataService.getCoursesList());
   const [vacancies, setVacancies] = useState(() => {
@@ -282,6 +280,7 @@ function MsimamiziAdminInner() {
   });
   const [isPosterDragging, setIsPosterDragging] = useState(false);
   const [posterPreviewModal, setPosterPreviewModal] = useState(null);
+  const [activeDocument, setActiveDocument] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
   // World-Class Filtering & View State for Courses Catalog (Cached in localStorage & sessionStorage)
@@ -547,6 +546,52 @@ function MsimamiziAdminInner() {
     setIsAuthenticated(adminRegistrationService.isAuthenticated());
   }, []);
 
+  const [realtimeTransport, setRealtimeTransport] = useState(() => realtimeService.getTransportState());
+
+  // Automatically sync live data (including new website inquiries) whenever logged in + Socket.IO/SSE real-time push + 30s fallback
+  useEffect(() => {
+    const updateTransport = () => setRealtimeTransport(realtimeService.getTransportState());
+    updateTransport();
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    let syncDebounce = null;
+    const performSync = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      const res = await adminRegistrationService.syncFromServer();
+      if (!cancelled) {
+        loadData();
+        updateTransport();
+        if (res?.mergedAdded > 0) {
+          showToast(`Synced ${res.mergedAdded} new local inquiry lead(s) to server.`);
+        }
+      }
+    };
+    performSync();
+    const syncTimer = window.setInterval(performSync, 30000);
+    const unsubscribeRealtime = realtimeService.subscribe((evt) => {
+      updateTransport();
+      if (
+        ['inquiries', 'registrations', 'applications', 'gallery', 'resources', 'courses', 'vacancies', 'cms', 'announcements', 'finance', 'cohorts', 'sync'].includes(evt?.topic)
+      ) {
+        window.clearTimeout(syncDebounce);
+        syncDebounce = window.setTimeout(() => {
+          performSync();
+        }, 180);
+      }
+    });
+    const onFocusSync = () => {
+      performSync();
+    };
+    window.addEventListener('focus', onFocusSync);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(syncDebounce);
+      window.clearInterval(syncTimer);
+      unsubscribeRealtime();
+      window.removeEventListener('focus', onFocusSync);
+    };
+  }, [isAuthenticated]);
+
   // Enterprise Collections State
   const [invoices, setInvoices] = useState(() => msimamiziEnterpriseService.getInvoices());
   const [payments, setPayments] = useState(() => msimamiziEnterpriseService.getPayments());
@@ -574,7 +619,6 @@ function MsimamiziAdminInner() {
     setInquiries(inqList);
     setVacancies(Array.isArray(vacList) ? vacList : []);
     setApplications(Array.isArray(appList) ? appList : []);
-    setKpis(adminRegistrationService.getKPIs());
     setInvoices(msimamiziEnterpriseService.getInvoices());
     setPayments(msimamiziEnterpriseService.getPayments());
     setCohorts(msimamiziEnterpriseService.getCohorts());
@@ -597,17 +641,39 @@ function MsimamiziAdminInner() {
   useEffect(() => {
     loadData();
     const handleUpdate = () => loadData();
+    const handleOpenDoc = (e) => {
+      if (!e?.detail) return;
+      setEditingCourse(null);
+      setIsNewCourseModalOpen(false);
+      setSelectedReg(null);
+      setIsNewModalOpen(false);
+      setSelectedApplication(null);
+      setIsVacancyFormOpen(false);
+      setActiveDocument(e.detail);
+      if (mainScrollRef.current && typeof mainScrollRef.current.scrollTo === 'function') {
+        mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
     window.addEventListener('ecasi_registration_updated', handleUpdate);
     window.addEventListener('ecasi_inquiry_updated', handleUpdate);
     window.addEventListener('ecasi_vacancies_updated', handleUpdate);
     window.addEventListener('ecasi_applications_updated', handleUpdate);
     window.addEventListener('ecasi_enterprise_updated', handleUpdate);
+    window.addEventListener('ecasi_gallery_updated', handleUpdate);
+    window.addEventListener('ecasi_resources_updated', handleUpdate);
+    window.addEventListener('ecasi_open_document_page', handleOpenDoc);
     return () => {
       window.removeEventListener('ecasi_registration_updated', handleUpdate);
       window.removeEventListener('ecasi_inquiry_updated', handleUpdate);
       window.removeEventListener('ecasi_vacancies_updated', handleUpdate);
       window.removeEventListener('ecasi_applications_updated', handleUpdate);
       window.removeEventListener('ecasi_enterprise_updated', handleUpdate);
+      window.removeEventListener('ecasi_gallery_updated', handleUpdate);
+      window.removeEventListener('ecasi_resources_updated', handleUpdate);
+      window.removeEventListener('ecasi_open_document_page', handleOpenDoc);
     };
   }, []);
 
@@ -848,6 +914,13 @@ function MsimamiziAdminInner() {
     setIsNewModalOpen(false);
     setSelectedApplication(null);
     setIsVacancyFormOpen(false);
+    setActiveDocument(null);
+  };
+
+  const openDocumentPage = (docSpec) => {
+    closeDetailViews();
+    setActiveDocument(docSpec);
+    scrollMainTop();
   };
 
   const openNewCoursePage = () => {
@@ -875,6 +948,7 @@ function MsimamiziAdminInner() {
   };
 
   const activeDetailView =
+    activeDocument ? 'document-view' :
     editingCourse ? 'edit-course' :
     isNewCourseModalOpen ? 'new-course' :
     selectedReg ? 'registration-dossier' :
@@ -968,11 +1042,6 @@ function MsimamiziAdminInner() {
     setAuthError('');
     setAuthSuccess('');
 
-    if (adminRegistrationService.isPasswordInitialized(createEmail)) {
-      setAuthError('Your password has already been created and is permanently locked. Please use Sign In with your existing password.');
-      return;
-    }
-
     if (createPassword !== confirmPassword) {
       setAuthError('Passwords do not match. Please verify both fields.');
       return;
@@ -1010,7 +1079,7 @@ function MsimamiziAdminInner() {
       setAuthMode('login');
       setAuthSuccess(
         result.message ||
-          'Your password has been securely created and permanently locked. Please sign in below with your new password.'
+          'Account password configured successfully. Please sign in to continue.'
       );
     } else {
       setAuthError(result.message);
@@ -1450,81 +1519,12 @@ function MsimamiziAdminInner() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  // Dashboard Analytics Data (Computed live from portal records)
-  const venueAnalyticsData = useMemo(() => {
-    const map = {};
-    registrations.forEach((r) => {
-      const key = (r.venue || 'Nairobi, Kenya').split(',')[0].trim() || 'Nairobi';
-      if (!map[key]) {
-        map[key] = { name: key, revenueUSD: 0, bookings: 0 };
-      }
-      map[key].revenueUSD += Number(r.totalFee) || 0;
-      map[key].bookings += 1;
-    });
-    const list = Object.values(map).sort((a, b) => b.revenueUSD - a.revenueUSD);
-    if (list.length > 0) return list.slice(0, 7);
-    return [
-      { name: 'Nairobi', revenueUSD: 0, bookings: 0 },
-      { name: 'Mombasa', revenueUSD: 0, bookings: 0 },
-      { name: 'Diani', revenueUSD: 0, bookings: 0 },
-      { name: 'Zanzibar', revenueUSD: 0, bookings: 0 },
-      { name: 'Dubai', revenueUSD: 0, bookings: 0 },
-    ];
-  }, [registrations]);
-
-  const statusDistributionData = useMemo(() => {
-    const counts = { Confirmed: 0, Approved: 0, Pending: 0, Completed: 0 };
-    registrations.forEach((r) => {
-      const st = r.status || 'Pending';
-      if (st in counts) {
-        counts[st] += 1;
-      } else {
-        counts.Pending += 1;
-      }
-    });
-    const palette = [
-      { name: 'Confirmed', value: counts.Confirmed, color: '#00a99d' },
-      { name: 'Approved', value: counts.Approved, color: '#0d2240' },
-      { name: 'Pending', value: counts.Pending, color: '#f59e0b' },
-      { name: 'Completed', value: counts.Completed, color: '#008000' },
-    ];
-    return palette.filter((item) => item.value > 0);
-  }, [registrations]);
-
-  const monthlyActivityData = useMemo(() => {
-    const now = new Date();
-    const months = [];
-    for (let i = 5; i >= 0; i -= 1) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
-        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-        label: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-        registrations: 0,
-        inquiries: 0,
-        applications: 0,
-      });
-    }
-    const bucket = Object.fromEntries(months.map((m) => [m.key, m]));
-    const assign = (items, field) => {
-      items.forEach((item) => {
-        const dt = item?.submittedAt ? new Date(item.submittedAt) : null;
-        if (!dt || Number.isNaN(dt.getTime())) return;
-        const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
-        if (bucket[k]) bucket[k][field] += 1;
-      });
-    };
-    assign(registrations, 'registrations');
-    assign(inquiries, 'inquiries');
-    assign(applications, 'applications');
-    return months;
-  }, [registrations, inquiries, applications]);
-
   const initialLoaderOverlay = showInitialLoader ? (
     <div className="fixed inset-0 z-[99999] bg-white flex items-center justify-center font-['Inter',sans-serif] text-[13px] transition-opacity duration-300">
-      <div className="min-w-[260px] text-[#212529] text-center border border-slate-200 rounded-xl shadow-lg bg-white overflow-hidden">
+      <div className="min-w-[260px] text-[#032e42] text-center border border-slate-200 rounded-2xl shadow-lg bg-white overflow-hidden">
         <div className="flex justify-between items-center px-4 py-3 gap-6">
-          <div className="font-['Outfit',sans-serif] text-[24px] font-bold text-[#0d2240] tracking-tight flex items-center">
-            ECAS<span className="text-[#00a99d]">.Msimamizi</span>
+          <div className="font-['Outfit',sans-serif] text-[24px] font-bold text-[#032e42] tracking-tight flex items-center">
+            ECAS<span className="text-[#008000]">.Msimamizi</span>
           </div>
           <svg
             className="animate-spin w-7 h-7"
@@ -1536,7 +1536,7 @@ function MsimamiziAdminInner() {
               d="M20.201,5.169c-8.254,0-14.946,6.692-14.946,14.946c0,8.255,6.692,14.946,14.946,14.946s14.946-6.691,14.946-14.946C35.146,11.861,28.455,5.169,20.201,5.169z M20.201,31.749c-6.425,0-11.634-5.208-11.634-11.634c0-6.425,5.209-11.634,11.634-11.634c6.425,0,11.633,5.209,11.633,11.634C31.834,26.541,26.626,31.749,20.201,31.749z"
             />
             <path
-              fill="#00a99d"
+              fill="#008000"
               d="M26.013,10.047l1.654-2.866c-2.198-1.272-4.743-2.012-7.466-2.012h0v3.312h0C22.32,8.481,24.301,9.057,26.013,10.047z"
             />
           </svg>
@@ -1553,11 +1553,10 @@ function MsimamiziAdminInner() {
   // ─────────────────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#08172e] flex items-center justify-center p-4 font-['Inter',sans-serif] selection:bg-[#00a99d] selection:text-white">
+      <div className="min-h-screen bg-[#032e42] flex items-center justify-center p-4 font-['Inter',sans-serif] selection:bg-[#008000] selection:text-white">
         {initialLoaderOverlay}
         <SEO
-          title="ECAS Msimamizi Admin Portal"
-          description="ECAS Institute administrative portal."
+          title="Portal"
           noIndex
         />
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100">
@@ -1569,15 +1568,11 @@ function MsimamiziAdminInner() {
                 <img src="/logo.png" alt="ECAS Institute" className="w-full h-full object-contain" />
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                ECAS Msimamizi
+                ECASI Msimamizi
               </h1>
               <p className="text-xs text-white/80 mt-1 uppercase tracking-widest font-semibold">
-                Executive Training Admin Portal
+                Administrative Portal
               </p>
-              <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#008000]/30 border border-[#008000]/50 text-white text-[11px] font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00c853] animate-pulse" />
-                msimamizi.ecasiafrica.org
-              </div>
             </div>
           </div>
 
@@ -1671,7 +1666,7 @@ function MsimamiziAdminInner() {
             <form onSubmit={handleLoginSubmit} className="p-6 sm:p-8 space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Administrator Email / Username
+                  Administrator Email
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1680,7 +1675,7 @@ function MsimamiziAdminInner() {
                     required
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
-                    placeholder="admin@ecasiafrica.org"
+                    placeholder="Enter your email address"
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
@@ -1688,7 +1683,7 @@ function MsimamiziAdminInner() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Security Password / Access PIN
+                  Password
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1701,11 +1696,6 @@ function MsimamiziAdminInner() {
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2">
-                <Lock className="w-3.5 h-3.5 text-[#008000] shrink-0" />
-                <span>Security: Single active session enforced. Sign-in is required for each visit.</span>
               </div>
 
               <div className="pt-1 flex justify-center">
@@ -1762,44 +1752,12 @@ function MsimamiziAdminInner() {
             </form>
           )}
 
-          {/* One-Time First-Time Administrator Password Setup Form (Permanently locked once created) */}
-          {!mfaChallenge && authMode === 'create' && (() => {
-            const isEmailAlreadyLocked = Boolean(createEmail.trim()) && adminRegistrationService.isPasswordInitialized(createEmail);
-            return (
+          {/* First-Time Password Setup Form (enforced server-side, hidden during MFA step) */}
+          {!mfaChallenge && authMode === 'create' && (
             <form onSubmit={handleCreatePasswordSubmit} className="p-6 sm:p-8 space-y-4">
-              <div className="bg-amber-50 border border-amber-200/90 rounded-xl p-3 text-xs text-amber-950 flex items-start gap-2">
-                <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                <p>
-                  <strong>One-Time Setup Only:</strong> Create your personal password once using your authorized <strong>@ecasiafrica.org</strong> email. Once created, your password is permanently locked and you will sign in normally on the Sign In tab.
-                </p>
-              </div>
-
-              {isEmailAlreadyLocked && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                  <div>
-                    <p className="font-bold">Password Already Created &amp; Locked</p>
-                    <p className="mt-0.5">
-                      This account already has an active password. First-time setup is permanently disabled for this email.{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuthEmail(createEmail);
-                          setAuthMode('login');
-                          setAuthError('');
-                        }}
-                        className="underline font-bold cursor-pointer"
-                      >
-                        Go to Sign In →
-                      </button>
-                    </p>
-                  </div>
-                </div>
-              )}
-
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Official Institutional Email
+                  Administrator Email
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1808,18 +1766,15 @@ function MsimamiziAdminInner() {
                     required
                     value={createEmail}
                     onChange={(e) => setCreateEmail(e.target.value)}
-                    placeholder="yourname@ecasiafrica.org"
+                    placeholder="Enter your email address"
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Must end with <strong className="font-mono text-slate-700">@ecasiafrica.org</strong>
-                </p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Create New Password
+                  Create Password
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1851,11 +1806,6 @@ function MsimamiziAdminInner() {
                     className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:border-[#008000] focus:ring-2 focus:ring-[#008000]/15 transition"
                   />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2">
-                <Lock className="w-3.5 h-3.5 text-[#008000] shrink-0" />
-                <span>Security: Single active session enforced per administrator account.</span>
               </div>
 
               <div className="pt-1 flex justify-center">
@@ -1894,11 +1844,10 @@ function MsimamiziAdminInner() {
 
               <button
                 type="submit"
-                disabled={isEmailAlreadyLocked}
-                className="w-full h-11 bg-[#008000] hover:bg-[#006600] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-11 bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2"
               >
                 <Lock className="w-4 h-4" />
-                <span>Create &amp; Lock Password</span>
+                <span>Set Account Password</span>
               </button>
 
               <div className="pt-2 text-center border-t border-slate-100">
@@ -1911,8 +1860,7 @@ function MsimamiziAdminInner() {
                 </a>
               </div>
             </form>
-            );
-          })()}
+          )}
         </div>
       </div>
     );
@@ -1926,9 +1874,7 @@ function MsimamiziAdminInner() {
 
   const sidebarBadges = {
     registrations: registrations.length,
-    enrolments: registrations.filter((r) =>
-      ['Payment Confirmed', 'Enrolment Confirmed', 'Training In Progress', 'Completed'].includes(getEffectiveRegistrationStage(r))
-    ).length,
+    enrolments: registrations.filter((r) => isConfirmedPaidEnrolment(r, invoices, payments)).length,
     securityReviewQueue: registrations.filter((r) => getRegistrationSecurityInfo(r).requiresSecurityReview).length,
     openSecurityAlerts: securityAlerts.filter((a) => a.status === 'Open').length,
     inquiries: inquiries.length,
@@ -2002,7 +1948,7 @@ function MsimamiziAdminInner() {
       return (
         <div className="bg-white rounded-2xl border border-red-200 p-10 text-center space-y-2">
           <ShieldCheck className="w-10 h-10 text-[#DC4545] mx-auto" />
-          <h3 className="text-base font-black text-[#10243E]">Access Restricted by Role Permissions</h3>
+          <h3 className="text-base font-black text-[#032e42]">Access Restricted by Role Permissions</h3>
           <p className="text-xs text-[#718096] max-w-md mx-auto">
             Your current role ({currentUserRoleDef.label}) does not have permission to access {activeNavMeta?.label}. Contact a Super Admin if you need access.
           </p>
@@ -2014,6 +1960,7 @@ function MsimamiziAdminInner() {
       currentUser,
       onDataChange: loadData,
       onNavigate: setActiveTab,
+      onOpenDocument: openDocumentPage,
       showToast,
     };
 
@@ -2085,6 +2032,8 @@ function MsimamiziAdminInner() {
           courses={courses}
           registrations={registrations}
           cohorts={cohorts}
+          invoices={invoices}
+          payments={payments}
           settings={platformSettings}
           publicSiteUrl={publicSiteUrl}
           onEditCourse={(course) => openEditCourse(course, false)}
@@ -2149,7 +2098,7 @@ function MsimamiziAdminInner() {
       );
     }
 
-    if (['cms-homepage', 'cms-programmes', 'cms-course-info', 'cms-announcements', 'cms-faqs', 'cms-vacancies'].includes(activeTab)) {
+    if (['cms-homepage', 'cms-programmes', 'cms-course-info', 'cms-announcements', 'cms-faqs', 'cms-vacancies', 'cms-gallery', 'cms-resources'].includes(activeTab)) {
       return (
         <WebsiteCmsModule
           {...commonProps}
@@ -2178,11 +2127,10 @@ function MsimamiziAdminInner() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F8FC] text-[#10243E] font-['Inter',sans-serif] selection:bg-[#00B8B0] selection:text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#F5F8FC] text-[#032e42] font-['Inter',sans-serif] selection:bg-[#008000] selection:text-white flex flex-col md:flex-row">
       {initialLoaderOverlay}
       <SEO
-        title="ECASIAFRICA Msimamizi — Institutional Management System"
-        description="ECAS Institute enterprise institutional administration platform."
+        title="Portal"
         noIndex
       />
 
@@ -2205,13 +2153,13 @@ function MsimamiziAdminInner() {
       ───────────────────────────────────────────────────────────── */}
       <div ref={mainScrollRef} className="flex-1 flex flex-col min-w-0 overflow-y-auto min-h-screen">
         {/* Top White Enterprise Utility Bar */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+        <header className="print:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Mobile Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden inline-flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-[#10243E] hover:bg-slate-50 cursor-pointer"
+              className="md:hidden inline-flex items-center gap-1.5 p-1.5 rounded-lg border border-slate-200 bg-white text-[#032e42] hover:bg-slate-50 cursor-pointer"
               aria-label="Toggle navigation menu"
             >
               {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -2221,7 +2169,7 @@ function MsimamiziAdminInner() {
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden md:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[#10243E] hover:bg-slate-50 transition cursor-pointer"
+              className="hidden md:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-[#032e42] hover:bg-slate-50 transition cursor-pointer"
               title={isSidebarCollapsed ? 'Open navigation menu' : 'Minimize navigation'}
               aria-label={isSidebarCollapsed ? 'Open navigation menu' : 'Minimize navigation'}
             >
@@ -2229,12 +2177,13 @@ function MsimamiziAdminInner() {
               {isSidebarCollapsed && <span className="text-[11px] font-semibold">Menu</span>}
             </button>
 
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#F5F8FC] border border-slate-200/80 text-[#10243E] text-xs font-bold truncate">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#F5F8FC] border border-slate-200/80 text-[#032e42] text-xs font-bold truncate">
               {(() => {
                 const ActiveIcon = activeNavMeta?.icon || LayoutGrid;
-                return <ActiveIcon className="w-3.5 h-3.5 text-[#00B8B0] shrink-0" />;
+                return <ActiveIcon className="w-3.5 h-3.5 text-[#008000] shrink-0" />;
               })()}
               <span className="truncate">
+                {activeDetailView === 'document-view' && (activeDocument?.title || 'Official Institutional Document')}
                 {activeDetailView === 'edit-course' && 'Edit Course & Pricing'}
                 {activeDetailView === 'new-course' && 'Upload New Course'}
                 {activeDetailView === 'registration-dossier' && 'Registration Dossier'}
@@ -2254,7 +2203,7 @@ function MsimamiziAdminInner() {
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               placeholder="Global search: applicants, leads, courses, invoices..."
-              className="w-full h-9 pl-8 pr-7 rounded-xl border border-slate-200 bg-[#F5F8FC] text-xs focus:bg-white focus:outline-none focus:border-[#00B8B0] transition"
+              className="w-full h-9 pl-8 pr-7 rounded-xl border border-slate-200 bg-[#F5F8FC] text-xs focus:bg-white focus:outline-none focus:border-[#008000] transition"
             />
             {globalSearch && (
               <button
@@ -2278,10 +2227,10 @@ function MsimamiziAdminInner() {
                     className="w-full px-3.5 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 text-xs cursor-pointer"
                   >
                     <div className="min-w-0">
-                      <p className="font-bold text-[#10243E] truncate">{res.title}</p>
+                      <p className="font-bold text-[#032e42] truncate">{res.title}</p>
                       <p className="text-[10.5px] text-[#718096] truncate">{res.sub}</p>
                     </div>
-                    <span className="px-2 py-0.5 rounded bg-teal-50 text-[#00B8B0] text-[10px] font-bold shrink-0">{res.type}</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-50 text-[#008000] text-[10px] font-bold shrink-0">{res.type}</span>
                   </button>
                 ))}
               </div>
@@ -2294,7 +2243,7 @@ function MsimamiziAdminInner() {
               <button
                 type="button"
                 onClick={() => setIsNotifOpen((o) => !o)}
-                className="relative p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[#10243E] cursor-pointer"
+                className="relative p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[#032e42] cursor-pointer"
                 title="Institutional Notification Centre"
               >
                 <Bell className="w-4 h-4" />
@@ -2306,7 +2255,7 @@ function MsimamiziAdminInner() {
               </button>
               {isNotifOpen && (
                 <div className="absolute right-0 top-11 w-72 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden text-xs">
-                  <div className="bg-[#071C2D] text-white px-4 py-3 flex items-center justify-between">
+                  <div className="bg-[#032e42] text-white px-4 py-3 flex items-center justify-between">
                     <span className="font-bold">Notification Centre</span>
                     <button type="button" onClick={() => setIsNotifOpen(false)} className="cursor-pointer"><X className="w-3.5 h-3.5" /></button>
                   </div>
@@ -2332,13 +2281,18 @@ function MsimamiziAdminInner() {
                       <span className="font-black text-[#DC4545]">{sidebarBadges.outstandingInvoices}</span>
                     </button>
                     <button type="button" onClick={() => { setActiveTab('candidate-cvs'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
-                      <span className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-[#00B8B0]" /> New Candidate CVs</span>
-                      <span className="font-black text-[#00B8B0]">{applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length}</span>
+                      <span className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-[#008000]" /> New Candidate CVs</span>
+                      <span className="font-black text-[#008000]">{applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length}</span>
                     </button>
                   </div>
                 </div>
               )}
             </div>
+
+            <span className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10.5px] font-bold text-[#008000]">
+              <Wifi className="w-3 h-3" />
+              <span>{realtimeTransport === 'socket.io' ? 'Live Socket.IO' : realtimeTransport === 'sse' ? 'Live Push' : 'Live Sync'}</span>
+            </span>
 
             <span className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold ${currentUserRoleDef.badgeColor}`}>
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -2348,9 +2302,15 @@ function MsimamiziAdminInner() {
             <button
               type="button"
               onClick={async () => {
-                await adminRegistrationService.syncFromServer();
+                const res = await adminRegistrationService.syncFromServer();
                 loadData();
-                showToast('Synced & refreshed from live institutional database.');
+                if (res?.ok === false) {
+                  showToast(`Sync issue: ${res.error || 'Could not reach live institutional database.'}`);
+                } else if (res?.mergedAdded > 0) {
+                  showToast(`Synced ${res.inquiriesCount ?? 0} inquiries (${res.mergedAdded} uploaded to server).`);
+                } else {
+                  showToast(`Synced live database (${res?.inquiriesCount ?? 0} inquiries, ${res?.registrationsCount ?? 0} registrations).`);
+                }
               }}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition cursor-pointer"
               title="Sync / Refresh Data"
@@ -2373,6 +2333,32 @@ function MsimamiziAdminInner() {
 
         {/* Centered SaaS Content Body */}
         <main className="p-4 sm:p-6 lg:px-8 lg:py-6 space-y-5 flex-1 max-w-[1320px] w-full mx-auto">
+          {activeDetailView === 'document-view' && activeDocument && (
+            <MsimamiziErrorBoundary
+              resetKey={`doc-${activeDocument.mode}-${activeDocument.invoice?.id || activeDocument.payment?.id || activeDocument.title}`}
+              sectionLabel="Official Document Viewer"
+              onRecoverDashboard={() => {
+                setActiveDocument(null);
+                setActiveTab('dashboard');
+              }}
+            >
+              <Suspense fallback={<ModuleSkeleton />}>
+                <DocumentViewerPage
+                  docSpec={activeDocument}
+                  onClose={() => {
+                    setActiveDocument(null);
+                    scrollMainTop();
+                  }}
+                  registrations={registrations}
+                  invoices={invoices}
+                  settings={platformSettings}
+                  currentUser={currentUser}
+                  onDataChange={loadData}
+                  showToast={showToast}
+                />
+              </Suspense>
+            </MsimamiziErrorBoundary>
+          )}
           {!activeDetailView && (
             <>
               <MsimamiziErrorBoundary
@@ -5320,7 +5306,7 @@ function MsimamiziAdminInner() {
         </main>
 
         {/* Transparent Portal Footer: ECAS Copyright & Transparent Tagline */}
-        <footer className="mt-auto bg-transparent border-t border-slate-200/60 px-4 sm:px-6 lg:px-8 py-4 max-w-[1180px] w-full mx-auto">
+        <footer className="print:hidden mt-auto bg-transparent border-t border-slate-200/60 px-4 sm:px-6 lg:px-8 py-4 max-w-[1180px] w-full mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left bg-transparent">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 bg-transparent">
               <img

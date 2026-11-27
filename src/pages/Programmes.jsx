@@ -15,7 +15,7 @@ const coreProgrammes = [
     title: "Air Quality Programme",
     description: "Addressing the growing challenges of urban air pollution through monitoring, policy recommendations, and technical assistance.",
     path: "/specialties/clean-air-programme",
-    color: "bg-teal-50 text-teal-600 border-teal-100",
+    color: "bg-emerald-50 text-[#008000] border-emerald-200",
   },
   {
     icon: Zap,
