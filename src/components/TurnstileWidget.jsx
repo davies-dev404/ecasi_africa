@@ -1,20 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TURNSTILE_SITE_KEY, ensureTurnstileLoaded, verifyTurnstile } from '@/services/turnstileService';
-import { ShieldCheck, CheckCircle2, RefreshCw } from 'lucide-react';
-
-function createHumanChallenge() {
-  const a = Math.floor(Math.random() * 8) + 2; // 2..9
-  const b = Math.floor(Math.random() * 8) + 2; // 2..9
-  return { a, b, expected: a + b };
-}
+import { RefreshCw } from 'lucide-react';
 
 /**
- * Cloudflare Turnstile React Component with Genuine Interactive Fallback
- * - Renders the authentic Cloudflare Turnstile iframe whenever Cloudflare is reachable.
- * - NEVER renders a fake Cloudflare logo box and NEVER auto-passes bots on error.
- * - If Cloudflare Turnstile cannot load (e.g. corporate firewall, adblocker, or subdomain error),
- *   presents a real interactive ECAS Anti-Bot Verification challenge that bots cannot auto-bypass,
- *   plus a Retry button to reload Cloudflare Turnstile.
+ * Authentic Cloudflare Turnstile React Component
+ * Renders ONLY the real Cloudflare Turnstile iframe (no fake checkboxes, no math challenges).
+ * Uses stable callback refs so parent form typing never destroys or re-initializes the widget.
  */
 export default function TurnstileWidget({
   onVerify,
@@ -27,16 +18,10 @@ export default function TurnstileWidget({
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
   const callbacksRef = useRef({ onVerify, onError, onExpire });
-  const [isRendered, setIsRendered] = useState(false);
-  const [loadError, setLoadError] = useState(false);
   const [tokenValue, setTokenValue] = useState('');
+  const [scriptFailed, setScriptFailed] = useState(false);
+  const [turnstileErrorCode, setTurnstileErrorCode] = useState('');
   const [retrySeq, setRetrySeq] = useState(0);
-
-  // Genuine interactive human challenge state (only shown if Cloudflare Turnstile fails to load)
-  const [challenge, setChallenge] = useState(() => createHumanChallenge());
-  const [challengeInput, setChallengeInput] = useState('');
-  const [challengeVerified, setChallengeVerified] = useState(false);
-  const [challengeError, setChallengeError] = useState('');
 
   // Keep latest callbacks in ref without triggering widget re-render
   useEffect(() => {
@@ -68,7 +53,7 @@ export default function TurnstileWidget({
       if (isCancelled || typeof window === 'undefined') return;
 
       if (!TURNSTILE_SITE_KEY) {
-        setLoadError(true);
+        setScriptFailed(true);
         return;
       }
 
@@ -82,11 +67,12 @@ export default function TurnstileWidget({
               theme: theme,
               retry: 'auto',
               'retry-interval': 2000,
+              'refresh-expired': 'auto',
               callback: (token) => {
                 if (isCancelled) return;
                 setTokenValue(token);
-                setLoadError(false);
-                setChallengeVerified(false);
+                setScriptFailed(false);
+                setTurnstileErrorCode('');
                 if (callbacksRef.current.onVerify) {
                   callbacksRef.current.onVerify(token);
                 }
@@ -98,19 +84,15 @@ export default function TurnstileWidget({
               'error-callback': (errCode) => {
                 if (isCancelled) return;
                 console.warn('[Cloudflare Turnstile Error Code]:', errCode);
-                cleanupWidget();
-                setIsRendered(false);
-                setLoadError(true);
                 setTokenValue('');
-                setChallenge(createHumanChallenge());
-                setChallengeInput('');
-                setChallengeVerified(false);
-                setChallengeError('');
-                // IMPORTANT: Do NOT auto-verify or emit a pre-approved token on error.
-                // Require the real human to solve the interactive challenge below.
+                setTurnstileErrorCode(String(errCode || ''));
                 if (callbacksRef.current.onExpire) {
                   callbacksRef.current.onExpire();
                 }
+                if (callbacksRef.current.onError) {
+                  callbacksRef.current.onError(errCode);
+                }
+                // Keep the real Cloudflare widget mounted so Cloudflare's retry:'auto' can recover
               },
               'expired-callback': () => {
                 if (isCancelled) return;
@@ -128,21 +110,19 @@ export default function TurnstileWidget({
               },
             });
             widgetIdRef.current = id;
-            setIsRendered(true);
-            setLoadError(false);
+            setScriptFailed(false);
             if (timerId) clearInterval(timerId);
           }
         } catch (err) {
           console.warn('[Turnstile Render Exception]:', err);
-          setIsRendered(false);
-          setLoadError(true);
+          setScriptFailed(true);
         }
       } else {
         attempts++;
-        if (attempts > 25) {
+        if (attempts > 35) {
           if (timerId) clearInterval(timerId);
           if (widgetIdRef.current === null) {
-            setLoadError(true);
+            setScriptFailed(true);
           }
         }
       }
@@ -158,35 +138,18 @@ export default function TurnstileWidget({
     };
   }, [action, theme, retrySeq]);
 
-  const handleChallengeVerify = () => {
-    const parsed = parseInt(String(challengeInput || '').trim(), 10);
-    if (Number.isNaN(parsed) || parsed !== challenge.expected) {
-      setChallengeError('Incorrect answer. Please try the new security question.');
-      setChallenge(createHumanChallenge());
-      setChallengeInput('');
-      setChallengeVerified(false);
-      setTokenValue('');
-      if (callbacksRef.current.onExpire) {
-        callbacksRef.current.onExpire();
-      }
-      return;
-    }
-
-    const humanToken = `ecas-human-verified-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setChallengeError('');
-    setChallengeVerified(true);
-    setTokenValue(humanToken);
-    if (callbacksRef.current.onVerify) {
-      callbacksRef.current.onVerify(humanToken);
-    }
-  };
-
-  const handleRetryCloudflare = () => {
-    setLoadError(false);
-    setIsRendered(false);
-    setChallengeVerified(false);
-    setChallengeError('');
+  const handleRetry = () => {
+    setScriptFailed(false);
+    setTurnstileErrorCode('');
     setTokenValue('');
+    if (widgetIdRef.current !== null && window.turnstile?.reset) {
+      try {
+        window.turnstile.reset(widgetIdRef.current);
+        return;
+      } catch {
+        // fall through to re-mount
+      }
+    }
     setRetrySeq((n) => n + 1);
   };
 
@@ -195,72 +158,26 @@ export default function TurnstileWidget({
       {/* Canonical Cloudflare Turnstile hidden form field */}
       <input type="hidden" name="cf-turnstile-response" value={tokenValue} />
 
-      {/* Authentic Cloudflare Turnstile Container */}
+      {/* Authentic Cloudflare Turnstile Widget Container */}
       <div
         ref={containerRef}
-        className={loadError && !isRendered ? 'hidden' : 'min-h-[65px] flex items-center justify-start'}
+        className="min-h-[65px] flex items-center justify-start"
       />
 
-      {/* Genuine Interactive ECAS Human Verification Challenge (ONLY when Cloudflare CDN is blocked/unavailable) */}
-      {loadError && !isRendered && (
-        <div className="w-full max-w-[360px] rounded-xl border border-slate-300 bg-[#F8FAFC] p-3.5 shadow-xs space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#032e42]">
-              <ShieldCheck className="w-4 h-4 text-[#008000] shrink-0" />
-              <span>ECAS Human Security Verification</span>
-            </div>
-            <button
-              type="button"
-              onClick={handleRetryCloudflare}
-              title="Retry Cloudflare Turnstile"
-              className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#1e73be] hover:underline cursor-pointer"
-            >
-              <RefreshCw className="w-3 h-3" /> Retry
-            </button>
-          </div>
-
-          {challengeVerified ? (
-            <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs font-bold text-[#008000]">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Human verification passed</span>
-            </div>
-          ) : (
-            <>
-              <p className="text-[11.5px] text-slate-600">
-                To block automated spam, please solve: <strong className="text-[#032e42] font-mono text-xs">{challenge.a} + {challenge.b} = ?</strong>
-              </p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={challengeInput}
-                  onChange={(e) => {
-                    setChallengeInput(e.target.value.replace(/[^0-9]/g, ''));
-                    if (challengeError) setChallengeError('');
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleChallengeVerify();
-                    }
-                  }}
-                  placeholder="Enter answer"
-                  className="h-9 w-32 px-3 rounded-lg border border-slate-300 bg-white text-xs font-mono text-[#032e42] focus:outline-none focus:border-[#008000]"
-                />
-                <button
-                  type="button"
-                  onClick={handleChallengeVerify}
-                  className="h-9 px-3.5 rounded-lg bg-[#032e42] hover:bg-[#008000] text-white text-xs font-bold transition cursor-pointer"
-                >
-                  Verify
-                </button>
-              </div>
-              {challengeError && (
-                <p className="text-[11px] font-medium text-[#d83030]">{challengeError}</p>
-              )}
-            </>
-          )}
+      {(scriptFailed || turnstileErrorCode) && (
+        <div className="flex items-center gap-2 text-[11.5px] text-slate-600">
+          <span>
+            {scriptFailed
+              ? 'Unable to load Cloudflare Turnstile security check.'
+              : `Cloudflare Turnstile could not verify (code ${turnstileErrorCode}).`}
+          </span>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="inline-flex items-center gap-1 text-[#1e73be] font-semibold hover:underline cursor-pointer"
+          >
+            <RefreshCw className="w-3 h-3" /> Reload Cloudflare
+          </button>
         </div>
       )}
     </div>

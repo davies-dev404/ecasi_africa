@@ -4,7 +4,8 @@
  * cPanel Production (/api/verify-turnstile.php), and Localhost Development.
  */
 
-export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
+export const TURNSTILE_SITE_KEY =
+  import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAF_txNruny6wo5Fu';
 
 // Cache server-side siteverify results per single-use token (4-minute TTL)
 // Prevents "timeout-or-duplicate" when verifying on challenge completion + form submit
@@ -49,12 +50,9 @@ export function ensureTurnstileLoaded() {
  * Calls https://challenges.cloudflare.com/turnstile/v0/siteverify on the server.
  */
 export async function verifyTurnstile(token, action = 'submit') {
-  if (!token) return { success: false, error: 'Please complete the security verification.' };
+  if (!token) return { success: false, error: 'Please complete the Cloudflare Turnstile verification.' };
 
   const tokenStr = String(token);
-  if (tokenStr.startsWith('ecas-human-verified-')) {
-    return { success: true, valid: true, humanChallengeVerified: true };
-  }
   if (tokenStr.startsWith('dev-')) {
     const isLocal =
       typeof window !== 'undefined' &&
@@ -62,7 +60,7 @@ export async function verifyTurnstile(token, action = 'submit') {
     if (isLocal) {
       return { success: true, valid: true, simulated: true };
     }
-    return { success: false, error: 'Please complete the human security verification challenge.' };
+    return { success: false, error: 'Please complete the Cloudflare Turnstile verification.' };
   }
 
   // Return cached server siteverify outcome if this single-use token was already validated
