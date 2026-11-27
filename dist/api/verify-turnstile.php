@@ -6,27 +6,10 @@
  * Canonical endpoint: https://challenges.cloudflare.com/turnstile/v0/siteverify
  */
 
-header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/security-lib.php';
 
-$allowedOrigins = [
-    'https://ecasiafrica.org',
-    'https://www.ecasiafrica.org',
-    'https://msimamizi.ecasiafrica.org',
-    'https://msimamiziecasi.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:8080',
-];
-
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($origin, $allowedOrigins, true)) {
-    header("Access-Control-Allow-Origin: $origin");
-    header('Vary: Origin');
-} else {
-    header('Access-Control-Allow-Origin: *');
-}
-
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+ecasApplySecurityHeaders();
+ecasApplyStrictCors('POST, OPTIONS', 'Content-Type, Authorization, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -36,6 +19,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed. Use POST.']);
+    exit;
+}
+
+if (!ecasVerifyRequestOrigin()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Untrusted request origin.']);
+    exit;
+}
+
+// Rate limit Turnstile verification endpoint (60 requests per IP per 10 min)
+$rateIp = trim(explode(',', (string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'))[0]);
+$rateCheck = ecasCheckRateLimit(sys_get_temp_dir(), 'turnstile:' . $rateIp, 60, 600);
+if (!$rateCheck['allowed']) {
+    http_response_code(429);
+    header('Retry-After: ' . $rateCheck['retryAfter']);
+    echo json_encode(['success' => false, 'error' => 'Rate limit exceeded. Please wait briefly and try again.']);
     exit;
 }
 
@@ -144,6 +143,15 @@ if ($token === '') {
 }
 
 if (strpos($token, 'dev-') === 0) {
+    if (!ecasIsLocalHost()) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'valid' => false,
+            'error' => 'Development verification tokens are not permitted in production.',
+        ]);
+        exit;
+    }
     echo json_encode([
         'success' => true,
         'valid' => true,

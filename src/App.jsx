@@ -58,6 +58,7 @@ import PolicyAnalysis from "./pages/PolicyAnalysis.jsx";
 import Search from "./pages/Search.jsx";
 import ExcursionDetail from "./pages/ExcursionDetail.jsx";
 import MsimamiziAdmin from "./pages/MsimamiziAdmin.jsx";
+import SecurityNotice from "./pages/SecurityNotice.jsx";
 
 import Analytics from "@/components/Analytics";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -159,6 +160,7 @@ const App = () => {
           <Route path="/institute-overview" element={<ExecutiveTraining />} />
           <Route path="/executive-training/:slug" element={<ExecutiveTraining />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/security-notice" element={<SecurityNotice />} />
           <Route path="/policy-analysis" element={<PolicyAnalysis />} />
           <Route path="/research/:slug" element={<ResearchConsultancy />} />
           <Route path="/consultancy" element={<Navigate to="/research/consulting" replace />} />

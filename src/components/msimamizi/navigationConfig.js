@@ -40,6 +40,7 @@ import {
   CheckSquare,
   UserCog,
   ShieldCheck,
+  ShieldAlert,
   ScrollText,
   Settings,
   Activity,
@@ -63,6 +64,16 @@ export const MASTER_NAV_GROUPS = [
       { id: 'applicants', label: 'Applicants', icon: UserCheck, permission: 'admissions.view' },
       { id: 'enrolments', label: 'Enrolments', icon: GraduationCap, permission: 'admissions.view', badgeKey: 'enrolments' },
       { id: 'application-documents', label: 'Application Documents', icon: FileCheck2, permission: 'admissions.view' },
+    ],
+  },
+  {
+    id: 'security_group',
+    label: 'SECURITY & FRAUD CONTROL',
+    icon: ShieldAlert,
+    items: [
+      { id: 'security-review-queue', label: 'Security Review Queue', icon: ShieldAlert, permission: 'security.view', badgeKey: 'securityReviewQueue' },
+      { id: 'security-dashboard', label: 'Security Analytics', icon: Activity, permission: 'security.view' },
+      { id: 'security-alerts', label: 'Security Alerts & Incidents', icon: AlertTriangle, permission: 'security.view', badgeKey: 'openSecurityAlerts' },
     ],
   },
   {

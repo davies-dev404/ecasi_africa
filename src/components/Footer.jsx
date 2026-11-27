@@ -86,6 +86,7 @@ const Footer = () => {
                 { label: "Research", path: "/research/overview" },
                 { label: "Resources", path: "/resources" },
                 { label: "Contact Us", path: "/contact" },
+                { label: "Security & Anti-Phishing", path: "/security-notice" },
               ].map(({ label, path }) => (
                 <li key={label} className="flex items-center gap-2 py-1">
                   <span className="text-white/40 text-base">›</span>
@@ -147,8 +148,11 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 pt-8 flex justify-center items-center text-sm text-white/60 text-center">
-          <p className="w-full text-center">Copyright © ECAS Institute, {year}. All rights reserved.</p>
+        <div className="border-t border-white/20 pt-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs sm:text-sm text-white/70 text-center sm:text-left">
+          <p>Copyright © ECAS Institute, {year}. All rights reserved. Official domains: <strong className="text-white">ecasiafrica.org</strong> &amp; <strong className="text-white">msimamizi.ecasiafrica.org</strong>.</p>
+          <Link to="/security-notice" className="text-[#4ade80] hover:underline font-semibold whitespace-nowrap">
+            Verify Invoices &amp; Report Phishing →
+          </Link>
         </div>
       </div>
     </footer>

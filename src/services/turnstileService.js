@@ -4,9 +4,7 @@
  * cPanel Production (/api/verify-turnstile.php), and Localhost Development.
  */
 
-export const TURNSTILE_SITE_KEY =
-  import.meta.env.VITE_TURNSTILE_SITE_KEY ||
-  '0x4AAAAAAF_txNruny6wo5Fu';
+export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 // Cache server-side siteverify results per single-use token (4-minute TTL)
 // Prevents "timeout-or-duplicate" when verifying on challenge completion + form submit
@@ -54,7 +52,13 @@ export async function verifyTurnstile(token, action = 'submit') {
   if (!token) return { success: false, error: 'No Turnstile token provided' };
 
   if (String(token).startsWith('dev-')) {
-    return { success: true, valid: true, simulated: true };
+    const isLocal =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (isLocal) {
+      return { success: true, valid: true, simulated: true };
+    }
+    return { success: false, error: 'Invalid production security token. Please complete the Turnstile check.' };
   }
 
   // Return cached server siteverify outcome if this single-use token was already validated

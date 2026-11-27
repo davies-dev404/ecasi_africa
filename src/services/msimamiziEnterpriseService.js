@@ -11,6 +11,7 @@ import {
   isValidInstitutionalEmail,
   computeCredentialDigest,
 } from '@/services/adminRegistrationService';
+import { escapeHtml, sanitizeRichHtml } from '@/utils/htmlSanitizer';
 
 export const ENTERPRISE_KEYS = {
   INVOICES: 'ecasi_msimamizi_invoices_v1',
@@ -22,6 +23,9 @@ export const ENTERPRISE_KEYS = {
   CMS: 'ecasi_msimamizi_cms_v1',
   SETTINGS: 'ecasi_msimamizi_settings_v1',
   AUDIT: 'ecasi_msimamizi_audit_events_v1',
+  SECURITY_ALERTS: 'ecasi_msimamizi_security_alerts_v1',
+  SECURITY_INCIDENTS: 'ecasi_msimamizi_security_incidents_v1',
+  SECURITY_STATS: 'ecasi_msimamizi_security_stats_v1',
 };
 
 // ─── Role-Based Access Control (RBAC) ─────────────────────────────────────────
@@ -34,11 +38,22 @@ export const ROLE_CATALOG = [
     badgeColor: 'bg-teal-100 text-teal-900 border-teal-200',
   },
   {
+    id: 'VERIFICATION_OFFICER',
+    label: 'Verification Officer',
+    description: 'Investigate high-risk and critical-risk registrations, verify organizations, clear false positives, manage security alerts, and resolve incidents.',
+    permissions: [
+      'dashboard.view', 'admissions.view', 'security.view', 'security.review',
+      'crm.view', 'communications.view', 'communications.write',
+      'reports.view', 'reports.export',
+    ],
+    badgeColor: 'bg-rose-100 text-rose-900 border-rose-200',
+  },
+  {
     id: 'ADMISSIONS_OFFICER',
     label: 'Admissions Officer',
     description: 'Manage registrations, applicant profiles, 12-stage enrolment workflows, documents, leads, and admissions reports.',
     permissions: [
-      'dashboard.view', 'admissions.view', 'admissions.write',
+      'dashboard.view', 'admissions.view', 'admissions.write', 'security.view',
       'crm.view', 'crm.write', 'courses.view',
       'communications.view', 'communications.write', 'reports.view', 'reports.export',
     ],
@@ -49,7 +64,7 @@ export const ROLE_CATALOG = [
     label: 'Finance Officer',
     description: 'Manage invoices, payment verification, outstanding balances, financial reconciliation, and financial reports.',
     permissions: [
-      'dashboard.view', 'admissions.view', 'finance.view', 'finance.write',
+      'dashboard.view', 'admissions.view', 'security.view', 'finance.view', 'finance.write',
       'courses.view', 'communications.view', 'communications.write',
       'reports.view', 'reports.export',
     ],
@@ -109,6 +124,9 @@ export function normalizeRole(rawRole) {
     'ADMISSIONS OFFICER': 'ADMISSIONS_OFFICER',
     FINANCE_OFFICER: 'FINANCE_OFFICER',
     'FINANCE OFFICER': 'FINANCE_OFFICER',
+    VERIFICATION_OFFICER: 'VERIFICATION_OFFICER',
+    'VERIFICATION OFFICER': 'VERIFICATION_OFFICER',
+    SECURITY_OFFICER: 'VERIFICATION_OFFICER',
     COURSE_MANAGER: 'COURSE_MANAGER',
     'COURSE MANAGER': 'COURSE_MANAGER',
     RECRUITMENT_OFFICER: 'RECRUITMENT_OFFICER',
@@ -230,6 +248,60 @@ export function normalizeCandidateStage(rawStatus) {
   if (s === 'Archived') return 'Rejected';
   if (RECRUITMENT_STAGES.includes(s)) return s;
   return 'Application Received';
+}
+
+export const SECURITY_GATED_STAGES = [
+  'Approved',
+  'Invoice Issued',
+  'Payment Pending',
+  'Payment Confirmed',
+  'Enrolment Confirmed',
+  'Training In Progress',
+  'Completed',
+];
+
+export function getRegistrationSecurityInfo(reg) {
+  const sec = reg?.securityAssessment || {};
+  const riskScore = Number(sec.riskScore) || 0;
+  const riskLevel =
+    sec.riskLevel ||
+    (riskScore >= 80
+      ? 'CRITICAL RISK'
+      : riskScore >= 60
+        ? 'HIGH RISK'
+        : riskScore >= 30
+          ? 'MEDIUM RISK'
+          : 'LOW RISK');
+  const securityClearance =
+    sec.securityClearance ||
+    (riskScore >= 80
+      ? 'Blocked — Review Required'
+      : riskScore >= 60
+        ? 'Pending Review'
+        : riskScore >= 30
+          ? 'Additional Check Recommended'
+          : 'Auto-Cleared (Low Risk)');
+
+  return {
+    riskScore,
+    riskLevel,
+    reasons: Array.isArray(sec.reasons) ? sec.reasons : [],
+    isDuplicate: Boolean(sec.isDuplicate),
+    botFlagged: Boolean(sec.botFlagged),
+    orgVerification: sec.orgVerification || 'Unverified',
+    emailVerification: sec.emailVerification || 'Unverified',
+    phoneVerification: sec.phoneVerification || 'Unverified',
+    securityClearance,
+    requiresSecurityReview: riskScore >= 60 && securityClearance !== 'Cleared',
+    recommendedAction: sec.recommendedAction || 'Proceed through standard admissions review.',
+    reviewHistory: Array.isArray(sec.reviewHistory) ? sec.reviewHistory : [],
+    falsePositiveCleared: Boolean(sec.falsePositiveCleared),
+  };
+}
+
+export function isRegistrationSecurityBlocked(reg) {
+  const info = getRegistrationSecurityInfo(reg);
+  return info.riskScore >= 60 && info.securityClearance !== 'Cleared';
 }
 
 // ─── Storage & Server Sync Helpers ────────────────────────────────────────────
@@ -477,6 +549,20 @@ export const msimamiziEnterpriseService = {
   },
 
   createInvoice(invoiceInput, actor) {
+    // MANDATORY SECURITY GATE: Block invoicing High/Critical risk registrations until Security Cleared
+    if (invoiceInput.registrationId) {
+      const linkedReg = adminRegistrationService
+        .getRegistrations()
+        .find((r) => r.id === invoiceInput.registrationId);
+      if (linkedReg && isRegistrationSecurityBlocked(linkedReg)) {
+        const sec = getRegistrationSecurityInfo(linkedReg);
+        return {
+          blocked: true,
+          error: `Security Gate Blocked: Registration ${linkedReg.referenceNo} (${sec.riskLevel}, Score ${sec.riskScore}/100) must be cleared in the Security Review Queue before issuing an invoice.`,
+        };
+      }
+    }
+
     const existing = this.getInvoices();
     const year = new Date().getFullYear();
     const seq = String(existing.length + 1).padStart(4, '0');
@@ -718,7 +804,18 @@ export const msimamiziEnterpriseService = {
   updateRegistrationWorkflow(regId, newStage, note = '', actor = null, extraUpdates = {}) {
     const regs = adminRegistrationService.getRegistrations();
     const target = regs.find((r) => r.id === regId);
-    if (!target) return false;
+    if (!target) return { success: false, error: 'Registration not found.' };
+
+    // MANDATORY SECURITY GATE: High & Critical risk registrations cannot advance to approval/invoicing/confirmation without clearance
+    if (SECURITY_GATED_STAGES.includes(newStage) && isRegistrationSecurityBlocked(target)) {
+      const sec = getRegistrationSecurityInfo(target);
+      return {
+        success: false,
+        blocked: true,
+        error: `Security Gate Blocked: ${target.referenceNo} (${sec.riskLevel}, Score ${sec.riskScore}/100) must obtain Security Clearance in the Security Review Queue before moving to "${newStage}".`,
+      };
+    }
+
     const prevStage = getEffectiveRegistrationStage(target);
     const actorEmail = actor?.email || adminRegistrationService.getCurrentUser()?.email || 'admin';
     const historyEntry = {
@@ -739,7 +836,7 @@ export const msimamiziEnterpriseService = {
     if (ok) {
       this.logAudit(actor, 'ADMISSION_STAGE_CHANGE', 'Registration', target.referenceNo || regId, prevStage, newStage);
     }
-    return ok;
+    return { success: Boolean(ok) };
   },
 
   convertLeadToRegistration(lead, actor = null) {
@@ -1145,6 +1242,253 @@ export const msimamiziEnterpriseService = {
     return { success: true, accounts: updatedAccounts };
   },
 
+  // ─── Security Review Queue, Alerts, Incidents, MFA, Password Rotation & Backups ─
+  getSecurityAlerts() {
+    const list = readJson(ENTERPRISE_KEYS.SECURITY_ALERTS, []);
+    return Array.isArray(list) ? list : [];
+  },
+
+  getSecurityIncidents() {
+    const list = readJson(ENTERPRISE_KEYS.SECURITY_INCIDENTS, []);
+    return Array.isArray(list) ? list : [];
+  },
+
+  getSecurityStats() {
+    return readJson(ENTERPRISE_KEYS.SECURITY_STATS, {
+      blockedBots: 0,
+      failedLogins: 0,
+      falsePositivesCleared: 0,
+      maliciousUploadsBlocked: 0,
+    });
+  },
+
+  async submitSecurityReviewDecision({ registrationId, decision, justification, orgVerification, emailVerification, phoneVerification }, actor) {
+    if (!hasPermission(actor, 'security.review')) {
+      return { success: false, error: 'Your role does not have Security Verification permission.' };
+    }
+    if (!justification || justification.trim().length < 5) {
+      return { success: false, error: 'A written justification (min. 5 characters) is mandatory for all security review decisions.' };
+    }
+    const serverRes = await postEnterpriseAction({
+      action: 'security_review_decision',
+      registrationId,
+      decision,
+      justification: justification.trim(),
+      orgVerification,
+      emailVerification,
+      phoneVerification,
+    });
+    if (!serverRes.unreachable && !serverRes.ok) {
+      return { success: false, error: serverRes.data?.error || 'Server rejected security review decision.' };
+    }
+
+    const regs = adminRegistrationService.getRegistrations();
+    const target = regs.find((r) => r.id === registrationId);
+    if (target) {
+      const sec = getRegistrationSecurityInfo(target);
+      const nextSec = { ...sec };
+      let stagePatch = {};
+      if (decision === 'Clear' || decision === 'ClearFalsePositive') {
+        nextSec.securityClearance = 'Cleared';
+        nextSec.requiresSecurityReview = false;
+        if (decision === 'ClearFalsePositive') {
+          nextSec.falsePositiveCleared = true;
+          const stats = this.getSecurityStats();
+          writeJson(ENTERPRISE_KEYS.SECURITY_STATS, { ...stats, falsePositivesCleared: (Number(stats.falsePositivesCleared) || 0) + 1 });
+        }
+      } else if (decision === 'VerifyOrg') {
+        nextSec.orgVerification = 'Verified by Officer';
+      } else if (decision === 'RequestDocs') {
+        nextSec.securityClearance = 'Pending Documents';
+        stagePatch = { workflowStage: 'Documents Required', status: 'Documents Required' };
+      } else if (decision === 'Escalate') {
+        nextSec.securityClearance = 'Escalated to Super Admin';
+      } else if (decision === 'RejectFraud') {
+        nextSec.securityClearance = 'Rejected — Fraudulent';
+        stagePatch = { workflowStage: 'Rejected', status: 'Rejected' };
+      }
+      if (orgVerification) nextSec.orgVerification = orgVerification;
+      if (emailVerification) nextSec.emailVerification = emailVerification;
+      if (phoneVerification) nextSec.phoneVerification = phoneVerification;
+      nextSec.reviewHistory = [
+        {
+          decision,
+          justification: justification.trim(),
+          officer: actor?.email || 'officer',
+          role: normalizeRole(actor?.role),
+          at: new Date().toISOString(),
+        },
+        ...(sec.reviewHistory || []),
+      ].slice(0, 50);
+
+      const updatedRegs = regs.map((r) => (r.id === registrationId ? { ...r, ...stagePatch, securityAssessment: nextSec, updatedAt: new Date().toISOString() } : r));
+      localStorage.setItem('ecasi_course_registrations_live', JSON.stringify(updatedRegs));
+      this.logAudit(actor, `SECURITY_REVIEW_${decision.toUpperCase()}`, 'Registration', target.referenceNo, sec.securityClearance, `${nextSec.securityClearance} — ${justification.trim()}`, false);
+    }
+    notifyEnterpriseUpdate('security');
+    return { success: true };
+  },
+
+  async updateSecurityAlert({ alertId, status, resolutionNotes = '', assignedOfficer = '' }, actor) {
+    if (!hasPermission(actor, 'security.review')) {
+      return { success: false, error: 'Your role does not have Security Alert management permission.' };
+    }
+    const alerts = this.getSecurityAlerts();
+    const updated = alerts.map((a) =>
+      a.id === alertId
+        ? {
+            ...a,
+            status,
+            resolutionNotes: resolutionNotes || a.resolutionNotes,
+            assignedOfficer: assignedOfficer || a.assignedOfficer,
+            updatedAt: new Date().toISOString(),
+          }
+        : a
+    );
+    writeJson(ENTERPRISE_KEYS.SECURITY_ALERTS, updated);
+    await postEnterpriseAction({ action: 'update_security_alert', alertId, status, resolutionNotes, assignedOfficer });
+    this.logAudit(actor, 'UPDATE_SECURITY_ALERT', 'SecurityAlert', alertId, '', `${status} ${resolutionNotes}`, false);
+    notifyEnterpriseUpdate('security');
+    return { success: true };
+  },
+
+  async saveSecurityIncident(incidentInput, actor) {
+    if (!hasPermission(actor, 'security.review')) {
+      return { success: false, error: 'Your role does not have Incident Response permission.' };
+    }
+    const incidents = this.getSecurityIncidents();
+    const id = incidentInput.id || `INC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
+    const record = {
+      id,
+      title: incidentInput.title || 'Security Incident',
+      category: incidentInput.category || 'Unauthorized Access',
+      severity: incidentInput.severity || 'HIGH',
+      phase: incidentInput.phase || '1. Detected',
+      affectedComponent: incidentInput.affectedComponent || '',
+      containmentActions: incidentInput.containmentActions || '',
+      rootCause: incidentInput.rootCause || '',
+      assignedOfficer: incidentInput.assignedOfficer || actor?.email || '',
+      status: incidentInput.status || 'Open',
+      createdAt: incidentInput.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const exists = incidents.some((i) => i.id === id);
+    const updated = exists ? incidents.map((i) => (i.id === id ? record : i)) : [record, ...incidents];
+    writeJson(ENTERPRISE_KEYS.SECURITY_INCIDENTS, updated);
+    await postEnterpriseAction({ action: 'save_security_incident', incident: record });
+    this.logAudit(actor, exists ? 'UPDATE_INCIDENT' : 'CREATE_INCIDENT', 'SecurityIncident', id, '', `${record.title} (${record.status})`, false);
+    notifyEnterpriseUpdate('security');
+    return { success: true, incident: record };
+  },
+
+  async startMfaSetup() {
+    const res = await postEnterpriseAction({ action: 'mfa_setup_start' });
+    if (res.unreachable) {
+      return { success: false, error: 'MFA setup requires the live production server (https://msimamizi.ecasiafrica.org).' };
+    }
+    if (!res.ok || !res.data?.success) {
+      return { success: false, error: res.data?.error || 'Could not start MFA setup.' };
+    }
+    return { success: true, secret: res.data.secret, otpauthUri: res.data.otpauthUri };
+  },
+
+  async confirmMfaSetup(code) {
+    const res = await postEnterpriseAction({ action: 'mfa_setup_confirm', code: String(code || '').trim() });
+    if (res.unreachable) return { success: false, error: 'Server unreachable.' };
+    if (!res.ok || !res.data?.success) {
+      return { success: false, error: res.data?.error || 'Invalid 6-digit authenticator code.' };
+    }
+    try {
+      const curRaw = sessionStorage.getItem('ecasi_msimamizi_user');
+      if (curRaw) {
+        const cur = JSON.parse(curRaw);
+        sessionStorage.setItem('ecasi_msimamizi_user', JSON.stringify({ ...cur, mfaEnabled: true }));
+      }
+    } catch {
+      // ignore
+    }
+    notifyEnterpriseUpdate('security');
+    return { success: true, recoveryCodes: res.data.recoveryCodes || [] };
+  },
+
+  async disableMfa(currentPassword) {
+    const res = await postEnterpriseAction({ action: 'mfa_disable', currentPassword });
+    if (res.unreachable) return { success: false, error: 'Server unreachable.' };
+    if (!res.ok || !res.data?.success) {
+      return { success: false, error: res.data?.error || 'Could not disable MFA.' };
+    }
+    try {
+      const curRaw = sessionStorage.getItem('ecasi_msimamizi_user');
+      if (curRaw) {
+        const cur = JSON.parse(curRaw);
+        sessionStorage.setItem('ecasi_msimamizi_user', JSON.stringify({ ...cur, mfaEnabled: false }));
+      }
+    } catch {
+      // ignore
+    }
+    notifyEnterpriseUpdate('security');
+    return { success: true };
+  },
+
+  async changeOwnPassword(currentPassword, newPassword, actor) {
+    if (!newPassword || newPassword.trim().length < 8) {
+      return { success: false, error: 'New password must be at least 8 characters long.' };
+    }
+    const email = normalizeAdminEmail(actor?.email || adminRegistrationService.getCurrentUser()?.email || '');
+    const digest = computeCredentialDigest(email, newPassword.trim());
+    const res = await postEnterpriseAction({
+      action: 'change_password',
+      currentPassword,
+      newPassword: newPassword.trim(),
+      credentialDigest: digest,
+    });
+    if (res.unreachable) {
+      return { success: false, error: 'Password rotation requires the live production server.' };
+    }
+    if (!res.ok || !res.data?.success) {
+      return { success: false, error: res.data?.error || 'Password change rejected.' };
+    }
+    return { success: true, message: res.data.message || 'Password updated and other sessions invalidated.' };
+  },
+
+  async exportVerifiedBackup(actor) {
+    if (!hasPermission(actor, 'admin.manage')) {
+      return { success: false, error: 'Only Super Admins can export full verified institutional backups.' };
+    }
+    const res = await postEnterpriseAction({ action: 'export_verified_backup' });
+    let backupPayload;
+    let checksum = '';
+    if (!res.unreachable && res.ok && res.data?.backup) {
+      backupPayload = { exportedAt: res.data.exportedAt, sha256: res.data.sha256, source: 'server', data: res.data.backup };
+      checksum = res.data.sha256 || '';
+    } else {
+      const localData = {
+        registrations: adminRegistrationService.getRegistrations(),
+        inquiries: adminRegistrationService.getInquiries(),
+        applications: adminRegistrationService.getApplications(),
+        invoices: this.getInvoices(),
+        payments: this.getPayments(),
+        cohorts: this.getCohorts(),
+        auditEvents: this.getAuditEvents(),
+        securityAlerts: this.getSecurityAlerts(),
+        securityIncidents: this.getSecurityIncidents(),
+      };
+      backupPayload = { exportedAt: new Date().toISOString(), sha256: 'local-snapshot', source: 'local-cache', data: localData };
+      checksum = 'local-snapshot';
+    }
+    const jsonStr = JSON.stringify(backupPayload, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ECAS_Verified_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return { success: true, sha256: checksum };
+  },
+
   // ─── System Health Diagnostics ──────────────────────────────────────────────
   async fetchSystemHealth() {
     if (typeof window === 'undefined') return null;
@@ -1244,11 +1588,13 @@ export const msimamiziEnterpriseService = {
       return;
     }
     const settings = this.getSettings();
+    const safeTitle = escapeHtml(title);
+    const safeBody = sanitizeRichHtml(bodyHtml);
     win.document.write(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>${title}</title>
+  <title>${safeTitle}</title>
   <style>
     body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #10243E; margin: 32px; font-size: 12px; line-height: 1.5; }
     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #071C2D; padding-bottom: 14px; margin-bottom: 22px; }
@@ -1269,17 +1615,17 @@ export const msimamiziEnterpriseService = {
 <body>
   <div class="header">
     <div>
-      <div class="brand">${settings.institutionName} <span>Msimamizi</span></div>
-      <div style="font-size:11px;color:#718096;">${settings.tagline} • ${settings.officialEmail}</div>
+      <div class="brand">${escapeHtml(settings.institutionName)} <span>Msimamizi</span></div>
+      <div style="font-size:11px;color:#718096;">${escapeHtml(settings.tagline)} • ${escapeHtml(settings.officialEmail)}</div>
     </div>
     <div class="meta">
-      <div><strong>${title}</strong></div>
-      <div>Generated: ${new Date().toLocaleString()}</div>
+      <div><strong>${safeTitle}</strong></div>
+      <div>Generated: ${escapeHtml(new Date().toLocaleString())}</div>
     </div>
   </div>
-  ${bodyHtml}
+  ${safeBody}
   <div class="footer">
-    <span>Official Institutional Record — ${settings.institutionName}</span>
+    <span>Official Institutional Record — ${escapeHtml(settings.institutionName)}</span>
     <span>msimamizi.ecasiafrica.org</span>
   </div>
   <script>window.onload = function(){ window.print(); };</script>

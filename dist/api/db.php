@@ -1,5 +1,11 @@
 <?php
-// Secure Database Connection Helper
+// Secure Database Connection Helper (Internal include only — direct HTTP access blocked)
+if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
+    http_response_code(403);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'error', 'message' => 'Forbidden']);
+    exit();
+}
 
 // Load .env file if it exists
 $loadEnv = function($path) {

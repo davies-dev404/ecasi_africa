@@ -13,6 +13,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { dataService } from '@/lib/dataService';
 import { adminRegistrationService } from '@/services/adminRegistrationService';
+import { sanitizeRichHtml } from '@/utils/htmlSanitizer';
 
 /* ── Visually verified course featured images ── */
 const courseFeaturedImages = {
@@ -2387,7 +2388,7 @@ export default function ExecutiveTraining() {
     : defaultSchedules.classroomCohorts;
 
   const onlineCohorts = defaultSchedules.onlineCohorts;
-  const formattedHtmlContent = formatCourseHtmlContent(courseInfo.content || '');
+  const formattedHtmlContent = sanitizeRichHtml(formatCourseHtmlContent(courseInfo.content || ''));
 
   // Related courses in the same category for the right sidebar
   const relatedCourses = allCourses

@@ -474,6 +474,9 @@ class AdminRegistrationService {
         cmsContent,
         settings,
         auditEvents,
+        securityAlerts,
+        securityIncidents,
+        securityStats,
       } = json.data;
 
       try {
@@ -490,6 +493,16 @@ class AdminRegistrationService {
           localStorage.setItem('ecasi_msimamizi_settings_v1', JSON.stringify(settings));
         }
         if (Array.isArray(auditEvents)) localStorage.setItem('ecasi_msimamizi_audit_events_v1', JSON.stringify(auditEvents));
+        if (Array.isArray(securityAlerts)) localStorage.setItem('ecasi_msimamizi_security_alerts_v1', JSON.stringify(securityAlerts));
+        if (Array.isArray(securityIncidents)) localStorage.setItem('ecasi_msimamizi_security_incidents_v1', JSON.stringify(securityIncidents));
+        if (securityStats && typeof securityStats === 'object') localStorage.setItem('ecasi_msimamizi_security_stats_v1', JSON.stringify(securityStats));
+        if (typeof json.mfaEnabled === 'boolean') {
+          const curRaw = sessionStorage.getItem(ADMIN_CURRENT_USER_KEY);
+          if (curRaw) {
+            const parsedCur = JSON.parse(curRaw);
+            sessionStorage.setItem(ADMIN_CURRENT_USER_KEY, JSON.stringify({ ...parsedCur, mfaEnabled: json.mfaEnabled }));
+          }
+        }
         window.dispatchEvent(new CustomEvent('ecasi_enterprise_updated', { detail: { topic: 'server_sync' } }));
       } catch {
         // ignore storage quota errors on secondary cache
@@ -593,29 +606,92 @@ class AdminRegistrationService {
     }
   }
 
-  // Save a new registration submitted by public user or admin
-  addRegistration(regData) {
+  // Save a new registration submitted by public user or admin (with Server-Side Risk Screening)
+  async addRegistration(regData, securityMeta = {}) {
     if (typeof window === 'undefined') return null;
     try {
       const existing = this.getRegistrations();
       const newId = `REG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       const newRef = regData.referenceNo || `ECAS-${regData.scheduleId || '400827'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+      const primaryEmail = String(regData.officialEmail || regData.personalEmail || '').trim().toLowerCase();
+      const emailDomain = primaryEmail.includes('@') ? primaryEmail.split('@')[1] : '';
+      const phoneDigits = String(`${regData.dialCode || ''}${regData.phoneNumber || ''}`).replace(/\D/g, '');
+      const isDuplicate = Boolean(
+        primaryEmail &&
+          existing.some(
+            (r) =>
+              String(r.officialEmail || r.personalEmail || '').trim().toLowerCase() === primaryEmail &&
+              String(r.eventTitle || '').trim().toLowerCase() === String(regData.eventTitle || '').trim().toLowerCase()
+          )
+      );
+      let fallbackScore = 0;
+      const fallbackReasons = [];
+      if (securityMeta?.honeypot) {
+        fallbackScore += 55;
+        fallbackReasons.push({ signal: 'BOT_HONEYPOT', weight: 55, detail: 'Hidden anti-bot honeypot field populated.' });
+      }
+      if (isDuplicate) {
+        fallbackScore += 30;
+        fallbackReasons.push({ signal: 'DUPLICATE_BOOKING', weight: 30, detail: 'Duplicate email & course registration detected.' });
+      }
+      if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+        fallbackScore += 20;
+        fallbackReasons.push({ signal: 'INVALID_PHONE_LENGTH', weight: 20, detail: 'Phone number outside valid international E.164 length.' });
+      }
+      const fallbackLevel =
+        fallbackScore >= 80 ? 'CRITICAL RISK' : fallbackScore >= 60 ? 'HIGH RISK' : fallbackScore >= 30 ? 'MEDIUM RISK' : 'LOW RISK';
+      const fallbackClearance =
+        fallbackScore >= 80
+          ? 'Blocked — Review Required'
+          : fallbackScore >= 60
+            ? 'Pending Review'
+            : fallbackScore >= 30
+              ? 'Additional Check Recommended'
+              : 'Auto-Cleared (Low Risk)';
+
       const newRecord = {
         id: newId,
         referenceNo: newRef,
-        status: regData.status || 'Pending',
+        status: fallbackScore >= 60 ? 'Under Review' : (regData.status || 'Pending'),
+        workflowStage: fallbackScore >= 60 ? 'Under Review' : (regData.workflowStage || 'Application Received'),
         paymentStatus: regData.paymentStatus || 'Unpaid',
         adminNotes: regData.adminNotes || 'Submitted via public online registration portal.',
         submittedAt: regData.submittedAt || new Date().toISOString(),
+        securityAssessment: regData.securityAssessment || {
+          riskScore: fallbackScore,
+          riskLevel: fallbackLevel,
+          reasons: fallbackReasons,
+          isDuplicate,
+          botFlagged: Boolean(securityMeta?.honeypot),
+          orgVerification: regData.organisationWebsite ? 'Domain Provided (Pending Check)' : 'Unverified',
+          emailVerification: securityMeta?.emailOtpVerified ? 'Verified (OTP)' : (emailDomain ? 'Syntax Valid (Pending OTP)' : 'Unverified'),
+          phoneVerification: phoneDigits.length >= 8 && phoneDigits.length <= 15 ? 'Valid International Format' : 'Invalid Format',
+          securityClearance: fallbackClearance,
+          requiresSecurityReview: fallbackScore >= 60,
+          recommendedAction: fallbackScore >= 60 ? 'Route to Security Review Queue before approval or invoicing.' : 'Proceed through standard admissions review.',
+          assessedAt: new Date().toISOString(),
+          reviewHistory: [],
+        },
         ...regData,
       };
 
+      const serverRes = await pushToServerWithStatus({
+        action: 'add_registration',
+        registration: newRecord,
+        securityMeta,
+      });
+
+      if (!serverRes.unreachable && serverRes.ok && serverRes.data?.securityAssessment) {
+        newRecord.securityAssessment = {
+          ...newRecord.securityAssessment,
+          ...serverRes.data.securityAssessment,
+        };
+      }
+
       const updated = [newRecord, ...existing];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      pushToServer({ action: 'add_registration', registration: newRecord });
 
-      // Notify any listening admin tabs/components
       window.dispatchEvent(new CustomEvent('ecasi_registration_updated', { detail: newRecord }));
       return newRecord;
     } catch (e) {
@@ -1449,13 +1525,25 @@ class AdminRegistrationService {
         };
       }
 
+      if (serverRes.ok && serverRes.data?.mfaRequired && serverRes.data?.mfaChallengeToken) {
+        return {
+          success: true,
+          mfaRequired: true,
+          mfaChallengeToken: serverRes.data.mfaChallengeToken,
+          email: inputUser,
+          message: serverRes.data.message || 'Please enter your 6-digit Authenticator App MFA code.',
+        };
+      }
+
       const role = serverRes.data.user?.role || matched?.role || (isSuperAdminEmail(inputUser) ? 'SUPER_ADMIN' : 'SUPPORT_OFFICER');
+      const mfaEnabled = Boolean(serverRes.data.user?.mfaEnabled);
       const updatedAccounts = [...accounts];
       const idx = updatedAccounts.findIndex((a) => normalizeAdminEmail(a.email) === inputUser);
       const record = {
         email: inputUser,
         credentialDigest: candidateDigest,
         passwordInitialized: true,
+        mfaEnabled,
         role,
         updatedAt: new Date().toISOString(),
       };
@@ -1473,9 +1561,9 @@ class AdminRegistrationService {
       if (serverRes.data.token) {
         this._storeToken(serverRes.data.token);
       }
-      this._setAuthSession(inputUser, role);
+      this._setAuthSession(inputUser, role, mfaEnabled);
       this.syncFromServer();
-      return { success: true, user: { email: inputUser, role } };
+      return { success: true, user: { email: inputUser, role, mfaEnabled } };
     }
 
     // 3. Offline / localhost fallback when PHP backend is unavailable
@@ -1502,11 +1590,33 @@ class AdminRegistrationService {
     sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
   }
 
-  _setAuthSession(email, role) {
+  async verifyMfaLogin(mfaChallengeToken, code) {
+    const serverRes = await pushToServerWithStatus({
+      action: 'mfa_verify_login',
+      mfaChallengeToken,
+      code: String(code || '').trim(),
+    });
+    if (serverRes.unreachable) {
+      return { success: false, message: 'Server unreachable during MFA verification.' };
+    }
+    if (!serverRes.ok || !serverRes.data?.success) {
+      return { success: false, message: serverRes.data?.error || 'Invalid MFA verification code.' };
+    }
+    const email = normalizeAdminEmail(serverRes.data.user?.email || '');
+    const role = serverRes.data.user?.role || (isSuperAdminEmail(email) ? 'SUPER_ADMIN' : 'SUPPORT_OFFICER');
+    if (serverRes.data.token) {
+      this._storeToken(serverRes.data.token);
+    }
+    this._setAuthSession(email, role, true);
+    this.syncFromServer();
+    return { success: true, user: { email, role, mfaEnabled: true } };
+  }
+
+  _setAuthSession(email, role, mfaEnabled = false) {
     if (typeof window === 'undefined') return;
     clearLegacyPersistentAuth();
     getOrCreateTabSessionId();
-    const userPayload = JSON.stringify({ email, role });
+    const userPayload = JSON.stringify({ email, role, mfaEnabled: Boolean(mfaEnabled) });
     sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
     sessionStorage.setItem(ADMIN_CURRENT_USER_KEY, userPayload);
     sessionStorage.setItem(ADMIN_LAST_ACTIVITY_KEY, String(Date.now()));

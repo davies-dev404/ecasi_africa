@@ -42,9 +42,9 @@ export default function Register() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const handleSubmitRegistration = (submissionRecord) => {
-    adminRegistrationService.addRegistration(submissionRecord);
-    setSubmittedData(submissionRecord);
+  const handleSubmitRegistration = async (submissionRecord, securityMeta = {}) => {
+    const saved = await adminRegistrationService.addRegistration(submissionRecord, securityMeta);
+    setSubmittedData(saved || submissionRecord);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 

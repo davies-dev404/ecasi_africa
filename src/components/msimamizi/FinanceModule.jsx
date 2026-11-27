@@ -143,6 +143,10 @@ export default function FinanceModule({
       return;
     }
     const created = msimamiziEnterpriseService.createInvoice(invForm, currentUser);
+    if (created?.blocked) {
+      alert(created.error);
+      return;
+    }
     setIsInvoiceModalOpen(false);
     onDataChange();
     showToast(`Invoice ${created.invoiceNo} generated (${created.currency} ${created.netAmount.toLocaleString()}).`);

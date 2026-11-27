@@ -4,6 +4,7 @@ import Footer from '@/components/Footer';
 import PageHeroBanner from '@/components/PageHeroBanner';
 import { Wind } from 'lucide-react';
 import { specialtiesData } from '@/data/specialtiesData';
+import { sanitizeRichHtml } from '@/utils/htmlSanitizer';
 
 const CleanAirProgramme = () => {
   const data = specialtiesData.find(s => s.id === 'clean-air-programme');
@@ -36,7 +37,7 @@ const CleanAirProgramme = () => {
                 prose-img:rounded-xl prose-img:shadow-md
                 prose-li:marker:text-ecasi-green
                 prose-strong:text-ecasi-navy"
-              dangerouslySetInnerHTML={{ __html: data.fullDescription }}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(data.fullDescription) }}
             />
           </div>
         </div>

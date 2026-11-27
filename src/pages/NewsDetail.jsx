@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { dataService } from '@/lib/dataService';
+import { sanitizeRichHtml } from '@/utils/htmlSanitizer';
 
 const NewsDetail = () => {
   const { id } = useParams();
@@ -61,7 +62,7 @@ const NewsDetail = () => {
                {/* Article Body */}
                <div 
                   className="prose prose-lg max-w-none prose-headings-serif prose-headings-[#1e3a8a] prose-p-muted-foreground prose-a-primary"
-                  dangerouslySetInnerHTML={{ __html: article.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(article.content) }}
                />
                
                {/* Share Section (Placeholder) */}

@@ -11,30 +11,10 @@
  * 6. Append-only structured security & audit logging outside public web root.
  */
 
-header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('X-Content-Type-Options: nosniff');
+require_once __DIR__ . '/security-lib.php';
 
-// 1. Strict CORS Origin Allowlist
-$allowedOrigins = [
-    'https://ecasiafrica.org',
-    'https://www.ecasiafrica.org',
-    'https://msimamizi.ecasiafrica.org',
-    'https://msimamiziecasi.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:8080',
-];
-
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($origin, $allowedOrigins, true)) {
-    header("Access-Control-Allow-Origin: $origin");
-    header('Vary: Origin');
-} else {
-    header('Access-Control-Allow-Origin: https://ecasiafrica.org');
-}
-
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Token, X-Requested-With');
+ecasApplySecurityHeaders();
+ecasApplyStrictCors('GET, POST, OPTIONS', 'Content-Type, Authorization, X-Admin-Token, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -98,6 +78,9 @@ function normalizeAdminRole(?string $role): string {
         'ADMISSIONS OFFICER' => 'ADMISSIONS_OFFICER',
         'FINANCE_OFFICER' => 'FINANCE_OFFICER',
         'FINANCE OFFICER' => 'FINANCE_OFFICER',
+        'VERIFICATION_OFFICER' => 'VERIFICATION_OFFICER',
+        'VERIFICATION OFFICER' => 'VERIFICATION_OFFICER',
+        'SECURITY_OFFICER' => 'VERIFICATION_OFFICER',
         'COURSE_MANAGER' => 'COURSE_MANAGER',
         'COURSE MANAGER' => 'COURSE_MANAGER',
         'RECRUITMENT_OFFICER' => 'RECRUITMENT_OFFICER',
@@ -114,12 +97,13 @@ function getRolePermissions(string $role): array {
     $norm = normalizeAdminRole($role);
     $matrix = [
         'SUPER_ADMIN' => ['*'],
-        'ADMISSIONS_OFFICER' => ['dashboard.view', 'admissions.view', 'admissions.write', 'crm.view', 'crm.write', 'courses.view', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
-        'FINANCE_OFFICER' => ['dashboard.view', 'admissions.view', 'finance.view', 'finance.write', 'courses.view', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
+        'VERIFICATION_OFFICER' => ['dashboard.view', 'admissions.view', 'security.view', 'security.review', 'crm.view', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
+        'ADMISSIONS_OFFICER' => ['dashboard.view', 'admissions.view', 'admissions.write', 'security.view', 'crm.view', 'crm.write', 'courses.view', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
+        'FINANCE_OFFICER' => ['dashboard.view', 'admissions.view', 'security.view', 'finance.view', 'finance.write', 'courses.view', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
         'COURSE_MANAGER' => ['dashboard.view', 'courses.view', 'courses.write', 'cms.view', 'cms.write', 'reports.view', 'reports.export'],
         'RECRUITMENT_OFFICER' => ['dashboard.view', 'recruitment.view', 'recruitment.write', 'communications.view', 'communications.write', 'reports.view', 'reports.export'],
         'SUPPORT_OFFICER' => ['dashboard.view', 'admissions.view', 'crm.view', 'crm.write', 'communications.view', 'communications.write', 'reports.view'],
-        'REPORTS_VIEWER' => ['dashboard.view', 'admissions.view', 'crm.view', 'courses.view', 'finance.view', 'recruitment.view', 'reports.view', 'reports.export'],
+        'REPORTS_VIEWER' => ['dashboard.view', 'admissions.view', 'security.view', 'crm.view', 'courses.view', 'finance.view', 'recruitment.view', 'reports.view', 'reports.export'],
     ];
     return $matrix[$norm] ?? $matrix['REPORTS_VIEWER'];
 }
@@ -290,6 +274,17 @@ function readStore(string $file): array {
         'cmsContent' => [],
         'settings' => [],
         'auditEvents' => [],
+        'securityAlerts' => [],
+        'securityIncidents' => [],
+        'emailOtps' => [],
+        'mfaChallenges' => [],
+        'loginThrottle' => [],
+        'securityStats' => [
+            'blockedBots' => 0,
+            'failedLogins' => 0,
+            'falsePositivesCleared' => 0,
+            'maliciousUploadsBlocked' => 0,
+        ],
         'accounts' => [],
         'sessions' => [],
         'updatedAt' => gmdate('c'),
@@ -470,6 +465,8 @@ function sanitizeRegistration(array $reg): array {
         'lastName' => sanitizeText($reg['lastName'] ?? '', 120),
         'jobTitle' => sanitizeText($reg['jobTitle'] ?? '', 180),
         'organisation' => sanitizeText($reg['organisation'] ?? '', 200),
+        'organisationWebsite' => sanitizeText($reg['organisationWebsite'] ?? '', 240),
+        'organisationRegNo' => sanitizeText($reg['organisationRegNo'] ?? '', 100),
         'academicBackground' => sanitizeText($reg['academicBackground'] ?? '', 300),
         'country' => sanitizeText($reg['country'] ?? 'Kenya', 100),
         'dialCode' => sanitizeText($reg['dialCode'] ?? '+254', 16),
@@ -508,6 +505,8 @@ function sanitizeRegistration(array $reg): array {
         'linkedLeadId' => sanitizeText($reg['linkedLeadId'] ?? '', 64),
         'documents' => $documents,
         'statusHistory' => $statusHistory,
+        'submitterIp' => sanitizeText($reg['submitterIp'] ?? '', 64),
+        'securityAssessment' => is_array($reg['securityAssessment'] ?? null) ? $reg['securityAssessment'] : null,
         'adminNotes' => sanitizeText($reg['adminNotes'] ?? '', 1500),
         'submittedAt' => sanitizeText($reg['submittedAt'] ?? gmdate('c'), 64),
         'displayDate' => sanitizeText($reg['displayDate'] ?? gmdate('j F Y'), 64),
@@ -594,13 +593,11 @@ function sanitizeVacancy(array $vac): array {
 }
 
 function sanitizeAttachmentDataUrl($raw): string {
-    if (!is_string($raw)) return '';
-    $trimmed = trim($raw);
-    if ($trimmed === '' || strlen($trimmed) > 4500000) return '';
-    if (preg_match('/^data:(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|octet-stream)|image\/(png|jpeg|jpg|webp)|text\/plain)?;base64,[A-Za-z0-9+\/=]+$/', $trimmed)) {
-        return $trimmed;
+    $checked = ecasValidateAttachmentStrict($raw);
+    if (!$checked['valid']) {
+        return '';
     }
-    return '';
+    return (string)($checked['dataUrl'] ?? '');
 }
 
 function sanitizeApplication(array $app): array {
@@ -1044,6 +1041,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'email' => $acc['email'] ?? '',
                 'name' => $acc['name'] ?? '',
                 'passwordInitialized' => !empty($acc['passwordHash']) || !empty($acc['passwordInitialized']),
+                'mfaEnabled' => !empty($acc['mfaEnabled']) && !empty($acc['mfaSecret']),
                 'role' => normalizeAdminRole($acc['role'] ?? 'SUPER_ADMIN'),
                 'status' => $acc['status'] ?? 'Active',
                 'createdAt' => $acc['createdAt'] ?? null,
@@ -1051,10 +1049,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             ];
         }, is_array($store['accounts']) ? $store['accounts'] : []);
 
+        $selfMfaEnabled = false;
+        foreach (($store['accounts'] ?? []) as $acc) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === normalizeAdminEmail($adminEmail)) {
+                $selfMfaEnabled = !empty($acc['mfaEnabled']) && !empty($acc['mfaSecret']);
+                break;
+            }
+        }
+
         echo json_encode([
             'success' => true,
             'authenticated' => true,
             'role' => $adminRole,
+            'mfaEnabled' => $selfMfaEnabled,
             'permissions' => getRolePermissions($adminRole),
             'data' => [
                 'registrations' => $store['registrations'] ?? [],
@@ -1071,6 +1078,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'cmsContent' => (object)($store['cmsContent'] ?? []),
                 'settings' => (object)($store['settings'] ?? []),
                 'auditEvents' => $store['auditEvents'] ?? [],
+                'securityAlerts' => $store['securityAlerts'] ?? [],
+                'securityIncidents' => $store['securityIncidents'] ?? [],
+                'securityStats' => $store['securityStats'] ?? ['blockedBots' => 0, 'failedLogins' => 0, 'falsePositivesCleared' => 0, 'maliciousUploadsBlocked' => 0],
                 'accounts' => $publicAccounts,
                 'updatedAt' => $store['updatedAt'] ?? gmdate('c'),
             ],
@@ -1129,6 +1139,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // ─── POST REQUESTS ────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!ecasVerifyRequestOrigin()) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Cross-origin request rejected by ECAS CSRF protection.']);
+        exit;
+    }
+
     $rawInput = file_get_contents('php://input');
     if ($rawInput === false || strlen($rawInput) > 12582912) { // 12 MB limit (supports CV & supporting certificates)
         http_response_code(413);
@@ -1144,9 +1160,147 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $action = sanitizeText($payload['action'] ?? '', 64);
+    $clientIp = getClientIp();
 
-    // 1. Public Action: Submit a New Course Registration
+    // 0a. Public Action: Send Applicant Email Verification OTP (Rate-Limited)
+    if ($action === 'send_reg_otp') {
+        $rate = ecasCheckRateLimit($dataDir, 'reg_otp:' . $clientIp, 6, 900);
+        if (!$rate['allowed']) {
+            http_response_code(429);
+            header('Retry-After: ' . $rate['retryAfter']);
+            echo json_encode(['success' => false, 'error' => 'Too many verification code requests. Please wait a few minutes.']);
+            exit;
+        }
+        $targetEmail = strtolower(trim((string)filter_var($payload['email'] ?? '', FILTER_SANITIZE_EMAIL)));
+        if (!filter_var($targetEmail, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Please enter a valid email address first.']);
+            exit;
+        }
+        $domain = explode('@', $targetEmail)[1] ?? '';
+        if (in_array($domain, ECAS_DISPOSABLE_DOMAINS, true)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Disposable temporary email addresses cannot be verified for course admission.']);
+            exit;
+        }
+        $otpCode = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $otpKey = hash('sha256', $targetEmail);
+        if (!isset($store['emailOtps']) || !is_array($store['emailOtps'])) $store['emailOtps'] = [];
+        // Prune expired OTPs
+        $now = time();
+        foreach ($store['emailOtps'] as $k => $v) {
+            if (!is_array($v) || ((int)($v['expiresAt'] ?? 0)) < $now) unset($store['emailOtps'][$k]);
+        }
+        $store['emailOtps'][$otpKey] = [
+            'hash' => password_hash($otpCode, PASSWORD_BCRYPT),
+            'expiresAt' => $now + 900,
+            'attempts' => 0,
+            'verified' => false,
+            'token' => '',
+        ];
+        writeStore($storeFile, $store);
+
+        $fromEmail = filter_var($store['settings']['officialEmail'] ?? 'admissions@ecasiafrica.org', FILTER_VALIDATE_EMAIL) ?: 'admissions@ecasiafrica.org';
+        $subject = 'ECAS Institute — Course Registration Email Verification Code';
+        $body = "Hello,\n\nYour ECAS Institute registration verification code is: {$otpCode}\n\nThis code expires in 15 minutes.\nOfficial Website: https://ecasiafrica.org\nIf you did not request this code, please ignore this message.\n";
+        $headers = "From: ECAS Institute Admissions <{$fromEmail}>\r\nReply-To: {$fromEmail}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n";
+        $delivered = function_exists('mail') ? @mail($targetEmail, $subject, $body, $headers) : false;
+
+        echo json_encode([
+            'success' => true,
+            'delivered' => $delivered,
+            'message' => $delivered
+                ? 'A 6-digit verification code has been sent to your email address (valid for 15 minutes).'
+                : 'Verification code generated. If your mail server delays delivery, you may still submit your registration for manual admissions confirmation.',
+        ]);
+        exit;
+    }
+
+    // 0b. Public Action: Verify Applicant Email OTP
+    if ($action === 'verify_reg_otp') {
+        $targetEmail = strtolower(trim((string)filter_var($payload['email'] ?? '', FILTER_SANITIZE_EMAIL)));
+        $code = preg_replace('/\D/', '', trim((string)($payload['code'] ?? '')));
+        $otpKey = hash('sha256', $targetEmail);
+        $entry = $store['emailOtps'][$otpKey] ?? null;
+        if (!is_array($entry) || (int)($entry['expiresAt'] ?? 0) < time()) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Verification code expired or not requested.']);
+            exit;
+        }
+        if ((int)($entry['attempts'] ?? 0) >= 5) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'error' => 'Too many failed verification attempts. Please request a new code.']);
+            exit;
+        }
+        if (!password_verify($code, (string)($entry['hash'] ?? ''))) {
+            $store['emailOtps'][$otpKey]['attempts'] = (int)($entry['attempts'] ?? 0) + 1;
+            writeStore($storeFile, $store);
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Incorrect verification code. Please check your email and try again.']);
+            exit;
+        }
+        $verifyToken = bin2hex(random_bytes(16));
+        $store['emailOtps'][$otpKey]['verified'] = true;
+        $store['emailOtps'][$otpKey]['token'] = hash('sha256', $verifyToken);
+        writeStore($storeFile, $store);
+        echo json_encode(['success' => true, 'verified' => true, 'emailVerifyToken' => $verifyToken]);
+        exit;
+    }
+
+    // 0c. Public Action: Report Suspected Phishing / Fraudulent Communication
+    if ($action === 'report_phishing') {
+        $rate = ecasCheckRateLimit($dataDir, 'phishing_report:' . $clientIp, 5, 3600);
+        if (!$rate['allowed']) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'error' => 'Report rate limit reached. Please email info@ecasiafrica.org directly.']);
+            exit;
+        }
+        $reporterEmail = filter_var(trim((string)($payload['reporterEmail'] ?? '')), FILTER_SANITIZE_EMAIL);
+        $suspiciousSender = sanitizeText($payload['suspiciousSender'] ?? '', 200);
+        $subjectLine = sanitizeText($payload['subject'] ?? '', 200);
+        $details = sanitizeText($payload['details'] ?? '', 1500);
+        if ($details === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Please describe the suspicious email, invoice, or message.']);
+            exit;
+        }
+        $alert = ecasRecordSecurityAlert(
+            $store,
+            'Phishing / Impersonation Report',
+            'HIGH',
+            $suspiciousSender ?: ($reporterEmail ?: 'Public Report'),
+            "Public phishing report from {$reporterEmail} | Sender: {$suspiciousSender} | Subject: {$subjectLine} | Details: {$details}",
+            'Verify sender authenticity, warn affected delegates if needed, and review DMARC/SPF logs.',
+            $clientIp
+        );
+        appendAuditEvent($store, $reporterEmail ?: 'public_visitor', 'PUBLIC', 'PHISHING_REPORT_SUBMITTED', 'SecurityAlert', $alert['id'], '', $suspiciousSender);
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'report_phishing', $reporterEmail ?: 'public', 'RECORDED', 'alert=' . $alert['id']);
+        echo json_encode(['success' => true, 'reportId' => $alert['id']]);
+        exit;
+    }
+
+    // 1. Public Action: Submit a New Course Registration (With Server-Side Risk Assessment & Bot Screening)
     if ($action === 'add_registration') {
+        $rate = ecasCheckRateLimit($dataDir, 'add_registration:' . $clientIp, 15, 3600);
+        if (!$rate['allowed']) {
+            ecasRecordSecurityAlert(
+                $store,
+                'Rate Limit / Bot Flood',
+                'HIGH',
+                $clientIp,
+                'Excessive course registration submission burst exceeded rate limit from IP.',
+                'Review recent registrations from this IP and evaluate Cloudflare WAF rules.',
+                $clientIp
+            );
+            $store['securityStats']['blockedBots'] = (int)($store['securityStats']['blockedBots'] ?? 0) + 1;
+            writeStore($storeFile, $store);
+            http_response_code(429);
+            header('Retry-After: ' . $rate['retryAfter']);
+            echo json_encode(['success' => false, 'error' => 'Too many registration submissions from your network. Please wait before trying again or contact admissions@ecasiafrica.org.']);
+            exit;
+        }
+
         $regInput = $payload['registration'] ?? null;
         if (!is_array($regInput) || empty($regInput['firstName']) || empty($regInput['eventTitle'])) {
             http_response_code(400);
@@ -1155,23 +1309,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $cleanReg = sanitizeRegistration($regInput);
+        $cleanReg['submitterIp'] = $clientIp;
+
+        // Check if applicant verified their email via OTP
+        $primaryEmail = strtolower(trim((string)($cleanReg['officialEmail'] ?: ($cleanReg['personalEmail'] ?? ''))));
+        $emailVerifyToken = sanitizeText($payload['securityMeta']['emailVerifyToken'] ?? '', 120);
+        $otpVerified = false;
+        if ($primaryEmail !== '' && $emailVerifyToken !== '') {
+            $otpEntry = $store['emailOtps'][hash('sha256', $primaryEmail)] ?? null;
+            if (is_array($otpEntry) && !empty($otpEntry['verified']) && !empty($otpEntry['token']) && hash_equals($otpEntry['token'], hash('sha256', $emailVerifyToken))) {
+                $otpVerified = true;
+            }
+        }
+
+        $securityMeta = is_array($payload['securityMeta'] ?? null) ? $payload['securityMeta'] : [];
+        $securityMeta['emailOtpVerified'] = $otpVerified;
+
+        // Run Authoritative Server-Side Registration Risk Assessment Engine
+        $assessment = ecasAssessRegistrationRisk($cleanReg, $store, $clientIp, $securityMeta);
+        $cleanReg['securityAssessment'] = $assessment;
+
+        // Enforce Stage 1/2/3 workflow routing without destroying legitimate evidence
+        if ($assessment['riskScore'] >= 60) {
+            $cleanReg['workflowStage'] = 'Under Review';
+            $cleanReg['status'] = 'Under Review';
+        } elseif (empty($cleanReg['workflowStage'])) {
+            $cleanReg['workflowStage'] = 'Application Received';
+        }
+
+        if (!empty($assessment['botFlagged'])) {
+            $store['securityStats']['blockedBots'] = (int)($store['securityStats']['blockedBots'] ?? 0) + 1;
+        }
+
+        // Auto-generate Security Notification Centre Alert for HIGH / CRITICAL risk or duplicate/bot flags
+        if ($assessment['riskScore'] >= 60) {
+            $reasonSummary = implode('; ', array_map(static fn($r) => $r['detail'], array_slice($assessment['reasons'], 0, 4)));
+            ecasRecordSecurityAlert(
+                $store,
+                $assessment['riskScore'] >= 80 ? 'Critical-Risk Registration' : 'High-Risk Registration',
+                $assessment['riskScore'] >= 80 ? 'CRITICAL' : 'HIGH',
+                $cleanReg['referenceNo'],
+                "Registration {$cleanReg['referenceNo']} ({$cleanReg['firstName']} {$cleanReg['lastName']}, {$cleanReg['organisation']}) scored {$assessment['riskScore']}/100 ({$assessment['riskLevel']}). Reasons: {$reasonSummary}",
+                $assessment['recommendedAction'],
+                $clientIp
+            );
+        }
+
         $existing = is_array($store['registrations']) ? $store['registrations'] : [];
         array_unshift($existing, $cleanReg);
         $store['registrations'] = array_slice($existing, 0, 5000);
+        appendAuditEvent(
+            $store,
+            $primaryEmail ?: 'public_delegate',
+            'APPLICANT',
+            'REGISTRATION_SCREENED',
+            'Registration',
+            $cleanReg['referenceNo'],
+            '',
+            "score={$assessment['riskScore']} ({$assessment['riskLevel']}) clearance={$assessment['securityClearance']}"
+        );
         writeStore($storeFile, $store);
 
-        $actorEmail = $cleanReg['officialEmail'] ?: ($cleanReg['personalEmail'] ?: 'public_delegate');
-        writeAuditLog($auditLogFile, 'add_registration', $actorEmail, 'SUCCESS', 'ref=' . $cleanReg['referenceNo']);
+        $actorEmail = $primaryEmail ?: 'public_delegate';
+        writeAuditLog($auditLogFile, 'add_registration', $actorEmail, 'SUCCESS', 'ref=' . $cleanReg['referenceNo'] . ' risk=' . $assessment['riskScore']);
 
         echo json_encode([
             'success' => true,
             'referenceNo' => $cleanReg['referenceNo'],
+            'securityAssessment' => [
+                'riskLevel' => $assessment['riskLevel'],
+                'securityClearance' => $assessment['securityClearance'],
+                'emailVerification' => $assessment['emailVerification'],
+            ],
         ]);
         exit;
     }
 
-    // 1b. Public Action: Record a New WhatsApp / Email / Course Inquiry
+    // 1b. Public Action: Record a New WhatsApp / Email / Course Inquiry (Rate-Limited)
     if ($action === 'add_inquiry') {
+        $rate = ecasCheckRateLimit($dataDir, 'add_inquiry:' . $clientIp, 20, 900);
+        if (!$rate['allowed']) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'error' => 'Too many inquiry requests. Please wait a few minutes.']);
+            exit;
+        }
         $inqInput = $payload['inquiry'] ?? null;
         if (!is_array($inqInput)) {
             http_response_code(400);
@@ -1195,13 +1416,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // 1c. Public Action: Submit a Job Vacancy / Speculative CV Application
+    // 1c. Public Action: Submit a Job Vacancy / Speculative CV Application (Rate-Limited + Magic-Byte File Validation)
     if ($action === 'add_application') {
+        $rate = ecasCheckRateLimit($dataDir, 'add_application:' . $clientIp, 10, 3600);
+        if (!$rate['allowed']) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'error' => 'Too many application submissions. Please try again later.']);
+            exit;
+        }
         $appInput = $payload['application'] ?? null;
         if (!is_array($appInput) || empty($appInput['fullName']) || empty($appInput['email'])) {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Missing required applicant name or email.']);
             exit;
+        }
+
+        // Strict binary signature check on uploaded CV & Certificates
+        foreach (['cvDataUrl' => 'CV', 'certDataUrl' => 'Certificate'] as $field => $label) {
+            if (!empty($appInput[$field])) {
+                $check = ecasValidateAttachmentStrict($appInput[$field]);
+                if (!$check['valid']) {
+                    $store['securityStats']['maliciousUploadsBlocked'] = (int)($store['securityStats']['maliciousUploadsBlocked'] ?? 0) + 1;
+                    ecasRecordSecurityAlert(
+                        $store,
+                        'Malicious / Invalid File Upload',
+                        'HIGH',
+                        sanitizeText($appInput['email'] ?? 'applicant', 140),
+                        "Blocked {$label} upload from {$appInput['email']}: {$check['reason']}",
+                        'Inspect upload source IP and verify file validation rules.',
+                        $clientIp
+                    );
+                    writeStore($storeFile, $store);
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => "{$label} rejected: {$check['reason']}"]);
+                    exit;
+                }
+            }
         }
 
         $cleanApp = sanitizeApplication($appInput);
@@ -1221,13 +1471,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // 2. Admin Action: Authenticate (Login)
+    // 2. Admin Action: Authenticate (Login with Brute-Force Lockout & 2-Step TOTP MFA)
     if ($action === 'login') {
         $email = normalizeAdminEmail((string)($payload['email'] ?? ''));
         $password = trim((string)($payload['password'] ?? ''));
         $clientDigest = sanitizeText($payload['credentialDigest'] ?? '', 120);
 
+        $lockCheck = ecasCheckLoginLockout($store, $clientIp, $email);
+        if ($lockCheck['locked']) {
+            http_response_code(429);
+            header('Retry-After: ' . $lockCheck['retryAfter']);
+            echo json_encode([
+                'success' => false,
+                'code' => 'ACCOUNT_TEMPORARILY_LOCKED',
+                'error' => 'Too many failed sign-in attempts. Access is temporarily locked for ' . ceil($lockCheck['retryAfter'] / 60) . ' minute(s) for security protection.',
+            ]);
+            exit;
+        }
+
         if (!isAuthorizedAdmin($email, $store)) {
+            $failInfo = ecasRecordFailedLogin($store, $clientIp, $email);
+            $store['securityStats']['failedLogins'] = (int)($store['securityStats']['failedLogins'] ?? 0) + 1;
+            if ($failInfo['locked'] || $failInfo['credentialStuffingSuspected']) {
+                ecasRecordSecurityAlert(
+                    $store,
+                    $failInfo['credentialStuffingSuspected'] ? 'Credential Stuffing Suspected' : 'Brute-Force Login Attempt',
+                    'HIGH',
+                    $email ?: $clientIp,
+                    "Unauthorized admin login attempts ({$failInfo['attempts']}) from IP {$clientIp} targeting {$email}.",
+                    'Review audit logs and consider blocking source IP in Cloudflare WAF.',
+                    $clientIp
+                );
+            }
+            writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'admin_login', $email, 'DENIED_UNAUTHORIZED_EMAIL');
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'Account not provisioned. Please contact a Super Admin (Jacob Olonde or Gift Rioba) to add your @ecasiafrica.org account.']);
@@ -1253,14 +1529,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$verified && $matched && empty($matched['passwordHash']) && !empty($matched['credentialDigest']) && $clientDigest !== '') {
             $verified = hash_equals((string)$matched['credentialDigest'], $clientDigest);
             if ($verified && $password !== '' && $matchedIdx >= 0) {
-                // Upgrade legacy digest record transparently to permanent bcrypt hash
                 $store['accounts'][$matchedIdx]['passwordHash'] = password_hash($password, PASSWORD_BCRYPT);
                 $store['accounts'][$matchedIdx]['passwordInitialized'] = true;
                 $store['accounts'][$matchedIdx]['passwordSetAt'] = $matched['passwordSetAt'] ?? gmdate('c');
             }
         }
-        // Only allow initial bootstrap password BEFORE a personal password has been created.
-        // Once a user has created their password, bootstrap passwords are permanently disabled.
         if (!$verified && !$hasPasswordSet && in_array($password, ['msimamizi2026', '2026', 'ecasi2026!'], true)) {
             $verified = true;
         }
@@ -1275,13 +1548,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$verified) {
-            appendAuditEvent($store, $email, $matched['role'] ?? 'UNKNOWN', 'LOGIN_FAILED', 'Auth', $email, '', 'Invalid password');
+            $failInfo = ecasRecordFailedLogin($store, $clientIp, $email);
+            $store['securityStats']['failedLogins'] = (int)($store['securityStats']['failedLogins'] ?? 0) + 1;
+            appendAuditEvent($store, $email, $matched['role'] ?? 'UNKNOWN', 'LOGIN_FAILED', 'Auth', $email, '', "Invalid password (attempt {$failInfo['attempts']})");
+            if ($failInfo['locked'] || $failInfo['credentialStuffingSuspected']) {
+                ecasRecordSecurityAlert(
+                    $store,
+                    $failInfo['credentialStuffingSuspected'] ? 'Credential Stuffing Detected' : 'Brute-Force Account Lockout',
+                    'CRITICAL',
+                    $email,
+                    "Admin account {$email} experienced {$failInfo['attempts']} failed login attempts from IP {$clientIp} and was temporarily locked.",
+                    'Confirm with the account owner and verify MFA is enabled on this account.',
+                    $clientIp
+                );
+            }
             writeStore($storeFile, $store);
             writeAuditLog($auditLogFile, 'admin_login', $email, 'FAILED_BAD_PASSWORD');
-            http_response_code(401);
-            $errMessage = $hasPasswordSet
-                ? 'Invalid email or password. Please enter the password you created for this account.'
-                : 'Invalid credentials. If this is your very first visit and you have not set a password yet, use First-Time Setup once.';
+            http_response_code($failInfo['locked'] ? 429 : 401);
+            $errMessage = $failInfo['locked']
+                ? 'Too many failed login attempts. This account is temporarily locked for 15 minutes.'
+                : ($hasPasswordSet
+                    ? 'Invalid email or password. Please enter the password you created for this account.'
+                    : 'Invalid credentials. If this is your very first visit and you have not set a password yet, use First-Time Setup once.');
             echo json_encode([
                 'success' => false,
                 'passwordInitialized' => $hasPasswordSet,
@@ -1305,6 +1593,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Check if Multi-Factor Authentication (TOTP) is enabled on this account
+        if ($matched && !empty($matched['mfaEnabled']) && !empty($matched['mfaSecret'])) {
+            $challengeToken = bin2hex(random_bytes(24));
+            if (!isset($store['mfaChallenges']) || !is_array($store['mfaChallenges'])) $store['mfaChallenges'] = [];
+            $now = time();
+            foreach ($store['mfaChallenges'] as $ck => $cv) {
+                if (!is_array($cv) || (int)($cv['expiresAt'] ?? 0) < $now) unset($store['mfaChallenges'][$ck]);
+            }
+            $store['mfaChallenges'][hash('sha256', $challengeToken)] = [
+                'email' => $email,
+                'browserProfileId' => $browserProfileId,
+                'ip' => $clientIp,
+                'expiresAt' => $now + 300, // 5 minutes to enter TOTP code
+                'attempts' => 0,
+            ];
+            writeStore($storeFile, $store);
+            echo json_encode([
+                'success' => true,
+                'mfaRequired' => true,
+                'mfaChallengeToken' => $challengeToken,
+                'email' => $email,
+                'message' => 'Please enter the 6-digit code from your Authenticator App (or a backup recovery code).',
+            ]);
+            exit;
+        }
+
+        ecasClearLoginThrottle($store, $clientIp, $email);
         $resolvedRole = normalizeAdminRole($matched['role'] ?? 'SUPER_ADMIN');
         $token = issueAdminToken($store, $email, $browserProfileId);
         appendAuditEvent($store, $email, $resolvedRole, 'ADMIN_LOGIN', 'Auth', $email, '', 'Authenticated session started');
@@ -1318,6 +1633,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'email' => $email,
                 'name' => $matched['name'] ?? '',
                 'role' => $resolvedRole,
+                'mfaEnabled' => false,
+                'permissions' => getRolePermissions($resolvedRole),
+            ],
+        ]);
+        exit;
+    }
+
+    // 2b. Admin Action: Verify 2-Step TOTP MFA Code or Backup Recovery Code
+    if ($action === 'mfa_verify_login') {
+        $challengeToken = trim((string)($payload['mfaChallengeToken'] ?? ''));
+        $codeInput = trim((string)($payload['code'] ?? ''));
+        $cHash = hash('sha256', $challengeToken);
+        $challenge = $store['mfaChallenges'][$cHash] ?? null;
+        if (!is_array($challenge) || (int)($challenge['expiresAt'] ?? 0) < time()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'MFA challenge expired. Please sign in again.']);
+            exit;
+        }
+        if ((int)($challenge['attempts'] ?? 0) >= 5) {
+            unset($store['mfaChallenges'][$cHash]);
+            writeStore($storeFile, $store);
+            http_response_code(429);
+            echo json_encode(['success' => false, 'error' => 'Too many invalid MFA attempts. Please sign in again.']);
+            exit;
+        }
+
+        $email = normalizeAdminEmail($challenge['email'] ?? '');
+        $matched = null;
+        $matchedIdx = -1;
+        foreach (($store['accounts'] ?? []) as $idx => $acc) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $email) {
+                $matched = $acc;
+                $matchedIdx = $idx;
+                break;
+            }
+        }
+        if (!$matched || empty($matched['mfaSecret'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'MFA verification unavailable for this account.']);
+            exit;
+        }
+
+        $mfaOk = ecasVerifyTotpCode((string)$matched['mfaSecret'], $codeInput, 1);
+        $usedRecovery = false;
+        if (!$mfaOk && is_array($matched['mfaRecoveryHashes'] ?? null)) {
+            $upperCode = strtoupper($codeInput);
+            foreach ($matched['mfaRecoveryHashes'] as $rIdx => $rHash) {
+                if (password_verify($upperCode, (string)$rHash)) {
+                    $mfaOk = true;
+                    $usedRecovery = true;
+                    array_splice($store['accounts'][$matchedIdx]['mfaRecoveryHashes'], $rIdx, 1);
+                    break;
+                }
+            }
+        }
+
+        if (!$mfaOk) {
+            $store['mfaChallenges'][$cHash]['attempts'] = (int)($challenge['attempts'] ?? 0) + 1;
+            $store['securityStats']['failedLogins'] = (int)($store['securityStats']['failedLogins'] ?? 0) + 1;
+            appendAuditEvent($store, $email, $matched['role'] ?? 'SUPER_ADMIN', 'MFA_VERIFICATION_FAILED', 'Auth', $email, '', 'Invalid TOTP/recovery code');
+            writeStore($storeFile, $store);
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'Invalid authenticator code. Please check your Authenticator App and retry.']);
+            exit;
+        }
+
+        unset($store['mfaChallenges'][$cHash]);
+        ecasClearLoginThrottle($store, $clientIp, $email);
+        $resolvedRole = normalizeAdminRole($matched['role'] ?? 'SUPER_ADMIN');
+        $token = issueAdminToken($store, $email, (string)($challenge['browserProfileId'] ?? ''));
+        appendAuditEvent($store, $email, $resolvedRole, 'ADMIN_LOGIN_MFA', 'Auth', $email, '', $usedRecovery ? 'Authenticated via single-use backup recovery code' : 'Authenticated via TOTP MFA');
+        if ($usedRecovery) {
+            ecasRecordSecurityAlert($store, 'MFA Recovery Code Used', 'MEDIUM', $email, "Administrator {$email} signed in using a single-use MFA backup recovery code.", 'Verify this login was authorized and regenerate backup codes if needed.', $clientIp);
+        }
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'admin_login_mfa', $email, 'SUCCESS');
+
+        echo json_encode([
+            'success' => true,
+            'token' => $token,
+            'user' => [
+                'email' => $email,
+                'name' => $matched['name'] ?? '',
+                'role' => $resolvedRole,
+                'mfaEnabled' => true,
                 'permissions' => getRolePermissions($resolvedRole),
             ],
         ]);
@@ -1504,11 +1904,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'set_registrations' && isset($payload['registrations']) && is_array($payload['registrations'])) {
         $enforcePermission('admissions.write');
+        $existingById = [];
+        foreach (($store['registrations'] ?? []) as $er) {
+            if (is_array($er) && !empty($er['id'])) $existingById[$er['id']] = $er;
+        }
+        $restrictedStages = ['Approved', 'Invoice Issued', 'Payment Pending', 'Payment Confirmed', 'Enrolment Confirmed', 'Training In Progress', 'Completed'];
         $cleanList = [];
         foreach (array_slice($payload['registrations'], 0, 5000) as $r) {
-            if (is_array($r)) {
-                $cleanList[] = sanitizeRegistration($r);
+            if (!is_array($r)) continue;
+            $sanitized = sanitizeRegistration($r);
+            $prevReg = $existingById[$sanitized['id']] ?? null;
+            // Preserve server-computed securityAssessment against client tampering unless updated via security_review_decision
+            if ($prevReg && is_array($prevReg['securityAssessment'] ?? null)) {
+                $sanitized['securityAssessment'] = $prevReg['securityAssessment'];
             }
+            $sec = $sanitized['securityAssessment'] ?? null;
+            $riskScore = is_array($sec) ? (int)($sec['riskScore'] ?? 0) : 0;
+            $clearance = is_array($sec) ? (string)($sec['securityClearance'] ?? '') : '';
+            $targetStage = $sanitized['workflowStage'] ?: $sanitized['status'];
+            if ($riskScore >= 60 && $clearance !== 'Cleared' && in_array($targetStage, $restrictedStages, true)) {
+                http_response_code(409);
+                echo json_encode([
+                    'success' => false,
+                    'code' => 'SECURITY_CLEARANCE_REQUIRED',
+                    'error' => "Security Gate Blocked: Registration {$sanitized['referenceNo']} is flagged ({$sec['riskLevel']} — Score {$riskScore}/100) and MUST be cleared in the Security Review Queue before moving to \"{$targetStage}\".",
+                ]);
+                exit;
+            }
+            $cleanList[] = $sanitized;
         }
         $prevCount = count($store['registrations'] ?? []);
         $store['registrations'] = $cleanList;
@@ -1616,9 +2039,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'set_invoices' && isset($payload['invoices']) && is_array($payload['invoices'])) {
         $enforcePermission('finance.write');
+        $regsById = [];
+        foreach (($store['registrations'] ?? []) as $regItem) {
+            if (is_array($regItem) && !empty($regItem['id'])) $regsById[$regItem['id']] = $regItem;
+        }
         $clean = [];
         foreach (array_slice($payload['invoices'], 0, 5000) as $inv) {
-            if (is_array($inv)) $clean[] = sanitizeInvoice($inv);
+            if (!is_array($inv)) continue;
+            $sanitizedInv = sanitizeInvoice($inv);
+            // MANDATORY SECURITY GATE: Block invoicing any High/Critical risk registration without Security Clearance
+            if (!empty($sanitizedInv['registrationId']) && ($sanitizedInv['status'] !== 'Cancelled') && isset($regsById[$sanitizedInv['registrationId']])) {
+                $linkedReg = $regsById[$sanitizedInv['registrationId']];
+                $sec = $linkedReg['securityAssessment'] ?? null;
+                if (is_array($sec) && (int)($sec['riskScore'] ?? 0) >= 60 && ($sec['securityClearance'] ?? '') !== 'Cleared') {
+                    http_response_code(409);
+                    echo json_encode([
+                        'success' => false,
+                        'code' => 'SECURITY_CLEARANCE_REQUIRED',
+                        'error' => "Security Gate Blocked: Cannot issue invoice for {$linkedReg['referenceNo']} ({$sec['riskLevel']}) until a Verification Officer or Super Admin grants Security Clearance.",
+                    ]);
+                    exit;
+                }
+            }
+            $clean[] = $sanitizedInv;
         }
         $store['invoices'] = $clean;
         $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
@@ -1640,9 +2083,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'set_payments' && isset($payload['payments']) && is_array($payload['payments'])) {
         $enforcePermission('finance.write');
+        $seenRefs = [];
         $clean = [];
         foreach (array_slice($payload['payments'], 0, 5000) as $pay) {
-            if (is_array($pay)) $clean[] = sanitizePayment($pay);
+            if (!is_array($pay)) continue;
+            $sp = sanitizePayment($pay);
+            $normRef = strtoupper(trim($sp['reference']));
+            if ($normRef !== '' && isset($seenRefs[$normRef])) {
+                $sp['reconciliationStatus'] = 'Duplicate';
+                ecasRecordSecurityAlert(
+                    $store,
+                    'Duplicate Payment Reference',
+                    'HIGH',
+                    $sp['reference'],
+                    "Duplicate payment reference {$sp['reference']} detected across multiple transactions (Invoice {$sp['invoiceNo']}).",
+                    'Reconcile against bank/M-Pesa statement before confirming delegate enrolment.',
+                    $clientIp
+                );
+            } elseif ($normRef !== '') {
+                $seenRefs[$normRef] = true;
+            }
+            $clean[] = $sp;
         }
         $store['payments'] = $clean;
         $auditMeta = is_array($payload['audit'] ?? null) ? $payload['audit'] : [];
@@ -1869,6 +2330,295 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         writeStore($storeFile, $store);
         writeAuditLog($auditLogFile, 'delete_staff_account', $adminEmail, 'SUCCESS', "target={$targetEmail}");
         echo json_encode(['success' => true]);
+        exit;
+    }
+
+    // ─── SECURITY REVIEW QUEUE, MFA, PASSWORD ROTATION, ALERTS & BACKUPS ──────
+
+    if ($action === 'security_review_decision') {
+        $enforcePermission('security.review');
+        $regId = sanitizeText($payload['registrationId'] ?? '', 64);
+        $decision = sanitizeText($payload['decision'] ?? '', 48); // Clear | ClearFalsePositive | RequestDocs | VerifyOrg | Escalate | RejectFraud
+        $justification = sanitizeText($payload['justification'] ?? '', 800);
+        if ($regId === '' || $decision === '' || strlen($justification) < 5) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Registration ID, decision, and a written justification (min. 5 chars) are required.']);
+            exit;
+        }
+        $foundIdx = -1;
+        foreach (($store['registrations'] ?? []) as $idx => $r) {
+            if (($r['id'] ?? '') === $regId) { $foundIdx = $idx; break; }
+        }
+        if ($foundIdx < 0) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Registration not found.']);
+            exit;
+        }
+        $reg = $store['registrations'][$foundIdx];
+        $sec = is_array($reg['securityAssessment'] ?? null) ? $reg['securityAssessment'] : [
+            'riskScore' => 0, 'riskLevel' => 'LOW RISK', 'reasons' => [], 'orgVerification' => 'Unverified',
+            'emailVerification' => 'Unverified', 'phoneVerification' => 'Unverified', 'securityClearance' => 'Pending Review', 'reviewHistory' => [],
+        ];
+        $prevClearance = (string)($sec['securityClearance'] ?? 'Pending Review');
+        if ($decision === 'Clear' || $decision === 'ClearFalsePositive') {
+            $sec['securityClearance'] = 'Cleared';
+            $sec['requiresSecurityReview'] = false;
+            if ($decision === 'ClearFalsePositive') {
+                $sec['falsePositiveCleared'] = true;
+                $store['securityStats']['falsePositivesCleared'] = (int)($store['securityStats']['falsePositivesCleared'] ?? 0) + 1;
+            }
+        } elseif ($decision === 'VerifyOrg') {
+            $sec['orgVerification'] = 'Verified by Officer';
+        } elseif ($decision === 'RequestDocs') {
+            $reg['workflowStage'] = 'Documents Required';
+            $reg['status'] = 'Documents Required';
+            $sec['securityClearance'] = 'Pending Documents';
+        } elseif ($decision === 'Escalate') {
+            $sec['securityClearance'] = 'Escalated to Super Admin';
+            ecasRecordSecurityAlert($store, 'Escalated Registration Review', 'CRITICAL', $reg['referenceNo'], "Officer {$adminEmail} escalated {$reg['referenceNo']}: {$justification}", 'Super Admin review required before any action.', $clientIp);
+        } elseif ($decision === 'RejectFraud') {
+            $sec['securityClearance'] = 'Rejected — Fraudulent';
+            $reg['workflowStage'] = 'Rejected';
+            $reg['status'] = 'Rejected';
+        }
+
+        if (!empty($payload['orgVerification'])) $sec['orgVerification'] = sanitizeText($payload['orgVerification'], 80);
+        if (!empty($payload['emailVerification'])) $sec['emailVerification'] = sanitizeText($payload['emailVerification'], 80);
+        if (!empty($payload['phoneVerification'])) $sec['phoneVerification'] = sanitizeText($payload['phoneVerification'], 80);
+
+        $history = is_array($sec['reviewHistory'] ?? null) ? $sec['reviewHistory'] : [];
+        array_unshift($history, [
+            'decision' => $decision,
+            'justification' => $justification,
+            'officer' => $adminEmail,
+            'role' => $adminRole,
+            'at' => gmdate('c'),
+        ]);
+        $sec['reviewHistory'] = array_slice($history, 0, 50);
+        $sec['reviewedBy'] = $adminEmail;
+        $sec['reviewedAt'] = gmdate('c');
+        $reg['securityAssessment'] = $sec;
+        $reg['updatedAt'] = gmdate('c');
+        $store['registrations'][$foundIdx] = $reg;
+
+        appendAuditEvent($store, $adminEmail, $adminRole, 'SECURITY_REVIEW_' . strtoupper($decision), 'Registration', $reg['referenceNo'], $prevClearance, "{$sec['securityClearance']} — {$justification}");
+        writeStore($storeFile, $store);
+        writeAuditLog($auditLogFile, 'security_review_decision', $adminEmail, 'SUCCESS', "ref={$reg['referenceNo']} decision={$decision}");
+        echo json_encode(['success' => true, 'registration' => $reg]);
+        exit;
+    }
+
+    if ($action === 'update_security_alert') {
+        $enforcePermission('security.review');
+        $alertId = sanitizeText($payload['alertId'] ?? '', 64);
+        $nextStatus = sanitizeText($payload['status'] ?? 'Acknowledged', 32);
+        $notes = sanitizeText($payload['resolutionNotes'] ?? '', 600);
+        $assigned = sanitizeText($payload['assignedOfficer'] ?? '', 160);
+        foreach (($store['securityAlerts'] ?? []) as $idx => $a) {
+            if (($a['id'] ?? '') === $alertId) {
+                $prevSt = $a['status'] ?? 'Open';
+                $store['securityAlerts'][$idx]['status'] = in_array($nextStatus, ['Open', 'Acknowledged', 'Investigating', 'Resolved', 'False Positive'], true) ? $nextStatus : 'Acknowledged';
+                if ($notes !== '') $store['securityAlerts'][$idx]['resolutionNotes'] = $notes;
+                if ($assigned !== '') $store['securityAlerts'][$idx]['assignedOfficer'] = $assigned;
+                $store['securityAlerts'][$idx]['updatedAt'] = gmdate('c');
+                appendAuditEvent($store, $adminEmail, $adminRole, 'UPDATE_SECURITY_ALERT', 'SecurityAlert', $alertId, $prevSt, "{$nextStatus} {$notes}");
+                writeStore($storeFile, $store);
+                echo json_encode(['success' => true, 'alert' => $store['securityAlerts'][$idx]]);
+                exit;
+            }
+        }
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Security alert not found.']);
+        exit;
+    }
+
+    if ($action === 'save_security_incident') {
+        $enforcePermission('security.review');
+        $incInput = is_array($payload['incident'] ?? null) ? $payload['incident'] : [];
+        $incId = sanitizeText($incInput['id'] ?? ('INC-' . gmdate('Ymd') . '-' . random_int(100, 999)), 64);
+        $record = [
+            'id' => $incId,
+            'title' => sanitizeText($incInput['title'] ?? 'Security Incident', 200),
+            'category' => sanitizeText($incInput['category'] ?? 'Unauthorized Access', 80),
+            'severity' => in_array($incInput['severity'] ?? 'HIGH', ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'], true) ? $incInput['severity'] : 'HIGH',
+            'phase' => sanitizeText($incInput['phase'] ?? '1. Detected', 64),
+            'affectedComponent' => sanitizeText($incInput['affectedComponent'] ?? '', 200),
+            'containmentActions' => sanitizeText($incInput['containmentActions'] ?? '', 1500),
+            'rootCause' => sanitizeText($incInput['rootCause'] ?? '', 1500),
+            'assignedOfficer' => sanitizeText($incInput['assignedOfficer'] ?? $adminEmail, 160),
+            'status' => in_array($incInput['status'] ?? 'Open', ['Open', 'Contained', 'Investigating', 'Restored', 'Closed'], true) ? $incInput['status'] : 'Open',
+            'createdAt' => sanitizeText($incInput['createdAt'] ?? gmdate('c'), 64),
+            'updatedAt' => gmdate('c'),
+        ];
+        if (!isset($store['securityIncidents']) || !is_array($store['securityIncidents'])) $store['securityIncidents'] = [];
+        $replaced = false;
+        foreach ($store['securityIncidents'] as $idx => $existingInc) {
+            if (($existingInc['id'] ?? '') === $incId) {
+                $store['securityIncidents'][$idx] = $record;
+                $replaced = true;
+                break;
+            }
+        }
+        if (!$replaced) array_unshift($store['securityIncidents'], $record);
+        appendAuditEvent($store, $adminEmail, $adminRole, $replaced ? 'UPDATE_INCIDENT' : 'CREATE_INCIDENT', 'SecurityIncident', $incId, '', "{$record['title']} ({$record['status']})");
+        writeStore($storeFile, $store);
+        echo json_encode(['success' => true, 'incident' => $record]);
+        exit;
+    }
+
+    if ($action === 'mfa_setup_start') {
+        $normSelf = normalizeAdminEmail($adminEmail);
+        $secret = ecasGenerateTotpSecret(32);
+        $found = false;
+        foreach (($store['accounts'] ?? []) as $idx => $acc) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $normSelf) {
+                $store['accounts'][$idx]['pendingMfaSecret'] = $secret;
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) {
+            $store['accounts'][] = [
+                'email' => $normSelf,
+                'role' => $adminRole,
+                'status' => 'Active',
+                'pendingMfaSecret' => $secret,
+                'createdAt' => gmdate('c'),
+                'updatedAt' => gmdate('c'),
+            ];
+        }
+        writeStore($storeFile, $store);
+        $issuer = rawurlencode('ECAS Msimamizi');
+        $label = rawurlencode("ECAS Msimamizi:{$normSelf}");
+        $otpauthUri = "otpauth://totp/{$label}?secret={$secret}&issuer={$issuer}&algorithm=SHA1&digits=6&period=30";
+        echo json_encode(['success' => true, 'secret' => $secret, 'otpauthUri' => $otpauthUri]);
+        exit;
+    }
+
+    if ($action === 'mfa_setup_confirm') {
+        $normSelf = normalizeAdminEmail($adminEmail);
+        $code = trim((string)($payload['code'] ?? ''));
+        foreach (($store['accounts'] ?? []) as $idx => $acc) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $normSelf) {
+                $pending = (string)($acc['pendingMfaSecret'] ?? '');
+                if ($pending === '' || !ecasVerifyTotpCode($pending, $code, 1)) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'Invalid 6-digit code from Authenticator App. Please verify your device clock and try again.']);
+                    exit;
+                }
+                $recovery = ecasGenerateRecoveryCodes(8);
+                $store['accounts'][$idx]['mfaSecret'] = $pending;
+                $store['accounts'][$idx]['mfaEnabled'] = true;
+                $store['accounts'][$idx]['mfaEnabledAt'] = gmdate('c');
+                $store['accounts'][$idx]['mfaRecoveryHashes'] = $recovery['hashed'];
+                unset($store['accounts'][$idx]['pendingMfaSecret']);
+                appendAuditEvent($store, $adminEmail, $adminRole, 'MFA_ENABLED', 'Auth', $normSelf, 'Disabled', 'TOTP Authenticator App Enabled');
+                ecasRecordSecurityAlert($store, 'Security Configuration Change', 'LOW', $normSelf, "Administrator {$normSelf} enabled TOTP Multi-Factor Authentication.", 'No action needed if initiated by account owner.', $clientIp);
+                writeStore($storeFile, $store);
+                echo json_encode(['success' => true, 'mfaEnabled' => true, 'recoveryCodes' => $recovery['plain']]);
+                exit;
+            }
+        }
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'MFA enrollment session not found. Please start MFA setup again.']);
+        exit;
+    }
+
+    if ($action === 'mfa_disable') {
+        $normSelf = normalizeAdminEmail($adminEmail);
+        $currentPassword = trim((string)($payload['currentPassword'] ?? ''));
+        foreach (($store['accounts'] ?? []) as $idx => $acc) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $normSelf) {
+                if (!empty($acc['passwordHash']) && !password_verify($currentPassword, (string)$acc['passwordHash'])) {
+                    http_response_code(401);
+                    echo json_encode(['success' => false, 'error' => 'Current password verification failed.']);
+                    exit;
+                }
+                $store['accounts'][$idx]['mfaEnabled'] = false;
+                unset($store['accounts'][$idx]['mfaSecret'], $store['accounts'][$idx]['pendingMfaSecret'], $store['accounts'][$idx]['mfaRecoveryHashes']);
+                appendAuditEvent($store, $adminEmail, $adminRole, 'MFA_DISABLED', 'Auth', $normSelf, 'Enabled', 'Disabled by account owner');
+                ecasRecordSecurityAlert($store, 'Security Configuration Change', 'HIGH', $normSelf, "Multi-Factor Authentication was disabled for {$normSelf}.", 'Verify this change was authorized by the administrator.', $clientIp);
+                writeStore($storeFile, $store);
+                echo json_encode(['success' => true, 'mfaEnabled' => false]);
+                exit;
+            }
+        }
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Account not found.']);
+        exit;
+    }
+
+    if ($action === 'change_password') {
+        $normSelf = normalizeAdminEmail($adminEmail);
+        $currentPassword = trim((string)($payload['currentPassword'] ?? ''));
+        $newPassword = trim((string)($payload['newPassword'] ?? ''));
+        $newDigest = sanitizeText($payload['credentialDigest'] ?? '', 120);
+        if (strlen($newPassword) < 8) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'New password must be at least 8 characters long.']);
+            exit;
+        }
+        foreach (($store['accounts'] ?? []) as $idx => $acc) {
+            if (normalizeAdminEmail($acc['email'] ?? '') === $normSelf) {
+                if (!empty($acc['passwordHash']) && !password_verify($currentPassword, (string)$acc['passwordHash'])) {
+                    http_response_code(401);
+                    echo json_encode(['success' => false, 'error' => 'Current password is incorrect.']);
+                    exit;
+                }
+                $store['accounts'][$idx]['passwordHash'] = password_hash($newPassword, PASSWORD_BCRYPT);
+                $store['accounts'][$idx]['passwordInitialized'] = true;
+                $store['accounts'][$idx]['passwordSetAt'] = gmdate('c');
+                if ($newDigest !== '') $store['accounts'][$idx]['credentialDigest'] = $newDigest;
+                // Invalidate all OTHER active sessions for this account immediately
+                $curTokHash = hash('sha256', $token);
+                foreach (($store['sessions'] ?? []) as $sHash => $sess) {
+                    if (normalizeAdminEmail($sess['email'] ?? '') === $normSelf && !hash_equals($sHash, $curTokHash)) {
+                        unset($store['sessions'][$sHash]);
+                    }
+                }
+                appendAuditEvent($store, $adminEmail, $adminRole, 'PASSWORD_CHANGED', 'Auth', $normSelf, '', 'Password rotated; other sessions invalidated');
+                ecasRecordSecurityAlert($store, 'Security Configuration Change', 'MEDIUM', $normSelf, "Password rotated for administrator {$normSelf}; all other sessions invalidated.", 'Confirm this password change was performed by the account owner.', $clientIp);
+                if (!writeStore($storeFile, $store)) {
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'error' => 'Failed to persist updated password to server storage.']);
+                    exit;
+                }
+                echo json_encode(['success' => true, 'message' => 'Password updated securely. All other sessions have been invalidated.']);
+                exit;
+            }
+        }
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Account record not found.']);
+        exit;
+    }
+
+    if ($action === 'export_verified_backup') {
+        $enforcePermission('admin.manage');
+        $safeStore = $store;
+        // Never export raw session tokens, OTPs, MFA secrets, or bcrypt password hashes in backups downloaded to browsers
+        unset($safeStore['sessions'], $safeStore['emailOtps'], $safeStore['mfaChallenges'], $safeStore['loginThrottle']);
+        $safeStore['accounts'] = array_map(static function ($a) {
+            return [
+                'email' => $a['email'] ?? '',
+                'name' => $a['name'] ?? '',
+                'role' => $a['role'] ?? 'SUPPORT_OFFICER',
+                'status' => $a['status'] ?? 'Active',
+                'mfaEnabled' => !empty($a['mfaEnabled']),
+                'passwordInitialized' => !empty($a['passwordInitialized']) || !empty($a['passwordHash']),
+                'createdAt' => $a['createdAt'] ?? null,
+            ];
+        }, is_array($store['accounts'] ?? null) ? $store['accounts'] : []);
+
+        $payloadJson = json_encode($safeStore, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $checksum = hash('sha256', (string)$payloadJson);
+        appendAuditEvent($store, $adminEmail, $adminRole, 'BACKUP_EXPORTED', 'Database', 'Verified Institutional Backup', '', "sha256={$checksum}");
+        writeStore($storeFile, $store);
+        echo json_encode([
+            'success' => true,
+            'exportedAt' => gmdate('c'),
+            'sha256' => $checksum,
+            'backup' => $safeStore,
+        ]);
         exit;
     }
 

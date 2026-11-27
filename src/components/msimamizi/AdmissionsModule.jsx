@@ -22,9 +22,12 @@ import { adminRegistrationService } from '@/services/adminRegistrationService';
 import {
   ADMISSION_STAGES,
   getEffectiveRegistrationStage,
+  getRegistrationSecurityInfo,
+  isRegistrationSecurityBlocked,
   hasPermission,
   msimamiziEnterpriseService,
 } from '@/services/msimamiziEnterpriseService';
+import { escapeHtml } from '@/utils/htmlSanitizer';
 
 const PAGE_SIZE = 12;
 
@@ -57,6 +60,7 @@ export default function AdmissionsModule({
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('All');
   const [paymentFilter, setPaymentFilter] = useState('All');
+  const [securityFilter, setSecurityFilter] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
   const [selectedProfile, setSelectedProfile] = useState(null);
@@ -93,14 +97,33 @@ export default function AdmissionsModule({
       list = list.filter((r) => (r.paymentStatus || 'Unpaid') === paymentFilter);
     }
 
+    if (securityFilter !== 'All') {
+      list = list.filter((r) => {
+        const sec = getRegistrationSecurityInfo(r);
+        if (securityFilter === 'Low Risk') return sec.riskLevel === 'LOW RISK';
+        if (securityFilter === 'Medium Risk') return sec.riskLevel === 'MEDIUM RISK';
+        if (securityFilter === 'High Risk') return sec.riskLevel === 'HIGH RISK';
+        if (securityFilter === 'Critical Risk') return sec.riskLevel === 'CRITICAL RISK';
+        if (securityFilter === 'Unverified Organizations') return sec.orgVerification.toLowerCase().includes('unverified') || sec.orgVerification.toLowerCase().includes('pending');
+        if (securityFilter === 'Unverified Emails') return !sec.emailVerification.toLowerCase().includes('verified (otp)');
+        if (securityFilter === 'Unverified Phone Numbers') return !sec.phoneVerification.toLowerCase().includes('valid');
+        if (securityFilter === 'Duplicate Applications') return sec.isDuplicate;
+        if (securityFilter === 'Security Review Required') return sec.requiresSecurityReview;
+        if (securityFilter === 'Security Cleared') return sec.securityClearance === 'Cleared' || sec.securityClearance.includes('Auto-Cleared');
+        if (securityFilter === 'Rejected Fraudulent Applications') return sec.securityClearance.includes('Rejected');
+        return true;
+      });
+    }
+
     list.sort((a, b) => {
       if (sortBy === 'oldest') return new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0);
       if (sortBy === 'fee-desc') return (Number(b.totalFee) || 0) - (Number(a.totalFee) || 0);
+      if (sortBy === 'risk-desc') return getRegistrationSecurityInfo(b).riskScore - getRegistrationSecurityInfo(a).riskScore;
       if (sortBy === 'name') return `${a.firstName || ''} ${a.lastName || ''}`.localeCompare(`${b.firstName || ''} ${b.lastName || ''}`);
       return new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0);
     });
     return list;
-  }, [registrations, activeTab, search, stageFilter, paymentFilter, sortBy]);
+  }, [registrations, activeTab, search, stageFilter, paymentFilter, securityFilter, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(scopedList.length / PAGE_SIZE));
   const pagedList = scopedList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -113,7 +136,11 @@ export default function AdmissionsModule({
 
   const handleStageUpdate = (reg, newStage) => {
     if (!canWrite) return;
-    msimamiziEnterpriseService.updateRegistrationWorkflow(reg.id, newStage, stageNote, currentUser);
+    const res = msimamiziEnterpriseService.updateRegistrationWorkflow(reg.id, newStage, stageNote, currentUser);
+    if (res?.blocked) {
+      alert(res.error);
+      return;
+    }
     setStageNote('');
     onDataChange();
     showToast(`${reg.referenceNo} moved to "${newStage}".`);
@@ -130,6 +157,11 @@ export default function AdmissionsModule({
   const handleGenerateInvoice = (reg) => {
     if (!canFinance) {
       alert('Your role does not have Finance write permission to generate invoices.');
+      return;
+    }
+    if (isRegistrationSecurityBlocked(reg)) {
+      const sec = getRegistrationSecurityInfo(reg);
+      alert(`Security Gate Blocked: ${reg.referenceNo} (${sec.riskLevel}, Score ${sec.riskScore}/100) must be cleared in the Security Review Queue before issuing an invoice.`);
       return;
     }
     const existing = invoices.find((i) => i.registrationId === reg.id && i.status !== 'Cancelled');
@@ -154,6 +186,10 @@ export default function AdmissionsModule({
       },
       currentUser
     );
+    if (inv?.blocked) {
+      alert(inv.error);
+      return;
+    }
     onDataChange();
     showToast(`Invoice ${inv.invoiceNo} generated and linked to ${reg.referenceNo}!`);
   };
@@ -263,13 +299,13 @@ export default function AdmissionsModule({
               type="button"
               onClick={() => {
                 const html = `
-                  <h3>Applicant Profile — ${fullName}</h3>
+                  <h3>Applicant Profile — ${escapeHtml(fullName)}</h3>
                   <table>
-                    <tr><th>Registration No</th><td>${activeProfile.referenceNo}</td><th>Workflow Stage</th><td>${stage}</td></tr>
-                    <tr><th>Email</th><td>${activeProfile.officialEmail || activeProfile.personalEmail || '—'}</td><th>Phone</th><td>${activeProfile.dialCode || ''} ${activeProfile.phoneNumber || ''}</td></tr>
-                    <tr><th>Organisation</th><td>${activeProfile.organisation || '—'}</td><th>Country</th><td>${activeProfile.country || '—'}</td></tr>
-                    <tr><th>Course</th><td>${activeProfile.eventTitle}</td><th>Destination</th><td>${activeProfile.venue}</td></tr>
-                    <tr><th>Cohort / Dates</th><td>${activeProfile.cohortName || activeProfile.durationText || '—'}</td><th>Total Fee</th><td>${activeProfile.currency || 'USD'} ${Number(activeProfile.totalFee || 0).toLocaleString()}</td></tr>
+                    <tr><th>Registration No</th><td>${escapeHtml(activeProfile.referenceNo)}</td><th>Workflow Stage</th><td>${escapeHtml(stage)}</td></tr>
+                    <tr><th>Email</th><td>${escapeHtml(activeProfile.officialEmail || activeProfile.personalEmail || '—')}</td><th>Phone</th><td>${escapeHtml(`${activeProfile.dialCode || ''} ${activeProfile.phoneNumber || ''}`)}</td></tr>
+                    <tr><th>Organisation</th><td>${escapeHtml(activeProfile.organisation || '—')}</td><th>Country</th><td>${escapeHtml(activeProfile.country || '—')}</td></tr>
+                    <tr><th>Course</th><td>${escapeHtml(activeProfile.eventTitle)}</td><th>Destination</th><td>${escapeHtml(activeProfile.venue)}</td></tr>
+                    <tr><th>Cohort / Dates</th><td>${escapeHtml(activeProfile.cohortName || activeProfile.durationText || '—')}</td><th>Total Fee</th><td>${escapeHtml(activeProfile.currency || 'USD')} ${Number(activeProfile.totalFee || 0).toLocaleString()}</td></tr>
                   </table>
                 `;
                 msimamiziEnterpriseService.printInstitutionalDocument(`Applicant Profile - ${activeProfile.referenceNo}`, html, currentUser);
@@ -601,18 +637,36 @@ export default function AdmissionsModule({
           </div>
         </div>
 
-        {/* Search & Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+        {/* Search & Filters (Includes All 12 Security & Risk Filters) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-100">
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search name, ref, email, course..."
+              placeholder="Search name, ref, email, org..."
               className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#00B8B0]"
             />
           </div>
+          <select
+            value={securityFilter}
+            onChange={(e) => { setSecurityFilter(e.target.value); setPage(1); }}
+            className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#10243E]"
+          >
+            <option value="All">All Security &amp; Risk Levels</option>
+            <option value="Low Risk">Low Risk (0–29)</option>
+            <option value="Medium Risk">Medium Risk (30–59)</option>
+            <option value="High Risk">High Risk (60–79)</option>
+            <option value="Critical Risk">Critical Risk (80–100)</option>
+            <option value="Security Review Required">Security Review Required</option>
+            <option value="Security Cleared">Security Cleared</option>
+            <option value="Unverified Organizations">Unverified Organizations</option>
+            <option value="Unverified Emails">Unverified Emails</option>
+            <option value="Unverified Phone Numbers">Unverified Phone Numbers</option>
+            <option value="Duplicate Applications">Duplicate Applications</option>
+            <option value="Rejected Fraudulent Applications">Rejected Fraudulent Applications</option>
+          </select>
           <select
             value={stageFilter}
             onChange={(e) => { setStageFilter(e.target.value); setPage(1); }}
@@ -639,6 +693,7 @@ export default function AdmissionsModule({
             className="h-9 px-3 rounded-xl border border-slate-200 text-xs bg-white font-semibold text-[#10243E]"
           >
             <option value="newest">Sort: Newest First</option>
+            <option value="risk-desc">Sort: Highest Risk First</option>
             <option value="oldest">Sort: Oldest First</option>
             <option value="fee-desc">Sort: Highest Fee</option>
             <option value="name">Sort: Applicant A–Z</option>
@@ -653,8 +708,9 @@ export default function AdmissionsModule({
             <thead>
               <tr className="bg-[#071C2D] text-white text-[11px] uppercase tracking-wider">
                 <th className="py-3 px-4">Reg No / Date</th>
-                <th className="py-3 px-4">Applicant &amp; Contact</th>
+                <th className="py-3 px-4">Applicant &amp; Org</th>
                 <th className="py-3 px-4">Course &amp; Destination</th>
+                <th className="py-3 px-4">Risk &amp; Clearance</th>
                 <th className="py-3 px-4">Workflow Stage</th>
                 <th className="py-3 px-4">Payment</th>
                 <th className="py-3 px-4">Officer</th>
@@ -664,7 +720,7 @@ export default function AdmissionsModule({
             <tbody className="divide-y divide-slate-100">
               {pagedList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#718096]">
+                  <td colSpan={8} className="py-12 text-center text-[#718096]">
                     <p className="font-bold text-[#10243E]">No matching records in {titleMap[activeTab] || 'Registrations'}.</p>
                     <p className="text-[11px] mt-1">Adjust filters or click &ldquo;New Registration&rdquo; to enrol a delegate.</p>
                   </td>
@@ -673,6 +729,7 @@ export default function AdmissionsModule({
                 pagedList.map((reg) => {
                   const fullName = [reg.firstName, reg.lastName].filter(Boolean).join(' ') || 'Applicant';
                   const stage = getEffectiveRegistrationStage(reg);
+                  const sec = getRegistrationSecurityInfo(reg);
                   return (
                     <tr key={reg.id} className="hover:bg-[#F5F8FC]/80 transition">
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -684,9 +741,20 @@ export default function AdmissionsModule({
                         <p className="text-[11px] text-[#718096]">{reg.officialEmail || reg.personalEmail || '—'}</p>
                         <p className="text-[10.5px] text-slate-400">{reg.country || 'Kenya'} • {reg.organisation || 'Individual'}</p>
                       </td>
-                      <td className="py-3 px-4 max-w-[240px]">
+                      <td className="py-3 px-4 max-w-[220px]">
                         <p className="font-semibold text-[#10243E] truncate" title={reg.eventTitle}>{reg.eventTitle}</p>
                         <p className="text-[11px] text-[#718096] truncate">{reg.venue || 'Nairobi'} • {reg.cohortName || reg.durationText || 'Standard'}</p>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black border ${
+                          sec.riskLevel === 'CRITICAL RISK' ? 'bg-red-100 text-[#DC4545] border-red-200' :
+                          sec.riskLevel === 'HIGH RISK' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                          sec.riskLevel === 'MEDIUM RISK' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+                          'bg-emerald-50 text-[#16A36A] border-emerald-200'
+                        }`}>
+                          {sec.riskScore}/100 • {sec.riskLevel.replace(' RISK', '')}
+                        </span>
+                        <p className="text-[10px] text-[#718096] mt-0.5">{sec.securityClearance}</p>
                       </td>
                       <td className="py-3 px-4">
                         <select

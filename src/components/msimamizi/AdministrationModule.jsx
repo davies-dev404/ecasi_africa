@@ -46,6 +46,10 @@ export default function AdministrationModule({
   const [auditEntityFilter, setAuditEntityFilter] = useState('All');
   const [settingsForm, setSettingsForm] = useState(settings || msimamiziEnterpriseService.getSettings());
   const [healthState, setHealthState] = useState({ loading: false, live: false, health: null });
+  const [mfaSetup, setMfaSetup] = useState({ active: false, secret: '', otpauthUri: '', code: '', recoveryCodes: [], busy: false, error: '' });
+  const [mfaDisablePass, setMfaDisablePass] = useState('');
+  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '', busy: false, msg: '', err: '' });
+  const [backupStatus, setBackupStatus] = useState('');
 
   useEffect(() => {
     if (settings) setSettingsForm(settings);
@@ -600,22 +604,195 @@ export default function AdministrationModule({
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-black text-[#10243E] flex items-center gap-2">
-            <Activity className="w-5 h-5 text-[#00B8B0]" /> System Health &amp; Infrastructure Diagnostics
+            <Activity className="w-5 h-5 text-[#00B8B0]" /> System Health, Account MFA &amp; Verified Backups
           </h2>
           <p className="text-xs text-[#718096]">
             {healthState.live ? 'Live production server telemetry from msimamizi-sync.php' : 'Local environment telemetry snapshot'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={loadHealth}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#071C2D] text-white text-xs font-bold cursor-pointer"
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              const res = await msimamiziEnterpriseService.exportVerifiedBackup(currentUser);
+              if (res.success) {
+                setBackupStatus(`Backup downloaded • SHA-256: ${res.sha256}`);
+                showToast('SHA-256 Verified Institutional Backup downloaded.');
+              } else {
+                alert(res.error);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00B8B0] hover:bg-teal-600 text-white text-xs font-bold cursor-pointer transition"
+          >
+            <Download className="w-3.5 h-3.5" /> Download Verified Backup
+          </button>
+          <button
+            type="button"
+            onClick={loadHealth}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#071C2D] text-white text-xs font-bold cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#00B8B0] ${healthState.loading ? 'animate-spin' : ''}`} /> Run Health Check
+          </button>
+        </div>
+      </div>
+
+      {backupStatus && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-mono break-all">
+          {backupStatus}
+        </div>
+      )}
+
+      {/* Administrator MFA (TOTP Authenticator App) & Password Rotation Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-black text-[#10243E] flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#00B8B0]" /> Multi-Factor Authentication (Authenticator App)
+            </h3>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${currentUser?.mfaEnabled ? 'bg-emerald-100 text-[#16A36A]' : 'bg-amber-100 text-amber-800'}`}>
+              {currentUser?.mfaEnabled ? 'MFA Active' : 'Not Enrolled'}
+            </span>
+          </div>
+          <p className="text-[#718096]">
+            Protect your administrator account ({currentUser?.email}) with RFC 6238 TOTP 6-digit codes from Google Authenticator, Microsoft Authenticator, or Authy, plus 8 single-use backup recovery codes.
+          </p>
+
+          {!currentUser?.mfaEnabled && !mfaSetup.active && (
+            <button
+              type="button"
+              disabled={mfaSetup.busy}
+              onClick={async () => {
+                setMfaSetup((s) => ({ ...s, busy: true, error: '' }));
+                const res = await msimamiziEnterpriseService.startMfaSetup();
+                if (res.success) {
+                  setMfaSetup({ active: true, secret: res.secret, otpauthUri: res.otpauthUri, code: '', recoveryCodes: [], busy: false, error: '' });
+                } else {
+                  setMfaSetup((s) => ({ ...s, busy: false, error: res.error }));
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#071C2D] hover:bg-[#00B8B0] text-white font-bold cursor-pointer transition"
+            >
+              <Lock className="w-3.5 h-3.5" /> Enroll Authenticator App MFA
+            </button>
+          )}
+
+          {mfaSetup.active && (
+            <div className="p-4 rounded-xl bg-[#F5F8FC] border border-slate-200 space-y-3">
+              <p className="font-bold text-[#10243E]">Step 1: Add this account to Google / Microsoft Authenticator</p>
+              <div className="p-3 rounded-lg bg-white border border-slate-200 font-mono text-[11px] break-all">
+                <span className="text-[10px] text-[#718096] block uppercase font-sans font-bold mb-1">Manual Setup Key (Base32):</span>
+                <strong className="text-[#071C2D] select-all">{mfaSetup.secret}</strong>
+              </div>
+              <p className="font-bold text-[#10243E]">Step 2: Enter the 6-digit code shown in your app</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={mfaSetup.code}
+                  onChange={(e) => setMfaSetup((s) => ({ ...s, code: e.target.value }))}
+                  placeholder="123456"
+                  className="h-9 px-3 rounded-xl border border-slate-300 bg-white font-mono w-36"
+                />
+                <button
+                  type="button"
+                  disabled={mfaSetup.busy}
+                  onClick={async () => {
+                    setMfaSetup((s) => ({ ...s, busy: true, error: '' }));
+                    const res = await msimamiziEnterpriseService.confirmMfaSetup(mfaSetup.code);
+                    if (res.success) {
+                      setMfaSetup({ active: false, secret: '', otpauthUri: '', code: '', recoveryCodes: res.recoveryCodes || [], busy: false, error: '' });
+                      onDataChange();
+                      showToast('MFA enabled! Save your 8 backup recovery codes safely.');
+                    } else {
+                      setMfaSetup((s) => ({ ...s, busy: false, error: res.error }));
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#16A36A] text-white font-bold cursor-pointer"
+                >
+                  Confirm &amp; Activate MFA
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mfaSetup.recoveryCodes.length > 0 && (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 space-y-2">
+              <p className="font-black text-amber-950">Save These 8 Single-Use Backup Recovery Codes Now (Shown Once!):</p>
+              <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px] font-bold text-[#10243E]">
+                {mfaSetup.recoveryCodes.map((c) => <span key={c} className="bg-white px-2 py-1 rounded border border-amber-200">{c}</span>)}
+              </div>
+            </div>
+          )}
+
+          {currentUser?.mfaEnabled && (
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2">
+              <input
+                type="password"
+                value={mfaDisablePass}
+                onChange={(e) => setMfaDisablePass(e.target.value)}
+                placeholder="Current password to disable MFA"
+                className="h-9 px-3 rounded-xl border border-slate-300 flex-1 min-w-[180px]"
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!mfaDisablePass) return;
+                  const res = await msimamiziEnterpriseService.disableMfa(mfaDisablePass);
+                  if (res.success) {
+                    setMfaDisablePass('');
+                    onDataChange();
+                    showToast('MFA disabled on your account.');
+                  } else {
+                    setMfaSetup((s) => ({ ...s, error: res.error }));
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC4545] border border-red-200 font-bold cursor-pointer"
+              >
+                Disable MFA
+              </button>
+            </div>
+          )}
+
+          {mfaSetup.error && <p className="text-[#DC4545] font-bold">{mfaSetup.error}</p>}
+        </div>
+
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (pwdForm.newPassword !== pwdForm.confirmPassword) {
+              setPwdForm((p) => ({ ...p, err: 'New passwords do not match.', msg: '' }));
+              return;
+            }
+            setPwdForm((p) => ({ ...p, busy: true, err: '', msg: '' }));
+            const res = await msimamiziEnterpriseService.changeOwnPassword(pwdForm.currentPassword, pwdForm.newPassword, currentUser);
+            if (res.success) {
+              setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '', busy: false, msg: res.message, err: '' });
+              showToast('Password updated securely and other sessions invalidated.');
+            } else {
+              setPwdForm((p) => ({ ...p, busy: false, err: res.error }));
+            }
+          }}
+          className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-[#00B8B0] ${healthState.loading ? 'animate-spin' : ''}`} /> Run Health Check
-        </button>
+          <h3 className="text-sm font-black text-[#10243E] flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-[#00B8B0]" /> Rotate My Administrator Password
+          </h3>
+          <p className="text-[#718096]">Changing your password requires your current password and immediately invalidates all other active sessions.</p>
+          <input type="password" required value={pwdForm.currentPassword} onChange={(e) => setPwdForm({ ...pwdForm, currentPassword: e.target.value })} placeholder="Current password *" className="w-full h-9 px-3 rounded-xl border border-slate-300" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <input type="password" required minLength={8} value={pwdForm.newPassword} onChange={(e) => setPwdForm({ ...pwdForm, newPassword: e.target.value })} placeholder="New password (min 8 chars) *" className="h-9 px-3 rounded-xl border border-slate-300" />
+            <input type="password" required minLength={8} value={pwdForm.confirmPassword} onChange={(e) => setPwdForm({ ...pwdForm, confirmPassword: e.target.value })} placeholder="Confirm new password *" className="h-9 px-3 rounded-xl border border-slate-300" />
+          </div>
+          {pwdForm.err && <p className="text-[#DC4545] font-bold">{pwdForm.err}</p>}
+          {pwdForm.msg && <p className="text-[#16A36A] font-bold">{pwdForm.msg}</p>}
+          <button type="submit" disabled={pwdForm.busy} className="px-4 py-2 rounded-xl bg-[#071C2D] hover:bg-[#00B8B0] text-white font-bold cursor-pointer transition">
+            {pwdForm.busy ? 'Updating...' : 'Update Password & Invalidate Other Sessions'}
+          </button>
+        </form>
       </div>
 
       {h && (

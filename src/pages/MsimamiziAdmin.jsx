@@ -59,6 +59,7 @@ import {
   hasPermission,
   getRoleDefinition,
   getEffectiveRegistrationStage,
+  getRegistrationSecurityInfo,
   normalizeLeadStatus,
   normalizeCandidateStage,
 } from '@/services/msimamiziEnterpriseService';
@@ -66,6 +67,7 @@ import {
 // Code-split enterprise modules for fast initial load & smooth switching
 const OverviewDashboard = lazy(() => import('@/components/msimamizi/OverviewDashboard'));
 const AdmissionsModule = lazy(() => import('@/components/msimamizi/AdmissionsModule'));
+const SecurityCenterModule = lazy(() => import('@/components/msimamizi/SecurityCenterModule'));
 const CrmModule = lazy(() => import('@/components/msimamizi/CrmModule'));
 const AcademicModule = lazy(() => import('@/components/msimamizi/AcademicModule'));
 const FinanceModule = lazy(() => import('@/components/msimamizi/FinanceModule'));
@@ -100,6 +102,8 @@ function MsimamiziAdminInner() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
+  const [mfaChallenge, setMfaChallenge] = useState(null); // { token, email } when TOTP MFA is required
+  const [mfaCode, setMfaCode] = useState('');
   const [turnstileVerified, setTurnstileVerified] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
 
@@ -553,6 +557,9 @@ function MsimamiziAdminInner() {
   const [cmsContent, setCmsContent] = useState(() => msimamiziEnterpriseService.getCmsContent());
   const [platformSettings, setPlatformSettings] = useState(() => msimamiziEnterpriseService.getSettings());
   const [auditEvents, setAuditEvents] = useState(() => msimamiziEnterpriseService.getAuditEvents());
+  const [securityAlerts, setSecurityAlerts] = useState(() => msimamiziEnterpriseService.getSecurityAlerts());
+  const [securityIncidents, setSecurityIncidents] = useState(() => msimamiziEnterpriseService.getSecurityIncidents());
+  const [securityStats, setSecurityStats] = useState(() => msimamiziEnterpriseService.getSecurityStats());
   const [staffAccounts, setStaffAccounts] = useState(() => adminRegistrationService.getAdminAccounts());
   const [globalSearch, setGlobalSearch] = useState('');
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -577,7 +584,13 @@ function MsimamiziAdminInner() {
     setCmsContent(msimamiziEnterpriseService.getCmsContent());
     setPlatformSettings(msimamiziEnterpriseService.getSettings());
     setAuditEvents(msimamiziEnterpriseService.getAuditEvents());
+    setSecurityAlerts(msimamiziEnterpriseService.getSecurityAlerts());
+    setSecurityIncidents(msimamiziEnterpriseService.getSecurityIncidents());
+    setSecurityStats(msimamiziEnterpriseService.getSecurityStats());
     setStaffAccounts(adminRegistrationService.getAdminAccounts());
+    if (adminRegistrationService.isAuthenticated()) {
+      setCurrentUser(adminRegistrationService.getCurrentUser());
+    }
     setCourses(dataService.getCoursesList());
   };
 
@@ -913,12 +926,39 @@ function MsimamiziAdminInner() {
     }
 
     const result = await adminRegistrationService.login(authEmail, authPassword);
+    if (result.success && result.mfaRequired && result.mfaChallengeToken) {
+      setMfaChallenge({ token: result.mfaChallengeToken, email: result.email || authEmail });
+      setMfaCode('');
+      setAuthPassword('');
+      setAuthError('');
+      setAuthSuccess(result.message || 'Please enter your 6-digit Authenticator App MFA code.');
+      return;
+    }
     if (result.success) {
+      setMfaChallenge(null);
       setCurrentUser(result.user);
       setIsAuthenticated(true);
       loadData();
     } else {
       setAuthError(result.message || 'Invalid administrative credentials');
+    }
+  };
+
+  // Handle Step-2 TOTP Authenticator App MFA Verification
+  const handleMfaVerifySubmit = async (e) => {
+    e.preventDefault();
+    if (!mfaChallenge?.token) return;
+    setAuthError('');
+    const result = await adminRegistrationService.verifyMfaLogin(mfaChallenge.token, mfaCode);
+    if (result.success) {
+      setMfaChallenge(null);
+      setMfaCode('');
+      setAuthSuccess('');
+      setCurrentUser(result.user);
+      setIsAuthenticated(true);
+      loadData();
+    } else {
+      setAuthError(result.message || 'Invalid authenticator code. Please try again.');
     }
   };
 
@@ -1578,8 +1618,56 @@ function MsimamiziAdminInner() {
             </button>
           </div>
 
-          {/* Login Form */}
-          {authMode === 'login' && (
+          {/* 2-Step TOTP Multi-Factor Authentication Challenge Screen */}
+          {mfaChallenge ? (
+            <form onSubmit={handleMfaVerifySubmit} className="p-6 sm:p-8 space-y-5">
+              <div className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-950 text-xs space-y-1">
+                <p className="font-black flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#00B8B0]" /> Multi-Factor Authentication Required
+                </p>
+                <p>Enter the 6-digit code from your Authenticator App for <strong className="font-mono">{mfaChallenge.email}</strong> (or a single-use backup recovery code).</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Authenticator Code / Backup Code
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  placeholder="123456 or XXXX-XXXXXX"
+                  className="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-sm font-mono tracking-widest text-center text-slate-800 focus:outline-none focus:border-[#008000]"
+                />
+              </div>
+              {authError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+              <button
+                type="submit"
+                className="w-full h-11 bg-[#008000] hover:bg-[#006600] text-white font-bold text-sm rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Verify MFA &amp; Enter Portal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMfaChallenge(null);
+                  setMfaCode('');
+                  setAuthError('');
+                  setAuthSuccess('');
+                }}
+                className="w-full text-xs font-bold text-slate-500 hover:text-[#032e42] cursor-pointer"
+              >
+                ← Back to Password Sign In
+              </button>
+            </form>
+          ) : authMode === 'login' && (
             <form onSubmit={handleLoginSubmit} className="p-6 sm:p-8 space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -1675,7 +1763,7 @@ function MsimamiziAdminInner() {
           )}
 
           {/* One-Time First-Time Administrator Password Setup Form (Permanently locked once created) */}
-          {authMode === 'create' && (() => {
+          {!mfaChallenge && authMode === 'create' && (() => {
             const isEmailAlreadyLocked = Boolean(createEmail.trim()) && adminRegistrationService.isPasswordInitialized(createEmail);
             return (
             <form onSubmit={handleCreatePasswordSubmit} className="p-6 sm:p-8 space-y-4">
@@ -1841,6 +1929,8 @@ function MsimamiziAdminInner() {
     enrolments: registrations.filter((r) =>
       ['Payment Confirmed', 'Enrolment Confirmed', 'Training In Progress', 'Completed'].includes(getEffectiveRegistrationStage(r))
     ).length,
+    securityReviewQueue: registrations.filter((r) => getRegistrationSecurityInfo(r).requiresSecurityReview).length,
+    openSecurityAlerts: securityAlerts.filter((a) => a.status === 'Open').length,
     inquiries: inquiries.length,
     overdueFollowups: inquiries.filter(
       (i) => i.nextFollowUp && i.nextFollowUp < todayStr && !['Converted', 'Closed'].includes(normalizeLeadStatus(i.status))
@@ -1861,6 +1951,8 @@ function MsimamiziAdminInner() {
     registrations.filter((r) => getEffectiveRegistrationStage(r) === 'Application Received').length +
     inquiries.filter((i) => normalizeLeadStatus(i.status) === 'New Lead').length +
     sidebarBadges.outstandingInvoices +
+    sidebarBadges.securityReviewQueue +
+    sidebarBadges.openSecurityAlerts +
     applications.filter((a) => normalizeCandidateStage(a.status) === 'Application Received').length;
 
   // Global Search across all major institutional entities
@@ -1955,6 +2047,19 @@ function MsimamiziAdminInner() {
           communications={communications}
           staffAccounts={staffAccounts}
           onOpenNewRegistration={openNewRegistrationPage}
+        />
+      );
+    }
+
+    if (['security-review-queue', 'security-dashboard', 'security-alerts'].includes(activeTab)) {
+      return (
+        <SecurityCenterModule
+          {...commonProps}
+          activeTab={activeTab}
+          registrations={registrations}
+          securityAlerts={securityAlerts}
+          securityIncidents={securityIncidents}
+          securityStats={securityStats}
         />
       );
     }
@@ -2206,6 +2311,14 @@ function MsimamiziAdminInner() {
                     <button type="button" onClick={() => setIsNotifOpen(false)} className="cursor-pointer"><X className="w-3.5 h-3.5" /></button>
                   </div>
                   <div className="divide-y divide-slate-100">
+                    <button type="button" onClick={() => { setActiveTab('security-review-queue'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-[#DC4545]" /> Security Review Queue</span>
+                      <span className="font-black text-[#DC4545]">{sidebarBadges.securityReviewQueue}</span>
+                    </button>
+                    <button type="button" onClick={() => { setActiveTab('security-alerts'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="flex items-center gap-2"><AlertCircle className="w-3.5 h-3.5 text-orange-600" /> Open Security Alerts</span>
+                      <span className="font-black text-orange-600">{sidebarBadges.openSecurityAlerts}</span>
+                    </button>
                     <button type="button" onClick={() => { setActiveTab('registrations'); setIsNotifOpen(false); }} className="w-full px-4 py-2.5 text-left hover:bg-[#F5F8FC] flex items-center justify-between gap-2 cursor-pointer">
                       <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-[#F0A020]" /> Pending Registrations</span>
                       <span className="font-black text-[#F0A020]">{registrations.filter((r) => getEffectiveRegistrationStage(r) === 'Application Received').length}</span>

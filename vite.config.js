@@ -133,6 +133,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      sourcemap: false,
       chunkSizeWarningLimit: 10000,
     },
   };

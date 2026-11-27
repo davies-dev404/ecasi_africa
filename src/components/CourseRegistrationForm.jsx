@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from "react";
-import { ArrowLeft, RotateCcw, Search } from "lucide-react";
+import React, { useState, useMemo, useRef } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, RotateCcw, Search, ShieldCheck, CheckCircle2, Mail } from "lucide-react";
 import countryListData from "@/data/countriesData.json";
 import CountrySelector from "@/components/CountrySelector";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { verifyTurnstile } from "@/services/turnstileService";
+import { getSyncUrl } from "@/services/adminRegistrationService";
 
 const COUNTRY_DIAL_CODES = countryListData;
 
@@ -14,6 +16,8 @@ const INITIAL_COURSE_REGISTRATION_STATE = {
   lastName: "",
   jobTitle: "",
   organisation: "",
+  organisationWebsite: "",
+  organisationRegNo: "",
   country: "Kenya",
   dialCode: "+254",
   phoneNumber: "",
@@ -143,6 +147,68 @@ export default function CourseRegistrationForm({
   const [robotError, setRobotError] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const [honeypot, setHoneypot] = useState("");
+  const formOpenedAtRef = useRef(Date.now());
+  const [otpState, setOtpState] = useState({
+    sent: false,
+    sending: false,
+    verifying: false,
+    verified: false,
+    code: "",
+    token: "",
+    feedback: "",
+  });
+
+  const handleSendEmailOtp = async () => {
+    const targetEmail = (formData.officialEmail || formData.personalEmail || "").trim();
+    if (!targetEmail || !targetEmail.includes("@")) {
+      setOtpState((s) => ({ ...s, feedback: "Please enter a valid email address before requesting a verification code." }));
+      return;
+    }
+    setOtpState((s) => ({ ...s, sending: true, feedback: "" }));
+    try {
+      const res = await fetch(getSyncUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send_reg_otp", email: targetEmail }),
+      });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.success) {
+        setOtpState((s) => ({ ...s, sending: false, sent: true, feedback: json.message || "Verification code sent to your email." }));
+      } else {
+        setOtpState((s) => ({ ...s, sending: false, feedback: json?.error || "Could not send code right now. You may still complete registration." }));
+      }
+    } catch {
+      setOtpState((s) => ({ ...s, sending: false, feedback: "Email OTP service offline in local mode. You may still submit registration." }));
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    const targetEmail = (formData.officialEmail || formData.personalEmail || "").trim();
+    if (!otpState.code.trim()) return;
+    setOtpState((s) => ({ ...s, verifying: true, feedback: "" }));
+    try {
+      const res = await fetch(getSyncUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify_reg_otp", email: targetEmail, code: otpState.code.trim() }),
+      });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.verified) {
+        setOtpState((s) => ({
+          ...s,
+          verifying: false,
+          verified: true,
+          token: json.emailVerifyToken || "",
+          feedback: "Email address verified successfully!",
+        }));
+      } else {
+        setOtpState((s) => ({ ...s, verifying: false, feedback: json?.error || "Invalid verification code." }));
+      }
+    } catch {
+      setOtpState((s) => ({ ...s, verifying: false, feedback: "Verification check unavailable right now." }));
+    }
+  };
 
   const filteredCourseOptions = useMemo(() => {
     const q = courseFilter.trim().toLowerCase();
@@ -258,15 +324,18 @@ export default function CourseRegistrationForm({
     }
     setRobotError(false);
 
+    let turnstileStatus = "unverified";
     if (effectiveToken) {
       setRobotLoading(true);
       try {
         const verification = await verifyTurnstile(effectiveToken, "register");
         if (verification && verification.success === false) {
+          turnstileStatus = "failed";
           setRobotError(true);
           setRobotLoading(false);
           return;
         }
+        turnstileStatus = "verified";
       } catch (err) {
         console.warn("[Turnstile Registration Check]:", err);
       }
@@ -310,7 +379,15 @@ export default function CourseRegistrationForm({
         : "Submitted via public online registration portal.",
     };
 
-    onSubmitRegistration?.(submissionRecord);
+    const securityMeta = {
+      honeypot,
+      dwellMs: Math.max(0, Date.now() - formOpenedAtRef.current),
+      turnstileStatus,
+      emailVerifyToken: otpState.token || "",
+      emailOtpVerified: otpState.verified,
+    };
+
+    onSubmitRegistration?.(submissionRecord, securityMeta);
   };
 
   return (
@@ -551,6 +628,50 @@ export default function CourseRegistrationForm({
           value={formData.organisation}
           onChange={handleFieldChange}
           className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+        />
+      </div>
+
+      {/* 6b. Optional Organization Verification Details (Helps speed up institutional admissions verification) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
+            Organisation Website <span className="text-slate-400 text-[11px]">(Optional)</span>
+          </label>
+          <input
+            type="text"
+            name="organisationWebsite"
+            placeholder="e.g. https://yourorganization.org"
+            value={formData.organisationWebsite}
+            onChange={handleFieldChange}
+            className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-[13px] font-medium text-[#334155] mb-1.5">
+            Business / Institutional Reg. No. <span className="text-slate-400 text-[11px]">(Optional)</span>
+          </label>
+          <input
+            type="text"
+            name="organisationRegNo"
+            placeholder="e.g. NGO / Ministry / Company Reg No."
+            value={formData.organisationRegNo}
+            onChange={handleFieldChange}
+            className="w-full h-[38px] px-3 rounded-[4px] border border-transparent bg-[#f5f6f8] text-[13.5px] text-[#1e293b] placeholder-[#64748b] focus:bg-white focus:border-[#008000] focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Invisible Anti-Bot Honeypot Field (Do not fill — hidden from humans) */}
+      <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", overflow: "hidden" }}>
+        <label htmlFor="ecas_website_fax_hp">Leave blank</label>
+        <input
+          id="ecas_website_fax_hp"
+          type="text"
+          name="faxNumber"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
         />
       </div>
 
@@ -952,6 +1073,67 @@ export default function CourseRegistrationForm({
           </div>
         )}
       </div>
+
+      {/* Optional Fast-Track Email Verification OTP + Anti-Phishing Notice (Public Mode Only) */}
+      {!isAdmin && (
+        <div className="rounded-lg border border-slate-200 bg-[#f8fafc] p-4 space-y-3 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 font-bold text-[#032e42]">
+              <Mail className="w-4 h-4 text-[#008000]" />
+              <span>Email Verification (Recommended for Faster Clearance)</span>
+            </div>
+            {otpState.verified ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#008000] font-bold text-[11px]">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Email Verified
+              </span>
+            ) : (
+              <button
+                type="button"
+                disabled={otpState.sending}
+                onClick={handleSendEmailOtp}
+                className="px-3 py-1.5 rounded-md bg-[#032e42] hover:bg-[#008000] text-white font-semibold text-[11px] transition cursor-pointer disabled:opacity-50"
+              >
+                {otpState.sending ? "Sending..." : otpState.sent ? "Resend 6-Digit Code" : "Send Verification Code"}
+              </button>
+            )}
+          </div>
+          {otpState.sent && !otpState.verified && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={otpState.code}
+                onChange={(e) => setOtpState((s) => ({ ...s, code: e.target.value }))}
+                placeholder="Enter 6-digit code"
+                className="h-9 px-3 rounded border border-slate-300 bg-white text-xs font-mono w-44"
+              />
+              <button
+                type="button"
+                disabled={otpState.verifying}
+                onClick={handleVerifyEmailOtp}
+                className="h-9 px-3.5 rounded bg-[#008000] hover:bg-[#006600] text-white font-bold text-xs cursor-pointer"
+              >
+                {otpState.verifying ? "Checking..." : "Verify Email"}
+              </button>
+            </div>
+          )}
+          {otpState.feedback && (
+            <p className={`text-[11px] font-medium ${otpState.verified ? "text-[#008000]" : "text-slate-600"}`}>
+              {otpState.feedback}
+            </p>
+          )}
+          <div className="pt-2 border-t border-slate-200 flex items-start gap-2 text-[11px] text-slate-600">
+            <ShieldCheck className="w-4 h-4 text-[#008000] shrink-0 mt-0.5" />
+            <p>
+              <strong>Official ECAS Security &amp; Privacy Notice:</strong> All registrations undergo automated verification. Official invoices are issued solely from <strong className="font-mono">@ecasiafrica.org</strong>.{' '}
+              <Link to="/security-notice" className="text-[#1e73be] font-semibold hover:underline">
+                Verify invoices or report phishing →
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Divider after Summary */}
       <hr className="border-t border-gray-300 my-6" />
